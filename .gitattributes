@@ -1,0 +1,5 @@
+# Tell GitHub Linguist to ignore plain JS config files
+# so TypeScript is detected as the primary language
+*.js linguist-detectable=false
+*.mjs linguist-detectable=false
+*.cjs linguist-detectable=false

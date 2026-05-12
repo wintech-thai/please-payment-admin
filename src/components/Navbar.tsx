@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLang } from '@/context/LanguageContext'
 import { clearAuthData } from '@/lib/axios'
 import { Lang } from '@/lib/translations'
@@ -42,11 +42,7 @@ const navItems: NavItem[] = [
   },
 ]
 
-interface NavbarProps {
-  username?: string
-}
-
-export default function Navbar({ username = 'Admin' }: NavbarProps) {
+export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { t, lang, setLang } = useLang()
@@ -54,6 +50,11 @@ export default function Navbar({ username = 'Admin' }: NavbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [modal, setModal] = useState<'profile' | 'changePassword' | null>(null)
+  const [username, setUsername] = useState('Admin')
+
+  useEffect(() => {
+    setUsername(localStorage.getItem('username') || 'Admin')
+  }, [])
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -69,10 +70,10 @@ export default function Navbar({ username = 'Admin' }: NavbarProps) {
       <div className="flex items-center h-14 px-4 gap-4">
         {/* Brand */}
         <Link href="/overview" className="flex items-center gap-2.5 flex-shrink-0">
-          <img src="/img/please-protect.svg" alt="Please Protect" className="w-9 h-9" />
+          <img src="/img/please-payment.svg" alt="Please Payment" className="w-9 h-9" />
           <div className="hidden sm:block">
             <p className="text-white font-bold text-sm leading-tight">PLEASE-PAYMENT</p>
-            <p className="text-blue-300 text-xs leading-tight">Admin Portal</p>
+            <p className="text-blue-300 text-xs leading-tight">Admin</p>
           </div>
         </Link>
 

@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: 'PLEASE-PAYMENT Admin',
   description: 'Please Payment Administration Dashboard',
   icons: {
-    icon: '/img/please-protect.svg',
-    shortcut: '/img/please-protect.svg',
+    icon: '/img/please-payment.svg',
+    shortcut: '/img/please-payment.svg',
   },
 }
 

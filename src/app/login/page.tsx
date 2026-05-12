@@ -82,26 +82,32 @@ function LoginForm() {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" className="w-11 h-11 flex-shrink-0">
             <defs>
               <linearGradient id="lp1Grad" x1="10%" y1="0%" x2="90%" y2="100%">
-                <stop offset="0%" stopColor="#4ade80" />
-                <stop offset="50%" stopColor="#06b6d4" />
-                <stop offset="100%" stopColor="#3b82f6" />
+                <stop offset="0%" stopColor="#60a5fa" />
+                <stop offset="50%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#1d4ed8" />
               </linearGradient>
               <filter id="lp1Glow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#06b6d4" floodOpacity="0.5" />
+                <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#3b82f6" floodOpacity="0.5" />
               </filter>
             </defs>
             <g filter="url(#lp1Glow)">
-              <path d="M60 12 L105 28 V60 C105 92 60 112 60 112 C60 112 15 92 15 60 V28 Z" stroke="url(#lp1Grad)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M60 25 L92 37 V60 C92 84 60 100 60 100" stroke="url(#lp1Grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M60 25 L28 37 V60 C28 84 60 100 60 100" stroke="url(#lp1Grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M60 40 L75 50 V65 L60 75 L45 65 V50 Z" fill="url(#lp1Grad)" fillOpacity="0.15" stroke="url(#lp1Grad)" strokeWidth="2" />
-              <circle cx="60" cy="57.5" r="4" fill="#4ade80" />
-              <path d="M60 75 V85 M75 57.5 H85 M45 57.5 H35 M60 40 V30" stroke="url(#lp1Grad)" strokeWidth="2" strokeLinecap="round" />
+              <rect x="10" y="25" width="100" height="70" rx="12" stroke="url(#lp1Grad)" strokeWidth="5" />
+              <rect x="10" y="44" width="100" height="16" fill="url(#lp1Grad)" fillOpacity="0.25" />
+              <rect x="20" y="31" width="22" height="16" rx="4" stroke="url(#lp1Grad)" strokeWidth="2.5" />
+              <line x1="31" y1="31" x2="31" y2="47" stroke="url(#lp1Grad)" strokeWidth="1.5" />
+              <line x1="20" y1="39" x2="42" y2="39" stroke="url(#lp1Grad)" strokeWidth="1.5" />
+              <circle cx="26" cy="72" r="4.5" fill="url(#lp1Grad)" />
+              <circle cx="41" cy="72" r="4.5" fill="url(#lp1Grad)" />
+              <circle cx="56" cy="72" r="4.5" fill="url(#lp1Grad)" />
+              <circle cx="71" cy="72" r="4.5" fill="url(#lp1Grad)" />
+              <circle cx="90" cy="60" r="3.5" fill="url(#lp1Grad)" />
+              <path d="M86 53 Q96 60 86 67" stroke="url(#lp1Grad)" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M82 49 Q98 60 82 71" stroke="url(#lp1Grad)" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.7" />
             </g>
           </svg>
           <div>
             <p className="text-white font-bold text-sm tracking-wide">PLEASE-PAYMENT</p>
-            <p className="text-blue-200 text-xs">Admin Portal</p>
+            <p className="text-blue-200 text-xs">Admin</p>
           </div>
         </div>
 
@@ -163,21 +169,27 @@ function LoginForm() {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" className="w-8 h-8 flex-shrink-0">
               <defs>
                 <linearGradient id="lp2Grad" x1="10%" y1="0%" x2="90%" y2="100%">
-                  <stop offset="0%" stopColor="#4ade80" />
-                  <stop offset="50%" stopColor="#06b6d4" />
-                  <stop offset="100%" stopColor="#3b82f6" />
+                  <stop offset="0%" stopColor="#60a5fa" />
+                  <stop offset="50%" stopColor="#3b82f6" />
+                  <stop offset="100%" stopColor="#1d4ed8" />
                 </linearGradient>
                 <filter id="lp2Glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#06b6d4" floodOpacity="0.5" />
+                  <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#3b82f6" floodOpacity="0.5" />
                 </filter>
               </defs>
               <g filter="url(#lp2Glow)">
-                <path d="M60 12 L105 28 V60 C105 92 60 112 60 112 C60 112 15 92 15 60 V28 Z" stroke="url(#lp2Grad)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M60 25 L92 37 V60 C92 84 60 100 60 100" stroke="url(#lp2Grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M60 25 L28 37 V60 C28 84 60 100 60 100" stroke="url(#lp2Grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M60 40 L75 50 V65 L60 75 L45 65 V50 Z" fill="url(#lp2Grad)" fillOpacity="0.15" stroke="url(#lp2Grad)" strokeWidth="2" />
-                <circle cx="60" cy="57.5" r="4" fill="#4ade80" />
-                <path d="M60 75 V85 M75 57.5 H85 M45 57.5 H35 M60 40 V30" stroke="url(#lp2Grad)" strokeWidth="2" strokeLinecap="round" />
+                <rect x="10" y="25" width="100" height="70" rx="12" stroke="url(#lp2Grad)" strokeWidth="5" />
+                <rect x="10" y="44" width="100" height="16" fill="url(#lp2Grad)" fillOpacity="0.25" />
+                <rect x="20" y="31" width="22" height="16" rx="4" stroke="url(#lp2Grad)" strokeWidth="2.5" />
+                <line x1="31" y1="31" x2="31" y2="47" stroke="url(#lp2Grad)" strokeWidth="1.5" />
+                <line x1="20" y1="39" x2="42" y2="39" stroke="url(#lp2Grad)" strokeWidth="1.5" />
+                <circle cx="26" cy="72" r="4.5" fill="url(#lp2Grad)" />
+                <circle cx="41" cy="72" r="4.5" fill="url(#lp2Grad)" />
+                <circle cx="56" cy="72" r="4.5" fill="url(#lp2Grad)" />
+                <circle cx="71" cy="72" r="4.5" fill="url(#lp2Grad)" />
+                <circle cx="90" cy="60" r="3.5" fill="url(#lp2Grad)" />
+                <path d="M86 53 Q96 60 86 67" stroke="url(#lp2Grad)" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M82 49 Q98 60 82 71" stroke="url(#lp2Grad)" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.7" />
               </g>
             </svg>
             <span className="font-bold text-primary-900 text-sm">PLEASE-PAYMENT Admin</span>

@@ -3,7 +3,8 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { useLang } from '@/context/LanguageContext'
 import { client } from '@/lib/axios'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
+import LeaveConfirmModal from '@/components/LeaveConfirmModal'
 
 interface Props {
   onClose: () => void
@@ -64,6 +65,7 @@ export default function ProfileModal({ onClose }: Props) {
   const [original, setOriginal] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
 
   useEffect(() => {
     client
@@ -126,13 +128,28 @@ export default function ProfileModal({ onClose }: Props) {
     }
   }
 
+  const isDirty = original !== null && (
+    profile.firstName !== original.firstName ||
+    profile.lastName !== original.lastName ||
+    profile.phoneNumber !== original.phoneNumber ||
+    profile.secondaryEmail !== original.secondaryEmail
+  )
+
+  const handleClose = () => {
+    if (isDirty) setShowLeaveConfirm(true)
+    else onClose()
+  }
+
   const set = (field: keyof Profile) => (v: string) =>
     setProfile((p) => ({ ...p, [field]: v }))
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+      {showLeaveConfirm && (
+        <LeaveConfirmModal onConfirm={onClose} onCancel={() => setShowLeaveConfirm(false)} />
+      )}
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Modal */}
       <div className="relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
@@ -145,7 +162,7 @@ export default function ProfileModal({ onClose }: Props) {
             <p className="text-white/50 text-sm mt-1">{t.profile.subtitle}</p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors mt-0.5"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -238,7 +255,7 @@ export default function ProfileModal({ onClose }: Props) {
           <div className="flex justify-end gap-3 px-4 sm:px-8 py-4 sm:py-5 border-t border-white/10">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-6 py-2 text-sm font-semibold rounded-lg border border-red-800 bg-red-950/50 text-red-400 hover:bg-red-900/50 transition-colors"
             >
               CANCEL

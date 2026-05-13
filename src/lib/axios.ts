@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 const API_URL = '/api/proxy'
 
@@ -128,6 +128,14 @@ client.interceptors.response.use(
       rawStr.includes('expired')
 
     if (!isTokenExpired || !originalRequest || originalRequest._retry) {
+      const apiMessage =
+        typeof errorData === 'object' && errorData !== null
+          ? ((errorData as Record<string, unknown>).description as string | undefined) ||
+            ((errorData as Record<string, unknown>).message as string | undefined)
+          : typeof errorData === 'string' ? errorData : undefined
+      if (apiMessage) {
+        return Promise.reject(new AxiosError(apiMessage, String(status ?? ''), originalRequest, error.request, errorResponse))
+      }
       return Promise.reject(error)
     }
 
@@ -147,28 +155,24 @@ client.interceptors.response.use(
     isRefreshing = true
 
     try {
-      const refreshToken = localStorage.getItem('refreshToken')
-      if (!refreshToken) throw new Error('No refresh token')
+      const res = await fetch('/api/auth/refresh', { method: 'POST' })
 
-      const res = await axios.post(
-        '/api/proxy/admin-api/AuthAdmin/org/global/action/Refresh',
-        { RefreshToken: refreshToken },
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+      if (!res.ok) throw new Error('Refresh failed')
 
-      const tokenData = res.data?.token || res.data
-      const { access_token, refresh_token } = tokenData
+      const data = await res.json()
+      const newAccessToken: string = data.accessToken
+      const newRefreshToken: string | undefined = data.refreshToken
 
-      if (!access_token) throw new Error('No access token in refresh response')
+      if (!newAccessToken) throw new Error('No access token in refresh response')
 
-      localStorage.setItem('accessToken', access_token)
-      if (refresh_token) localStorage.setItem('refreshToken', refresh_token)
-      setAuthCookies(access_token, refresh_token)
+      localStorage.setItem('accessToken', newAccessToken)
+      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken)
+      setAuthCookies(newAccessToken, newRefreshToken)
 
-      processQueue(null, access_token)
+      processQueue(null, newAccessToken)
 
       if (originalRequest.headers) {
-        originalRequest.headers.Authorization = `Bearer ${encodeBase64(access_token)}`
+        originalRequest.headers.Authorization = `Bearer ${encodeBase64(newAccessToken)}`
       }
 
       return client(originalRequest)

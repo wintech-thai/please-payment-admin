@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Toaster } from 'react-hot-toast'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -21,26 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="th">
       <body>
         {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            success: {
-              style: {
-                background: '#f0fdf4',
-                color: '#166534',
-                border: '1px solid #bbf7d0',
-              },
-            },
-            error: {
-              style: {
-                background: '#fef2f2',
-                color: '#991b1b',
-                border: '1px solid #fecaca',
-              },
-            },
-          }}
-        />
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   )

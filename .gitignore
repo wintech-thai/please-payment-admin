@@ -20,3 +20,6 @@ dist/
 
 # Claude
 .claude/
+
+# External reference projects
+tempplease-protect-center/

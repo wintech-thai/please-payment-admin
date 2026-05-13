@@ -8,7 +8,7 @@
     "start": "next start -H 0.0.0.0 -p 3000"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^9.4.0",
+    "@elastic/elasticsearch": "^8.19.1",
     "axios": "^1.16.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.14.0",

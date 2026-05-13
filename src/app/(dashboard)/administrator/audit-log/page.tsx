@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { Search, RefreshCcw, Eye, ChevronLeft, ChevronRight, Clock, ChevronDown } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react'
+import { Search, RefreshCcw, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
-import { auditLogApi, type AuditLogDocument, type AuditLogPayload } from '@/lib/api/audit-log.api'
+import type { AuditLogDocument } from '@/lib/api/audit-log.api'
 import { useLang } from '@/context/LanguageContext'
 import AuditLogFlyout from '@/components/AuditLogFlyout'
+import { AuditLogHistogram } from '@/components/AuditLogHistogram'
+import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 
@@ -20,15 +22,6 @@ function getApiColor(name: string): string {
 
 // ── Date helpers (no external library) ───────────────────────────────────────
 
-function calcFrom(rangeValue: string): Date {
-  const now = new Date()
-  const num = parseInt(rangeValue)
-  const unit = rangeValue.replace(/\d/g, '')
-  if (unit === 'm') return new Date(now.getTime() - num * 60_000)
-  if (unit === 'h') return new Date(now.getTime() - num * 3_600_000)
-  return new Date(now.getTime() - num * 86_400_000)
-}
-
 function formatDate(iso: string): string {
   if (!iso) return '-'
   try {
@@ -39,24 +32,55 @@ function formatDate(iso: string): string {
   } catch { return iso }
 }
 
-// ── Response normaliser ───────────────────────────────────────────────────────
+function getTimeFilter(tr: TimeRangeValue): { gte: string; lte?: string } {
+  if (tr.type === 'absolute' && tr.start && tr.end) {
+    return {
+      gte: new Date(tr.start * 1000).toISOString(),
+      lte: new Date(tr.end * 1000).toISOString(),
+    }
+  }
+  const num = parseInt(tr.value)
+  const unit = tr.value.replace(/\d/g, '')
+  const now = Date.now()
+  let startMs = now
+  if (unit === 'm') startMs = now - num * 60_000
+  else if (unit === 'h') startMs = now - num * 3_600_000
+  else startMs = now - num * 86_400_000
+  return { gte: new Date(startMs).toISOString() }
+}
 
-function mapItem(item: Record<string, unknown>, idx: number): AuditLogDocument {
-  const data = (item.data as Record<string, unknown>) || {}
+function calculateInterval(tr: TimeRangeValue): string {
+  if (tr.type === 'absolute' && tr.start && tr.end) {
+    const diffH = (tr.end - tr.start) / 3600
+    if (diffH <= 1) return '30s'
+    if (diffH <= 24) return '30m'
+    return '1d'
+  }
+  const v = tr.value
+  if (v.endsWith('m') || v === '1h') return '30s'
+  if (v === '24h' || v === '1d') return '30m'
+  if (v.endsWith('d')) return '1d'
+  return '1h'
+}
+
+// ── Response mapper ───────────────────────────────────────────────────────────
+
+function mapItem(source: Record<string, unknown>): AuditLogDocument {
+  const data = (source.data as Record<string, unknown>) || {}
   const userInfo = (data.userInfo as Record<string, unknown>) || (data.user as Record<string, unknown>) || {}
   const api = (data.api as Record<string, unknown>) || {}
   return {
-    id: String(item.auditLogId ?? item.id ?? item._id ?? idx),
-    '@timestamp': String(item['@timestamp'] ?? item.createdDate ?? item.timestamp ?? ''),
-    user_name: String(userInfo.UserName ?? userInfo.userName ?? item.userName ?? ''),
-    id_type: String(userInfo.IdentityType ?? userInfo.identityType ?? item.identityType ?? '-'),
-    role: String(userInfo.Role ?? userInfo.role ?? item.role ?? '-'),
-    action: String(api.ApiName ?? api.apiName ?? data.Path ?? data.path ?? item.action ?? '-'),
-    path: String(data.Path ?? data.path ?? item.path ?? ''),
+    id: String(source._id ?? source.auditLogId ?? source.id ?? ''),
+    '@timestamp': String(source['@timestamp'] ?? ''),
+    user_name: String(userInfo.UserName ?? userInfo.userName ?? ''),
+    id_type: String(userInfo.IdentityType ?? userInfo.identityType ?? '-'),
+    role: String(userInfo.Role ?? userInfo.role ?? '-'),
+    action: String(api.ApiName ?? api.apiName ?? data.Path ?? data.path ?? '-'),
+    path: String(data.Path ?? data.path ?? ''),
     resource: String(api.Controller ?? api.controller ?? ''),
-    status_code: Number(data.StatusCode ?? data.statusCode ?? api.statusCode ?? item.statusCode ?? 200),
-    client_ip: String(data.CfClientIp ?? data.ClientIp ?? data.clientIp ?? item.clientIp ?? '-'),
-    ...item,
+    status_code: Number(data.StatusCode ?? data.statusCode ?? api.statusCode ?? 200),
+    client_ip: String(data.CfClientIp ?? data.ClientIp ?? data.clientIp ?? '-'),
+    ...source,
   }
 }
 
@@ -66,20 +90,6 @@ export default function AuditLogPage() {
   const { t } = useLang()
   const tAL = t.auditLog
 
-  const TIME_RANGES = [
-    { value: '5m',  label: tAL.last5m },
-    { value: '15m', label: tAL.last15m },
-    { value: '30m', label: tAL.last30m },
-    { value: '1h',  label: tAL.last1h },
-    { value: '3h',  label: tAL.last3h },
-    { value: '6h',  label: tAL.last6h },
-    { value: '12h', label: tAL.last12h },
-    { value: '24h', label: tAL.last24h },
-    { value: '2d',  label: tAL.last2d },
-    { value: '7d',  label: tAL.last7d },
-    { value: '30d', label: tAL.last30d },
-  ]
-
   const [logs, setLogs] = useState<AuditLogDocument[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [totalCount, setTotalCount] = useState(0)
@@ -88,44 +98,84 @@ export default function AuditLogPage() {
   const [inputValue, setInputValue] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [searchField, setSearchField] = useState('all')
-  const [timeRange, setTimeRange] = useState('24h')
-  const [timeOpen, setTimeOpen] = useState(false)
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h', label: tAL.last24h })
+  const [chartData, setChartData] = useState<any[]>([])
+  const [chartMax, setChartMax] = useState(1)
+  const [chartInterval, setChartInterval] = useState('30m')
   const [selectedLog, setSelectedLog] = useState<AuditLogDocument | null>(null)
   const [selectedIndex, setSelectedIndex] = useState(-1)
-  const timeRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (timeRef.current && !timeRef.current.contains(e.target as Node)) setTimeOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  const getOrgId = () => typeof window !== 'undefined' ? localStorage.getItem('orgId') || '' : ''
 
   const fetchData = useCallback(async () => {
+    const orgId = getOrgId()
+    if (!orgId) { setIsLoading(false); return }
     setIsLoading(true)
     try {
-      const from = calcFrom(timeRange).toISOString()
-      const to = new Date().toISOString()
-      const offset = (page - 1) * itemsPerPage
-      const payload: AuditLogPayload = { limit: itemsPerPage, offset, from, to }
+      const currentInterval = calculateInterval(timeRange)
+      setChartInterval(currentInterval)
+
+      const { gte, lte } = getTimeFilter(timeRange)
+      const tsFilter: any = { gte }
+      if (lte) tsFilter.lte = lte
+      const queryMust: any[] = [{ range: { '@timestamp': tsFilter } }]
+
       if (searchTerm) {
-        if (searchField === 'username') payload.search = searchTerm
-        else if (searchField === 'api') payload.apiSearch = searchTerm
-        else if (searchField === 'ip') payload.ipSearch = searchTerm
-        else payload.search = searchTerm
+        if (searchField === 'all') {
+          queryMust.push({
+            multi_match: {
+              query: searchTerm,
+              fields: ['data.userInfo.UserName', 'data.api.ApiName', 'data.userInfo.Role', 'data.CfClientIp', 'data.Path'],
+              type: 'phrase_prefix',
+            },
+          })
+        } else if (searchField === 'username') {
+          queryMust.push({ match: { 'data.userInfo.UserName': searchTerm } })
+        } else if (searchField === 'api') {
+          queryMust.push({ match: { 'data.api.ApiName': searchTerm } })
+        } else if (searchField === 'ip') {
+          queryMust.push({ match: { 'data.CfClientIp': searchTerm } })
+        }
       }
-      const res = await auditLogApi.getAuditLogs(payload)
-      const raw = res.data as Record<string, unknown>
-      const arr = (Array.isArray(raw)
-        ? raw
-        : ((raw?.auditLogs ?? raw?.data ?? raw?.items ?? []) as unknown[])) as Record<string, unknown>[]
-      const total = raw?.total ?? raw?.totalCount ?? arr.length
-      setLogs(arr.map(mapItem))
-      setTotalCount(typeof total === 'number' ? total : 0)
+
+      const esPayload = {
+        from: (page - 1) * itemsPerPage,
+        size: itemsPerPage,
+        sort: [{ '@timestamp': { order: 'desc' } }],
+        track_total_hits: true,
+        query: { bool: { must: queryMust } },
+        aggs: {
+          timeline: {
+            date_histogram: { field: '@timestamp', fixed_interval: currentInterval, min_doc_count: 0 },
+            aggs: { group_by_api: { terms: { field: 'data.api.ApiName.keyword', size: 10 } } },
+          },
+        },
+      }
+
+      const res = await fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
+        body: JSON.stringify({ esPayload }),
+      })
+      const result = await res.json()
+
+      if (result.status === 'OK') {
+        setLogs(result.data.map(mapItem))
+        setTotalCount(result.total)
+        if (result.aggregations?.timeline?.buckets) {
+          const buckets = result.aggregations.timeline.buckets
+          setChartData(buckets)
+          setChartMax(Math.max(1, ...buckets.map((b: any) => b.doc_count as number)))
+        } else {
+          setChartData([])
+        }
+      } else {
+        throw new Error(result.message)
+      }
     } catch {
       setLogs([])
       setTotalCount(0)
+      setChartData([])
     } finally {
       setIsLoading(false)
     }
@@ -137,7 +187,7 @@ export default function AuditLogPage() {
 
   const handleReset = () => {
     setInputValue(''); setSearchTerm(''); setSearchField('all')
-    setTimeRange('24h'); setPage(1)
+    setTimeRange({ type: 'relative', value: '24h', label: tAL.last24h }); setPage(1)
   }
 
   const handleOpenFlyout = (log: AuditLogDocument, idx: number) => {
@@ -151,21 +201,19 @@ export default function AuditLogPage() {
   const totalPages = Math.ceil(totalCount / itemsPerPage)
   const startRow = totalCount === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, totalCount)
-  const selectedRangeLabel = TIME_RANGES.find(r => r.value === timeRange)?.label ?? timeRange
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
 
       {/* Header */}
-      <div>
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900">{tAL.title}</h1>
         <p className="text-sm text-gray-500 mt-0.5">{tAL.subtitle}</p>
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3 flex flex-wrap gap-2 items-center">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3 flex flex-wrap gap-2 items-center mb-4">
 
-        {/* Search field */}
         <select
           value={searchField}
           onChange={e => setSearchField(e.target.value)}
@@ -177,7 +225,6 @@ export default function AuditLogPage() {
           <option value="ip">{tAL.searchFieldIp}</option>
         </select>
 
-        {/* Text input */}
         <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -198,36 +245,12 @@ export default function AuditLogPage() {
         </button>
 
         {/* Time range */}
-        <div className="relative" ref={timeRef}>
-          <button
-            onClick={() => setTimeOpen(v => !v)}
-            className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <span className="min-w-[100px]">{selectedRangeLabel}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-          </button>
-          {timeOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-20 py-1 overflow-hidden">
-              {TIME_RANGES.map(r => (
-                <button
-                  key={r.value}
-                  onClick={() => { setTimeRange(r.value); setPage(1); setTimeOpen(false) }}
-                  className={clsx(
-                    'w-full text-left px-4 py-2 text-sm transition-colors',
-                    timeRange === r.value
-                      ? 'bg-primary-50 text-primary-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  )}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <AdvancedTimeRangeSelector
+          value={timeRange}
+          onChange={val => { setTimeRange(val); setPage(1) }}
+          disabled={isLoading}
+        />
 
-        {/* Reset */}
         <button
           onClick={handleReset}
           title={tAL.reset}
@@ -237,9 +260,20 @@ export default function AuditLogPage() {
         </button>
       </div>
 
+      {/* Histogram */}
+      <div className="mb-4">
+        <AuditLogHistogram
+          data={chartData}
+          totalHits={totalCount}
+          interval={chartInterval}
+          maxDocCount={chartMax}
+          dict={{ totalLogs: tAL.totalLogs ?? 'Total Logs' }}
+        />
+      </div>
+
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead className="bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               <tr>
@@ -336,7 +370,7 @@ export default function AuditLogPage() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+        <div className="flex-none flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>{tAL.rowsPerPage}</span>
             <select

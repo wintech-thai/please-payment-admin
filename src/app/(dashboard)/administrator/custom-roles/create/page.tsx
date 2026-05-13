@@ -102,9 +102,9 @@ export default function CreateCustomRolePage() {
   const totalPerms = permGroups.reduce((s, g) => s + g.apiPermissions.length, 0)
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
       {showConfirm && <LeaveConfirmModal onConfirm={confirmLeave} onCancel={cancelLeave} />}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex-none flex items-center gap-3 mb-6">
         <button
           onClick={() => guardNavigation(() => router.push('/administrator/custom-roles'))}
           className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors"
@@ -117,7 +117,8 @@ export default function CreateCustomRolePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
         {/* Role Information */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{t.customRoles.roleInfoSection}</SectionHeader>
@@ -224,7 +225,8 @@ export default function CreateCustomRolePage() {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 py-2">
+        </div>
+        <div className="flex-none -mx-3 sm:-mx-6 px-4 sm:px-8 py-4 flex items-center justify-end gap-3 bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
           <button type="button" onClick={() => guardNavigation(() => router.push('/administrator/custom-roles'))} className={cancelBtnCls}>
             {t.admin.cancel}
           </button>

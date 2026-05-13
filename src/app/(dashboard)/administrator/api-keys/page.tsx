@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams, usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
@@ -11,7 +11,7 @@ import { Search, ChevronLeft, ChevronRight, Trash2, Ban, CheckCircle, MoreHorizo
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
-export default function ApiKeysPage() {
+function ApiKeysContent() {
   const { t } = useLang()
   const router = useRouter()
   const pathname = usePathname()
@@ -425,3 +425,11 @@ function EmptyRow({ icon, title, subtitle }: { icon: React.ReactNode; title: str
 }
 
 const cancelBtnCls = 'px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'
+
+export default function ApiKeysPage() {
+  return (
+    <Suspense>
+      <ApiKeysContent />
+    </Suspense>
+  )
+}

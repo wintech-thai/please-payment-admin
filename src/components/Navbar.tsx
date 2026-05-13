@@ -10,6 +10,7 @@ import clsx from 'clsx'
 import { toast } from 'sonner'
 import ProfileModal from '@/components/ProfileModal'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
+import { AppVersionDisplay } from '@/components/AppVersionDisplay'
 
 interface NavItem {
   href: string
@@ -108,6 +109,11 @@ export default function Navbar() {
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2">
+          {/* Version display */}
+          <div className="hidden lg:flex items-center mr-1 pr-3 border-r border-white/10 h-8">
+            <AppVersionDisplay />
+          </div>
+
           {/* Language switcher */}
           <div className="hidden sm:flex items-center gap-1 bg-white/10 rounded-lg p-0.5">
             {(['th', 'en'] as Lang[]).map((l) => (

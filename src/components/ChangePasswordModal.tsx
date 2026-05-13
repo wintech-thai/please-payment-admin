@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react'
 import { useLang } from '@/context/LanguageContext'
 import { client } from '@/lib/axios'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 interface Props {
   onClose: () => void

@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 import { LanguageProvider, useLang } from '@/context/LanguageContext'
 
 function LoginForm() {
@@ -81,28 +81,21 @@ function LoginForm() {
         <div className="relative z-10 flex items-center gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" className="w-11 h-11 flex-shrink-0">
             <defs>
-              <linearGradient id="lp1Grad" x1="10%" y1="0%" x2="90%" y2="100%">
+              <linearGradient id="lp1MbGrad" x1="20%" y1="0%" x2="80%" y2="100%">
                 <stop offset="0%" stopColor="#60a5fa" />
-                <stop offset="50%" stopColor="#3b82f6" />
+                <stop offset="60%" stopColor="#3b82f6" />
                 <stop offset="100%" stopColor="#1d4ed8" />
               </linearGradient>
-              <filter id="lp1Glow" x="-20%" y="-20%" width="140%" height="140%">
+              <filter id="lp1MbGlow" x="-20%" y="-20%" width="140%" height="140%">
                 <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#3b82f6" floodOpacity="0.5" />
               </filter>
             </defs>
-            <g filter="url(#lp1Glow)">
-              <rect x="10" y="25" width="100" height="70" rx="12" stroke="url(#lp1Grad)" strokeWidth="5" />
-              <rect x="10" y="44" width="100" height="16" fill="url(#lp1Grad)" fillOpacity="0.25" />
-              <rect x="20" y="31" width="22" height="16" rx="4" stroke="url(#lp1Grad)" strokeWidth="2.5" />
-              <line x1="31" y1="31" x2="31" y2="47" stroke="url(#lp1Grad)" strokeWidth="1.5" />
-              <line x1="20" y1="39" x2="42" y2="39" stroke="url(#lp1Grad)" strokeWidth="1.5" />
-              <circle cx="26" cy="72" r="4.5" fill="url(#lp1Grad)" />
-              <circle cx="41" cy="72" r="4.5" fill="url(#lp1Grad)" />
-              <circle cx="56" cy="72" r="4.5" fill="url(#lp1Grad)" />
-              <circle cx="71" cy="72" r="4.5" fill="url(#lp1Grad)" />
-              <circle cx="90" cy="60" r="3.5" fill="url(#lp1Grad)" />
-              <path d="M86 53 Q96 60 86 67" stroke="url(#lp1Grad)" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M82 49 Q98 60 82 71" stroke="url(#lp1Grad)" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.7" />
+            <g filter="url(#lp1MbGlow)">
+              <ellipse cx="60" cy="20" rx="11" ry="7" fill="url(#lp1MbGrad)" />
+              <rect x="49" y="24" width="22" height="16" rx="5" fill="url(#lp1MbGrad)" />
+              <ellipse cx="60" cy="76" rx="40" ry="36" fill="url(#lp1MbGrad)" />
+              <ellipse cx="45" cy="60" rx="9" ry="6" fill="white" fillOpacity="0.2" transform="rotate(-35 45 60)" />
+              <text x="60" y="89" textAnchor="middle" fill="white" fontSize="42" fontWeight="bold" fontFamily="Arial, sans-serif">฿</text>
             </g>
           </svg>
           <div>
@@ -168,28 +161,21 @@ function LoginForm() {
           <div className="flex lg:hidden items-center gap-2 mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" className="w-8 h-8 flex-shrink-0">
               <defs>
-                <linearGradient id="lp2Grad" x1="10%" y1="0%" x2="90%" y2="100%">
+                <linearGradient id="lp2MbGrad" x1="20%" y1="0%" x2="80%" y2="100%">
                   <stop offset="0%" stopColor="#60a5fa" />
-                  <stop offset="50%" stopColor="#3b82f6" />
+                  <stop offset="60%" stopColor="#3b82f6" />
                   <stop offset="100%" stopColor="#1d4ed8" />
                 </linearGradient>
-                <filter id="lp2Glow" x="-20%" y="-20%" width="140%" height="140%">
+                <filter id="lp2MbGlow" x="-20%" y="-20%" width="140%" height="140%">
                   <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#3b82f6" floodOpacity="0.5" />
                 </filter>
               </defs>
-              <g filter="url(#lp2Glow)">
-                <rect x="10" y="25" width="100" height="70" rx="12" stroke="url(#lp2Grad)" strokeWidth="5" />
-                <rect x="10" y="44" width="100" height="16" fill="url(#lp2Grad)" fillOpacity="0.25" />
-                <rect x="20" y="31" width="22" height="16" rx="4" stroke="url(#lp2Grad)" strokeWidth="2.5" />
-                <line x1="31" y1="31" x2="31" y2="47" stroke="url(#lp2Grad)" strokeWidth="1.5" />
-                <line x1="20" y1="39" x2="42" y2="39" stroke="url(#lp2Grad)" strokeWidth="1.5" />
-                <circle cx="26" cy="72" r="4.5" fill="url(#lp2Grad)" />
-                <circle cx="41" cy="72" r="4.5" fill="url(#lp2Grad)" />
-                <circle cx="56" cy="72" r="4.5" fill="url(#lp2Grad)" />
-                <circle cx="71" cy="72" r="4.5" fill="url(#lp2Grad)" />
-                <circle cx="90" cy="60" r="3.5" fill="url(#lp2Grad)" />
-                <path d="M86 53 Q96 60 86 67" stroke="url(#lp2Grad)" strokeWidth="2.5" strokeLinecap="round" />
-                <path d="M82 49 Q98 60 82 71" stroke="url(#lp2Grad)" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.7" />
+              <g filter="url(#lp2MbGlow)">
+                <ellipse cx="60" cy="20" rx="11" ry="7" fill="url(#lp2MbGrad)" />
+                <rect x="49" y="24" width="22" height="16" rx="5" fill="url(#lp2MbGrad)" />
+                <ellipse cx="60" cy="76" rx="40" ry="36" fill="url(#lp2MbGrad)" />
+                <ellipse cx="45" cy="60" rx="9" ry="6" fill="white" fillOpacity="0.2" transform="rotate(-35 45 60)" />
+                <text x="60" y="89" textAnchor="middle" fill="white" fontSize="42" fontWeight="bold" fontFamily="Arial, sans-serif">฿</text>
               </g>
             </svg>
             <span className="font-bold text-primary-900 text-sm">PLEASE-PAYMENT Admin</span>

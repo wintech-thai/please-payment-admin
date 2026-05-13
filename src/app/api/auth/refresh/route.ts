@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
     const newAccessToken: string = data.token?.access_token || ''
     const newRefreshToken: string = data.token?.refresh_token || refreshToken
 
-    const res = NextResponse.json({ success: true })
+    const res = NextResponse.json({ success: true, accessToken: newAccessToken, refreshToken: newRefreshToken })
 
     res.cookies.set('accessToken', newAccessToken, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     })
 
     res.cookies.set('refreshToken', newRefreshToken, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',

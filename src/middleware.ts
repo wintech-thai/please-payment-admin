@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/login']
-const AUTH_API_PATHS = ['/api/auth/login']
+const AUTH_ONLY_PUBLIC_PATHS = ['/login']
+const ALWAYS_PUBLIC_PATHS = ['/admin-signup-confirm', '/forgot-password', '/user-invite-confirm']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -17,13 +17,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+  // Always accessible regardless of auth state
+  if (ALWAYS_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    return NextResponse.next()
+  }
 
-  if (!token && !isPublic) {
+  const isAuthOnlyPublic = AUTH_ONLY_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+
+  if (!token && !isAuthOnlyPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (token && isPublic) {
+  if (token && isAuthOnlyPublic) {
     return NextResponse.redirect(new URL('/overview', request.url))
   }
 

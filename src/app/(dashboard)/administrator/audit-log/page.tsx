@@ -104,6 +104,7 @@ export default function AuditLogPage() {
   const [chartInterval, setChartInterval] = useState('30m')
   const [selectedLog, setSelectedLog] = useState<AuditLogDocument | null>(null)
   const [selectedIndex, setSelectedIndex] = useState(-1)
+  const [highlightedId, setHighlightedId] = useState<string>('')
 
   const getOrgId = () => typeof window !== 'undefined' ? localStorage.getItem('orgId') || '' : ''
 
@@ -190,12 +191,17 @@ export default function AuditLogPage() {
     setTimeRange({ type: 'relative', value: '24h', label: tAL.last24h }); setPage(1)
   }
 
+  const handleRowClick = (log: AuditLogDocument) => {
+    setHighlightedId(log.id)
+  }
   const handleOpenFlyout = (log: AuditLogDocument, idx: number) => {
-    setSelectedLog(log); setSelectedIndex(idx)
+    setHighlightedId(log.id); setSelectedLog(log); setSelectedIndex(idx)
   }
   const handleCloseFlyout = () => { setSelectedLog(null); setSelectedIndex(-1) }
   const handleNavigate = (idx: number) => {
-    if (idx >= 0 && idx < logs.length) { setSelectedLog(logs[idx]); setSelectedIndex(idx) }
+    if (idx >= 0 && idx < logs.length) {
+      setHighlightedId(logs[idx].id); setSelectedLog(logs[idx]); setSelectedIndex(idx)
+    }
   }
 
   const totalPages = Math.ceil(totalCount / itemsPerPage)
@@ -303,16 +309,17 @@ export default function AuditLogPage() {
               ) : (
                 logs.map((log, idx) => {
                   const isError = log.status_code && log.status_code !== 200
-                  const isSelected = selectedLog?.id === log.id
+                  const isHighlighted = highlightedId === log.id
+                  const isFlyoutOpen = selectedLog?.id === log.id
                   return (
                     <tr
                       key={log.id || idx}
-                      onClick={() => handleOpenFlyout(log, idx)}
+                      onClick={() => handleRowClick(log)}
                       className={clsx(
                         'cursor-pointer transition-colors text-sm',
                         isError
-                          ? clsx('bg-red-50 hover:bg-red-100', isSelected && 'bg-red-100 border-l-[3px] border-l-red-400')
-                          : clsx('hover:bg-gray-50', isSelected && 'bg-primary-50 border-l-[3px] border-l-primary-400')
+                          ? clsx('bg-red-50 hover:bg-red-100', isHighlighted && '!bg-red-200 border-l-[3px] border-l-red-500')
+                          : clsx('hover:bg-gray-50', isHighlighted && '!bg-primary-100 border-l-[3px] border-l-primary-500')
                       )}
                     >
                       <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-gray-500">
@@ -353,7 +360,7 @@ export default function AuditLogPage() {
                           onClick={e => { e.stopPropagation(); handleOpenFlyout(log, idx) }}
                           className={clsx(
                             'p-1.5 rounded-lg transition-colors',
-                            isSelected
+                            isFlyoutOpen
                               ? 'bg-primary-100 text-primary-600'
                               : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                           )}

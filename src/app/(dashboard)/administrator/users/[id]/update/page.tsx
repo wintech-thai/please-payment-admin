@@ -91,7 +91,7 @@ function UpdateUserPageInner() {
           ? (u.roles as string[]).filter(Boolean)
           : []
         const rolesFromList: string[] = u.rolesList
-          ? u.rolesList.split(',').map(r => r.trim()).filter(Boolean)
+          ? u.rolesList.split(',').map((r: string) => r.trim()).filter(Boolean)
           : []
         const currentList = rolesFromArray.length ? rolesFromArray : rolesFromList
 

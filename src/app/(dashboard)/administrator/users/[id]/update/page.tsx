@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { userApi } from '@/lib/api/user.api'
 import { customRoleApi } from '@/lib/api/custom-role.api'
 import type { UserItem, UpdateUserPayload, CustomRoleItem } from '@/lib/api/types'
@@ -18,11 +18,14 @@ interface SystemRole {
   description?: string
 }
 
-export default function UpdateUserPage() {
+function UpdateUserPageInner() {
   const { t } = useLang()
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const id = params.id as string
+  const presetCustomRoleId = searchParams.get('customRoleId') ?? ''
+  const presetCustomRoleName = searchParams.get('customRoleName') ?? ''
 
   const [user, setUser] = useState<UserItem | null>(null)
   const [customRoleId, setCustomRoleId] = useState('')
@@ -47,14 +50,37 @@ export default function UpdateUserPage() {
     ])
       .then(([userRes, rolesRes, sysRolesRes]) => {
         const raw = userRes.data as Record<string, unknown>
-        const u = (raw.user ?? raw.adminUser) as UserItem
+        const u = (raw.user ?? raw.adminUser) as any
         if (!u) throw new Error('User not found in response')
-        setUser(u)
-        setCustomRoleId(u.customRoleId ?? '')
-        setTags(u.tags ? u.tags.split(',').map(t => t.trim()).filter(Boolean) : [])
+        setUser(u as UserItem)
+        setTags(u.tags ? u.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [])
 
         const customRaw = rolesRes.data
-        setCustomRoles(Array.isArray(customRaw) ? customRaw : (customRaw?.customRoles ?? []))
+        const loadedRoles: CustomRoleItem[] = Array.isArray(customRaw) ? customRaw : (customRaw?.customRoles ?? [])
+        setCustomRoles(loadedRoles)
+
+        // Try all known field name variants (camelCase, PascalCase, nested)
+        const idCandidates = [
+          u.customRoleId, u.CustomRoleId,
+          u.customRole?.roleId, u.CustomRole?.RoleId,
+          u.customRole?.id, u.CustomRole?.Id,
+          presetCustomRoleId,
+        ].filter(Boolean).map(String)
+        let resolvedId = idCandidates.find(id => loadedRoles.find(r => r.roleId === id)) ?? ''
+        // Fallback: match by name
+        if (!resolvedId) {
+          const nameCandidates = [
+            u.customRoleName, u.CustomRoleName,
+            u.customRole?.roleName, u.CustomRole?.RoleName,
+            u.customRole?.name, u.CustomRole?.Name,
+            presetCustomRoleName,
+          ].filter(Boolean).map(String)
+          for (const name of nameCandidates) {
+            const found = loadedRoles.find(r => r.roleName === name)
+            if (found) { resolvedId = found.roleId; break }
+          }
+        }
+        setCustomRoleId(resolvedId)
 
         const rawRoles: { roleId: string; roleName: string; roleDescription?: string }[] =
           Array.isArray(sysRolesRes.data) ? sysRolesRes.data : ((sysRolesRes.data as { roles?: unknown[] })?.roles ?? []) as { roleId: string; roleName: string; roleDescription?: string }[]
@@ -65,7 +91,7 @@ export default function UpdateUserPage() {
           ? (u.roles as string[]).filter(Boolean)
           : []
         const rolesFromList: string[] = u.rolesList
-          ? u.rolesList.split(',').map(r => r.trim()).filter(Boolean)
+          ? u.rolesList.split(',').map((r: string) => r.trim()).filter(Boolean)
           : []
         const currentList = rolesFromArray.length ? rolesFromArray : rolesFromList
 
@@ -121,6 +147,7 @@ export default function UpdateUserPage() {
       const finalTags = pendingTag && !tags.includes(pendingTag) ? [...tags, pendingTag] : tags
       const payload: UpdateUserPayload = {
         customRoleId: customRoleId || undefined,
+        CustomRoleId: customRoleId || undefined,
         Roles: selectedRoles.length ? selectedRoles.map(r => r.name) : undefined,
         tags: finalTags.length ? finalTags.join(',') : undefined,
       }
@@ -339,6 +366,14 @@ function Spinner() {
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
+  )
+}
+
+export default function UpdateUserPage() {
+  return (
+    <Suspense>
+      <UpdateUserPageInner />
+    </Suspense>
   )
 }
 

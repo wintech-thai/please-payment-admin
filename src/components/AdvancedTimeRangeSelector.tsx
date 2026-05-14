@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Clock, ChevronDown, Check } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
@@ -8,8 +8,8 @@ import { useLang } from '@/context/LanguageContext'
 export interface TimeRangeValue {
   type: 'relative' | 'absolute'
   value: string
-  start?: number // unix seconds
-  end?: number   // unix seconds
+  start?: number
+  end?: number
   label?: string
 }
 
@@ -66,9 +66,26 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
   const [isOpen, setIsOpen] = useState(false)
   const [fromStr, setFromStr] = useState('')
   const [toStr, setToStr] = useState('')
-  const [activeTab, setActiveTab] = useState<'quick' | 'absolute'>('quick')
+  // ── sync active tab กับ value prop ──────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<'quick' | 'absolute'>(
+    value.type === 'absolute' ? 'absolute' : 'quick'
+  )
   const [search, setSearch] = useState('')
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
   const ref = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  // ── sync tab เมื่อ value prop เปลี่ยนจากภายนอก (เช่น reset) ────────────────
+  useEffect(() => {
+    setActiveTab(value.type === 'absolute' ? 'absolute' : 'quick')
+  }, [value.type])
+
+  const calcPos = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
+    }
+  }, [])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -77,6 +94,16 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    window.addEventListener('resize', calcPos)
+    window.addEventListener('scroll', calcPos, true)
+    return () => {
+      window.removeEventListener('resize', calcPos)
+      window.removeEventListener('scroll', calcPos, true)
+    }
+  }, [isOpen, calcPos])
 
   useEffect(() => {
     if (!isOpen) return
@@ -113,15 +140,23 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
     ? quickRanges.filter(r => r.label.toLowerCase().includes(search.toLowerCase()))
     : quickRanges
 
-  const displayLabel = value.type === 'relative'
-    ? (quickRanges.find(r => r.value === value.value)?.label ?? value.label ?? tAL.last24h)
-    : (value.label ?? tAL.customRange)
+  // ── displayLabel อ่านจาก prop โดยตรง ไม่พึ่ง internal state ───────────────
+  const displayLabel = useMemo(() => {
+    if (value.type === 'absolute') {
+      if (value.start && value.end) {
+        return `${fmtAbsLabel(value.start)} → ${fmtAbsLabel(value.end)}`
+      }
+      return value.label ?? tAL.customRange
+    }
+    return quickRanges.find(r => r.value === value.value)?.label ?? value.label ?? tAL.last24h
+  }, [value, quickRanges, tAL])
 
   return (
     <div className={clsx('relative', className)} ref={ref}>
       <button
+        ref={buttonRef}
         disabled={disabled}
-        onClick={() => setIsOpen(v => !v)}
+        onClick={() => { if (!isOpen) calcPos(); setIsOpen(v => !v) }}
         className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors min-w-[180px] justify-between disabled:opacity-50"
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -132,9 +167,10 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden w-[calc(100vw-2rem)] sm:w-[560px]">
-
-          {/* Mobile tabs */}
+        <div
+          className="fixed z-[200] bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden w-[calc(100vw-2rem)] sm:w-[560px]"
+          style={{ top: dropdownPos.top, right: dropdownPos.right }}
+        >
           <div className="flex sm:hidden border-b border-gray-100">
             <button
               onClick={() => setActiveTab('quick')}
@@ -161,14 +197,11 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
           </div>
 
           <div className="flex flex-col sm:flex-row h-[360px] sm:h-[400px]">
-
-            {/* Left: Absolute Range */}
             <div className={clsx(
               'flex-1 p-5 border-r border-gray-100 flex flex-col gap-4',
               activeTab !== 'absolute' && 'hidden sm:flex'
             )}>
               <h4 className="hidden sm:block font-semibold text-sm text-gray-800">{tAL.absoluteRange}</h4>
-
               <div className="flex flex-col gap-3">
                 <div>
                   <label className="text-xs text-gray-500 mb-1.5 block font-medium">{tAL.absoluteFrom}</label>
@@ -189,7 +222,6 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
                   />
                 </div>
               </div>
-
               <div className="mt-auto">
                 <button
                   onClick={handleApplyAbsolute}
@@ -201,7 +233,6 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
               </div>
             </div>
 
-            {/* Right: Quick Ranges */}
             <div className={clsx(
               'w-full sm:w-[200px] flex flex-col bg-gray-50/60',
               activeTab !== 'quick' && 'hidden sm:flex'
@@ -235,7 +266,6 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       )}

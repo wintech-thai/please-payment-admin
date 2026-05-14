@@ -149,10 +149,12 @@ export default function InviteUserPage() {
         adminUser?.inviteLink as string ??
         null
 
-      if (newId && (selectedRoles.length > 0 || customRoleId)) {
+      if (newId && (selectedRoles.length > 0 || customRoleId || finalTags.length > 0)) {
         await userApi.updateUserById(newId, {
           customRoleId: customRoleId || undefined,
+          CustomRoleId: customRoleId || undefined,
           Roles: selectedRoles.length ? selectedRoles.map(r => r.name) : undefined,
+          tags: finalTags.length ? finalTags.join(',') : undefined,
         }).catch(() => {})
       }
 

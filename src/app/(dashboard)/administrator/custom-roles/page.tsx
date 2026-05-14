@@ -199,9 +199,9 @@ function CustomRolesContent() {
                       key={role.roleId}
                       onClick={() => setSelectedRowId(role.roleId)}
                       className={clsx(
-                        'border-l-4 transition-all cursor-pointer',
+                        'border-l-[3px] transition-all cursor-pointer',
                         isSelected
-                          ? 'bg-primary-50 border-l-primary-500'
+                          ? '!bg-primary-100 border-l-primary-500'
                           : 'border-l-transparent hover:bg-gray-50/50'
                       )}
                     >

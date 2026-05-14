@@ -20,7 +20,7 @@ function getApiColor(name: string): string {
   return PALETTE[Math.abs(h) % PALETTE.length]
 }
 
-// ── Date helpers (no external library) ───────────────────────────────────────
+// ── Date helpers ──────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
   if (!iso) return '-'
@@ -63,6 +63,22 @@ function calculateInterval(tr: TimeRangeValue): string {
   return '1h'
 }
 
+// ── sessionStorage helpers ────────────────────────────────────────────────────
+
+const SS_KEY = 'auditLog:timeRange'
+
+function saveTimeRange(tr: TimeRangeValue) {
+  try { sessionStorage.setItem(SS_KEY, JSON.stringify(tr)) } catch { /* ignore */ }
+}
+
+function loadTimeRange(): TimeRangeValue | null {
+  try {
+    const raw = sessionStorage.getItem(SS_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as TimeRangeValue
+  } catch { return null }
+}
+
 // ── Response mapper ───────────────────────────────────────────────────────────
 
 function mapItem(source: Record<string, unknown>): AuditLogDocument {
@@ -79,16 +95,26 @@ function mapItem(source: Record<string, unknown>): AuditLogDocument {
     path: String(data.Path ?? data.path ?? ''),
     resource: String(api.Controller ?? api.controller ?? ''),
     status_code: Number(data.StatusCode ?? data.statusCode ?? api.statusCode ?? 200),
-    client_ip: String(data.CfClientIp ?? data.ClientIp ?? data.clientIp ?? '-'),
+    client_ip: String(data.ClientIp || data.CfClientIp || data.clientIp || data.cfClientIp || '-'),
     ...source,
   }
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function AuditLogPage() {
+function AuditLogContent() {
   const { t } = useLang()
   const tAL = t.auditLog
+
+  // sessionStorage survives F5 (React cleanup NOT called on refresh)
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>(
+    () => loadTimeRange() ?? { type: 'relative', value: '24h' }
+  )
+
+  // Clear saved range when leaving the page — next visit starts at 24h default
+  useEffect(() => {
+    return () => { sessionStorage.removeItem(SS_KEY) }
+  }, [])
 
   const [logs, setLogs] = useState<AuditLogDocument[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -98,7 +124,6 @@ export default function AuditLogPage() {
   const [inputValue, setInputValue] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [searchField, setSearchField] = useState('all')
-  const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h', label: tAL.last24h })
   const [chartData, setChartData] = useState<any[]>([])
   const [chartMax, setChartMax] = useState(1)
   const [chartInterval, setChartInterval] = useState('30m')
@@ -126,7 +151,16 @@ export default function AuditLogPage() {
           queryMust.push({
             multi_match: {
               query: searchTerm,
-              fields: ['data.userInfo.UserName', 'data.api.ApiName', 'data.userInfo.Role', 'data.CfClientIp', 'data.Path'],
+              fields: [
+                'data.userInfo.UserName',
+                'data.api.ApiName',
+                'data.api.Controller',
+                'data.userInfo.Role',
+                'data.userInfo.IdentityType',
+                'data.CfClientIp',
+                'data.ClientIp',
+                'data.Path',
+              ],
               type: 'phrase_prefix',
             },
           })
@@ -184,16 +218,20 @@ export default function AuditLogPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const setAndSaveTimeRange = (val: TimeRangeValue) => {
+    setTimeRange(val)
+    setPage(1)
+    saveTimeRange(val)
+  }
+
   const handleSearch = () => { setPage(1); setSearchTerm(inputValue) }
 
   const handleReset = () => {
     setInputValue(''); setSearchTerm(''); setSearchField('all')
-    setTimeRange({ type: 'relative', value: '24h', label: tAL.last24h }); setPage(1)
+    setAndSaveTimeRange({ type: 'relative', value: '24h' })
   }
 
-  const handleRowClick = (log: AuditLogDocument) => {
-    setHighlightedId(log.id)
-  }
+  const handleRowClick = (log: AuditLogDocument) => { setHighlightedId(log.id) }
   const handleOpenFlyout = (log: AuditLogDocument, idx: number) => {
     setHighlightedId(log.id); setSelectedLog(log); setSelectedIndex(idx)
   }
@@ -250,15 +288,14 @@ export default function AuditLogPage() {
           <Search className="w-4 h-4" />
         </button>
 
-        {/* Time range */}
         <AdvancedTimeRangeSelector
           value={timeRange}
-          onChange={val => { setTimeRange(val); setPage(1) }}
+          onChange={setAndSaveTimeRange}
           disabled={isLoading}
         />
 
         <button
-          onClick={handleReset}
+          onClick={() => fetchData()}
           title={tAL.reset}
           className="p-2 text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
@@ -420,4 +457,8 @@ export default function AuditLogPage() {
       />
     </div>
   )
+}
+
+export default function AuditLogPage() {
+  return <AuditLogContent />
 }

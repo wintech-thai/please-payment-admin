@@ -45,6 +45,7 @@ export interface InviteUserWithLinkPayload {
   userEmail: string
   tmpUserEmail: string
   customRoleId?: string
+  CustomRoleId?: string  // PascalCase variant for backends that require it
   Roles?: string[]     // array of role names e.g. ["OWNER", "VIEWER"]
   tags?: string        // comma-separated string
 }
@@ -54,6 +55,7 @@ export interface UpdateUserPayload {
   lastName?: string
   phoneNumber?: string
   customRoleId?: string
+  CustomRoleId?: string  // PascalCase variant for backends that require it
   Roles?: string[]     // array of role names e.g. ["OWNER", "VIEWER"]
   tags?: string        // comma-separated string e.g. "prod,backend"
 }
@@ -143,6 +145,7 @@ export interface UpdateApiKeyPayload {
   keyName?: string
   keyDescription?: string
   customRoleId?: string
+  CustomRoleId?: string  // PascalCase variant for backends that require it
   Roles?: string[]     // array of role names e.g. ["OWNER", "VIEWER"]
   tags?: string        // comma-separated string e.g. "prod,backend"
 }

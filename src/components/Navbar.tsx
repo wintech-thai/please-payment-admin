@@ -60,20 +60,20 @@ export default function Navbar() {
     setLoggingOut(true)
     clearAuthData()
     await fetch('/api/auth/logout', { method: 'POST' })
-    toast.success('Logged out successfully', { duration: 1500 })
+    toast.success(t.nav.logoutSuccess, { duration: 1500 })
     await new Promise((resolve) => setTimeout(resolve, 1000))
     router.push('/login')
   }
 
   return (
-    <header className="bg-gradient-to-r from-primary-950 to-primary-900 shadow-lg z-30 relative">
+    <header className="bg-gradient-to-r from-primary-700 to-primary-600 shadow-lg z-30 relative">
       <div className="flex items-center h-14 px-4 gap-4">
         {/* Brand */}
         <Link href="/overview" className="flex items-center gap-2.5 flex-shrink-0">
           <img src="/img/please-payment.svg" alt="Please Payment" className="w-9 h-9" />
           <div className="hidden sm:block">
             <p className="text-white font-bold text-sm leading-tight">PLEASE-PAYMENT</p>
-            <p className="text-blue-300 text-xs leading-tight">Admin</p>
+            <p className="text-orange-300 text-xs leading-tight">Admin</p>
           </div>
         </Link>
 
@@ -92,13 +92,13 @@ export default function Navbar() {
                   'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-white/20 text-white'
-                    : 'text-blue-200 hover:bg-white/10 hover:text-white'
+                    : 'text-orange-200 hover:bg-white/10 hover:text-white'
                 )}
               >
                 {item.icon}
                 <span>{t.nav[item.labelKey]}</span>
                 {item.comingSoon && (
-                  <span className="text-xs bg-white/20 text-blue-100 px-1.5 py-0.5 rounded-full leading-none">
+                  <span className="text-xs bg-white/20 text-orange-100 px-1.5 py-0.5 rounded-full leading-none">
                     {t.nav.comingSoon}
                   </span>
                 )}
@@ -124,7 +124,7 @@ export default function Navbar() {
                   'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
                   lang === l
                     ? 'bg-white/30 text-white'
-                    : 'text-blue-300 hover:text-white'
+                    : 'text-orange-300 hover:text-white'
                 )}
               >
                 {l === 'th' ? 'TH' : 'EN'}
@@ -136,7 +136,7 @@ export default function Navbar() {
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen((v) => !v)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-blue-200 hover:bg-white/10 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-orange-200 hover:bg-white/10 hover:text-white transition-colors"
             >
               <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xs uppercase">
                 {username.charAt(0)}
@@ -240,13 +240,13 @@ export default function Navbar() {
                   'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-white/20 text-white'
-                    : 'text-blue-200 hover:bg-white/10 hover:text-white'
+                    : 'text-orange-200 hover:bg-white/10 hover:text-white'
                 )}
               >
                 {item.icon}
                 <span>{t.nav[item.labelKey]}</span>
                 {item.comingSoon && (
-                  <span className="ml-auto text-xs bg-white/20 text-blue-100 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-auto text-xs bg-white/20 text-orange-100 px-1.5 py-0.5 rounded-full">
                     {t.nav.comingSoon}
                   </span>
                 )}

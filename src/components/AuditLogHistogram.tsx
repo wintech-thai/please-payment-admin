@@ -11,7 +11,7 @@ interface AuditLogHistogramProps {
 }
 
 const API_COLORS: Record<string, string> = {
-  'Heartbeat': '#3b82f6',
+  'Heartbeat': '#f97316',
   'GetAgents': '#ef4444',
   'GetAgentCount': '#f97316',
   'GetUserCount': '#d946ef',
@@ -22,7 +22,7 @@ const API_COLORS: Record<string, string> = {
   'GetApiKeyCount': '#84cc16',
 }
 
-const PALETTE = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1']
+const PALETTE = ['#f97316', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#3b82f6', '#6366f1']
 
 function getApiColor(name: string): string {
   if (!name) return '#cbd5e1'
@@ -55,7 +55,7 @@ export function AuditLogHistogram({ data, totalHits, interval, maxDocCount, dict
   const intervalUnit = match ? match[2] : 'm'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 pt-4 pb-8 flex flex-col relative z-30 select-none overflow-visible" style={{ height: '220px' }}>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 pt-4 pb-8 flex flex-col relative select-none overflow-visible" style={{ height: '220px' }}>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3 flex-none">
@@ -109,7 +109,7 @@ export function AuditLogHistogram({ data, totalHits, interval, maxDocCount, dict
                 >
                   {allBuckets.length === 0 && hasData ? (
                     <div
-                      style={{ backgroundColor: '#3b82f6' }}
+                      style={{ backgroundColor: '#f97316' }}
                       className="w-full h-full rounded-t-sm"
                     />
                   ) : (

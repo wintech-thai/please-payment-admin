@@ -194,40 +194,44 @@ export default function InviteUserPage() {
 
       {/* Success modal */}
       {inviteResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="flex flex-col items-center text-center px-8 pt-10 pb-6">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-5">
-                <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div
+              className="flex flex-col items-center text-center px-8 pt-10 pb-6"
+              style={{ background: 'linear-gradient(135deg, #b54500 0%, #d25209 40%, #f97316 100%)' }}
+            >
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-5">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <h2 className="text-xl font-bold text-white mb-1">{t.users.inviteSuccessTitle}</h2>
-              <p className="text-sm text-gray-400 mb-1">
+              <p className="text-sm text-orange-100 mb-1">
                 <span className="text-white font-medium">{inviteResult.userName}</span>
                 {' '}·{' '}
-                <span className="text-gray-300">{inviteResult.userEmail}</span>
+                <span className="text-orange-200">{inviteResult.userEmail}</span>
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-orange-200 mt-1">
                 {t.users.inviteSuccessSubtitle}
               </p>
             </div>
 
-            <div className="px-8 pb-8">
+            <div className="px-8 py-7">
               {inviteResult.registrationUrl ? (
                 <>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                     {t.users.registrationLink}
                   </label>
-                  <div className="flex items-center gap-2 px-4 py-3 bg-gray-800 rounded-xl border border-gray-700 mb-6">
-                    <span className="flex-1 text-sm text-emerald-400 font-mono break-all select-all">
+                  <div className="flex items-center gap-2 px-4 py-3 bg-orange-50 rounded-xl border border-orange-200 mb-6">
+                    <span className="flex-1 text-sm text-primary-800 font-mono break-all select-all">
                       {inviteResult.registrationUrl}
                     </span>
                     <button
                       onClick={handleCopy}
                       className={clsx(
                         'flex-shrink-0 p-1.5 rounded-lg transition-colors',
-                        copied ? 'text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                        copied ? 'text-primary-600' : 'text-gray-400 hover:text-primary-600 hover:bg-orange-100'
                       )}
                     >
                       {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}

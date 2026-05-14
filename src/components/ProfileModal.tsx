@@ -144,7 +144,7 @@ export default function ProfileModal({ onClose }: Props) {
     setProfile((p) => ({ ...p, [field]: v }))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
       {showLeaveConfirm && (
         <LeaveConfirmModal onConfirm={onClose} onCancel={() => setShowLeaveConfirm(false)} />
       )}
@@ -153,7 +153,7 @@ export default function ProfileModal({ onClose }: Props) {
 
       {/* Modal */}
       <div className="relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
-        style={{ background: 'linear-gradient(135deg, #0f1f4a 0%, #0d1a3d 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #b54500 0%, #9a3800 100%)' }}
       >
         {/* Header */}
         <div className="flex items-start justify-between px-4 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5">

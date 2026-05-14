@@ -126,9 +126,12 @@ function SignupConfirmContent() {
           {/* Card */}
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Card header */}
-          <div className="px-8 pt-8 pb-6 border-b border-gray-100">
-            <h1 className="text-xl font-bold text-gray-900 mb-1">{t.signupConfirm.title}</h1>
-            <p className="text-sm text-gray-500">{t.signupConfirm.subtitle}</p>
+          <div
+            className="px-8 pt-8 pb-6 text-white"
+            style={{ background: 'linear-gradient(135deg, #b54500 0%, #d25209 40%, #f97316 100%)' }}
+          >
+            <h1 className="text-xl font-bold text-white mb-1">{t.signupConfirm.title}</h1>
+            <p className="text-sm text-orange-200">{t.signupConfirm.subtitle}</p>
           </div>
 
           {/* Form */}

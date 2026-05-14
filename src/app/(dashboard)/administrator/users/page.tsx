@@ -388,7 +388,7 @@ function UsersContent() {
 
       {/* Delete Confirm Modal */}
       {deleteModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteModal({ open: false })}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteModal({ open: false })}>
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="px-6 pt-6 pb-5 text-center">
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
@@ -462,12 +462,12 @@ function ResetLinkModal({ link, loading, onClose }: { link?: string; loading?: b
     setTimeout(() => setCopied(false), 2000)
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
         {/* Header — blue gradient */}
         <div
           className="px-7 py-5 flex items-center justify-between"
-          style={{ background: 'linear-gradient(135deg, #0f2460 0%, #1a3a8f 40%, #1d4ed8 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #b54500 0%, #d25209 40%, #f97316 100%)' }}
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
@@ -477,7 +477,7 @@ function ResetLinkModal({ link, loading, onClose }: { link?: string; loading?: b
             </div>
             <div>
               <h2 className="text-base font-bold text-white">{t.users.resetLinkTitle}</h2>
-              <p className="text-xs text-blue-200 mt-0.5">{t.users.resetLinkSubtitle}</p>
+              <p className="text-xs text-orange-200 mt-0.5">{t.users.resetLinkSubtitle}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">

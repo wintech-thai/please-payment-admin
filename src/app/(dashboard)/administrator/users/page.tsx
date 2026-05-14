@@ -261,9 +261,9 @@ function UsersContent() {
                       key={user.adminUserId}
                       onClick={() => setSelectedRowId(user.adminUserId)}
                       className={clsx(
-                        'border-l-4 transition-all cursor-pointer',
+                        'border-l-[3px] transition-all cursor-pointer',
                         isSelected
-                          ? 'bg-primary-50 border-l-primary-500'
+                          ? '!bg-primary-100 border-l-primary-500'
                           : 'border-l-transparent hover:bg-gray-50/50'
                       )}
                     >
@@ -278,7 +278,7 @@ function UsersContent() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <Link
-                            href={`/administrator/users/${user.adminUserId}/update`}
+                            href={`/administrator/users/${user.adminUserId}/update?customRoleId=${encodeURIComponent(user.customRoleId ?? '')}&customRoleName=${encodeURIComponent(user.customRoleName ?? '')}`}
                             onClick={e => e.stopPropagation()}
                             className={clsx('text-sm font-semibold hover:underline', isSelected ? 'text-primary-700' : 'text-gray-900 hover:text-primary-600')}
                           >

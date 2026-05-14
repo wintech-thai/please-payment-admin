@@ -46,14 +46,35 @@ export default function UpdateApiKeyPage() {
       userApi.getRoles().catch(() => ({ data: { roles: [] } })),
     ])
       .then(([keyRes, rolesRes, sysRolesRes]) => {
-        const k = keyRes.data.apiKey
+        const k = keyRes.data.apiKey as any
         setApiKey(k)
         setName(k.keyName ?? '')
         setDesc(k.keyDescription ?? '')
-        setCustomRoleId(k.customRoleId ?? '')
 
         const customRaw = rolesRes.data
-        setCustomRoles(Array.isArray(customRaw) ? customRaw : (customRaw?.customRoles ?? []))
+        const loadedRoles: CustomRoleItem[] = Array.isArray(customRaw) ? customRaw : (customRaw?.customRoles ?? [])
+        setCustomRoles(loadedRoles)
+
+        // Try all known field name variants (camelCase, PascalCase, nested)
+        const idCandidates = [
+          k.customRoleId, k.CustomRoleId,
+          k.customRole?.roleId, k.CustomRole?.RoleId,
+          k.customRole?.id, k.CustomRole?.Id,
+        ].filter(Boolean).map(String)
+        let resolvedId = idCandidates.find(id => loadedRoles.find(r => r.roleId === id)) ?? ''
+        // Fallback: match by name
+        if (!resolvedId) {
+          const nameCandidates = [
+            k.customRoleName, k.CustomRoleName,
+            k.customRole?.roleName, k.CustomRole?.RoleName,
+            k.customRole?.name, k.CustomRole?.Name,
+          ].filter(Boolean).map(String)
+          for (const name of nameCandidates) {
+            const found = loadedRoles.find(r => r.roleName === name)
+            if (found) { resolvedId = found.roleId; break }
+          }
+        }
+        setCustomRoleId(resolvedId)
 
         const rawRoles: { roleId: string; roleName: string; roleDescription?: string }[] =
           Array.isArray(sysRolesRes.data) ? sysRolesRes.data : ((sysRolesRes.data as { roles?: unknown[] })?.roles ?? []) as { roleId: string; roleName: string; roleDescription?: string }[]
@@ -112,6 +133,7 @@ export default function UpdateApiKeyPage() {
       const payload: UpdateApiKeyPayload = {
         keyDescription: desc.trim() || undefined,
         customRoleId: customRoleId || undefined,
+        CustomRoleId: customRoleId || undefined,
         Roles: selectedRoles.length ? selectedRoles.map(r => r.name) : undefined,
       }
       await apiKeyApi.updateApiKeyById(id, payload)

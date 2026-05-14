@@ -73,10 +73,10 @@ function ApiKeysContent() {
     try {
       if (active) {
         await apiKeyApi.disableApiKeyById(key.keyId)
-        toast.success(`"${name}" disabled`)
+        toast.success(`"${name}" ${t.apiKeys.disabledSuccess}`)
       } else {
         await apiKeyApi.enableApiKeyById(key.keyId)
-        toast.success(`"${name}" enabled`)
+        toast.success(`"${name}" ${t.apiKeys.enabledSuccess}`)
       }
       fetchKeys(page, appliedSearch)
     } catch (err: unknown) {
@@ -320,7 +320,7 @@ function ApiKeysContent() {
 
       {/* Delete Confirm Modal */}
       {deleteModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteModal({ open: false })}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteModal({ open: false })}>
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="px-6 pt-6 pb-5 text-center">
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">

@@ -53,11 +53,11 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #bfdbfe;
+  background: #fed7aa;
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #3b82f6;
+  background: #f06b1e;
 }
 
 @layer components {

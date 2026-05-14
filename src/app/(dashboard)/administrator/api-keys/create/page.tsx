@@ -131,32 +131,35 @@ export default function CreateApiKeyPage() {
 
       {/* Success modal */}
       {createdKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="flex flex-col items-center text-center px-8 pt-10 pb-8">
-              {/* Icon */}
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-5">
-                <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div
+              className="flex flex-col items-center text-center px-8 pt-10 pb-8"
+              style={{ background: 'linear-gradient(135deg, #96370b 0%, #b8440d 40%, #f06b1e 100%)' }}
+            >
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-5">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
               <h2 className="text-xl font-bold text-white mb-2">{t.apiKeys.createdSuccessTitle}</h2>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-orange-100">
                 {t.apiKeys.createdSuccessNote}
               </p>
             </div>
 
             {/* Key display */}
-            <div className="px-8 pb-8">
-              <div className="flex items-center gap-2 px-4 py-3 bg-gray-800 rounded-xl border border-gray-700 mb-6">
-                <code className="flex-1 text-sm text-emerald-400 font-mono break-all select-all">
+            <div className="px-8 py-7">
+              <div className="flex items-center gap-2 px-4 py-3 bg-orange-50 rounded-xl border border-orange-200 mb-6">
+                <code className="flex-1 text-sm text-primary-800 font-mono break-all select-all">
                   {createdKey.value}
                 </code>
                 <button
                   onClick={handleCopy}
                   className={clsx(
                     'flex-shrink-0 p-1.5 rounded-lg transition-colors',
-                    copied ? 'text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                    copied ? 'text-primary-600' : 'text-gray-400 hover:text-primary-600 hover:bg-orange-100'
                   )}
                 >
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}

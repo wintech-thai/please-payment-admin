@@ -90,7 +90,7 @@ function InviteConfirmContent() {
             {/* Card header */}
             <div
               className="px-8 pt-8 pb-6 text-white"
-              style={{ background: 'linear-gradient(135deg, #0f2460 0%, #1a3a8f 40%, #1d4ed8 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #96370b 0%, #b8440d 40%, #f06b1e 100%)' }}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -98,7 +98,7 @@ function InviteConfirmContent() {
                 </div>
                 <div>
                   <h1 className="text-lg font-bold leading-tight">{ti.title}</h1>
-                  <p className="text-blue-200 text-sm mt-0.5">{ti.subtitle}</p>
+                  <p className="text-orange-200 text-sm mt-0.5">{ti.subtitle}</p>
                 </div>
               </div>
             </div>

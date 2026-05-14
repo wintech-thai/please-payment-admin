@@ -21,7 +21,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="th">
       <body>
         {children}
-        <Toaster position="top-right" richColors closeButton />
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          toastOptions={{
+            style: {
+              fontFamily: "'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+            },
+          }}
+        />
       </body>
     </html>
   )

@@ -61,7 +61,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
   return (
     <aside
       className={clsx(
-        'flex flex-col h-full bg-gradient-to-b from-primary-950 to-primary-900 transition-all duration-300',
+        'flex flex-col h-full bg-gradient-to-b from-primary-800 to-primary-700 transition-all duration-300',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -75,7 +75,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
         {!collapsed && (
           <div className="overflow-hidden">
             <p className="text-white font-bold text-sm leading-tight truncate">PLEASE-PAYMENT</p>
-            <p className="text-blue-300 text-xs truncate">Admin Portal</p>
+            <p className="text-orange-300 text-xs truncate">Admin Portal</p>
           </div>
         )}
         <button
@@ -104,7 +104,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative',
                 isActive
                   ? 'bg-white/20 text-white'
-                  : 'text-blue-200 hover:bg-white/10 hover:text-white'
+                  : 'text-orange-200 hover:bg-white/10 hover:text-white'
               )}
             >
               <span className="flex-shrink-0">{item.icon}</span>
@@ -112,7 +112,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
                 <>
                   <span className="text-sm font-medium">{t.nav[item.labelKey]}</span>
                   {item.comingSoon && (
-                    <span className="ml-auto text-xs bg-white/20 text-blue-100 px-2 py-0.5 rounded-full">
+                    <span className="ml-auto text-xs bg-white/20 text-orange-100 px-2 py-0.5 rounded-full">
                       {t.nav.comingSoon}
                     </span>
                   )}
@@ -131,7 +131,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
       {/* Language switcher */}
       {!collapsed && (
         <div className="px-4 py-3 border-t border-white/10">
-          <p className="text-blue-400 text-xs mb-2 uppercase tracking-wider">à¸ à¸²à¸©à¸² / Language</p>
+          <p className="text-orange-400 text-xs mb-2 uppercase tracking-wider">à¸ à¸²à¸©à¸² / Language</p>
           <div className="flex gap-1">
             {(['th', 'en'] as Lang[]).map((l) => (
               <button
@@ -141,7 +141,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
                   'flex-1 py-1 rounded-md text-xs font-medium transition-colors',
                   lang === l
                     ? 'bg-white/20 text-white'
-                    : 'text-blue-300 hover:text-white hover:bg-white/10'
+                    : 'text-orange-300 hover:text-white hover:bg-white/10'
                 )}
               >
                 {l === 'th' ? 'à¹„à¸—à¸¢' : 'EN'}
@@ -155,7 +155,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
       <div className="border-t border-white/10 px-2 py-3 space-y-1">
         <Link
           href="/profile"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-blue-200 hover:bg-white/10 hover:text-white transition-colors"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-orange-200 hover:bg-white/10 hover:text-white transition-colors"
         >
           <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -165,7 +165,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
 
         <Link
           href="/change-password"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-blue-200 hover:bg-white/10 hover:text-white transition-colors"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-orange-200 hover:bg-white/10 hover:text-white transition-colors"
         >
           <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -187,7 +187,7 @@ export default function Sidebar({ username = 'Admin', collapsed = false, onToggl
                 onClick={handleLogout}
                 disabled={loggingOut}
                 title={t.nav.logout}
-                className="text-blue-300 hover:text-red-300 transition-colors disabled:opacity-50"
+                className="text-orange-300 hover:text-red-300 transition-colors disabled:opacity-50"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

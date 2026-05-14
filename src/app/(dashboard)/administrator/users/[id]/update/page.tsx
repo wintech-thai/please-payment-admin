@@ -130,6 +130,7 @@ function UpdateUserPageInner() {
     setSelectedRoles(prev => [...prev, ...moving])
     setAvailableRoles(prev => prev.filter(r => !availableChecked.has(r.id)))
     setAvailableChecked(new Set())
+    setIsDirty(true)
   }
 
   const moveToAvailable = () => {
@@ -137,10 +138,12 @@ function UpdateUserPageInner() {
     setAvailableRoles(prev => [...prev, ...moving])
     setSelectedRoles(prev => prev.filter(r => !selectedChecked.has(r.id)))
     setSelectedChecked(new Set())
+    setIsDirty(true)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isDirty) { router.push(`/administrator/users?highlight=${id}`); return }
     setSaving(true)
     try {
       const pendingTag = tagInput.trim()
@@ -219,7 +222,7 @@ function UpdateUserPageInner() {
               {tags.map(tag => (
                 <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-primary-50 text-primary-700 rounded-full">
                   {tag}
-                  <button type="button" onClick={() => setTags(p => p.filter(t => t !== tag))}>
+                  <button type="button" onClick={() => { setTags(p => p.filter(t => t !== tag)); setIsDirty(true) }}>
                     <X className="w-3 h-3 text-primary-400 hover:text-primary-700" />
                   </button>
                 </span>

@@ -26,7 +26,7 @@ function LoginForm() {
       })
 
       if (!res.ok) {
-        toast.error('Invalid username or password')
+        toast.error(t.login.invalidCredentials)
         return
       }
 
@@ -45,11 +45,11 @@ function LoginForm() {
         localStorage.setItem('userId', '')
       }
 
-      toast.success('Login successful', { duration: 1500 })
+      toast.success(t.login.success, { duration: 1500 })
       await new Promise((resolve) => setTimeout(resolve, 1000))
       router.push('/overview')
     } catch {
-      toast.error('Unable to connect to server')
+      toast.error(t.login.serverError)
     } finally {
       setLoading(false)
     }
@@ -61,7 +61,7 @@ function LoginForm() {
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #0f2460 0%, #1a3a8f 40%, #1d4ed8 100%)',
+          background: 'linear-gradient(135deg, #c2510c 0%, #b8440d 40%, #f06b1e 100%)',
         }}
       >
         {/* Grid overlay */}
@@ -74,20 +74,20 @@ function LoginForm() {
           }}
         />
         {/* Glow circles */}
-        <div className="absolute top-1/4 -left-20 w-80 h-80 bg-blue-500 rounded-full opacity-10 blur-3xl" />
-        <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-indigo-400 rounded-full opacity-10 blur-3xl" />
+        <div className="absolute top-1/4 -left-20 w-80 h-80 bg-orange-500 rounded-full opacity-10 blur-3xl" />
+        <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-orange-400 rounded-full opacity-10 blur-3xl" />
 
         {/* Top: Logo + name */}
         <div className="relative z-10 flex items-center gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" className="w-11 h-11 flex-shrink-0">
             <defs>
               <linearGradient id="lp1MbGrad" x1="20%" y1="0%" x2="80%" y2="100%">
-                <stop offset="0%" stopColor="#60a5fa" />
-                <stop offset="60%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#1d4ed8" />
+                <stop offset="0%" stopColor="#fb923c" />
+                <stop offset="60%" stopColor="#f06b1e" />
+                <stop offset="100%" stopColor="#b8440d" />
               </linearGradient>
               <filter id="lp1MbGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#3b82f6" floodOpacity="0.5" />
+                <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#f06b1e" floodOpacity="0.5" />
               </filter>
             </defs>
             <g filter="url(#lp1MbGlow)">
@@ -100,7 +100,7 @@ function LoginForm() {
           </svg>
           <div>
             <p className="text-white font-bold text-sm tracking-wide">PLEASE-PAYMENT</p>
-            <p className="text-blue-200 text-xs">Admin</p>
+            <p className="text-orange-200 text-xs">Admin</p>
           </div>
         </div>
 
@@ -109,7 +109,7 @@ function LoginForm() {
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Payment Admin<br />Dashboard
           </h1>
-          <p className="text-blue-200 text-base mb-10">{t.appSubtitle}</p>
+          <p className="text-orange-200 text-base mb-10">{t.appSubtitle}</p>
 
           <ul className="space-y-4">
             {[
@@ -139,17 +139,17 @@ function LoginForm() {
               },
             ].map(({ icon, label }) => (
               <li key={label} className="flex items-center gap-3">
-                <span className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-blue-100">
+                <span className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-orange-100">
                   {icon}
                 </span>
-                <span className="text-blue-100 text-sm font-medium">{label}</span>
+                <span className="text-orange-100 text-sm font-medium">{label}</span>
               </li>
             ))}
           </ul>
         </div>
 
         {/* Bottom footer */}
-        <p className="relative z-10 text-blue-300 text-xs">
+        <p className="relative z-10 text-orange-300 text-xs">
           Secure &bull; Reliable &bull; Fast
         </p>
       </div>
@@ -162,12 +162,12 @@ function LoginForm() {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" className="w-8 h-8 flex-shrink-0">
               <defs>
                 <linearGradient id="lp2MbGrad" x1="20%" y1="0%" x2="80%" y2="100%">
-                  <stop offset="0%" stopColor="#60a5fa" />
-                  <stop offset="60%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#1d4ed8" />
+                  <stop offset="0%" stopColor="#fb923c" />
+                  <stop offset="60%" stopColor="#f06b1e" />
+                  <stop offset="100%" stopColor="#b8440d" />
                 </linearGradient>
                 <filter id="lp2MbGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#3b82f6" floodOpacity="0.5" />
+                  <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#f06b1e" floodOpacity="0.5" />
                 </filter>
               </defs>
               <g filter="url(#lp2MbGlow)">

@@ -128,6 +128,7 @@ export default function UpdateApiKeyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) { toast.error(t.apiKeys.keyNameRequired); return }
+    if (!isDirty) { router.push(`/administrator/api-keys?highlight=${id}`); return }
     setSaving(true)
     try {
       const payload: UpdateApiKeyPayload = {

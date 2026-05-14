@@ -104,14 +104,14 @@ export default function ChangePasswordModal({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div
         className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0f1f4a 0%, #0d1a3d 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #96370b 0%, #762c09 100%)' }}
       >
         {/* Header */}
         <div className="flex items-start justify-between px-4 sm:px-8 pt-5 sm:pt-7 pb-2">

@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     if (esPayload.query?.bool?.must) {
       esPayload.query.bool.must.push({ match_phrase: { 'data.ApplicationType': 'PLEASE-PAYMENT-ADMIN' } })
       esPayload.query.bool.must.push({ match: { 'data.api.OrgId': orgId.toLowerCase() } })
-      const envRun = process.env.NEXT_PUBLIC_ENV_RUN
+      const envRun = process.env.ENV_RUN || process.env.NEXT_PUBLIC_ENV_RUN
       if (envRun) {
         esPayload.query.bool.must.push({ match_phrase: { 'data.Environment': envRun } })
       }

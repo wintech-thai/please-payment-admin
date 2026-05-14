@@ -57,7 +57,7 @@ export default function AdminSidebar() {
         'border-r border-white/10',
         collapsed ? 'w-14' : 'w-56'
       )}
-      style={{ background: 'linear-gradient(180deg, #b54500 0%, #9a3800 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #96370b 0%, #762c09 100%)' }}
     >
       {/* Collapse toggle */}
       <button
@@ -94,7 +94,7 @@ export default function AdminSidebar() {
                 collapsed && 'justify-center px-2',
                 isActive
                   ? 'bg-white/20 text-white'
-                  : 'text-orange-200 hover:bg-white/10 hover:text-white'
+                  : 'text-white/75 hover:bg-white/15 hover:text-white'
               )}
             >
               {item.icon}

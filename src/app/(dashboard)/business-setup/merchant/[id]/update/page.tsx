@@ -1,0 +1,308 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { merchantApi } from '@/lib/api/merchant.api'
+import type { MerchantItem } from '@/lib/api/types'
+import { toast } from 'sonner'
+import { ChevronLeft, Mail, Phone } from 'lucide-react'
+import clsx from 'clsx'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import LeaveConfirmModal from '@/components/LeaveConfirmModal'
+import { useLang } from '@/context/LanguageContext'
+
+export default function UpdateMerchantPage() {
+  const { t } = useLang()
+  const m = t.merchant
+  const router = useRouter()
+  const params = useParams()
+  const id = params.id as string
+
+  const [merchant, setMerchant] = useState<MerchantItem | null>(null)
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [payInFee, setPayInFee] = useState<string>('0')
+  const [payOutFee, setPayOutFee] = useState<string>('0')
+  const [payInMin, setPayInMin] = useState<string>('0')
+  const [payInMax, setPayInMax] = useState<string>('0')
+  const [payOutMin, setPayOutMin] = useState<string>('0')
+  const [payOutMax, setPayOutMax] = useState<string>('0')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
+
+  const markDirty = () => { if (!isDirty) setIsDirty(true) }
+
+  useEffect(() => {
+    merchantApi.getMerchantById(id)
+      .then(res => {
+        const raw = (res.data as any)?.merchant ?? res.data
+        const merch: MerchantItem = raw
+        setMerchant(merch)
+        setEmail(merch.contactEmail ?? '')
+        setPhone(merch.contactPhone ?? '')
+        setPayInFee(merch.payinFeePct != null ? String(merch.payinFeePct) : '0')
+        setPayOutFee(merch.payoutFeePct != null ? String(merch.payoutFeePct) : '0')
+        setPayInMin(merch.payinMinAmount != null ? String(merch.payinMinAmount) : '0')
+        setPayInMax(merch.payinMaxAmount != null ? String(merch.payinMaxAmount) : '0')
+        setPayOutMin(merch.payoutMinAmount != null ? String(merch.payoutMinAmount) : '0')
+        setPayOutMax(merch.payoutMaxAmount != null ? String(merch.payoutMaxAmount) : '0')
+      })
+      .catch(() => {
+        toast.error(m.failedToLoadMerchant)
+        router.push('/business-setup/merchant')
+      })
+      .finally(() => setLoading(false))
+  }, [id])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isDirty) {
+      router.push('/business-setup/merchant')
+      return
+    }
+    setSaving(true)
+    try {
+      await merchantApi.updateMerchantById(id, {
+        Code: merchant?.code ?? undefined,
+        Name: merchant?.name ?? undefined,
+        ContactEmail: email.trim() || undefined,
+        ContactPhone: phone.trim() || undefined,
+        PayinFeePct: payInFee,
+        PayoutFeePct: payOutFee,
+        PayinMinAmount: payInMin,
+        PayinMaxAmount: payInMax,
+        PayoutMinAmount: payOutMin,
+        PayoutMaxAmount: payOutMax,
+      })
+      setIsDirty(false)
+      toast.success(m.updatedSuccess)
+      router.push(`/business-setup/merchant?highlight=${id}`)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToUpdate)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400">
+        <svg className="w-6 h-6 animate-spin mr-2 text-primary-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        {t.admin.loading}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
+      {showConfirm && <LeaveConfirmModal onConfirm={confirmLeave} onCancel={cancelLeave} />}
+
+      <div className="flex-none flex items-center gap-3 mb-6">
+        <button
+          onClick={() => guardNavigation(() => router.push('/business-setup/merchant'))}
+          className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{m.editTitle}</h1>
+          <p className="text-base text-gray-500 mt-0.5">
+            {m.editSubtitle} &quot;{merchant?.name || id.slice(0, 8)}&quot;
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
+
+          {/* Merchant Info */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>{m.merchantInfoSection}</SectionHeader>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Locked fields */}
+              <FormField label={m.fieldCode}>
+                <input
+                  value={merchant?.code ?? ''}
+                  readOnly
+                  className={clsx(inputCls(false), 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                />
+              </FormField>
+
+              <FormField label={m.fieldName}>
+                <input
+                  value={merchant?.name ?? ''}
+                  readOnly
+                  className={clsx(inputCls(false), 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                />
+              </FormField>
+
+              {/* Editable fields */}
+              <FormField label={m.fieldEmail}>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); markDirty() }}
+                    placeholder={m.fieldEmailPlaceholder}
+                    className={clsx(inputCls(false), 'pl-9')}
+                  />
+                </div>
+              </FormField>
+
+              <FormField label={m.fieldPhone}>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    value={phone}
+                    onChange={e => { setPhone(e.target.value); markDirty() }}
+                    placeholder={m.fieldPhonePlaceholder}
+                    className={clsx(inputCls(false), 'pl-9')}
+                  />
+                </div>
+              </FormField>
+            </div>
+          </div>
+
+          {/* Fee & Limits */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label={m.fieldPayInFee}>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={payInFee}
+                    onChange={e => { setPayInFee(e.target.value); markDirty() }}
+                    className={clsx(inputCls(false), 'pr-8')}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
+                </div>
+              </FormField>
+
+              <FormField label={m.fieldPayOutFee}>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={payOutFee}
+                    onChange={e => { setPayOutFee(e.target.value); markDirty() }}
+                    className={clsx(inputCls(false), 'pr-8')}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
+                </div>
+              </FormField>
+            </div>
+
+            <div className="border-t border-gray-100 mt-5 pt-5">
+              <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-4">{m.sectionTransactionLimits}</p>
+
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gray-500 mb-3">{m.fieldPayIn}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label={m.fieldMinAmount}>
+                    <input
+                      type="number"
+                      min={0}
+                      value={payInMin}
+                      onChange={e => { setPayInMin(e.target.value); markDirty() }}
+                      className={inputCls(false)}
+                    />
+                  </FormField>
+                  <FormField label={m.fieldMaxAmount}>
+                    <input
+                      type="number"
+                      min={0}
+                      value={payInMax}
+                      onChange={e => { setPayInMax(e.target.value); markDirty() }}
+                      className={inputCls(false)}
+                    />
+                  </FormField>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-3">{m.fieldPayOut}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label={m.fieldMinAmount}>
+                    <input
+                      type="number"
+                      min={0}
+                      value={payOutMin}
+                      onChange={e => { setPayOutMin(e.target.value); markDirty() }}
+                      className={inputCls(false)}
+                    />
+                  </FormField>
+                  <FormField label={m.fieldMaxAmount}>
+                    <input
+                      type="number"
+                      min={0}
+                      value={payOutMax}
+                      onChange={e => { setPayOutMax(e.target.value); markDirty() }}
+                      className={inputCls(false)}
+                    />
+                  </FormField>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Sticky footer */}
+        <div className="flex-none -mx-3 sm:-mx-6 px-4 sm:px-8 py-4 flex items-center justify-end gap-3 bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+          <button
+            type="button"
+            onClick={() => guardNavigation(() => router.push('/business-setup/merchant'))}
+            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            {t.admin.cancel}
+          </button>
+          <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-60 transition-colors">
+            {saving && (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {saving ? t.admin.saving : t.admin.saveChanges}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2.5 text-sm font-bold text-gray-900 mb-5">
+      <span className="w-1 h-5 bg-primary-500 rounded-full flex-shrink-0" />
+      {children}
+    </h2>
+  )
+}
+
+function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+const inputCls = (hasError: boolean) =>
+  clsx(
+    'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white transition-colors',
+    hasError ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary-500'
+  )

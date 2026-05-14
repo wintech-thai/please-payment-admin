@@ -61,7 +61,7 @@ function LoginForm() {
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #c2510c 0%, #d25209 40%, #f97316 100%)',
+          background: 'linear-gradient(135deg, #c2510c 0%, #b8440d 40%, #f06b1e 100%)',
         }}
       >
         {/* Grid overlay */}
@@ -83,11 +83,11 @@ function LoginForm() {
             <defs>
               <linearGradient id="lp1MbGrad" x1="20%" y1="0%" x2="80%" y2="100%">
                 <stop offset="0%" stopColor="#fb923c" />
-                <stop offset="60%" stopColor="#f97316" />
-                <stop offset="100%" stopColor="#d25209" />
+                <stop offset="60%" stopColor="#f06b1e" />
+                <stop offset="100%" stopColor="#b8440d" />
               </linearGradient>
               <filter id="lp1MbGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#f97316" floodOpacity="0.5" />
+                <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#f06b1e" floodOpacity="0.5" />
               </filter>
             </defs>
             <g filter="url(#lp1MbGlow)">
@@ -163,11 +163,11 @@ function LoginForm() {
               <defs>
                 <linearGradient id="lp2MbGrad" x1="20%" y1="0%" x2="80%" y2="100%">
                   <stop offset="0%" stopColor="#fb923c" />
-                  <stop offset="60%" stopColor="#f97316" />
-                  <stop offset="100%" stopColor="#d25209" />
+                  <stop offset="60%" stopColor="#f06b1e" />
+                  <stop offset="100%" stopColor="#b8440d" />
                 </linearGradient>
                 <filter id="lp2MbGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#f97316" floodOpacity="0.5" />
+                  <feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#f06b1e" floodOpacity="0.5" />
                 </filter>
               </defs>
               <g filter="url(#lp2MbGlow)">

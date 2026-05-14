@@ -111,7 +111,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
       {/* Modal */}
       <div
         className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #b54500 0%, #9a3800 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #96370b 0%, #762c09 100%)' }}
       >
         {/* Header */}
         <div className="flex items-start justify-between px-4 sm:px-8 pt-5 sm:pt-7 pb-2">

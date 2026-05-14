@@ -10,7 +10,7 @@ export default function NavbarClean() {
     <>
       <nav
         className="fixed top-0 left-0 right-0 z-50 h-16 shadow-lg"
-        style={{ background: 'linear-gradient(135deg, #c2510c 0%, #d25209 40%, #f97316 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #c2510c 0%, #b8440d 40%, #f06b1e 100%)' }}
       >
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
           {/* Logo */}

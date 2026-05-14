@@ -11,9 +11,9 @@ interface AuditLogHistogramProps {
 }
 
 const API_COLORS: Record<string, string> = {
-  'Heartbeat': '#f97316',
+  'Heartbeat': '#f06b1e',
   'GetAgents': '#ef4444',
-  'GetAgentCount': '#f97316',
+  'GetAgentCount': '#f06b1e',
   'GetUserCount': '#d946ef',
   'UpdateAgentById': '#8b5cf6',
   'GetCustomRoles': '#6366f1',
@@ -22,7 +22,7 @@ const API_COLORS: Record<string, string> = {
   'GetApiKeyCount': '#84cc16',
 }
 
-const PALETTE = ['#f97316', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#3b82f6', '#6366f1']
+const PALETTE = ['#f06b1e', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#3b82f6', '#6366f1']
 
 function getApiColor(name: string): string {
   if (!name) return '#cbd5e1'
@@ -109,7 +109,7 @@ export function AuditLogHistogram({ data, totalHits, interval, maxDocCount, dict
                 >
                   {allBuckets.length === 0 && hasData ? (
                     <div
-                      style={{ backgroundColor: '#f97316' }}
+                      style={{ backgroundColor: '#f06b1e' }}
                       className="w-full h-full rounded-t-sm"
                     />
                   ) : (

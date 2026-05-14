@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLang } from '@/context/LanguageContext'
 import { clearAuthData } from '@/lib/axios'
 import { Lang } from '@/lib/translations'
@@ -12,36 +12,6 @@ import ProfileModal from '@/components/ProfileModal'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import { AppVersionDisplay } from '@/components/AppVersionDisplay'
 
-interface NavItem {
-  href: string
-  labelKey: 'overview' | 'administrator'
-  icon: React.ReactNode
-  comingSoon?: boolean
-}
-
-const navItems: NavItem[] = [
-  {
-    href: '/overview',
-    labelKey: 'overview',
-    comingSoon: true,
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    href: '/administrator/custom-roles',
-    labelKey: 'administrator',
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-]
-
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -49,12 +19,24 @@ export default function Navbar() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [businessSetupOpen, setBusinessSetupOpen] = useState(false)
   const [modal, setModal] = useState<'profile' | 'changePassword' | null>(null)
   const [username, setUsername] = useState('Admin')
+  const businessSetupRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setUsername(localStorage.getItem('username') || 'Admin')
   }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (businessSetupRef.current && !businessSetupRef.current.contains(e.target as Node)) {
+        setBusinessSetupOpen(false)
+      }
+    }
+    if (businessSetupOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [businessSetupOpen])
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -64,6 +46,15 @@ export default function Navbar() {
     await new Promise((resolve) => setTimeout(resolve, 1000))
     router.push('/login')
   }
+
+  const isAdministratorActive = pathname.startsWith('/administrator')
+  const isBusinessSetupActive = pathname.startsWith('/business-setup')
+
+  const businessSetupChildren = [
+    { href: '/business-setup/merchant', label: t.nav.merchant, comingSoon: false },
+    { href: '/business-setup/pay-in-bank-account', label: t.nav.payInBankAccount, comingSoon: false },
+    { href: '/business-setup/payment', label: t.nav.payment, comingSoon: false },
+  ]
 
   return (
     <header className="bg-gradient-to-r from-primary-700 to-primary-600 shadow-lg z-30 relative">
@@ -81,30 +72,112 @@ export default function Navbar() {
         <div className="hidden md:block w-px h-6 bg-white/20 flex-shrink-0" />
 
         {/* Nav items — desktop */}
-        <nav className="hidden md:flex items-center gap-1 flex-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={clsx(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-white/20 text-white'
-                    : 'text-orange-200 hover:bg-white/10 hover:text-white'
-                )}
+        <nav className="hidden md:flex items-center gap-0.5 flex-nowrap">
+          {/* Overview */}
+          <Link
+            href="/overview"
+            className={clsx(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+              pathname === '/overview' || pathname.startsWith('/overview/')
+                ? 'bg-white/20 text-white'
+                : 'text-white hover:bg-white/15'
+            )}
+          >
+            <span>{t.nav.overview}</span>
+            <span className="text-[10px] bg-white/20 text-white/70 px-1 py-0.5 rounded-full leading-none">
+              Soon
+            </span>
+          </Link>
+
+          {/* Business Setup dropdown */}
+          <div className="relative" ref={businessSetupRef}>
+            <button
+              onClick={() => setBusinessSetupOpen(v => !v)}
+              className={clsx(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+                isBusinessSetupActive
+                  ? 'bg-white/20 text-white'
+                  : 'text-white hover:bg-white/15'
+              )}
+            >
+              <span>{t.nav.businessSetup}</span>
+              <svg
+                className={clsx('w-3 h-3 flex-shrink-0 transition-transform', businessSetupOpen && 'rotate-180')}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
               >
-                {item.icon}
-                <span>{t.nav[item.labelKey]}</span>
-                {item.comingSoon && (
-                  <span className="text-xs bg-white/20 text-orange-100 px-1.5 py-0.5 rounded-full leading-none">
-                    {t.nav.comingSoon}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {businessSetupOpen && (
+              <div className="absolute left-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+                {businessSetupChildren.map(item => (
+                  <Link
+                    key={item.href}
+                    href={item.comingSoon ? '#' : item.href}
+                    onClick={e => {
+                      if (item.comingSoon) e.preventDefault()
+                      else setBusinessSetupOpen(false)
+                    }}
+                    className={clsx(
+                      'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
+                      item.comingSoon
+                        ? 'text-gray-400 cursor-default'
+                        : pathname.startsWith(item.href)
+                          ? 'text-primary-700 font-semibold bg-primary-50'
+                          : 'text-gray-700 hover:bg-gray-50'
+                    )}
+                  >
+                    <span>{item.label}</span>
+                    {item.comingSoon && (
+                      <span className="text-xs bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full leading-none">
+                        {t.nav.comingSoon}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Report & Analytic */}
+          <Link
+            href="/report-analytic"
+            className={clsx(
+              'flex items-center px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+              pathname.startsWith('/report-analytic')
+                ? 'bg-white/20 text-white'
+                : 'text-white hover:bg-white/15'
+            )}
+          >
+            {t.nav.reportAndAnalytic}
+          </Link>
+
+          {/* Administrator */}
+          <Link
+            href="/administrator/custom-roles"
+            className={clsx(
+              'flex items-center px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+              isAdministratorActive
+                ? 'bg-white/20 text-white'
+                : 'text-white hover:bg-white/15'
+            )}
+          >
+            {t.nav.administrator}
+          </Link>
+
+          {/* Setting */}
+          <Link
+            href="/setting"
+            className={clsx(
+              'flex items-center px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+              pathname.startsWith('/setting')
+                ? 'bg-white/20 text-white'
+                : 'text-white hover:bg-white/15'
+            )}
+          >
+            {t.nav.setting}
+          </Link>
         </nav>
 
         {/* Right side */}
@@ -124,7 +197,7 @@ export default function Navbar() {
                   'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
                   lang === l
                     ? 'bg-white/30 text-white'
-                    : 'text-orange-300 hover:text-white'
+                    : 'text-white hover:text-white'
                 )}
               >
                 {l === 'th' ? 'TH' : 'EN'}
@@ -136,7 +209,7 @@ export default function Navbar() {
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen((v) => !v)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-orange-200 hover:bg-white/10 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-white hover:bg-white/15 transition-colors"
             >
               <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xs uppercase">
                 {username.charAt(0)}
@@ -170,7 +243,7 @@ export default function Navbar() {
                     {t.nav.changePassword}
                   </button>
 
-                  {/* Language switcher — mobile only, inside menu */}
+                  {/* Language switcher — mobile only */}
                   <div className="sm:hidden border-t border-gray-100 mt-1 pt-1">
                     <div className="flex items-center gap-1 px-4 py-2">
                       {(['th', 'en'] as Lang[]).map((l) => (
@@ -229,30 +302,96 @@ export default function Navbar() {
       {/* Mobile nav dropdown */}
       {mobileMenuOpen && (
         <nav className="md:hidden border-t border-white/10 px-3 pb-3 pt-2 flex flex-col gap-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-            return (
+          {/* Overview */}
+          <Link
+            href="/overview"
+            onClick={() => setMobileMenuOpen(false)}
+            className={clsx(
+              'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              pathname.startsWith('/overview') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/15'
+            )}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span>{t.nav.overview}</span>
+            <span className="ml-auto text-xs bg-white/20 text-orange-100 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
+          </Link>
+
+          {/* Business Setup group */}
+          <div className="px-3 py-1.5">
+            <p className="text-xs font-semibold text-orange-300/60 uppercase tracking-wider mb-1">{t.nav.businessSetup}</p>
+            {businessSetupChildren.map(item => (
               <Link
                 key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
+                href={item.comingSoon ? '#' : item.href}
+                onClick={e => {
+                  if (item.comingSoon) e.preventDefault()
+                  else setMobileMenuOpen(false)
+                }}
                 className={clsx(
-                  'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-white/20 text-white'
-                    : 'text-orange-200 hover:bg-white/10 hover:text-white'
+                  'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
+                  item.comingSoon
+                    ? 'text-white/35 cursor-default'
+                    : pathname.startsWith(item.href)
+                      ? 'bg-white/20 text-white'
+                      : 'text-white hover:bg-white/15'
                 )}
               >
-                {item.icon}
-                <span>{t.nav[item.labelKey]}</span>
+                <span>{item.label}</span>
                 {item.comingSoon && (
-                  <span className="ml-auto text-xs bg-white/20 text-orange-100 px-1.5 py-0.5 rounded-full">
-                    {t.nav.comingSoon}
-                  </span>
+                  <span className="text-xs bg-white/20 text-orange-100/60 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
                 )}
               </Link>
-            )
-          })}
+            ))}
+          </div>
+
+          {/* Report & Analytic */}
+          <Link
+            href="/report-analytic"
+            onClick={() => setMobileMenuOpen(false)}
+            className={clsx(
+              'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              pathname.startsWith('/report-analytic') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/15'
+            )}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span>{t.nav.reportAndAnalytic}</span>
+          </Link>
+
+          {/* Administrator */}
+          <Link
+            href="/administrator/custom-roles"
+            onClick={() => setMobileMenuOpen(false)}
+            className={clsx(
+              'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              isAdministratorActive ? 'bg-white/20 text-white' : 'text-white hover:bg-white/15'
+            )}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>{t.nav.administrator}</span>
+          </Link>
+
+          {/* Setting */}
+          <Link
+            href="/setting"
+            onClick={() => setMobileMenuOpen(false)}
+            className={clsx(
+              'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              pathname.startsWith('/setting') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/15'
+            )}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>{t.nav.setting}</span>
+          </Link>
         </nav>
       )}
     </header>

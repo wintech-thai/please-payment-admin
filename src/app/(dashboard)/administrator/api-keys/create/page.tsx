@@ -136,7 +136,7 @@ export default function CreateApiKeyPage() {
             {/* Header */}
             <div
               className="flex flex-col items-center text-center px-8 pt-10 pb-8"
-              style={{ background: 'linear-gradient(135deg, #b54500 0%, #d25209 40%, #f97316 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #96370b 0%, #b8440d 40%, #f06b1e 100%)' }}
             >
               <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-5">
                 <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

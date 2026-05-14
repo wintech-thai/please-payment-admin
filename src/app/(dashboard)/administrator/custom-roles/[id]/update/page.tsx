@@ -63,6 +63,7 @@ export default function UpdateCustomRolePage() {
       const t = tagInput.trim()
       if (!tags.includes(t)) setTags(prev => [...prev, t])
       setTagInput('')
+      setIsDirty(true)
     }
   }
 
@@ -91,6 +92,7 @@ export default function UpdateCustomRolePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) { toast.error(t.customRoles.roleNameRequired); return }
+    if (!isDirty) { router.push(`/administrator/custom-roles?highlight=${id}`); return }
     setSaving(true)
     try {
       const pendingTag = tagInput.trim()
@@ -163,7 +165,7 @@ export default function UpdateCustomRolePage() {
             <FormField label={t.customRoles.fieldRoleName} required>
               <input
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => { setName(e.target.value); setIsDirty(true) }}
                 placeholder={t.customRoles.fieldRoleNamePlaceholder}
                 className={inputCls}
               />
@@ -182,7 +184,7 @@ export default function UpdateCustomRolePage() {
               {tags.map(tag => (
                 <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-primary-50 text-primary-700 rounded-full">
                   {tag}
-                  <button type="button" onClick={() => setTags(p => p.filter(t => t !== tag))}>
+                  <button type="button" onClick={() => { setTags(p => p.filter(t => t !== tag)); setIsDirty(true) }}>
                     <X className="w-3 h-3 text-primary-400 hover:text-primary-700" />
                   </button>
                 </span>

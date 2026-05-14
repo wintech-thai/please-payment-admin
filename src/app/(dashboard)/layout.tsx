@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar'
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-200">
+    <div className="flex flex-col min-h-screen bg-gray-100">
       <Navbar />
       <main className="flex-1 flex flex-col overflow-hidden">
         {children}

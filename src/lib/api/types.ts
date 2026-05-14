@@ -150,6 +150,68 @@ export interface UpdateApiKeyPayload {
   tags?: string        // comma-separated string e.g. "prod,backend"
 }
 
+// ─── Merchant ────────────────────────────────────────────────────────────────
+
+export interface MerchantItem {
+  id: string
+  orgId?: string | null
+  code?: string | null
+  name?: string | null
+  description?: string | null
+  contactEmail?: string | null
+  tags?: string | null
+  contactPhone?: string | null
+  payinFeePct?: number | null
+  payoutFeePct?: number | null
+  payinMinAmount?: number | null
+  payinMaxAmount?: number | null
+  payoutMinAmount?: number | null
+  payoutMaxAmount?: number | null
+  status?: string | null
+  createdDate?: string | null
+}
+
+export interface GetMerchantsPayload {
+  search?: string
+  page?: number
+  limit?: number
+  Status?: string
+}
+
+export interface AddMerchantPayload {
+  OrgCustomId?: string
+  OrgName?: string
+  OrgDescription?: string
+  OrgType?: string
+  Tags?: string
+  Status?: string
+  Merchant?: {
+    Code?: string
+    Name?: string
+    ContactEmail?: string
+    ContactPhone?: string
+    PayinFeePct?: number | string
+    PayoutFeePct?: number | string
+    PayinMinAmount?: number | string
+    PayinMaxAmount?: number | string
+    PayoutMinAmount?: number | string
+    PayoutMaxAmount?: number | string
+  }
+}
+
+export interface UpdateMerchantPayload {
+  Code?: string
+  Name?: string
+  ContactEmail?: string
+  ContactPhone?: string
+  PayinFeePct?: number | string
+  PayoutFeePct?: number | string
+  PayinMinAmount?: number | string
+  PayinMaxAmount?: number | string
+  PayoutMinAmount?: number | string
+  PayoutMaxAmount?: number | string
+}
+
 // ─── Common ──────────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {

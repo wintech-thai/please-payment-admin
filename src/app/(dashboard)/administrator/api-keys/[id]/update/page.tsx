@@ -85,7 +85,7 @@ export default function UpdateApiKeyPage() {
           ? (k.roles as string[]).filter(Boolean)
           : []
         const rolesFromList: string[] = k.rolesList
-          ? k.rolesList.split(',').map(r => r.trim()).filter(Boolean)
+          ? k.rolesList.split(',').map((r: string) => r.trim()).filter(Boolean)
           : []
         const currentList = rolesFromArray.length ? rolesFromArray : rolesFromList
 

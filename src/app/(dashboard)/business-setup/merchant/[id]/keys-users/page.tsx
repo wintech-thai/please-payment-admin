@@ -128,6 +128,10 @@ export default function MerchantKeysUsersPage() {
   const [inviting, setInviting] = useState(false)
   const [registrationUrl, setRegistrationUrl] = useState<string | null>(null)
 
+  // Row highlight
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null)
+
   // New API key modal
   const [newApiKey, setNewApiKey] = useState<string | null>(null)
 
@@ -284,6 +288,12 @@ export default function MerchantKeysUsersPage() {
         }
       },
     })
+  }
+
+  const formatDate = (d?: string | null) => {
+    if (!d) return '—'
+    try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) }
+    catch { return d }
   }
 
   if (loading) {
@@ -488,7 +498,7 @@ export default function MerchantKeysUsersPage() {
               <table className="w-full text-sm border-separate border-spacing-0 min-w-[600px]">
                 <thead>
                   <tr className="bg-gray-50">
-                    {[m.colUsername, m.colEmail, m.colTags, m.colRole, m.colInitialUser, m.colStatus, m.colAction].map((col: string, i: number) => (
+                    {[m.colUsername, m.colEmail, m.colTags, m.colRole, m.colInitialUser, m.colCreated, m.colStatus, m.colAction].map((col: string, i: number) => (
                       <th key={col} className={clsx('px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap', i === 0 && 'rounded-tl-xl')}>
                         {col}
                       </th>
@@ -499,8 +509,18 @@ export default function MerchantKeysUsersPage() {
                   {users.map((user, idx) => {
                     const isActive = user.userStatus?.toLowerCase() === 'active'
                     const displayEmail = user.userEmail ?? user.tmpUserEmail
+                    const isHighlighted = selectedUserId === user.orgUserId
                     return (
-                      <tr key={user.orgUserId} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
+                      <tr
+                        key={user.orgUserId}
+                        onClick={() => setSelectedUserId(prev => prev === user.orgUserId ? null : user.orgUserId)}
+                        className={clsx(
+                          'cursor-pointer transition-colors',
+                          isHighlighted
+                            ? 'bg-primary-100'
+                            : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
+                        )}
+                      >
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap font-semibold text-gray-900">{user.userName ?? '—'}</td>
                         <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap">{displayEmail ?? '—'}</td>
                         <td className="px-4 py-3 border-b border-gray-100 text-gray-500 text-xs">
@@ -517,6 +537,9 @@ export default function MerchantKeysUsersPage() {
                           {user.isOrgInitialUser === 'YES' ? (
                             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">YES</span>
                           ) : '—'}
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-xs text-gray-500">
+                          {formatDate(user.createdDate)}
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={user.userStatus} />
@@ -566,7 +589,7 @@ export default function MerchantKeysUsersPage() {
               <table className="w-full text-sm border-separate border-spacing-0 min-w-[600px]">
                 <thead>
                   <tr className="bg-gray-50">
-                    {[m.colKeyName, m.colDescription, m.colRoles, m.colStatus, m.colAction].map((col: string, i: number) => (
+                    {[m.colKeyName, m.colDescription, m.colRoles, m.colCreated, m.colStatus, m.colAction].map((col: string, i: number) => (
                       <th key={col} className={clsx('px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap', i === 0 && 'rounded-tl-xl')}>
                         {col}
                       </th>
@@ -576,8 +599,18 @@ export default function MerchantKeysUsersPage() {
                 <tbody>
                   {apiKeys.map((key, idx) => {
                     const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
+                    const isHighlighted = selectedKeyId === key.keyId
                     return (
-                      <tr key={key.keyId} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
+                      <tr
+                        key={key.keyId}
+                        onClick={() => setSelectedKeyId(prev => prev === key.keyId ? null : key.keyId)}
+                        className={clsx(
+                          'cursor-pointer transition-colors',
+                          isHighlighted
+                            ? 'bg-primary-100'
+                            : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
+                        )}
+                      >
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <span className="flex items-center gap-2">
                             <Key className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
@@ -589,6 +622,9 @@ export default function MerchantKeysUsersPage() {
                           {key.rolesList ? (
                             <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{key.rolesList}</span>
                           ) : '—'}
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-xs text-gray-500">
+                          {formatDate(key.keyCreatedDate)}
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={key.keyStatus ?? 'Active'} />

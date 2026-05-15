@@ -236,9 +236,9 @@ export interface OrgApiKeyItem {
   keyName?: string | null
   keyDescription?: string | null
   keyStatus?: string | null
+  keyCreatedDate?: string | null
   rolesList?: string | null
   roles?: unknown[]
-  createdDate?: string | null
 }
 
 export interface InviteOrgUserPayload {

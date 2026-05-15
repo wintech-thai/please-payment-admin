@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
 import { toast } from 'sonner'
-import { ChevronLeft, Mail, Phone, Lock, Send } from 'lucide-react'
+import { ChevronLeft, Mail, Phone } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
@@ -19,8 +19,6 @@ export default function CreateMerchantPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [telegramChatId, setTelegramChatId] = useState('')
-  const [password, setPassword] = useState('')
   const [payInFee, setPayInFee] = useState<string>('0')
   const [payOutFee, setPayOutFee] = useState<string>('0')
   const [payInMin, setPayInMin] = useState<string>('1')
@@ -40,6 +38,13 @@ export default function CreateMerchantPage() {
     if (!orgId.trim()) errs.orgId = m.orgIdRequired
     if (!name.trim()) errs.name = m.nameRequired
     if (!email.trim()) errs.email = m.emailRequired
+    if (!phone.trim()) errs.phone = m.phoneRequired
+    if (payInFee === '' || isNaN(parseFloat(payInFee))) errs.payInFee = m.payInFeeRequired
+    if (payOutFee === '' || isNaN(parseFloat(payOutFee))) errs.payOutFee = m.payOutFeeRequired
+    if (payInMin === '' || isNaN(parseFloat(payInMin))) errs.payInMin = m.payInMinRequired
+    if (payInMax === '' || isNaN(parseFloat(payInMax))) errs.payInMax = m.payInMaxRequired
+    if (payOutMin === '' || isNaN(parseFloat(payOutMin))) errs.payOutMin = m.payOutMinRequired
+    if (payOutMax === '' || isNaN(parseFloat(payOutMax))) errs.payOutMax = m.payOutMaxRequired
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -140,75 +145,47 @@ export default function CreateMerchantPage() {
               </FormField>
 
               {/* Contact Phone */}
-              <FormField label={m.fieldPhone}>
+              <FormField label={m.fieldPhone} required error={errors.phone}>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   <input
                     value={phone}
-                    onChange={e => { setPhone(e.target.value); mark() }}
+                    onChange={e => { setPhone(e.target.value); mark(); clearErr('phone') }}
                     placeholder={m.fieldPhonePlaceholder}
-                    className={clsx(inputCls(false), 'pl-9')}
+                    className={clsx(inputCls(!!errors.phone), 'pl-9')}
                   />
                 </div>
               </FormField>
 
-              {/* Telegram Chat ID */}
-              <FormField label={m.fieldTelegramChatId} hint={m.fieldTelegramHint}>
-                <div className="relative">
-                  <Send className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <input
-                    value={telegramChatId}
-                    onChange={e => { setTelegramChatId(e.target.value); mark() }}
-                    placeholder={m.fieldTelegramPlaceholder}
-                    className={clsx(inputCls(false), 'pl-9')}
-                  />
-                </div>
-              </FormField>
-            </div>
-
-            {/* Password */}
-            <div className="mt-4">
-              <FormField label={m.fieldPassword} hint={m.fieldPasswordHint}>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={e => { setPassword(e.target.value); mark() }}
-                    placeholder="••••••••••"
-                    className={clsx(inputCls(false), 'pl-9')}
-                  />
-                </div>
-              </FormField>
             </div>
           </div>
 
           {/* Fee Settings */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label={m.fieldPayInFee}>
+              <FormField label={m.fieldPayInFee} required error={errors.payInFee}>
                 <div className="relative">
                   <input
                     type="number"
                     min={0}
                     step={0.01}
                     value={payInFee}
-                    onChange={e => { setPayInFee(e.target.value); mark() }}
-                    className={clsx(inputCls(false), 'pr-8')}
+                    onChange={e => { setPayInFee(e.target.value); mark(); clearErr('payInFee') }}
+                    className={clsx(inputCls(!!errors.payInFee), 'pr-8')}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
               </FormField>
 
-              <FormField label={m.fieldPayOutFee}>
+              <FormField label={m.fieldPayOutFee} required error={errors.payOutFee}>
                 <div className="relative">
                   <input
                     type="number"
                     min={0}
                     step={0.01}
                     value={payOutFee}
-                    onChange={e => { setPayOutFee(e.target.value); mark() }}
-                    className={clsx(inputCls(false), 'pr-8')}
+                    onChange={e => { setPayOutFee(e.target.value); mark(); clearErr('payOutFee') }}
+                    className={clsx(inputCls(!!errors.payOutFee), 'pr-8')}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
@@ -222,22 +199,22 @@ export default function CreateMerchantPage() {
               <div className="mb-4">
                 <p className="text-xs font-semibold text-gray-500 mb-3">{m.fieldPayIn}</p>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField label={m.fieldMinAmount}>
+                  <FormField label={m.fieldMinAmount} required error={errors.payInMin}>
                     <input
                       type="number"
                       min={0}
                       value={payInMin}
-                      onChange={e => { setPayInMin(e.target.value); mark() }}
-                      className={inputCls(false)}
+                      onChange={e => { setPayInMin(e.target.value); mark(); clearErr('payInMin') }}
+                      className={inputCls(!!errors.payInMin)}
                     />
                   </FormField>
-                  <FormField label={m.fieldMaxAmount}>
+                  <FormField label={m.fieldMaxAmount} required error={errors.payInMax}>
                     <input
                       type="number"
                       min={0}
                       value={payInMax}
-                      onChange={e => { setPayInMax(e.target.value); mark() }}
-                      className={inputCls(false)}
+                      onChange={e => { setPayInMax(e.target.value); mark(); clearErr('payInMax') }}
+                      className={inputCls(!!errors.payInMax)}
                     />
                   </FormField>
                 </div>
@@ -247,22 +224,22 @@ export default function CreateMerchantPage() {
               <div>
                 <p className="text-xs font-semibold text-gray-500 mb-3">{m.fieldPayOut}</p>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField label={m.fieldMinAmount}>
+                  <FormField label={m.fieldMinAmount} required error={errors.payOutMin}>
                     <input
                       type="number"
                       min={0}
                       value={payOutMin}
-                      onChange={e => { setPayOutMin(e.target.value); mark() }}
-                      className={inputCls(false)}
+                      onChange={e => { setPayOutMin(e.target.value); mark(); clearErr('payOutMin') }}
+                      className={inputCls(!!errors.payOutMin)}
                     />
                   </FormField>
-                  <FormField label={m.fieldMaxAmount}>
+                  <FormField label={m.fieldMaxAmount} required error={errors.payOutMax}>
                     <input
                       type="number"
                       min={0}
                       value={payOutMax}
-                      onChange={e => { setPayOutMax(e.target.value); mark() }}
-                      className={inputCls(false)}
+                      onChange={e => { setPayOutMax(e.target.value); mark(); clearErr('payOutMax') }}
+                      className={inputCls(!!errors.payOutMax)}
                     />
                   </FormField>
                 </div>

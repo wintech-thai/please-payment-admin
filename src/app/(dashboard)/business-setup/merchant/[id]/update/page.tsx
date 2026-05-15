@@ -30,9 +30,23 @@ export default function UpdateMerchantPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
 
   const markDirty = () => { if (!isDirty) setIsDirty(true) }
+  const clearErr = (key: string) => setErrors(p => ({ ...p, [key]: '' }))
+
+  const validate = () => {
+    const errs: Record<string, string> = {}
+    if (payInFee === '' || isNaN(parseFloat(payInFee))) errs.payInFee = m.payInFeeRequired
+    if (payOutFee === '' || isNaN(parseFloat(payOutFee))) errs.payOutFee = m.payOutFeeRequired
+    if (payInMin === '' || isNaN(parseFloat(payInMin))) errs.payInMin = m.payInMinRequired
+    if (payInMax === '' || isNaN(parseFloat(payInMax))) errs.payInMax = m.payInMaxRequired
+    if (payOutMin === '' || isNaN(parseFloat(payOutMin))) errs.payOutMin = m.payOutMinRequired
+    if (payOutMax === '' || isNaN(parseFloat(payOutMax))) errs.payOutMax = m.payOutMaxRequired
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
 
   useEffect(() => {
     merchantApi.getMerchantById(id)
@@ -62,6 +76,7 @@ export default function UpdateMerchantPage() {
       router.push('/business-setup/merchant')
       return
     }
+    if (!validate()) return
     setSaving(true)
     try {
       await merchantApi.updateMerchantById(id, {
@@ -173,29 +188,29 @@ export default function UpdateMerchantPage() {
           {/* Fee & Limits */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label={m.fieldPayInFee}>
+              <FormField label={m.fieldPayInFee} error={errors.payInFee}>
                 <div className="relative">
                   <input
                     type="number"
                     min={0}
                     step={0.01}
                     value={payInFee}
-                    onChange={e => { setPayInFee(e.target.value); markDirty() }}
-                    className={clsx(inputCls(false), 'pr-8')}
+                    onChange={e => { setPayInFee(e.target.value); markDirty(); clearErr('payInFee') }}
+                    className={clsx(inputCls(!!errors.payInFee), 'pr-8')}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
               </FormField>
 
-              <FormField label={m.fieldPayOutFee}>
+              <FormField label={m.fieldPayOutFee} error={errors.payOutFee}>
                 <div className="relative">
                   <input
                     type="number"
                     min={0}
                     step={0.01}
                     value={payOutFee}
-                    onChange={e => { setPayOutFee(e.target.value); markDirty() }}
-                    className={clsx(inputCls(false), 'pr-8')}
+                    onChange={e => { setPayOutFee(e.target.value); markDirty(); clearErr('payOutFee') }}
+                    className={clsx(inputCls(!!errors.payOutFee), 'pr-8')}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
@@ -208,22 +223,22 @@ export default function UpdateMerchantPage() {
               <div className="mb-4">
                 <p className="text-xs font-semibold text-gray-500 mb-3">{m.fieldPayIn}</p>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField label={m.fieldMinAmount}>
+                  <FormField label={m.fieldMinAmount} error={errors.payInMin}>
                     <input
                       type="number"
                       min={0}
                       value={payInMin}
-                      onChange={e => { setPayInMin(e.target.value); markDirty() }}
-                      className={inputCls(false)}
+                      onChange={e => { setPayInMin(e.target.value); markDirty(); clearErr('payInMin') }}
+                      className={inputCls(!!errors.payInMin)}
                     />
                   </FormField>
-                  <FormField label={m.fieldMaxAmount}>
+                  <FormField label={m.fieldMaxAmount} error={errors.payInMax}>
                     <input
                       type="number"
                       min={0}
                       value={payInMax}
-                      onChange={e => { setPayInMax(e.target.value); markDirty() }}
-                      className={inputCls(false)}
+                      onChange={e => { setPayInMax(e.target.value); markDirty(); clearErr('payInMax') }}
+                      className={inputCls(!!errors.payInMax)}
                     />
                   </FormField>
                 </div>
@@ -232,22 +247,22 @@ export default function UpdateMerchantPage() {
               <div>
                 <p className="text-xs font-semibold text-gray-500 mb-3">{m.fieldPayOut}</p>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField label={m.fieldMinAmount}>
+                  <FormField label={m.fieldMinAmount} error={errors.payOutMin}>
                     <input
                       type="number"
                       min={0}
                       value={payOutMin}
-                      onChange={e => { setPayOutMin(e.target.value); markDirty() }}
-                      className={inputCls(false)}
+                      onChange={e => { setPayOutMin(e.target.value); markDirty(); clearErr('payOutMin') }}
+                      className={inputCls(!!errors.payOutMin)}
                     />
                   </FormField>
-                  <FormField label={m.fieldMaxAmount}>
+                  <FormField label={m.fieldMaxAmount} error={errors.payOutMax}>
                     <input
                       type="number"
                       min={0}
                       value={payOutMax}
-                      onChange={e => { setPayOutMax(e.target.value); markDirty() }}
-                      className={inputCls(false)}
+                      onChange={e => { setPayOutMax(e.target.value); markDirty(); clearErr('payOutMax') }}
+                      className={inputCls(!!errors.payOutMax)}
                     />
                   </FormField>
                 </div>
@@ -290,13 +305,14 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   )
 }
 
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
         {label}
       </label>
       {children}
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   )
 }

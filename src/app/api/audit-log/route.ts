@@ -19,8 +19,7 @@ export async function POST(req: Request) {
     const index = process.env.ES_INDEX_PATTERN || 'onix-v2*'
 
     if (esPayload.query?.bool?.must) {
-      esPayload.query.bool.must.push({ match_phrase: { 'data.ApplicationType': 'PLEASE-PAYMENT-ADMIN' } })
-      esPayload.query.bool.must.push({ match: { 'data.api.OrgId': orgId.toLowerCase() } })
+      esPayload.query.bool.must.push({ term: { 'data.api.OrgId.keyword': 'global' } })
       const envRun = process.env.ENV_RUN || process.env.NEXT_PUBLIC_ENV_RUN
       if (envRun) {
         esPayload.query.bool.must.push({ match_phrase: { 'data.Environment': envRun } })

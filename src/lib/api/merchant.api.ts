@@ -4,6 +4,9 @@ import type {
   GetMerchantsPayload,
   AddMerchantPayload,
   UpdateMerchantPayload,
+  OrgUserItem,
+  OrgApiKeyItem,
+  InviteOrgUserPayload,
 } from './types'
 
 const BASE = '/admin-api/AdminMerchant/org/global/action'
@@ -33,4 +36,30 @@ export const merchantApi = {
 
   addMerchant: (payload: AddMerchantPayload) =>
     client.post(`${ORG_BASE}/AddOrganization`, payload),
+
+  // ── Org Users ────────────────────────────────────────────────────────────
+  getOrgUsers: (orgCustomId: string) =>
+    client.get<{ users: OrgUserItem[] }>(`${ORG_BASE}/GetOrgUsers/${orgCustomId}`),
+
+  enableOrgUser: (orgCustomId: string, orgUserId: string) =>
+    client.post(`${ORG_BASE}/EnableOrgUserById/${orgCustomId}/${orgUserId}`, null),
+
+  disableOrgUser: (orgCustomId: string, orgUserId: string) =>
+    client.post(`${ORG_BASE}/DisableOrgUserById/${orgCustomId}/${orgUserId}`, null),
+
+  inviteOrgUser: (orgCustomId: string, payload: InviteOrgUserPayload) =>
+    client.post(`${ORG_BASE}/InviteOrganizationUser/${orgCustomId}`, payload),
+
+  // ── Org API Keys ─────────────────────────────────────────────────────────
+  getOrgApiKeys: (orgCustomId: string) =>
+    client.get<{ apiKeys: OrgApiKeyItem[] }>(`${ORG_BASE}/GetPaymentRequestApiKeys/${orgCustomId}`),
+
+  createOrgApiKey: (orgCustomId: string) =>
+    client.post(`${ORG_BASE}/CreatePaymentRequestApiKey/${orgCustomId}`, {}),
+
+  enableOrgApiKey: (orgCustomId: string, keyId: string) =>
+    client.post(`${ORG_BASE}/EnablePaymentRequestApiKeyById/${orgCustomId}/${keyId}`, null),
+
+  disableOrgApiKey: (orgCustomId: string, keyId: string) =>
+    client.post(`${ORG_BASE}/DisableRequestApiKeyById/${orgCustomId}/${keyId}`, null),
 }

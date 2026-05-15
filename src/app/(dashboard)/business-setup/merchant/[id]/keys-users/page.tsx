@@ -533,7 +533,7 @@ export default function MerchantKeysUsersPage() {
                             <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{user.rolesList}</span>
                           ) : '—'}
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 text-center whitespace-nowrap text-xs text-gray-500">
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-xs text-gray-500">
                           {user.isOrgInitialUser === 'YES' ? (
                             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">YES</span>
                           ) : '—'}
@@ -544,13 +544,13 @@ export default function MerchantKeysUsersPage() {
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={user.userStatus} />
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
                           <button
                             onClick={() => handleToggleUser(user)}
-                            className={clsx('flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors',
+                            className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
                               isActive
-                                ? 'text-red-600 hover:bg-red-50'
-                                : 'text-emerald-600 hover:bg-emerald-50'
+                                ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
+                                : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
                             )}
                           >
                             {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
@@ -618,7 +618,7 @@ export default function MerchantKeysUsersPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 text-gray-500 text-xs">{key.keyDescription ?? '—'}</td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
                           {key.rolesList ? (
                             <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{key.rolesList}</span>
                           ) : '—'}
@@ -629,13 +629,13 @@ export default function MerchantKeysUsersPage() {
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={key.keyStatus ?? 'Active'} />
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
                           <button
                             onClick={() => handleToggleApiKey(key)}
-                            className={clsx('flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors',
+                            className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
                               isActive
-                                ? 'text-red-600 hover:bg-red-50'
-                                : 'text-emerald-600 hover:bg-emerald-50'
+                                ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
+                                : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
                             )}
                           >
                             {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}

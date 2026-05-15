@@ -33,7 +33,7 @@ export const translations = {
       merchant: 'ร้านค้า',
       payInBankAccount: 'บัญชีธนาคาร',
       payment: 'ธุรกรรมการเงิน',
-      reportAndAnalytic: 'Report & Analytic',
+      reportAndAnalytic: 'รายงาน & วิเคราะห์',
       setting: 'การตั้งค่า',
       comingSoon: 'เร็วๆ นี้',
       profile: 'โปรไฟล์',

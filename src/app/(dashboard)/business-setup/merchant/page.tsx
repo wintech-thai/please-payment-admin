@@ -6,6 +6,7 @@ import { useSearchParams, usePathname } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
@@ -77,6 +78,7 @@ function formatRange(min?: number | null, max?: number | null) {
 function MerchantContent() {
   const { t } = useLang()
   const m = t.merchant
+  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const highlightIdParam = searchParams.get('highlight')
@@ -390,16 +392,13 @@ function MerchantContent() {
 
                               <div className="border-t border-gray-100 my-1" />
 
-                              {/* Coming-soon items */}
+                              {/* API Keys & Users */}
                               <button
-                                disabled
-                                className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-gray-300 cursor-not-allowed"
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/merchant/${merchant.id}/keys-users`) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <span className="flex items-center gap-2.5">
-                                  <Key className="w-4 h-4 flex-shrink-0" />
-                                  {m.apiKeysAndUsers}
-                                </span>
-                                <span className="text-[10px] bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
+                                <Key className="w-4 h-4 flex-shrink-0" />
+                                {m.apiKeysAndUsers}
                               </button>
                               <button
                                 disabled

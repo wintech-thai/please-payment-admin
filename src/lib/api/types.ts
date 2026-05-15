@@ -212,6 +212,40 @@ export interface UpdateMerchantPayload {
   PayoutMaxAmount?: number | string
 }
 
+// ─── Merchant Org Users & API Keys ───────────────────────────────────────────
+
+export interface OrgUserItem {
+  orgUserId: string
+  userId?: string | null
+  userName?: string | null
+  userEmail?: string | null
+  tmpUserEmail?: string | null
+  userStatus?: string | null
+  tags?: string | null
+  rolesList?: string | null
+  roles?: unknown[]
+  isOrgInitialUser?: string | null
+  createdDate?: string | null
+  invitedDate?: string | null
+  invitedBy?: string | null
+}
+
+export interface OrgApiKeyItem {
+  keyId: string
+  apiKey?: string | null
+  keyName?: string | null
+  keyDescription?: string | null
+  keyStatus?: string | null
+  rolesList?: string | null
+  roles?: unknown[]
+  createdDate?: string | null
+}
+
+export interface InviteOrgUserPayload {
+  UserName: string
+  UserEmail: string
+}
+
 // ─── Common ──────────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {

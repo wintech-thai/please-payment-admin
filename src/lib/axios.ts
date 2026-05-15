@@ -114,7 +114,14 @@ client.interceptors.response.use(
     if (isPublicPath) return Promise.reject(error)
 
     if (status === 403) {
-      return Promise.reject(new AxiosError('You do not have permission to perform this action.', 'UNAUTHORIZED'))
+      const apiPath = originalRequest?.url || 'unknown endpoint'
+      return Promise.reject(new AxiosError(
+        `Access denied (403 Forbidden) — ${apiPath}`,
+        'FORBIDDEN',
+        originalRequest,
+        error.request,
+        errorResponse
+      ))
     }
 
     const rawStr = typeof errorData === 'string' ? errorData

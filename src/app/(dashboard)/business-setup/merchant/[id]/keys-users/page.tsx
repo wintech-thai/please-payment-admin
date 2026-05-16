@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem, OrgUserItem, OrgApiKeyItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key } from 'lucide-react'
+import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
@@ -266,6 +266,42 @@ export default function MerchantKeysUsersPage() {
     }
   }
 
+  const handleDeleteUser = (user: OrgUserItem) => {
+    setConfirm({
+      title: m.confirmDeleteUser,
+      onConfirm: async () => {
+        setConfirm(null)
+        try {
+          await merchantApi.deleteOrgUser(orgCustomId, user.orgUserId)
+          toast.success(m.deleteUserSuccess)
+          const res = await merchantApi.getOrgUsers(orgCustomId)
+          const data = res.data as any
+          setUsers(Array.isArray(data) ? data : (data?.users ?? data?.Users ?? []))
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : m.failedToDeleteUser)
+        }
+      },
+    })
+  }
+
+  const handleDeleteApiKey = (key: OrgApiKeyItem) => {
+    setConfirm({
+      title: m.confirmDeleteApiKey,
+      onConfirm: async () => {
+        setConfirm(null)
+        try {
+          await merchantApi.deleteOrgApiKey(orgCustomId, key.keyId)
+          toast.success(m.deleteApiKeySuccess)
+          const res = await merchantApi.getOrgApiKeys(orgCustomId)
+          const data = res.data as any
+          setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : m.failedToDeleteApiKey)
+        }
+      },
+    })
+  }
+
   const handleToggleApiKey = (key: OrgApiKeyItem) => {
     const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
     setConfirm({
@@ -521,9 +557,9 @@ export default function MerchantKeysUsersPage() {
                             : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                         )}
                       >
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap font-semibold text-gray-900">{user.userName ?? '—'}</td>
-                        <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap">{displayEmail ?? '—'}</td>
-                        <td className="px-4 py-3 border-b border-gray-100 text-gray-500 text-xs">
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm font-semibold text-gray-900">{user.userName ?? '—'}</td>
+                        <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">{displayEmail ?? '—'}</td>
+                        <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500">
                           {user.tags ? user.tags.split(',').map(tag => (
                             <span key={tag} className="inline-flex mr-1 mb-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[10px] font-medium">{tag.trim()}</span>
                           )) : '—'}
@@ -533,29 +569,39 @@ export default function MerchantKeysUsersPage() {
                             <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{user.rolesList}</span>
                           ) : '—'}
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-xs text-gray-500">
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
                           {user.isOrgInitialUser === 'YES' ? (
                             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">YES</span>
                           ) : '—'}
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-xs text-gray-500">
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(user.createdDate)}
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={user.userStatus} />
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
-                          <button
-                            onClick={() => handleToggleUser(user)}
-                            className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
-                              isActive
-                                ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
-                                : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
-                            )}
-                          >
-                            {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                            {isActive ? m.disableUser : m.enableUser}
-                          </button>
+                          {user.userStatus?.toLowerCase() === 'pending' ? (
+                            <button
+                              onClick={e => { e.stopPropagation(); handleDeleteUser(user) }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors text-red-600 bg-red-50 ring-red-200 hover:bg-red-100"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              {m.deleteUser}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={e => { e.stopPropagation(); handleToggleUser(user) }}
+                              className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
+                                isActive
+                                  ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
+                                  : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
+                              )}
+                            >
+                              {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                              {isActive ? m.disableUser : m.enableUser}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     )
@@ -614,33 +660,42 @@ export default function MerchantKeysUsersPage() {
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <span className="flex items-center gap-2">
                             <Key className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="font-semibold text-gray-900">{key.keyName ?? '—'}</span>
+                            <span className="text-sm font-semibold text-gray-900">{key.keyName ?? '—'}</span>
                           </span>
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 text-gray-500 text-xs">{key.keyDescription ?? '—'}</td>
+                        <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500">{key.keyDescription ?? '—'}</td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
                           {key.rolesList ? (
                             <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{key.rolesList}</span>
                           ) : '—'}
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-xs text-gray-500">
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(key.keyCreatedDate)}
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={key.keyStatus ?? 'Active'} />
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
-                          <button
-                            onClick={() => handleToggleApiKey(key)}
-                            className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
-                              isActive
-                                ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
-                                : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
-                            )}
-                          >
-                            {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                            {isActive ? m.disableApiKey : m.enableApiKey}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={e => { e.stopPropagation(); handleToggleApiKey(key) }}
+                              className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
+                                isActive
+                                  ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
+                                  : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
+                              )}
+                            >
+                              {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                              {isActive ? m.disableApiKey : m.enableApiKey}
+                            </button>
+                            <button
+                              onClick={e => { e.stopPropagation(); handleDeleteApiKey(key) }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors text-red-600 bg-red-50 ring-red-200 hover:bg-red-100"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              {m.deleteApiKey}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )

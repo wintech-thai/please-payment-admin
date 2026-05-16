@@ -277,6 +277,7 @@ export interface BankAccountItem {
   dailyQuota?: number | null
   status?: string | null
   createdDate?: string | null
+  merchantLinkCount?: number | null
 }
 
 export interface GetBankAccountsPayload {

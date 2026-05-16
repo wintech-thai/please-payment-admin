@@ -246,6 +246,87 @@ export interface InviteOrgUserPayload {
   UserEmail: string
 }
 
+// ─── Bank Account ────────────────────────────────────────────────────────────
+
+export interface BankItem {
+  bankCode: string
+  bankName?: string | null
+  bankShortName?: string | null
+  bankNameEng?: string | null
+  bankNameTh?: string | null
+  qrSupportFlag?: boolean | null
+  type?: string | null
+}
+
+export interface BankAccountItem {
+  accountId: string
+  bankAccountId?: string | null
+  bankCode?: string | null
+  bankName?: string | null
+  accountNumber?: string | null
+  accountName?: string | null
+  promptPayId?: string | null
+  tags?: string | null
+  accountType?: string | null       // "PromptPay" | "Native"
+  accountCategory?: string | null   // "PayIn"
+  accountLevel?: string | null      // "Global" | "Selected"
+  payinMinAmount?: number | null
+  payinMaxAmount?: number | null
+  payoutMinAmount?: number | null
+  payoutMaxAmount?: number | null
+  dailyQuota?: number | null
+  status?: string | null
+  createdDate?: string | null
+  merchantLinkCount?: number | null
+}
+
+export interface GetBankAccountsPayload {
+  FullTextSearch?: string
+  AccountCategory?: string
+  AccountType?: string
+  AccountLevel?: string
+  page?: number
+  limit?: number
+}
+
+export interface AddBankAccountPayload {
+  BankCode?: string
+  AccountNumber?: string
+  AccountName?: string
+  PromptPayId?: string
+  Tags?: string
+  AccountType?: string
+  AccountCategory?: string
+  AccountLevel?: string
+  PayinMinAmount?: number
+  PayinMaxAmount?: number
+  PayoutMinAmount?: number
+  PayoutMaxAmount?: number
+  DailyQuota?: number
+}
+
+export interface UpdateBankAccountPayload {
+  BankCode?: string
+  AccountNumber?: string
+  AccountName?: string
+  PromptPayId?: string
+  Tags?: string
+  AccountType?: string
+  AccountLevel?: string
+  PayinMinAmount?: number
+  PayinMaxAmount?: number
+  PayoutMinAmount?: number
+  PayoutMaxAmount?: number
+  DailyQuota?: number
+}
+
+export interface BankAccountMerchantItem {
+  merchantId: string
+  merchantName?: string | null
+  merchantCode?: string | null
+  isSelected?: boolean | null
+}
+
 // ─── Common ──────────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {

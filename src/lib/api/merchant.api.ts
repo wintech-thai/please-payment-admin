@@ -50,6 +50,9 @@ export const merchantApi = {
   inviteOrgUser: (orgCustomId: string, payload: InviteOrgUserPayload) =>
     client.post(`${ORG_BASE}/InviteOrganizationUser/${orgCustomId}`, payload),
 
+  deleteOrgUser: (orgCustomId: string, orgUserId: string) =>
+    client.delete(`${ORG_BASE}/DeleteOrgUserById/${orgCustomId}/${orgUserId}`),
+
   // ── Org API Keys ─────────────────────────────────────────────────────────
   getOrgApiKeys: (orgCustomId: string) =>
     client.get<{ apiKeys: OrgApiKeyItem[] }>(`${ORG_BASE}/GetPaymentRequestApiKeys/${orgCustomId}`),
@@ -62,4 +65,7 @@ export const merchantApi = {
 
   disableOrgApiKey: (orgCustomId: string, keyId: string) =>
     client.post(`${ORG_BASE}/DisableRequestApiKeyById/${orgCustomId}/${keyId}`, null),
+
+  deleteOrgApiKey: (orgCustomId: string, keyId: string) =>
+    client.post(`${ORG_BASE}/DeletePaymentRequestApiKeyById/${orgCustomId}/${keyId}`, {}),
 }

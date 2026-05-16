@@ -282,6 +282,8 @@ export interface BankAccountItem {
 export interface GetBankAccountsPayload {
   FullTextSearch?: string
   AccountCategory?: string
+  AccountType?: string
+  AccountLevel?: string
   page?: number
   limit?: number
 }

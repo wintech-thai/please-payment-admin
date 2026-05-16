@@ -131,6 +131,8 @@ function BankAccountContent() {
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [searchTerm, setSearchTerm] = useState('')
+  const [filterType, setFilterType] = useState('')
+  const [filterLevel, setFilterLevel] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [selectedRowId, setSelectedRowId] = useState<string | null>(highlightIdParam)
@@ -163,10 +165,13 @@ function BankAccountContent() {
   const fetchAccounts = async (currentPage: number) => {
     setLoading(true)
     try {
-      const searchPayload = searchTerm.trim() ? { FullTextSearch: searchTerm.trim() } : {}
+      const filterPayload: Record<string, string> = {}
+      if (searchTerm.trim()) filterPayload.FullTextSearch = searchTerm.trim()
+      if (filterType) filterPayload.AccountType = filterType
+      if (filterLevel) filterPayload.AccountLevel = filterLevel
       const [listRes, countRes] = await Promise.allSettled([
-        bankAccountApi.getBankAccounts({ page: currentPage, limit: itemsPerPage, ...searchPayload }),
-        bankAccountApi.getBankAccountCount({ ...searchPayload }),
+        bankAccountApi.getBankAccounts({ page: currentPage, limit: itemsPerPage, ...filterPayload }),
+        bankAccountApi.getBankAccountCount({ ...filterPayload }),
       ])
       if (listRes.status === 'fulfilled') {
         const raw = listRes.value.data as any
@@ -187,7 +192,7 @@ function BankAccountContent() {
     }
   }
 
-  useEffect(() => { fetchAccounts(page) }, [page, itemsPerPage])
+  useEffect(() => { fetchAccounts(page) }, [page, itemsPerPage, filterType, filterLevel])
 
   const handleSearch = () => { setPage(1); fetchAccounts(1) }
 
@@ -297,6 +302,24 @@ function BankAccountContent() {
             <button onClick={() => setSearchTerm('')} className="text-gray-400 hover:text-gray-600">✕</button>
           )}
         </div>
+        <select
+          value={filterType}
+          onChange={e => { setFilterType(e.target.value); setPage(1) }}
+          className="px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg shadow-sm text-gray-700 outline-none focus:ring-2 focus:ring-primary-300 cursor-pointer"
+        >
+          <option value="">{m.filterAllTypes}</option>
+          <option value="Native">Native</option>
+          <option value="PromptPay">PromptPay</option>
+        </select>
+        <select
+          value={filterLevel}
+          onChange={e => { setFilterLevel(e.target.value); setPage(1) }}
+          className="px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg shadow-sm text-gray-700 outline-none focus:ring-2 focus:ring-primary-300 cursor-pointer"
+        >
+          <option value="">{m.filterAllLevels}</option>
+          <option value="Global">Global</option>
+          <option value="Selected">Selected</option>
+        </select>
         <button
           onClick={handleSearch}
           className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
@@ -391,33 +414,33 @@ function BankAccountContent() {
                         <Link
                           href={`/business-setup/pay-in-bank-account/${account.accountId}/update`}
                           onClick={e => e.stopPropagation()}
-                          className={clsx('font-semibold text-xs hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
+                          className={clsx('font-semibold text-sm hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
                           {account.bankName || account.bankCode || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-700 whitespace-nowrap font-mono text-xs">
+                      <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap font-mono text-sm">
                         {account.accountNumber || '—'}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-700 whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 whitespace-nowrap">
                         {account.accountName || '—'}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
                         {account.accountType || '—'}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
                         {account.accountLevel || '—'}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-700 whitespace-nowrap tabular-nums">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 whitespace-nowrap tabular-nums">
                         {formatRange(account.payinMinAmount, account.payinMaxAmount)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-700 whitespace-nowrap tabular-nums">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 whitespace-nowrap tabular-nums">
                         {account.dailyQuota != null ? fmtNum(account.dailyQuota) : '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={account.status} />
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-500 text-xs whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500 whitespace-nowrap">
                         {formatDate(account.createdDate)}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>

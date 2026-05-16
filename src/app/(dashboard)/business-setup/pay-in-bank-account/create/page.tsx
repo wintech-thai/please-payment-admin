@@ -154,13 +154,16 @@ export default function CreateBankAccountPage() {
                   className={inputCls(!!errors.bankCode)}
                 >
                   <option value="">{m.fieldBankPlaceholder}</option>
-                  {banks.map(b => (
-                    <option key={b.bankCode} value={b.bankCode}>
-                      {lang === 'th'
-                        ? (b.bankNameTh || b.bankNameEng || b.bankShortName || b.bankCode)
-                        : (b.bankNameEng || b.bankNameTh || b.bankShortName || b.bankCode)}
-                    </option>
-                  ))}
+                  {banks.map(b => {
+                    const name = lang === 'th'
+                      ? (b.bankNameTh || b.bankNameEng || b.bankShortName || '')
+                      : (b.bankNameEng || b.bankNameTh || b.bankShortName || '')
+                    return (
+                      <option key={b.bankCode} value={b.bankCode}>
+                        {name ? `${b.bankCode} - ${name}` : b.bankCode}
+                      </option>
+                    )
+                  })}
                 </select>
               </FormField>
 

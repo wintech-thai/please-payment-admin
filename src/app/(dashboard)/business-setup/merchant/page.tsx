@@ -329,33 +329,33 @@ function MerchantContent() {
                         <Link
                           href={`/business-setup/merchant/${merchant.id}/update`}
                           onClick={e => e.stopPropagation()}
-                          className={clsx('font-mono text-xs font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
+                          className={clsx('font-semibold text-sm hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
                           {merchant.code ?? '—'}
                         </Link>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="font-semibold text-gray-900">{merchant.name ?? '—'}</span>
+                        <span className="text-sm text-gray-600">{merchant.name ?? '—'}</span>
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
                         {merchant.contactEmail ?? '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={merchant.status} />
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-700 text-center whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 text-center whitespace-nowrap">
                         {formatPercent(merchant.payinFeePct)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-700 text-center whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 text-center whitespace-nowrap">
                         {formatPercent(merchant.payoutFeePct)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-600 text-center whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 text-center whitespace-nowrap">
                         {formatRange(merchant.payinMinAmount, merchant.payinMaxAmount)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-600 text-center whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 text-center whitespace-nowrap">
                         {formatRange(merchant.payoutMinAmount, merchant.payoutMaxAmount)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-500 text-xs whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500 whitespace-nowrap">
                         {formatDate(merchant.createdDate)}
                       </td>
 

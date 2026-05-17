@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import QrPaymentModal from '@/components/QrPaymentModal'
 
 function StatusBadge({ status }: { status?: string | null }) {
   const lower = status?.toLowerCase()
@@ -94,6 +95,7 @@ function MerchantContent() {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(highlightIdParam)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ type: 'enable' | 'disable'; merchant: MerchantItem } | null>(null)
+  const [qrMerchant, setQrMerchant] = useState<MerchantItem | null>(null)
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
@@ -198,11 +200,18 @@ function MerchantContent() {
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
+      {qrMerchant && (
+        <QrPaymentModal
+          merchantId={qrMerchant.id}
+          merchantName={qrMerchant.name ?? qrMerchant.code ?? undefined}
+          onClose={() => setQrMerchant(null)}
+        />
+      )}
       {confirmDialog && (
         <ConfirmDialog
           title={confirmDialog.type === 'enable' ? m.enableConfirmTitle : m.disableConfirmTitle}
           desc={confirmDialog.type === 'enable' ? m.enableConfirmDesc : m.disableConfirmDesc}
-          confirmLabel={confirmDialog.type === 'enable' ? m.enableMerchant : m.disableMerchant}
+          confirmLabel={t.admin.yes}
           onConfirm={() => {
             const merch = confirmDialog.merchant
             confirmDialog.type === 'enable' ? handleEnable(merch) : handleDisable(merch)
@@ -411,14 +420,11 @@ function MerchantContent() {
                                 <span className="text-[10px] bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
                               </button>
                               <button
-                                disabled
-                                className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-gray-300 cursor-not-allowed"
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); setQrMerchant(merchant) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <span className="flex items-center gap-2.5">
-                                  <QrCode className="w-4 h-4 flex-shrink-0" />
-                                  {m.qrPayment}
-                                </span>
-                                <span className="text-[10px] bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
+                                <QrCode className="w-4 h-4 flex-shrink-0" />
+                                {m.qrPayment}
                               </button>
                             </div>
                           )}

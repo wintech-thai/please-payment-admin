@@ -44,6 +44,9 @@ export const bankAccountApi = {
   getAvailableBanks: () =>
     client.get<{ banks: BankItem[] }>(`${BASE}/GetAvailableBanks`),
 
+  getAvailableSupportQrBanks: () =>
+    client.get<{ banks: BankItem[] }>(`${BASE}/GetAvailableSupportQrBanks`),
+
   getMerchantsForBankAccount: (id: string) =>
     client.get<{ merchants: BankAccountMerchantItem[] }>(`${BASE}/GetMerchantsForBankAccount/${id}`),
 

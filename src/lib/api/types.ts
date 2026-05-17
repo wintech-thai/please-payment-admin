@@ -327,6 +327,32 @@ export interface BankAccountMerchantItem {
   isSelected?: boolean | null
 }
 
+// ─── QR Payment ──────────────────────────────────────────────────────────────
+
+export interface SubmitPaymentRequestPayload {
+  RefId: string
+  RefId1?: string
+  RefId2?: string
+  Description?: string
+  Currency?: string
+  RequestedAmount: number
+  QrProvider?: string
+  SelectedPayInBankAccountId?: string
+}
+
+export interface PaymentRequestResponse {
+  id?: string
+  referenceId?: string
+  requestedAmount?: number
+  generatedAmount?: number
+  currency?: string
+  qrCode?: string
+  qrCodeImage?: string
+  payInBankAccountNo?: string
+  payInBankAccountName?: string
+  payInBankCode?: string
+}
+
 // ─── Common ──────────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {

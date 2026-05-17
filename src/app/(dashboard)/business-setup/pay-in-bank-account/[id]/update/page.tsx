@@ -89,8 +89,6 @@ export default function UpdateBankAccountPage() {
 
   const validate = () => {
     const errs: Record<string, string> = {}
-    if (!bankCode) errs.bankCode = m.bankRequired
-    if (!accountType) errs.accountType = m.accountTypeRequired
     if (!accountNumber.trim()) {
       errs.accountNumber = m.accountNumberRequired
     } else if (!DIGITS_ONLY_RE.test(accountNumber.trim())) {
@@ -126,11 +124,9 @@ export default function UpdateBankAccountPage() {
     setSaving(true)
     try {
       await bankAccountApi.updateBankAccountById(id, {
-        BankCode: bankCode,
         AccountNumber: accountNumber.trim(),
         AccountName: accountName.trim(),
         PromptPayId: accountType === 'PromptPay' ? promptPayId.trim() : undefined,
-        AccountType: accountType,
         AccountLevel: accountLevel,
         PayinMinAmount: toInt(payInMin),
         PayinMaxAmount: toInt(payInMax),
@@ -189,8 +185,8 @@ export default function UpdateBankAccountPage() {
               <FormField label={m.fieldBank} required error={errors.bankCode}>
                 <select
                   value={bankCode}
-                  onChange={e => { setBankCode(e.target.value); mark(); clearErr('bankCode') }}
-                  className={inputCls(!!errors.bankCode)}
+                  disabled
+                  className={clsx(inputCls(false), 'bg-gray-50 text-gray-500 cursor-not-allowed opacity-75')}
                 >
                   <option value="">{m.fieldBankPlaceholder}</option>
                   {banks.map(b => {
@@ -209,13 +205,8 @@ export default function UpdateBankAccountPage() {
               <FormField label={m.fieldAccountType} required error={errors.accountType}>
                 <select
                   value={accountType}
-                  onChange={e => {
-                    const v = e.target.value as 'PromptPay' | 'Native' | ''
-                    setAccountType(v)
-                    if (v !== 'PromptPay') { setPromptPayId(''); clearErr('promptPayId') }
-                    mark(); clearErr('accountType')
-                  }}
-                  className={inputCls(!!errors.accountType)}
+                  disabled
+                  className={clsx(inputCls(false), 'bg-gray-50 text-gray-500 cursor-not-allowed opacity-75')}
                 >
                   <option value="">—</option>
                   <option value="PromptPay">{m.accountTypePromptPay}</option>

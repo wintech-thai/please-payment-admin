@@ -76,7 +76,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
         const raw = accountsRes.value.data as any
         const list: any[] = Array.isArray(raw) ? raw : (raw?.bankAccounts ?? raw?.BankAccounts ?? raw?.accounts ?? [])
         setAllAccounts(list.map(a => ({
-          bankAccountId: a.id ?? a.bankAccountId ?? a.BankAccountId ?? a.accountId ?? '',
+          bankAccountId: a.bankAccountId ?? a.BankAccountId ?? a.accountId ?? a.AccountId ?? '',
           accountNumber: a.accountNumber ?? a.AccountNumber,
           accountName: a.accountName ?? a.AccountName,
           bankCode: a.bankCode ?? a.BankCode,

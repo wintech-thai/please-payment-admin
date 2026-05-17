@@ -53,7 +53,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
   const [selectedBankCode, setSelectedBankCode] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState('')
   const [amount, setAmount] = useState('')
-  const [ref, setRef] = useState('')
+  const [ref, setRef] = useState(() => generateRefId())
   const [ref1, setRef1] = useState('')
   const [ref2, setRef2] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -139,7 +139,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
   const handleReset = () => {
     setResult(null)
     setAmount('')
-    setRef('')
+    setRef(generateRefId())
     setRef1('')
     setRef2('')
     setErrors({})
@@ -229,7 +229,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
                       <option value="">{m.qrSelectAccountPlaceholder}</option>
                       {filteredAccounts.map(a => (
                         <option key={a.bankAccountId} value={a.bankAccountId}>
-                          {a.accountNumber} {a.accountName ? `— ${a.accountName}` : ''}
+                          {[a.bankCode, a.accountNumber, a.accountName ? `— ${a.accountName}` : ''].filter(Boolean).join(' ')}
                         </option>
                       ))}
                     </select>

@@ -32,7 +32,7 @@ export default function LeaveConfirmModal({ onConfirm, onCancel }: Props) {
             onClick={onConfirm}
             className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors uppercase"
           >
-            {a.leaveConfirm}
+            {a.yes}
           </button>
         </div>
       </div>

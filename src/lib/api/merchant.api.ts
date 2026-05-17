@@ -7,10 +7,12 @@ import type {
   OrgUserItem,
   OrgApiKeyItem,
   InviteOrgUserPayload,
+  SubmitPaymentRequestPayload,
 } from './types'
 
 const BASE = '/admin-api/AdminMerchant/org/global/action'
 const ORG_BASE = '/admin-api/AdminOrganization/org/global/action'
+const PMR_BASE = '/admin-api/AdminPaymentRequest/org/global/action'
 
 export const merchantApi = {
   getMerchants: (payload: GetMerchantsPayload = {}) =>
@@ -68,4 +70,11 @@ export const merchantApi = {
 
   deleteOrgApiKey: (orgCustomId: string, keyId: string) =>
     client.post(`${ORG_BASE}/DeletePaymentRequestApiKeyById/${orgCustomId}/${keyId}`, {}),
+
+  // ── QR Payment ───────────────────────────────────────────────────────────
+  getPayInBankAccountsForMerchant: (merchantId: string) =>
+    client.get(`${BASE}/GetPayInBankAccountsForMerchant/${merchantId}`),
+
+  submitPaymentRequest: (merchantId: string, payload: SubmitPaymentRequestPayload) =>
+    client.post(`${PMR_BASE}/SubmitPaymentRequestByMerchantId/${merchantId}`, payload),
 }

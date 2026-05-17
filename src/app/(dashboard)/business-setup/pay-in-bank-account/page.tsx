@@ -256,7 +256,7 @@ function BankAccountContent() {
           title={confirmDialog.type === 'enable' ? m.confirmEnableTitle : m.confirmDisableTitle}
           accountName={confirmDialog.account.accountName || confirmDialog.account.accountNumber || ''}
           desc={confirmDialog.type === 'enable' ? m.confirmEnableDesc : m.confirmDisableDesc}
-          confirmLabel={confirmDialog.type === 'enable' ? m.enableAction : m.disableAction}
+          confirmLabel={t.admin.yes}
           onConfirm={() => { handleToggleActive(confirmDialog.account); setConfirmDialog(null) }}
           onCancel={() => setConfirmDialog(null)}
         />

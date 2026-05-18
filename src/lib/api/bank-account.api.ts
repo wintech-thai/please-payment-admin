@@ -55,4 +55,15 @@ export const bankAccountApi = {
 
   unselectMerchant: (bankAccountId: string, merchantId: string) =>
     client.post(`${BASE}/UnSelectMerchantById/${bankAccountId}/${merchantId}`, {}),
+
+  getPayInTxLineEndpoint: (id: string) =>
+    client.get(`${BASE}/GetBankAccountPayInTxLineEndPoint/${id}`),
+
+  getLinePaymentTxNotiApiKeys: (id: string) =>
+    client.get(`${BASE}/GetLinePaymentTxNotiApiKeys/${id}`),
+
+  createLinePaymentTxNotiApiKey: (id: string) =>
+    client.post(`${BASE}/CreateLinePaymentTxNotiApiKey/${id}`, {}),
+
+
 }

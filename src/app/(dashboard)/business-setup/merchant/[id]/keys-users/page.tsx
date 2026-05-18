@@ -481,14 +481,22 @@ export default function MerchantKeysUsersPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{m.merchantInfoSection}</SectionHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{m.fieldCode}</p>
-              <p className="text-sm font-mono font-semibold text-gray-800">{merchant?.code ?? '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{m.fieldName}</p>
-              <p className="text-sm font-semibold text-gray-800">{merchant?.name ?? '—'}</p>
-            </div>
+            {[
+              { label: m.fieldCode, value: merchant?.code },
+              { label: m.fieldName, value: merchant?.name },
+              { label: m.fieldEmail, value: merchant?.contactEmail },
+              { label: m.fieldPhone, value: merchant?.contactPhone },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{label}</label>
+                <input
+                  readOnly
+                  value={value ?? ''}
+                  placeholder="—"
+                  className="w-full px-3.5 py-2.5 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed focus:outline-none"
+                />
+              </div>
+            ))}
           </div>
         </div>
 

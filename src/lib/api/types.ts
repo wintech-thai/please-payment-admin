@@ -263,6 +263,7 @@ export interface BankItem {
 export interface BankAccountItem {
   accountId: string
   bankAccountId?: string | null
+  orgId?: string | null
   bankCode?: string | null
   bankName?: string | null
   accountNumber?: string | null

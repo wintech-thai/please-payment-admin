@@ -7,7 +7,7 @@ import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, Building2, ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import QrPaymentModal from '@/components/QrPaymentModal'
@@ -192,7 +192,9 @@ function MerchantContent() {
   }
 
   const cols = [
-    m.colCode, m.colName, m.colEmail, m.colStatus,
+    m.colCode, m.colName, m.colEmail,
+    `${m.colPayInCount} / ${m.colPayOutCount}`,
+    m.colStatus,
     m.colPayInPercent, m.colPayOutPercent,
     m.colPayInRange, m.colPayOutRange,
     m.colCreated, m.colAction,
@@ -350,6 +352,24 @@ function MerchantContent() {
                         {merchant.contactEmail ?? '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={e => { e.stopPropagation(); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                          >
+                            <span className="text-[9px] text-blue-400">IN</span>
+                            {merchant.payInBankAccountCount ?? 0}
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 ring-1 ring-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
+                          >
+                            <span className="text-[9px] text-purple-400">OUT</span>
+                            {merchant.payOutBankAccountCount ?? 0}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={merchant.status} />
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 text-center whitespace-nowrap">
@@ -418,6 +438,13 @@ function MerchantContent() {
                                   {m.walletSummary}
                                 </span>
                                 <span className="text-[10px] bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <Building2 className="w-4 h-4 flex-shrink-0" />
+                                {m.bankAccounts}
                               </button>
                               <button
                                 onClick={e => { e.stopPropagation(); setOpenMenuId(null); setQrMerchant(merchant) }}

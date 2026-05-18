@@ -169,6 +169,8 @@ export interface MerchantItem {
   payoutMaxAmount?: number | null
   status?: string | null
   createdDate?: string | null
+  payInBankAccountCount?: number | null
+  payOutBankAccountCount?: number | null
 }
 
 export interface GetMerchantsPayload {

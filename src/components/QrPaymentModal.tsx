@@ -147,7 +147,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]">
+      <div className={clsx('w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] transition-all duration-300', result && result.qrCode ? 'max-w-3xl' : 'max-w-lg')}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
@@ -163,135 +163,138 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-5">
+        <div className="flex flex-1 min-h-0">
 
           {loadingInit ? (
-            <div className="flex items-center justify-center py-12 text-gray-400">
+            <div className="flex flex-1 items-center justify-center py-12 text-gray-400">
               <Loader2 className="w-5 h-5 animate-spin mr-2" />
               {a.loading}
             </div>
           ) : (
             <>
-              {/* Mode selection */}
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{m.qrSelectAccount}</p>
-                <div className="flex gap-4">
-                  {(['manual', 'auto'] as const).map(m => (
-                    <label key={m} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={mode === m}
-                        onChange={() => { setMode(m); setSelectedBankCode(''); setSelectedAccountId(''); setErrors({}) }}
-                        className="text-primary-600 focus:ring-primary-500"
-                      />
-                      <span className="text-sm text-gray-700 font-medium">
-                        {m === 'manual' ? t.merchant.qrModeManual : t.merchant.qrModeAuto}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Manual: bank + account dropdowns */}
-              {mode === 'manual' && (
-                <div className="grid grid-cols-1 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                      {m.qrFieldBank} <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={selectedBankCode}
-                      onChange={e => { setSelectedBankCode(e.target.value); setSelectedAccountId(''); setErrors(p => ({ ...p, account: '' })) }}
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
-                    >
-                      <option value="">{m.qrSelectBankPlaceholder}</option>
-                      {qrBanks.map(b => (
-                        <option key={b.bankCode} value={b.bankCode}>
-                          {b.bankCode} — {bankLabel(b)}
-                        </option>
-                      ))}
-                    </select>
+              {/* Form column */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-5">
+                {/* Mode selection */}
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{m.qrSelectAccount}</p>
+                  <div className="flex gap-4">
+                    {(['manual', 'auto'] as const).map(m => (
+                      <label key={m} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={mode === m}
+                          onChange={() => { setMode(m); setSelectedBankCode(''); setSelectedAccountId(''); setErrors({}) }}
+                          className="text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-gray-700 font-medium">
+                          {m === 'manual' ? t.merchant.qrModeManual : t.merchant.qrModeAuto}
+                        </span>
+                      </label>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                      {m.qrFieldBankAccount} <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={selectedAccountId}
-                      onChange={e => { setSelectedAccountId(e.target.value); setErrors(p => ({ ...p, account: '' })) }}
-                      disabled={!selectedBankCode}
-                      className={clsx(
-                        'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 bg-white',
-                        errors.account ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-primary-300',
-                        !selectedBankCode && 'opacity-50 cursor-not-allowed'
+                </div>
+
+                {/* Manual: bank + account dropdowns */}
+                {mode === 'manual' && (
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                        {m.qrFieldBank} <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={selectedBankCode}
+                        onChange={e => { setSelectedBankCode(e.target.value); setSelectedAccountId(''); setErrors(p => ({ ...p, account: '' })) }}
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+                      >
+                        <option value="">{m.qrSelectBankPlaceholder}</option>
+                        {qrBanks.map(b => (
+                          <option key={b.bankCode} value={b.bankCode}>
+                            {b.bankCode} — {bankLabel(b)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                        {m.qrFieldBankAccount} <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={selectedAccountId}
+                        onChange={e => { setSelectedAccountId(e.target.value); setErrors(p => ({ ...p, account: '' })) }}
+                        disabled={!selectedBankCode}
+                        className={clsx(
+                          'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 bg-white',
+                          errors.account ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-primary-300',
+                          !selectedBankCode && 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        <option value="">{m.qrSelectAccountPlaceholder}</option>
+                        {filteredAccounts.map(a => (
+                          <option key={a.bankAccountId} value={a.bankAccountId}>
+                            {[a.bankCode, a.accountNumber, a.accountName ? `— ${a.accountName}` : ''].filter(Boolean).join(' ')}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.account && <p className="text-red-500 text-xs mt-1">{errors.account}</p>}
+                      {selectedBankCode && filteredAccounts.length === 0 && (
+                        <p className="text-xs text-gray-400 mt-1">{m.qrNoAccountFound}</p>
                       )}
-                    >
-                      <option value="">{m.qrSelectAccountPlaceholder}</option>
-                      {filteredAccounts.map(a => (
-                        <option key={a.bankAccountId} value={a.bankAccountId}>
-                          {[a.bankCode, a.accountNumber, a.accountName ? `— ${a.accountName}` : ''].filter(Boolean).join(' ')}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.account && <p className="text-red-500 text-xs mt-1">{errors.account}</p>}
-                    {selectedBankCode && filteredAccounts.length === 0 && (
-                      <p className="text-xs text-gray-400 mt-1">{m.qrNoAccountFound}</p>
-                    )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Amount + REF fields */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    {m.qrFieldAmount} <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amount}
-                    onChange={e => { setAmount(e.target.value); setErrors(p => ({ ...p, amount: '' })) }}
-                    placeholder="0.00"
-                    className={clsx(
-                      'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2',
-                      errors.amount ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-primary-300'
-                    )}
-                  />
-                  {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount}</p>}
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    {m.qrFieldRef} <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={ref}
-                    onChange={e => { setRef(e.target.value); setErrors(p => ({ ...p, ref: '' })) }}
-                    placeholder="Reference"
-                    className={clsx(
-                      'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2',
-                      errors.ref ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-primary-300'
-                    )}
-                  />
-                  {errors.ref && <p className="text-red-500 text-xs mt-1">{errors.ref}</p>}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">REF1 <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
-                  <input type="text" value={ref1} onChange={e => setRef1(e.target.value)} placeholder="REF1" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">REF2 <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
-                  <input type="text" value={ref2} onChange={e => setRef2(e.target.value)} placeholder="REF2" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                {/* Amount + REF fields */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      {m.qrFieldAmount} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={amount}
+                      onChange={e => { setAmount(e.target.value); setErrors(p => ({ ...p, amount: '' })) }}
+                      placeholder="0.00"
+                      className={clsx(
+                        'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2',
+                        errors.amount ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-primary-300'
+                      )}
+                    />
+                    {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount}</p>}
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      {m.qrFieldRef} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={ref}
+                      onChange={e => { setRef(e.target.value); setErrors(p => ({ ...p, ref: '' })) }}
+                      placeholder="Reference"
+                      className={clsx(
+                        'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2',
+                        errors.ref ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-primary-300'
+                      )}
+                    />
+                    {errors.ref && <p className="text-red-500 text-xs mt-1">{errors.ref}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">REF1 <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
+                    <input type="text" value={ref1} onChange={e => setRef1(e.target.value)} placeholder="REF1" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">REF2 <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
+                    <input type="text" value={ref2} onChange={e => setRef2(e.target.value)} placeholder="REF2" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                  </div>
                 </div>
               </div>
 
-              {/* QR Result */}
+              {/* QR Result — right column */}
               {result && result.qrCode && (
-                <div className="border border-primary-100 bg-primary-50/40 rounded-xl p-5 flex flex-col items-center gap-3">
-                  <div className="bg-white p-4 rounded-xl shadow-sm">
-                    <QRCode value={result.qrCode} size={200} />
+                <div className="w-72 flex-shrink-0 border-l border-gray-100 flex flex-col items-center justify-center gap-4 px-6 py-5 bg-primary-50/30">
+                  <div className="bg-white p-3 rounded-xl shadow-sm">
+                    <QRCode value={result.qrCode} size={180} />
                   </div>
                   {result.payInBankAccountName && (
                     <div className="text-center">

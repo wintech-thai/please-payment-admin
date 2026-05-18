@@ -428,9 +428,12 @@ function BankAccountContent() {
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
                         {account.merchantLinkCount != null ? (
-                          <span className="inline-flex items-center justify-center min-w-[1.5rem] px-2 py-0.5 text-xs font-bold text-primary-700 bg-primary-50 ring-1 ring-primary-200 rounded-full">
+                          <button
+                            onClick={e => { e.stopPropagation(); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/merchant-link`) }}
+                            className="inline-flex items-center justify-center min-w-[1.5rem] px-2 py-0.5 text-xs font-bold text-primary-700 bg-primary-50 ring-1 ring-primary-200 rounded-full hover:bg-primary-100 transition-colors cursor-pointer"
+                          >
                             {account.merchantLinkCount}
-                          </span>
+                          </button>
                         ) : '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">

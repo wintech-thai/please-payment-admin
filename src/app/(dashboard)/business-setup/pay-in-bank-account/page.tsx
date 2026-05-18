@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { BankAccountItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Trash2, ChevronLeft, ChevronRight, Landmark } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Trash2, ChevronLeft, ChevronRight, Landmark, Webhook } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
@@ -487,6 +487,13 @@ function BankAccountContent() {
                               >
                                 <Link2 className="w-4 h-4 flex-shrink-0" />
                                 {m.merchantLinkAction}
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/tx-endpoint`) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <Webhook className="w-4 h-4 flex-shrink-0" />
+                                {m.txEndpointAction}
                               </button>
                             </div>
                           )}

@@ -353,14 +353,20 @@ function MerchantContent() {
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <div className="flex items-center gap-1">
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200">
+                          <button
+                            onClick={e => { e.stopPropagation(); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                          >
                             <span className="text-[9px] text-blue-400">IN</span>
                             {merchant.payInBankAccountCount ?? 0}
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 ring-1 ring-purple-200">
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 ring-1 ring-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
+                          >
                             <span className="text-[9px] text-purple-400">OUT</span>
                             {merchant.payOutBankAccountCount ?? 0}
-                          </span>
+                          </button>
                         </div>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">

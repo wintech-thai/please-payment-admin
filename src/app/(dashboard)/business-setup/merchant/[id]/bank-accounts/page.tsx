@@ -64,6 +64,7 @@ export default function MerchantBankAccountsPage() {
   const [merchant, setMerchant] = useState<MerchantItem | null>(null)
   const [payInAccounts, setPayInAccounts] = useState<PayInAccount[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -144,7 +145,7 @@ export default function MerchantBankAccountsPage() {
               <table className="w-full text-sm border-separate border-spacing-0 min-w-[700px]">
                 <thead>
                   <tr className="bg-gray-50">
-                    {[b.colBank, b.colAccountNumber, b.colAccountName, b.colPromptPayId, b.colAccountType, b.colAccountLevel, b.colStatus, b.colCreated].map((col, i) => (
+                    {[b.colBank, b.colAccountNumber, b.colAccountName, b.colPromptPayId, b.colAccountType, b.colAccountLevel, b.colStatus].map((col, i) => (
                       <th key={col} className={clsx('px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap', i === 0 && 'rounded-tl-xl')}>
                         {col}
                       </th>
@@ -153,7 +154,16 @@ export default function MerchantBankAccountsPage() {
                 </thead>
                 <tbody>
                   {payInAccounts.map((a, idx) => (
-                    <tr key={a.bankAccountId} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
+                    <tr
+                      key={a.bankAccountId}
+                      onClick={() => setSelectedId(prev => prev === a.bankAccountId ? null : a.bankAccountId)}
+                      className={clsx(
+                        'cursor-pointer transition-colors',
+                        selectedId === a.bankAccountId
+                          ? 'bg-primary-100'
+                          : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
+                      )}
+                    >
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <span className="text-sm font-semibold text-gray-800">{bankLabel(a)}</span>
                       </td>
@@ -180,9 +190,6 @@ export default function MerchantBankAccountsPage() {
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={a.status} />
-                      </td>
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(a.createdDate)}
                       </td>
                     </tr>
                   ))}

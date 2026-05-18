@@ -492,23 +492,122 @@ export default function MerchantKeysUsersPage() {
           </div>
         </div>
 
-        {/* Payment Request Endpoint */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
-          <SectionHeader>{m.sectionEndpoint}</SectionHeader>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{m.endpointLabel}</p>
-          {paymentUrl ? (
-            <div className="flex items-start gap-3">
-              <textarea
-                readOnly
-                value={paymentUrl}
-                rows={2}
-                className="flex-1 px-3 py-2.5 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 resize-none focus:outline-none"
-              />
-              <CopyButton text={paymentUrl} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
-            </div>
+        {/* Payment Request Endpoint + API Keys */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6 flex flex-col gap-6">
+          {/* Endpoint */}
+          <div>
+            <SectionHeader>{m.sectionEndpoint}</SectionHeader>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{m.endpointLabel}</p>
+            {paymentUrl ? (
+              <div className="flex items-start gap-3">
+                <textarea
+                  readOnly
+                  value={paymentUrl}
+                  rows={2}
+                  className="flex-1 px-3 py-2.5 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 resize-none focus:outline-none"
+                />
+                <CopyButton text={paymentUrl} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
+            )}
+          </div>
+
+          <div className="border-t border-gray-100" />
+
+          {/* API Keys */}
+          <div>
+          <SectionHeader
+            action={
+              <button
+                onClick={handleCreateApiKey}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {m.addApiKey}
+              </button>
+            }
+          >
+            {m.sectionApiKeys}
+          </SectionHeader>
+
+          {apiKeys.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">{m.noApiKeysFound}</p>
           ) : (
-            <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-separate border-spacing-0 min-w-[600px]">
+                <thead>
+                  <tr className="bg-gray-50">
+                    {[m.colKeyName, m.colDescription, m.colRoles, m.colCreated, m.colStatus, m.colAction].map((col: string, i: number) => (
+                      <th key={col} className={clsx('px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap', i === 0 && 'rounded-tl-xl')}>
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {apiKeys.map((key, idx) => {
+                    const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
+                    const isHighlighted = selectedKeyId === key.keyId
+                    return (
+                      <tr
+                        key={key.keyId}
+                        onClick={() => setSelectedKeyId(prev => prev === key.keyId ? null : key.keyId)}
+                        className={clsx(
+                          'cursor-pointer transition-colors',
+                          isHighlighted
+                            ? 'bg-primary-100'
+                            : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
+                        )}
+                      >
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                          <span className="flex items-center gap-2">
+                            <Key className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm font-semibold text-gray-900">{key.keyName ?? '—'}</span>
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500">{key.keyDescription ?? '—'}</td>
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
+                          {key.rolesList ? (
+                            <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{key.rolesList}</span>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(key.keyCreatedDate)}
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                          <StatusBadge status={key.keyStatus ?? 'Active'} />
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={e => { e.stopPropagation(); handleToggleApiKey(key) }}
+                              className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
+                                isActive
+                                  ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
+                                  : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
+                              )}
+                            >
+                              {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                              {isActive ? m.disableApiKey : m.enableApiKey}
+                            </button>
+                            <button
+                              onClick={e => { e.stopPropagation(); handleDeleteApiKey(key) }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors text-red-600 bg-red-50 ring-red-200 hover:bg-red-100"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              {m.deleteApiKey}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
+          </div>
         </div>
 
         {/* Users Section */}
@@ -602,100 +701,6 @@ export default function MerchantKeysUsersPage() {
                               {isActive ? m.disableUser : m.enableUser}
                             </button>
                           )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* API Keys Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
-          <SectionHeader
-            action={
-              <button
-                onClick={handleCreateApiKey}
-                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {m.addApiKey}
-              </button>
-            }
-          >
-            {m.sectionApiKeys}
-          </SectionHeader>
-
-          {apiKeys.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">{m.noApiKeysFound}</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-separate border-spacing-0 min-w-[600px]">
-                <thead>
-                  <tr className="bg-gray-50">
-                    {[m.colKeyName, m.colDescription, m.colRoles, m.colCreated, m.colStatus, m.colAction].map((col: string, i: number) => (
-                      <th key={col} className={clsx('px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap', i === 0 && 'rounded-tl-xl')}>
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {apiKeys.map((key, idx) => {
-                    const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
-                    const isHighlighted = selectedKeyId === key.keyId
-                    return (
-                      <tr
-                        key={key.keyId}
-                        onClick={() => setSelectedKeyId(prev => prev === key.keyId ? null : key.keyId)}
-                        className={clsx(
-                          'cursor-pointer transition-colors',
-                          isHighlighted
-                            ? 'bg-primary-100'
-                            : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
-                        )}
-                      >
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                          <span className="flex items-center gap-2">
-                            <Key className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm font-semibold text-gray-900">{key.keyName ?? '—'}</span>
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500">{key.keyDescription ?? '—'}</td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
-                          {key.rolesList ? (
-                            <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{key.rolesList}</span>
-                          ) : '—'}
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(key.keyCreatedDate)}
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                          <StatusBadge status={key.keyStatus ?? 'Active'} />
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={e => { e.stopPropagation(); handleToggleApiKey(key) }}
-                              className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
-                                isActive
-                                  ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
-                                  : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
-                              )}
-                            >
-                              {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                              {isActive ? m.disableApiKey : m.enableApiKey}
-                            </button>
-                            <button
-                              onClick={e => { e.stopPropagation(); handleDeleteApiKey(key) }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors text-red-600 bg-red-50 ring-red-200 hover:bg-red-100"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              {m.deleteApiKey}
-                            </button>
-                          </div>
                         </td>
                       </tr>
                     )

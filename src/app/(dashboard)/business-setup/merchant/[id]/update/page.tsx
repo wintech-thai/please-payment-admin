@@ -65,7 +65,7 @@ export default function UpdateMerchantPage() {
       })
       .catch(() => {
         toast.error(m.failedToLoadMerchant)
-        router.push('/business-setup/merchant')
+        router.push(`/business-setup/merchant?highlight=${id}`)
       })
       .finally(() => setLoading(false))
   }, [id])
@@ -73,7 +73,7 @@ export default function UpdateMerchantPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isDirty) {
-      router.push('/business-setup/merchant')
+      router.push(`/business-setup/merchant?highlight=${id}`)
       return
     }
     if (!validate()) return
@@ -119,7 +119,7 @@ export default function UpdateMerchantPage() {
 
       <div className="flex-none flex items-center gap-3 mb-6">
         <button
-          onClick={() => guardNavigation(() => router.push('/business-setup/merchant'))}
+          onClick={() => guardNavigation(() => router.push(`/business-setup/merchant?highlight=${id}`))}
           className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -276,7 +276,7 @@ export default function UpdateMerchantPage() {
         <div className="flex-none -mx-3 sm:-mx-6 px-4 sm:px-8 py-4 flex items-center justify-end gap-3 bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
           <button
             type="button"
-            onClick={() => guardNavigation(() => router.push('/business-setup/merchant'))}
+            onClick={() => guardNavigation(() => router.push(`/business-setup/merchant?highlight=${id}`))}
             className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             {t.admin.cancel}

@@ -11,7 +11,7 @@ export default function PaymentSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
-  const menuItems = [
+  const menuItems: ({ href: string; label: string; icon: React.ReactNode; divider?: boolean } | { divider: true; href?: never; label?: never; icon?: never })[] = [
     {
       href: '/business-setup/payment/pay-in-requests',
       label: t.nav.payInRequests,
@@ -29,6 +29,9 @@ export default function PaymentSidebar() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
       ),
+    },
+    {
+      divider: true,
     },
     {
       href: '/business-setup/payment/withdraw-request',
@@ -82,12 +85,15 @@ export default function PaymentSidebar() {
 
       {/* Nav items */}
       <nav className="flex flex-col gap-1 px-2">
-        {menuItems.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+        {menuItems.map((item, i) => {
+          if (item.divider) {
+            return <div key={`divider-${i}`} className="my-1 border-t border-white/15" />
+          }
+          const isActive = pathname.startsWith(item.href!)
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={item.href!}
               title={collapsed ? item.label : undefined}
               className={clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',

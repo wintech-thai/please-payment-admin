@@ -66,19 +66,22 @@ export default function PayInRequestsPage() {
   const router = useRouter()
 
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
   const [items, setItems] = useState<PayInRequestItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [loading, setLoading] = useState(false)
+  const [highlightedId, setHighlightedId] = useState<string>('')
 
-  const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string) => {
+  const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string) => {
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)
       const payload: Record<string, unknown> = { Page: currentPage, Limit: limit, FromDate: fromDate, ToDate: toDate }
       if (q.trim()) payload.FullTextSearch = q.trim()
+      if (status) payload.Status = status
 
       const countPayload = { ...payload }
       delete countPayload.FullTextSearch
@@ -109,24 +112,24 @@ export default function PayInRequestsPage() {
     }
   }, [])
 
-  useEffect(() => { load(1, itemsPerPage, timeRange, search) }, [])
+  useEffect(() => { load(1, itemsPerPage, timeRange, search, statusFilter) }, [])
 
   const handleRefresh = () => {
     setPage(1)
-    load(1, itemsPerPage, timeRange, search)
+    load(1, itemsPerPage, timeRange, search, statusFilter)
   }
 
   const handleTimeRangeChange = (tr: TimeRangeValue) => {
     setTimeRange(tr)
     setPage(1)
-    load(1, itemsPerPage, tr, search)
+    load(1, itemsPerPage, tr, search, statusFilter)
   }
 
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colRef]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colRef1, m.colRef2]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -165,6 +168,20 @@ export default function PayInRequestsPage() {
         >
           <Search className="w-4 h-4" />
         </button>
+
+        <select
+          value={statusFilter}
+          onChange={e => {
+            setStatusFilter(e.target.value)
+            setPage(1)
+            load(1, itemsPerPage, timeRange, search, e.target.value)
+          }}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        >
+          <option value="">{m.statusAll}</option>
+          <option value="Paid">Paid</option>
+          <option value="Pending">Pending</option>
+        </select>
 
         <AdvancedTimeRangeSelector
           value={timeRange}
@@ -231,17 +248,28 @@ export default function PayInRequestsPage() {
                   </td>
                 </tr>
               ) : (
-                items.map((item, idx) => (
+                items.map((item, idx) => {
+                  const isHighlighted = highlightedId === item.id
+                  const isPromptPay = item.payinAccountType?.toLowerCase() === 'promptpay'
+                  return (
                   <tr
                     key={item.id}
-                    onClick={() => router.push(`/business-setup/payment/pay-in-requests/${item.id}`)}
+                    onClick={() => setHighlightedId(item.id)}
                     className={clsx(
                       'cursor-pointer transition-colors',
-                      idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
+                      isHighlighted
+                        ? '!bg-primary-100 border-l-[3px] border-l-primary-500'
+                        : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                     )}
                   >
-                    <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                      <span className="text-sm text-gray-600">{formatDateTime(item.createdDate)}</span>
+                    <td
+                      className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group"
+                      onClick={e => { e.stopPropagation(); router.push(`/business-setup/payment/pay-in-requests/${item.id}`) }}
+                    >
+                      <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
+                      {(item.refId || item.refId1) && (
+                        <p className="text-xs text-gray-400 mt-0.5 font-mono">{item.refId ?? item.refId1}</p>
+                      )}
                     </td>
 
                     <td className="px-4 py-3 border-b border-gray-100">
@@ -263,16 +291,14 @@ export default function PayInRequestsPage() {
                         <p className="text-sm text-gray-400">—</p>
                       )}
                       {item.payinBankAccountName && <p className="text-xs text-gray-500 mt-0.5">{item.payinBankAccountName}</p>}
-                      {(item.payinAccountType || item.payinAccountLevel) && (
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {item.payinAccountType && (
-                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">{item.payinAccountType}</span>
-                          )}
-                          {item.payinAccountLevel && (
-                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-full">{item.payinAccountLevel}</span>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {item.payinAccountType && (
+                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">{item.payinAccountType}</span>
+                        )}
+                        {isPromptPay && item.payinPromptPayId && (
+                          <span className="text-[10px] text-gray-500 font-mono">{item.payinPromptPayId}</span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
@@ -280,13 +306,15 @@ export default function PayInRequestsPage() {
                     </td>
 
                     <td className="px-4 py-3 border-b border-gray-100">
-                      {item.refId && <p className="text-sm text-gray-600">{item.refId}</p>}
-                      {item.refId1 && <p className="text-sm text-gray-600">{item.refId1}</p>}
-                      {item.refId2 && <p className="text-xs text-gray-400 mt-0.5">{item.refId2}</p>}
-                      {!item.refId && !item.refId1 && !item.refId2 && <span className="text-sm text-gray-400">—</span>}
+                      <span className="text-sm text-gray-600 font-mono">{item.refId ?? item.refId1 ?? '—'}</span>
+                    </td>
+
+                    <td className="px-4 py-3 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-mono">{item.refId2 ?? '—'}</span>
                     </td>
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>
@@ -302,7 +330,7 @@ export default function PayInRequestsPage() {
                 const n = Number(e.target.value)
                 setItemsPerPage(n)
                 setPage(1)
-                load(1, n, timeRange, search)
+                load(1, n, timeRange, search, statusFilter)
               }}
               className="bg-transparent border-none text-gray-700 focus:ring-0 cursor-pointer font-medium outline-none text-sm"
             >
@@ -313,14 +341,14 @@ export default function PayInRequestsPage() {
             <span className="text-xs text-gray-400">{total === 0 ? '0-0' : `${startRow}-${endRow}`} of {total}</span>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search) }}
+                onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search, statusFilter) }}
                 disabled={page <= 1 || loading}
                 className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                onClick={() => { setPage(p => p + 1); load(page + 1, itemsPerPage, timeRange, search) }}
+                onClick={() => { setPage(p => p + 1); load(page + 1, itemsPerPage, timeRange, search, statusFilter) }}
                 disabled={page >= totalPages || total === 0 || loading}
                 className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
               >

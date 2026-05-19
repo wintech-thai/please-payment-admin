@@ -356,6 +356,51 @@ export interface PaymentRequestResponse {
   payInBankCode?: string
 }
 
+// ─── Pay-In Requests ─────────────────────────────────────────────────────────
+
+export interface PayInRequestItem {
+  id: string
+  createdDate?: string | null
+  merchantCode?: string | null
+  merchantName?: string | null
+  generatedAmount?: number | null
+  requestedAmount?: number | null
+  currency?: string | null
+  status?: string | null
+  refId?: string | null
+  refId1?: string | null
+  refId2?: string | null
+  // bank account fields (API uses lowercase 'payin')
+  payinBankCode?: string | null
+  payinBankAccountNo?: string | null
+  payinBankAccountName?: string | null
+  payinPromptPayId?: string | null
+  payinAccountType?: string | null
+  payinAccountLevel?: string | null
+}
+
+export interface PayInRequestDetail extends PayInRequestItem {
+  orgId?: string | null
+  description?: string | null
+  qrProvider?: string | null
+  responseDataObj?: string | null
+  processingSteps?: string[] | null
+  processingMessages?: string | null
+  merchantId?: string | null
+  paymentTxId?: string | null
+  direction?: string | null
+}
+
+export interface GetPayInRequestsPayload {
+  FullTextSearch?: string
+  Direction?: string
+  Status?: string
+  FromDate?: string
+  ToDate?: string
+  Page?: number
+  Limit?: number
+}
+
 // ─── Common ──────────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {

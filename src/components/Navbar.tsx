@@ -53,7 +53,6 @@ export default function Navbar() {
   const businessSetupChildren = [
     { href: '/business-setup/merchant', label: t.nav.merchant, comingSoon: false },
     { href: '/business-setup/pay-in-bank-account', label: t.nav.payInBankAccount, comingSoon: false },
-    { href: '/business-setup/payment', label: t.nav.payment, comingSoon: false },
   ]
 
   return (
@@ -110,32 +109,36 @@ export default function Navbar() {
             </button>
 
             {businessSetupOpen && (
-              <div className="absolute left-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+              <div className="absolute left-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
                 {businessSetupChildren.map(item => (
                   <Link
                     key={item.href}
-                    href={item.comingSoon ? '#' : item.href}
-                    onClick={e => {
-                      if (item.comingSoon) e.preventDefault()
-                      else setBusinessSetupOpen(false)
-                    }}
+                    href={item.href}
+                    onClick={() => setBusinessSetupOpen(false)}
                     className={clsx(
                       'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
-                      item.comingSoon
-                        ? 'text-gray-400 cursor-default'
-                        : pathname.startsWith(item.href)
-                          ? 'text-primary-700 font-semibold bg-primary-50'
-                          : 'text-gray-700 hover:bg-gray-50'
+                      pathname.startsWith(item.href)
+                        ? 'text-primary-700 font-semibold bg-primary-50'
+                        : 'text-gray-700 hover:bg-gray-50'
                     )}
                   >
                     <span>{item.label}</span>
-                    {item.comingSoon && (
-                      <span className="text-xs bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full leading-none">
-                        {t.nav.comingSoon}
-                      </span>
-                    )}
                   </Link>
                 ))}
+
+                {/* Payment link */}
+                <Link
+                  href="/business-setup/payment"
+                  onClick={() => setBusinessSetupOpen(false)}
+                  className={clsx(
+                    'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
+                    pathname.startsWith('/business-setup/payment')
+                      ? 'text-primary-700 font-semibold bg-primary-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  )}
+                >
+                  <span>{t.nav.payment}</span>
+                </Link>
               </div>
             )}
           </div>
@@ -344,6 +347,20 @@ export default function Navbar() {
                 )}
               </Link>
             ))}
+
+            {/* Payment link */}
+            <Link
+              href="/business-setup/payment"
+              onClick={() => setMobileMenuOpen(false)}
+              className={clsx(
+                'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
+                pathname.startsWith('/business-setup/payment')
+                  ? 'bg-white/20 text-white'
+                  : 'text-white hover:bg-white/15'
+              )}
+            >
+              <span>{t.nav.payment}</span>
+            </Link>
           </div>
 
           {/* Report & Analytic */}

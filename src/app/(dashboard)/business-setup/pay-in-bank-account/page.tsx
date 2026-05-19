@@ -162,13 +162,13 @@ function BankAccountContent() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [openMenuId])
 
-  const fetchAccounts = async (currentPage: number) => {
+  const fetchAccounts = async (currentPage: number, search = searchTerm, type = filterType, level = filterLevel) => {
     setLoading(true)
     try {
       const filterPayload: Record<string, string> = {}
-      if (searchTerm.trim()) filterPayload.FullTextSearch = searchTerm.trim()
-      if (filterType) filterPayload.AccountType = filterType
-      if (filterLevel) filterPayload.AccountLevel = filterLevel
+      if (search.trim()) filterPayload.FullTextSearch = search.trim()
+      if (type) filterPayload.AccountType = type
+      if (level) filterPayload.AccountLevel = level
       const [listRes, countRes] = await Promise.allSettled([
         bankAccountApi.getBankAccounts({ page: currentPage, limit: itemsPerPage, ...filterPayload }),
         bankAccountApi.getBankAccountCount({ ...filterPayload }),
@@ -193,9 +193,9 @@ function BankAccountContent() {
     }
   }
 
-  useEffect(() => { fetchAccounts(page) }, [page, itemsPerPage, filterType, filterLevel])
+  useEffect(() => { fetchAccounts(page, searchTerm, filterType, filterLevel) }, [page, itemsPerPage, filterType, filterLevel])
 
-  const handleSearch = () => { setPage(1); fetchAccounts(1) }
+  const handleSearch = () => { setPage(1); fetchAccounts(1, searchTerm, filterType, filterLevel) }
 
   const handleToggleActive = async (account: BankAccountItem) => {
     const active = isAccountActive(account.status)
@@ -420,7 +420,7 @@ function BankAccountContent() {
                           {account.bankName || account.bankCode || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap font-mono text-sm">
+                      <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap text-sm">
                         {account.accountNumber || '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 whitespace-nowrap">

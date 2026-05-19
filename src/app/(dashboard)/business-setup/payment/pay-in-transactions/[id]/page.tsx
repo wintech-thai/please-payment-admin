@@ -2,50 +2,43 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { paymentRequestApi } from '@/lib/api/payment-request.api'
-import type { PayInRequestDetail } from '@/lib/api/types'
+import { paymentTxApi } from '@/lib/api/payment-tx.api'
+import type { PayInTxDetail } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock } from 'lucide-react'
-import clsx from 'clsx'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatAge(createdDate?: string | null): string {
-  if (!createdDate) return ''
-  const diffMs = Date.now() - new Date(createdDate).getTime()
-  if (diffMs < 0) return ''
-  const totalMin = Math.floor(diffMs / 60_000)
-  const hours = Math.floor(totalMin / 60)
-  const mins = totalMin % 60
-  if (hours === 0) return `${mins}min`
-  return `${hours}h ${mins}min`
+function formatDateTime(d?: string | null) {
+  if (!d) return '—'
+  try {
+    return new Date(d).toLocaleString('th-TH', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    })
+  } catch { return d }
 }
 
-function StatusBadge({ status, createdDate }: { status?: string | null; createdDate?: string | null }) {
+function StatusBadge({ status }: { status?: string | null }) {
   const s = status?.toLowerCase()
-  const isPending = s !== 'match' && s !== 'paid' && s !== 'error'
-  const age = isPending ? formatAge(createdDate) : ''
-  if (s === 'match' || s === 'paid') return (
+  if (s === 'identified') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
       <CheckCircle className="w-3.5 h-3.5" />{status}
     </span>
   )
-  if (s === 'error') return (
+  if (s === 'error' || s === 'failed') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
       <AlertCircle className="w-3.5 h-3.5" />{status}
     </span>
   )
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-        <Clock className="w-3.5 h-3.5" />{status ?? 'Pending'}
-      </span>
-      {age && <span className="text-xs text-gray-400">{age}</span>}
-    </div>
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+      <Clock className="w-3.5 h-3.5" />{status ?? '—'}
+    </span>
   )
 }
 
@@ -65,16 +58,6 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
       <div className="text-sm text-gray-800">{children}</div>
     </div>
   )
-}
-
-function formatDateTime(d?: string | null) {
-  if (!d) return '—'
-  try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
-  } catch { return d }
 }
 
 function JsonHighlight({ json }: { json: string }) {
@@ -98,25 +81,26 @@ function JsonHighlight({ json }: { json: string }) {
   )
 }
 
-export default function PayInRequestDetailPage() {
+export default function PayInTxDetailPage() {
   const { t } = useLang()
-  const m = t.payInRequest
+  const m = t.payInTx
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
-  const [detail, setDetail] = useState<PayInRequestDetail | null>(null)
+  const [detail, setDetail] = useState<PayInTxDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       try {
-        const res = await paymentRequestApi.getPaymentRequestById(id)
+        const res = await paymentTxApi.getPaymentTransactionById(id)
         const data = res.data as any
-        setDetail(data?.paymentRequest ?? data)
+        const raw = data?.paymentTransaction ?? data?.PaymentTransaction ?? data?.transaction ?? data?.Transaction ?? data
+        setDetail(raw)
       } catch {
-        toast.error('Failed to load payment request detail')
+        toast.error('Failed to load transaction detail')
       } finally {
         setLoading(false)
       }
@@ -124,22 +108,20 @@ export default function PayInRequestDetailPage() {
     load()
   }, [id])
 
-  const responseJson = (() => {
-    if (!detail?.responseDataObj) return null
+  const inputDataJson = (() => {
+    if (!detail?.rawInputObj) return null
     try {
-      const parsed = typeof detail.responseDataObj === 'string'
-        ? JSON.parse(detail.responseDataObj)
-        : detail.responseDataObj
-      if (parsed && typeof parsed === 'object') {
-        // exclude only the base64 image field, keep qrCode (text)
-        const { qrCodeImage, QrCodeImage, ...rest } = parsed
-        return JSON.stringify(rest, null, 2)
-      }
+      const parsed = typeof detail.rawInputObj === 'string'
+        ? JSON.parse(detail.rawInputObj)
+        : detail.rawInputObj
       return JSON.stringify(parsed, null, 2)
     } catch {
-      return String(detail.responseDataObj)
+      return String(detail.rawInputObj)
     }
   })()
+
+  const hasFeeInfo = detail?.payInFeePct != null || (detail?.payInFeeDecimal ?? detail?.payInFee) != null || (detail?.payInTotalAmountDecimal ?? detail?.payInTotalAmount) != null
+  const hasSenderInfo = detail?.fromBankCode || detail?.fromBankAccountNo || detail?.fromBankAccountName
 
   if (loading) {
     return (
@@ -152,10 +134,6 @@ export default function PayInRequestDetailPage() {
       </div>
     )
   }
-
-  const isPending = detail?.status?.toLowerCase() !== 'match'
-    && detail?.status?.toLowerCase() !== 'paid'
-    && detail?.status?.toLowerCase() !== 'error'
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -179,49 +157,83 @@ export default function PayInRequestDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
             <InfoRow label={m.fieldStatus}>
-              <StatusBadge status={detail?.status} createdDate={detail?.createdDate} />
+              <StatusBadge status={detail?.status} />
             </InfoRow>
+            <InfoRow label={m.fieldOrgId}>{detail?.orgId ?? '—'}</InfoRow>
             <InfoRow label={m.fieldMerchant}>
-              <span className="font-semibold">{detail?.merchantCode ?? '—'}</span>
-              {detail?.merchantName && <span className="text-gray-500 ml-2 text-xs">{detail.merchantName}</span>}
+              {detail?.merchantCode || detail?.merchantName
+                ? <><span className="font-semibold">{detail?.merchantCode ?? '—'}</span>{detail?.merchantName && <span className="text-gray-500 ml-2 text-xs">{detail.merchantName}</span>}</>
+                : '—'}
+            </InfoRow>
+            <InfoRow label={m.fieldTxAmount}>
+              {(detail?.txAmountDecimal ?? detail?.txAmount) != null
+                ? <span className="font-semibold tabular-nums">{formatAmount(detail!.txAmountDecimal ?? detail!.txAmount)} {detail!.currency ?? ''}</span>
+                : '—'}
             </InfoRow>
             <InfoRow label={m.fieldCurrency}>{detail?.currency ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldRequested}>
-              {detail?.requestedAmount != null
-                ? <span className="font-semibold tabular-nums">{formatAmount(detail.requestedAmount)}</span>
-                : '—'}
-            </InfoRow>
-            <InfoRow label={m.fieldAmount}>
-              {detail?.generatedAmount != null
-                ? <span className="font-semibold tabular-nums">{formatAmount(detail.generatedAmount)}</span>
-                : '—'}
-            </InfoRow>
-            <InfoRow label={m.fieldBank}>{detail?.payinBankCode ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldAccountNo}>{detail?.payinBankAccountNo ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldAccountName}>{detail?.payinBankAccountName ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldAccountType}>
-              {detail?.payinAccountType ? (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full ring-1 ring-blue-200">{detail.payinAccountType}</span>
-                  {detail.payinAccountType.toLowerCase() === 'promptpay' && detail.payinPromptPayId && (
-                    <span className="px-2.5 py-0.5 bg-sky-50 text-sky-700 text-xs font-semibold rounded-full ring-1 ring-sky-200">{detail.payinPromptPayId}</span>
-                  )}
-                </div>
+            <InfoRow label={m.fieldBank}>{detail?.payInBankCode ?? '—'}</InfoRow>
+            <InfoRow label={m.fieldAccountNo}>{detail?.payInBankAccountNo ?? '—'}</InfoRow>
+            <InfoRow label={m.fieldAccountName}>{detail?.payInBankAccountName ?? '—'}</InfoRow>
+            <InfoRow label={m.fieldPaymentRequestId}>
+              {detail?.paymentRequestId ? (
+                <a
+                  href={`/business-setup/payment/pay-in-requests/${detail.paymentRequestId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-600 hover:underline text-sm"
+                >
+                  {detail.paymentRequestId}
+                </a>
               ) : '—'}
             </InfoRow>
-            <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldRefId1}>{detail?.refId1 ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldRefId2}>{detail?.refId2 ?? '—'}</InfoRow>
+            {detail?.description && (
+              <InfoRow label={m.fieldDescription}>{detail.description}</InfoRow>
+            )}
           </div>
         </div>
 
-        {/* Response Data */}
+        {/* Fee Info */}
+        {hasFeeInfo && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>{m.sectionFee}</SectionHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <InfoRow label={m.fieldTxAmount}>
+                <span className="font-semibold tabular-nums">{formatAmount(detail?.txAmountDecimal ?? detail?.txAmount)}</span>
+              </InfoRow>
+              <InfoRow label={m.fieldPayInFeePct}>
+                {detail?.payInFeePct != null ? `${detail.payInFeePct}%` : '—'}
+              </InfoRow>
+              <InfoRow label={m.fieldPayInFee}>
+                <span className="tabular-nums">{formatAmount(detail?.payInFeeDecimal ?? detail?.payInFee)}</span>
+              </InfoRow>
+              <InfoRow label={m.fieldPayInTotalAmount}>
+                <span className="font-bold text-primary-700 tabular-nums text-base">{formatAmount(detail?.payInTotalAmountDecimal ?? detail?.payInTotalAmount)}</span>
+              </InfoRow>
+            </div>
+          </div>
+        )}
+
+        {/* Sender Info */}
+        {hasSenderInfo && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>{m.sectionSender}</SectionHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <InfoRow label={m.fieldSenderBank}>{detail?.fromBankCode ?? '—'}</InfoRow>
+              <InfoRow label={m.fieldSenderAccountNo}>{detail?.fromBankAccountNo ?? '—'}</InfoRow>
+              {detail?.fromBankAccountName && (
+                <InfoRow label={m.fieldSenderName}>{detail.fromBankAccountName}</InfoRow>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Input Data */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
-          <SectionHeader>{m.sectionResponse}</SectionHeader>
-          {responseJson ? (
-            <JsonHighlight json={responseJson} />
+          <SectionHeader>{m.sectionInputData}</SectionHeader>
+          {inputDataJson ? (
+            <JsonHighlight json={inputDataJson} />
           ) : (
-            <p className="text-sm text-gray-400">{m.noResponseData}</p>
+            <p className="text-sm text-gray-400">{m.noInputData}</p>
           )}
         </div>
 

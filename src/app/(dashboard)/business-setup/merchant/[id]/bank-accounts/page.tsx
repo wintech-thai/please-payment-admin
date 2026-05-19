@@ -168,14 +168,14 @@ export default function MerchantBankAccountsPage() {
                         <span className="text-sm font-semibold text-gray-800">{bankLabel(a)}</span>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm font-mono text-gray-600">{a.accountNumber ?? '—'}</span>
+                        <span className="text-sm text-gray-600">{a.accountNumber ?? '—'}</span>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">
                         {a.accountName ?? '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         {a.promptPayId ? (
-                          <span className="text-sm font-mono text-gray-600">{a.promptPayId}</span>
+                          <span className="text-sm text-gray-600">{a.promptPayId}</span>
                         ) : '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">

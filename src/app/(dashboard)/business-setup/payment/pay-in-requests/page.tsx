@@ -6,9 +6,11 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayInRequestItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+
+const HIGHLIGHTED_KEY = 'payInRequests_highlightedId'
 
 function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string } {
   if (tr.type === 'absolute' && tr.start && tr.end) {
@@ -27,7 +29,23 @@ function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string }
   return { fromDate: new Date(startMs).toISOString(), toDate: new Date(now).toISOString() }
 }
 
-function StatusBadge({ status }: { status?: string | null }) {
+function formatAmount(n?: number | null): string {
+  if (n == null) return '—'
+  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function formatAge(createdDate?: string | null): string {
+  if (!createdDate) return ''
+  const diffMs = Date.now() - new Date(createdDate).getTime()
+  if (diffMs < 0) return ''
+  const totalMin = Math.floor(diffMs / 60_000)
+  const hours = Math.floor(totalMin / 60)
+  const mins = totalMin % 60
+  if (hours === 0) return `${mins}min`
+  return `${hours}h ${mins}min`
+}
+
+function StatusBadge({ status, createdDate }: { status?: string | null; createdDate?: string | null }) {
   const s = status?.toLowerCase()
   if (s === 'match' || s === 'paid') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
@@ -41,11 +59,15 @@ function StatusBadge({ status }: { status?: string | null }) {
       {status}
     </span>
   )
+  const age = formatAge(createdDate)
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-      {status ?? 'Pending'}
-    </span>
+    <div className="flex flex-col gap-0.5">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+        {status ?? 'Pending'}
+      </span>
+      {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
+    </div>
   )
 }
 
@@ -73,7 +95,12 @@ export default function PayInRequestsPage() {
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [loading, setLoading] = useState(false)
-  const [highlightedId, setHighlightedId] = useState<string>('')
+  const [highlightedId, setHighlightedId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
+    }
+    return ''
+  })
 
   const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string) => {
     setLoading(true)
@@ -125,11 +152,16 @@ export default function PayInRequestsPage() {
     load(1, itemsPerPage, tr, search, statusFilter)
   }
 
+  const handleRowHighlight = (id: string) => {
+    setHighlightedId(id)
+    sessionStorage.setItem(HIGHLIGHTED_KEY, id)
+  }
+
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colRef1, m.colRef2]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colPaymentTxId, m.colRef1, m.colRef2]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -181,6 +213,7 @@ export default function PayInRequestsPage() {
           <option value="">{m.statusAll}</option>
           <option value="Paid">Paid</option>
           <option value="Pending">Pending</option>
+          <option value="Error">Error</option>
         </select>
 
         <AdvancedTimeRangeSelector
@@ -210,7 +243,7 @@ export default function PayInRequestsPage() {
         )}
 
         <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full text-sm border-separate border-spacing-0 min-w-[900px]">
+          <table className="w-full text-sm border-separate border-spacing-0 min-w-[1050px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50">
                 {cols.map((col, i) => (
@@ -254,7 +287,7 @@ export default function PayInRequestsPage() {
                   return (
                   <tr
                     key={item.id}
-                    onClick={() => setHighlightedId(item.id)}
+                    onClick={() => handleRowHighlight(item.id)}
                     className={clsx(
                       'cursor-pointer transition-colors',
                       isHighlighted
@@ -262,13 +295,14 @@ export default function PayInRequestsPage() {
                         : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                     )}
                   >
+                    {/* Date + ref — click navigates to detail */}
                     <td
                       className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group"
-                      onClick={e => { e.stopPropagation(); router.push(`/business-setup/payment/pay-in-requests/${item.id}`) }}
+                      onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/pay-in-requests/${item.id}`) }}
                     >
                       <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
                       {(item.refId || item.refId1) && (
-                        <p className="text-xs text-gray-400 mt-0.5 font-mono">{item.refId ?? item.refId1}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{item.refId ?? item.refId1}</p>
                       )}
                     </td>
 
@@ -279,7 +313,7 @@ export default function PayInRequestsPage() {
 
                     <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
                       <p className="text-sm font-semibold text-gray-800 tabular-nums">
-                        {item.generatedAmount != null ? item.generatedAmount.toFixed(2) : '—'}
+                        {formatAmount(item.generatedAmount)}
                       </p>
                       <p className="text-xs text-gray-400">{item.currency ?? '—'}</p>
                     </td>
@@ -296,21 +330,38 @@ export default function PayInRequestsPage() {
                           <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">{item.payinAccountType}</span>
                         )}
                         {isPromptPay && item.payinPromptPayId && (
-                          <span className="text-[10px] text-gray-500 font-mono">{item.payinPromptPayId}</span>
+                          <span className="text-[10px] text-gray-500">{item.payinPromptPayId}</span>
                         )}
                       </div>
                     </td>
 
                     <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                      <StatusBadge status={item.status} />
+                      <StatusBadge status={item.status} createdDate={item.createdDate} />
                     </td>
 
                     <td className="px-4 py-3 border-b border-gray-100">
-                      <span className="text-sm text-gray-600 font-mono">{item.refId ?? item.refId1 ?? '—'}</span>
+                      {item.paymentTxId ? (
+                        <a
+                          href={`/business-setup/payment/pay-in-transactions/${item.paymentTxId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 hover:underline"
+                        >
+                          <span className="truncate max-w-[120px]">{item.paymentTxId}</span>
+                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                        </a>
+                      ) : (
+                        <span className="text-sm text-gray-400">—</span>
+                      )}
                     </td>
 
                     <td className="px-4 py-3 border-b border-gray-100">
-                      <span className="text-sm text-gray-600 font-mono">{item.refId2 ?? '—'}</span>
+                      <span className="text-sm text-gray-600">{item.refId1 ?? '—'}</span>
+                    </td>
+
+                    <td className="px-4 py-3 border-b border-gray-100">
+                      <span className="text-sm text-gray-600">{item.refId2 ?? '—'}</span>
                     </td>
                   </tr>
                   )

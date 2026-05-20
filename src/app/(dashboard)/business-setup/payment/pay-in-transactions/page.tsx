@@ -182,9 +182,10 @@ export default function PayInTransactionsPage() {
     sessionStorage.setItem(HIGHLIGHTED_KEY, id)
   }
 
-  const totalPages = Math.ceil(total / itemsPerPage)
-  const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
-  const endRow = Math.min(page * itemsPerPage, total)
+  const displayTotal = search.trim() ? items.length : total
+  const totalPages = Math.ceil(displayTotal / itemsPerPage)
+  const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
+  const endRow = Math.min(page * itemsPerPage, displayTotal)
 
   const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, m.colSender]
 
@@ -400,7 +401,7 @@ export default function PayInTransactionsPage() {
         {/* Pagination Footer */}
         <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100">
           <span className="text-sm text-gray-500">
-            <span className="font-semibold text-gray-800">{search.trim() ? items.length : total}</span> {m.foundCount}
+            <span className="font-semibold text-gray-800">{displayTotal}</span> {m.foundCount}
           </span>
           <div className="flex items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -419,7 +420,7 @@ export default function PayInTransactionsPage() {
               </select>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-gray-400">{total === 0 ? '0-0' : `${startRow}-${endRow}`} of {total}</span>
+              <span className="text-xs text-gray-400">{displayTotal === 0 ? '0-0' : `${startRow}-${endRow}`} of {displayTotal}</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search, statusFilter) }}

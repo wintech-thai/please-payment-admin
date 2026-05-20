@@ -29,6 +29,14 @@
 @font-face {
   font-family: 'Prompt';
   src: url('/fonts/Prompt-Bold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Prompt';
+  src: url('/fonts/Prompt-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -59,6 +67,13 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #f06b1e;
 }
+
+/* JSON syntax highlight (light background) */
+.json-key    { color: #1d4ed8; font-weight: 600; }
+.json-string { color: #15803d; }
+.json-bool   { color: #b45309; }
+.json-null   { color: #9ca3af; }
+.json-number { color: #7c3aed; }
 
 @layer components {
   .btn-primary {

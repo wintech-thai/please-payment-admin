@@ -1,6 +1,6 @@
 import BankAccountSidebar from '@/components/BankAccountSidebar'
 
-export default function PayInBankAccountLayout({ children }: { children: React.ReactNode }) {
+export default function PayOutBankAccountLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-1 overflow-hidden">
       <BankAccountSidebar />

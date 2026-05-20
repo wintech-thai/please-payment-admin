@@ -7,7 +7,7 @@ import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, Building2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, Building2, ChevronLeft, ChevronRight, Webhook } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import QrPaymentModal from '@/components/QrPaymentModal'
@@ -118,13 +118,14 @@ function MerchantContent() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [openMenuId])
 
-  const fetchMerchants = async (currentPage: number, status = '') => {
+  const fetchMerchants = async (currentPage: number, status = '', search = '') => {
     setLoading(true)
     try {
       const payload = {
         page: currentPage,
         limit: itemsPerPage,
         Status: status || undefined,
+        FullTextSearch: search.trim() || undefined,
       }
       const [listRes, countRes] = await Promise.all([
         merchantApi.getMerchants(payload),
@@ -141,29 +142,20 @@ function MerchantContent() {
     }
   }
 
-  useEffect(() => { fetchMerchants(page, statusFilter) }, [page, itemsPerPage, statusFilter])
+  useEffect(() => { fetchMerchants(page, statusFilter, appliedSearch) }, [page, itemsPerPage, statusFilter, appliedSearch])
 
   const handleSearch = () => {
     setAppliedSearch(searchTerm)
     setPage(1)
   }
 
-  const displayMerchants = appliedSearch
-    ? merchants.filter(mc => {
-        const q = appliedSearch.toLowerCase()
-        return (
-          mc.code?.toLowerCase().includes(q) ||
-          mc.name?.toLowerCase().includes(q) ||
-          mc.contactEmail?.toLowerCase().includes(q)
-        )
-      })
-    : merchants
+  const displayMerchants = merchants
 
   const handleEnable = async (merchant: MerchantItem) => {
     try {
       await merchantApi.enableMerchantById(merchant.id)
       toast.success(m.enabledSuccess)
-      fetchMerchants(page, statusFilter)
+      fetchMerchants(page, statusFilter, appliedSearch)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToEnable)
     }
@@ -173,7 +165,7 @@ function MerchantContent() {
     try {
       await merchantApi.disableMerchantById(merchant.id)
       toast.success(m.disabledSuccess)
-      fetchMerchants(page, statusFilter)
+      fetchMerchants(page, statusFilter, appliedSearch)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToDisable)
     }
@@ -419,7 +411,7 @@ function MerchantContent() {
                                 </button>
                               )}
 
-                              <div className="border-t border-gray-100 my-1" />
+                              <div className="border-t border-gray-200 my-1" />
 
                               {/* API Keys & Users */}
                               <button
@@ -434,11 +426,23 @@ function MerchantContent() {
                                 className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-gray-300 cursor-not-allowed"
                               >
                                 <span className="flex items-center gap-2.5">
+                                  <Webhook className="w-4 h-4 flex-shrink-0" />
+                                  {t.nav.webhook}
+                                </span>
+                                <span className="text-[10px] bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
+                              </button>
+                              <div className="border-t border-gray-200 my-1" />
+                              <button
+                                disabled
+                                className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-gray-300 cursor-not-allowed"
+                              >
+                                <span className="flex items-center gap-2.5">
                                   <Wallet className="w-4 h-4 flex-shrink-0" />
                                   {m.walletSummary}
                                 </span>
                                 <span className="text-[10px] bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
                               </button>
+                              <div className="border-t border-gray-200 my-1" />
                               <button
                                 onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
                                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"

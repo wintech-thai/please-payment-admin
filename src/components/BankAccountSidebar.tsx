@@ -6,50 +6,28 @@ import { useState } from 'react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
-type NavItem = { href: string; label: string; icon: React.ReactNode; comingSoon?: boolean; divider?: boolean }
-type DividerItem = { divider: true; href?: never; label?: never; icon?: never; comingSoon?: never }
-type MenuItem = NavItem | DividerItem
-
-export default function PaymentSidebar() {
+export default function BankAccountSidebar() {
   const { t } = useLang()
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
-  const menuItems: MenuItem[] = [
+  const menuItems = [
     {
-      href: '/business-setup/payment/pay-in-requests',
-      label: t.nav.payInRequests,
+      href: '/business-setup/pay-in-bank-account',
+      label: t.nav.payInBankAccountSub,
       icon: (
         <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
       ),
     },
     {
-      href: '/business-setup/payment/pay-in-transactions',
-      label: t.nav.payInTransactions,
-      icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-        </svg>
-      ),
-    },
-    { divider: true },
-    {
-      href: '/business-setup/payment/withdraw-request',
-      label: t.nav.withdrawRequest,
+      href: '/business-setup/pay-out-bank-account',
+      label: t.nav.payOutBankAccountSub,
+      comingSoon: true,
       icon: (
         <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      ),
-    },
-    {
-      href: '/business-setup/payment/withdraw-transactions',
-      label: t.nav.withdrawTransactions,
-      icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
     },
@@ -80,45 +58,38 @@ export default function PaymentSidebar() {
       {/* Section label */}
       {!collapsed && (
         <div className="px-4 pt-5 pb-3">
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-widest">{t.nav.payment}</p>
+          <p className="text-xs font-semibold text-white/40 uppercase tracking-widest">{t.nav.bankAccounts}</p>
         </div>
       )}
       {collapsed && <div className="pt-5 pb-3" />}
 
       {/* Nav items */}
       <nav className="flex flex-col gap-1 px-2">
-        {menuItems.map((item, i) => {
-          if (item.divider) {
-            return <div key={`divider-${i}`} className="my-1 border-t border-white/15" />
-          }
+        {menuItems.map((item) => {
+          const isActive = pathname.startsWith(item.href)
           if (item.comingSoon) {
             return (
-              <div
+              <Link
                 key={item.href}
+                href={item.href}
                 title={collapsed ? item.label : undefined}
                 className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium opacity-50 cursor-default',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   collapsed && 'justify-center px-2',
-                  'text-white/60'
+                  isActive
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/60 hover:bg-white/10 hover:text-white/80'
                 )}
               >
                 {item.icon}
-                {!collapsed && (
-                  <>
-                    <span className="truncate flex-1">{item.label}</span>
-                    <span className="text-[10px] bg-white/20 text-white/70 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                      {t.nav.comingSoon}
-                    </span>
-                  </>
-                )}
-              </div>
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </Link>
             )
           }
-          const isActive = pathname.startsWith(item.href!)
           return (
             <Link
               key={item.href}
-              href={item.href!}
+              href={item.href}
               title={collapsed ? item.label : undefined}
               className={clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
@@ -129,7 +100,7 @@ export default function PaymentSidebar() {
               )}
             >
               {item.icon}
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && <span className="leading-tight">{item.label}</span>}
             </Link>
           )
         })}

@@ -174,7 +174,7 @@ export interface MerchantItem {
 }
 
 export interface GetMerchantsPayload {
-  search?: string
+  FullTextSearch?: string
   page?: number
   limit?: number
   Status?: string
@@ -370,6 +370,7 @@ export interface PayInRequestItem {
   refId?: string | null
   refId1?: string | null
   refId2?: string | null
+  paymentTxId?: string | null
   // bank account fields (API uses lowercase 'payin')
   payinBankCode?: string | null
   payinBankAccountNo?: string | null
@@ -394,6 +395,54 @@ export interface PayInRequestDetail extends PayInRequestItem {
 export interface GetPayInRequestsPayload {
   FullTextSearch?: string
   Direction?: string
+  Status?: string
+  FromDate?: string
+  ToDate?: string
+  Page?: number
+  Limit?: number
+}
+
+// ─── Pay-In Transactions ─────────────────────────────────────────────────────
+
+export interface PayInTxItem {
+  id: string
+  orgId?: string | null
+  merchantId?: string | null
+  merchantCode?: string | null
+  merchantName?: string | null
+  paymentRequestId?: string | null
+  description?: string | null
+  currency?: string | null
+  tags?: string | null
+  status?: string | null
+  direction?: string | null
+  txAmount?: number | null
+  txAmountDecimal?: number | null
+  payInFeePct?: number | null
+  payInFee?: number | null
+  payInFeeDecimal?: number | null
+  payInTotalAmount?: number | null
+  payInTotalAmountDecimal?: number | null
+  payInBankAccountId?: string | null
+  payInBankCode?: string | null
+  payInBankAccountNo?: string | null
+  payInBankAccountName?: string | null
+  fromBankCode?: string | null
+  fromBankAccountNo?: string | null
+  fromBankAccountName?: string | null
+  processingMessages?: string | null
+  createdDate?: string | null
+  processingSteps?: string[] | null
+  rawInputObj?: unknown | null
+}
+
+export interface PayInTxDetail extends PayInTxItem {
+  rawInput?: string | null
+  rawInputObj?: unknown | null
+}
+
+export interface GetPayInTxPayload {
+  FullTextSearch?: string
   Status?: string
   FromDate?: string
   ToDate?: string

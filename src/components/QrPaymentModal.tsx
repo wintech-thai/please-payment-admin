@@ -303,9 +303,9 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
                       {result.payInBankAccountNo && <p className="text-xs text-gray-500">{result.payInBankCode} · {result.payInBankAccountNo}</p>}
                     </div>
                   )}
-                  {result.requestedAmount != null && (
+                  {result.generatedAmount != null && (
                     <p className="text-lg font-bold text-primary-700">
-                      ฿{result.requestedAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      ฿{result.generatedAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                     </p>
                   )}
                 </div>

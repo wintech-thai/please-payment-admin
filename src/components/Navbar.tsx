@@ -52,7 +52,7 @@ export default function Navbar() {
 
   const businessSetupChildren = [
     { href: '/business-setup/merchant', label: t.nav.merchant, comingSoon: false },
-    { href: '/business-setup/pay-in-bank-account', label: t.nav.payInBankAccount, comingSoon: false },
+    { href: '/business-setup/pay-in-bank-account', label: t.nav.bankAccounts, comingSoon: false },
   ]
 
   return (

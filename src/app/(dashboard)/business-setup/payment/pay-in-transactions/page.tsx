@@ -34,6 +34,17 @@ function formatAmount(n?: number | null): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function formatAge(createdDate?: string | null): string {
+  if (!createdDate) return ''
+  const diffMs = Date.now() - new Date(createdDate).getTime()
+  if (diffMs < 0) return ''
+  const totalMin = Math.floor(diffMs / 60_000)
+  const hours = Math.floor(totalMin / 60)
+  const mins = totalMin % 60
+  if (hours === 0) return `${mins}min`
+  return `${hours}h ${mins}min`
+}
+
 function formatDateTime(d?: string | null) {
   if (!d) return '—'
   try {
@@ -44,20 +55,44 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
-function StatusBadge({ status }: { status?: string | null }) {
+function StatusBadge({ status, createdDate, paymentRequestId }: {
+  status?: string | null
+  createdDate?: string | null
+  paymentRequestId?: string | null
+}) {
   const s = status?.toLowerCase()
   if (s === 'identified') return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-      {status}
-    </span>
+    <div className="flex flex-col gap-0.5 items-start">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+        {status}
+      </span>
+      {paymentRequestId && (
+        <a
+          href={`/business-setup/payment/pay-in-requests/${paymentRequestId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 hover:underline ml-1"
+        >
+          <span className="truncate max-w-[130px]">{paymentRequestId}</span>
+          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+        </a>
+      )}
+    </div>
   )
-  if (s === 'unidentified') return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-      {status}
-    </span>
-  )
+  if (s === 'unidentified') {
+    const age = formatAge(createdDate)
+    return (
+      <div className="flex flex-col gap-0.5 items-start">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+          {status}
+        </span>
+        {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
+      </div>
+    )
+  }
   if (s === 'error' || s === 'failed') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
       <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
@@ -78,7 +113,6 @@ export default function PayInTransactionsPage() {
   const router = useRouter()
 
   const [search, setSearch] = useState('')
-  const [appliedSearch, setAppliedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
   const [items, setItems] = useState<PayInTxItem[]>([])
@@ -93,16 +127,20 @@ export default function PayInTransactionsPage() {
     return ''
   })
 
-  const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, _q: string, status: string) => {
+  const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string) => {
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)
       const payload: Record<string, unknown> = { Page: currentPage, Limit: limit, FromDate: fromDate, ToDate: toDate }
+      if (q.trim()) payload.FullTextSearch = q.trim()
       if (status) payload.Status = status
+
+      const countPayload = { ...payload }
+      delete countPayload.FullTextSearch
 
       const [listRes, countRes] = await Promise.allSettled([
         paymentTxApi.getPayInTransactions(payload),
-        paymentTxApi.getPayInTransactionCount(payload),
+        paymentTxApi.getPayInTransactionCount(countPayload),
       ])
 
       if (listRes.status === 'rejected') throw listRes.reason
@@ -129,7 +167,6 @@ export default function PayInTransactionsPage() {
   useEffect(() => { load(1, itemsPerPage, timeRange, search, statusFilter) }, [])
 
   const handleRefresh = () => {
-    setAppliedSearch(search)
     setPage(1)
     load(1, itemsPerPage, timeRange, search, statusFilter)
   }
@@ -145,27 +182,11 @@ export default function PayInTransactionsPage() {
     sessionStorage.setItem(HIGHLIGHTED_KEY, id)
   }
 
-  const displayItems = appliedSearch.trim()
-    ? items.filter(item => {
-        const q = appliedSearch.toLowerCase()
-        return (
-          item.id?.toLowerCase().includes(q) ||
-          item.merchantCode?.toLowerCase().includes(q) ||
-          item.merchantName?.toLowerCase().includes(q) ||
-          item.payInBankCode?.toLowerCase().includes(q) ||
-          item.payInBankAccountNo?.toLowerCase().includes(q) ||
-          item.paymentRequestId?.toLowerCase().includes(q) ||
-          item.fromBankCode?.toLowerCase().includes(q) ||
-          item.fromBankAccountNo?.toLowerCase().includes(q)
-        )
-      })
-    : items
-
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colPaymentRequestId, m.colSender]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, m.colSender]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -238,16 +259,8 @@ export default function PayInTransactionsPage() {
 
       {/* Table */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white rounded-xl shadow-sm border border-gray-100">
-        {!loading && (
-          <div className="flex-none px-4 pt-3 pb-1">
-            <span className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-800">{appliedSearch.trim() ? displayItems.length : total}</span> {m.foundCount}
-            </span>
-          </div>
-        )}
-
         <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full text-sm border-separate border-spacing-0 min-w-[1050px]">
+          <table className="w-full text-sm border-separate border-spacing-0 min-w-[1100px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50">
                 {cols.map((col, i) => (
@@ -257,7 +270,7 @@ export default function PayInTransactionsPage() {
                       'px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
                       i === 0 && 'rounded-tl-xl text-left',
                       i === cols.length - 1 && 'rounded-tr-xl text-left',
-                      i === 2 ? 'text-right' : 'text-left'
+                      (i === 2 || i === 3) ? 'text-right' : 'text-left'
                     )}
                   >
                     {col}
@@ -278,14 +291,14 @@ export default function PayInTransactionsPage() {
                     </div>
                   </td>
                 </tr>
-              ) : displayItems.length === 0 ? (
+              ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={cols.length} className="px-4 py-16 text-center">
                     <p className="text-sm font-semibold text-gray-500">{m.noData}</p>
                   </td>
                 </tr>
               ) : (
-                displayItems.map((item, idx) => {
+                items.map((item, idx) => {
                   const isHighlighted = highlightedId === item.id
                   return (
                     <tr
@@ -298,7 +311,7 @@ export default function PayInTransactionsPage() {
                           : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                       )}
                     >
-                      {/* Date — click navigates to detail */}
+                      {/* Date */}
                       <td
                         className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group"
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/pay-in-transactions/${item.id}`) }}
@@ -308,7 +321,7 @@ export default function PayInTransactionsPage() {
                         </span>
                       </td>
 
-                      {/* Org / Merchant */}
+                      {/* Merchant */}
                       <td className="px-4 py-3 border-b border-gray-100">
                         {item.merchantCode || item.merchantName ? (
                           <>
@@ -316,7 +329,7 @@ export default function PayInTransactionsPage() {
                             {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
                           </>
                         ) : (
-                          <p className="text-xs text-gray-400">{item.orgId ?? '—'}</p>
+                          <p className="text-sm text-gray-400">—</p>
                         )}
                       </td>
 
@@ -325,14 +338,20 @@ export default function PayInTransactionsPage() {
                         <p className="text-sm font-semibold text-gray-800 tabular-nums">
                           {formatAmount(item.txAmountDecimal ?? item.txAmount)}
                         </p>
-                        {(item.payInTotalAmountDecimal ?? item.payInTotalAmount) != null &&
-                          (item.payInTotalAmountDecimal ?? item.payInTotalAmount) !== (item.txAmountDecimal ?? item.txAmount) && (
-                          <p className="text-xs text-gray-400 tabular-nums">net {formatAmount(item.payInTotalAmountDecimal ?? item.payInTotalAmount)}</p>
+                        {item.payInFeePct != null && (
+                          <p className="text-xs text-gray-400 tabular-nums">{item.payInFeePct}%</p>
                         )}
                         <p className="text-xs text-gray-400">{item.currency ?? '—'}</p>
                       </td>
 
-                      {/* Receiving Bank Account */}
+                      {/* Fee */}
+                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                        <p className="text-sm text-gray-700 tabular-nums">
+                          {formatAmount(item.payInFeeDecimal ?? item.payInFee)}
+                        </p>
+                      </td>
+
+                      {/* Bank Account */}
                       <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
                         {item.payInBankCode || item.payInBankAccountNo ? (
                           <p className="text-sm font-semibold text-gray-800">
@@ -347,26 +366,12 @@ export default function PayInTransactionsPage() {
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <StatusBadge status={item.status} />
-                      </td>
-
-                      {/* Payment Request ID */}
                       <td className="px-4 py-3 border-b border-gray-100">
-                        {item.paymentRequestId ? (
-                          <a
-                            href={`/business-setup/payment/pay-in-requests/${item.paymentRequestId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={e => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 hover:underline"
-                          >
-                            <span className="truncate max-w-[120px]">{item.paymentRequestId}</span>
-                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                          </a>
-                        ) : (
-                          <span className="text-sm text-gray-400">—</span>
-                        )}
+                        <StatusBadge
+                          status={item.status}
+                          createdDate={item.createdDate}
+                          paymentRequestId={item.paymentRequestId}
+                        />
                       </td>
 
                       {/* Sender */}
@@ -393,39 +398,44 @@ export default function PayInTransactionsPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex items-center justify-end px-6 py-3 border-t border-gray-100 gap-4 sm:gap-6">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span>{t.admin.rowsPerPage}</span>
-            <select
-              value={itemsPerPage}
-              onChange={e => {
-                const n = Number(e.target.value)
-                setItemsPerPage(n)
-                setPage(1)
-                load(1, n, timeRange, search, statusFilter)
-              }}
-              className="bg-transparent border-none text-gray-700 focus:ring-0 cursor-pointer font-medium outline-none text-sm"
-            >
-              {[25, 50, 100, 200].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-gray-400">{total === 0 ? '0-0' : `${startRow}-${endRow}`} of {total}</span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search, statusFilter) }}
-                disabled={page <= 1 || loading}
-                className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
+        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100">
+          <span className="text-sm text-gray-500">
+            <span className="font-semibold text-gray-800">{search.trim() ? items.length : total}</span> {m.foundCount}
+          </span>
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{t.admin.rowsPerPage}</span>
+              <select
+                value={itemsPerPage}
+                onChange={e => {
+                  const n = Number(e.target.value)
+                  setItemsPerPage(n)
+                  setPage(1)
+                  load(1, n, timeRange, search, statusFilter)
+                }}
+                className="bg-transparent border-none text-gray-700 focus:ring-0 cursor-pointer font-medium outline-none text-sm"
               >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => { setPage(p => p + 1); load(page + 1, itemsPerPage, timeRange, search, statusFilter) }}
-                disabled={page >= totalPages || total === 0 || loading}
-                className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+                {[25, 50, 100, 200].map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-gray-400">{total === 0 ? '0-0' : `${startRow}-${endRow}`} of {total}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search, statusFilter) }}
+                  disabled={page <= 1 || loading}
+                  className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => { setPage(p => p + 1); load(page + 1, itemsPerPage, timeRange, search, statusFilter) }}
+                  disabled={page >= totalPages || total === 0 || loading}
+                  className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

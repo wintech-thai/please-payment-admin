@@ -61,7 +61,7 @@ function StatusBadge({ status, createdDate }: { status?: string | null; createdD
   )
   const age = formatAge(createdDate)
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5 items-start">
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
         {status ?? 'Pending'}
@@ -161,7 +161,7 @@ export default function PayInRequestsPage() {
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colPaymentTxId, m.colRef1, m.colRef2]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colRef1, m.colRef2]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -234,13 +234,6 @@ export default function PayInRequestsPage() {
 
       {/* Table */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white rounded-xl shadow-sm border border-gray-100">
-        {!loading && (
-          <div className="flex-none px-4 pt-3 pb-1">
-            <span className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-800">{total}</span> {m.foundCount}
-            </span>
-          </div>
-        )}
 
         <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="w-full text-sm border-separate border-spacing-0 min-w-[1050px]">
@@ -335,24 +328,19 @@ export default function PayInRequestsPage() {
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                      <StatusBadge status={item.status} createdDate={item.createdDate} />
-                    </td>
-
                     <td className="px-4 py-3 border-b border-gray-100">
-                      {item.paymentTxId ? (
+                      <StatusBadge status={item.status} createdDate={item.createdDate} />
+                      {item.status?.toLowerCase() === 'paid' && item.paymentTxId && (
                         <a
                           href={`/business-setup/payment/pay-in-transactions/${item.paymentTxId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={e => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 hover:underline"
+                          className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 hover:underline mt-1"
                         >
-                          <span className="truncate max-w-[120px]">{item.paymentTxId}</span>
+                          <span className="truncate max-w-[130px]">{item.paymentTxId}</span>
                           <ExternalLink className="w-3 h-3 flex-shrink-0" />
                         </a>
-                      ) : (
-                        <span className="text-sm text-gray-400">—</span>
                       )}
                     </td>
 
@@ -372,7 +360,11 @@ export default function PayInRequestsPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex items-center justify-end px-6 py-3 border-t border-gray-100 gap-4 sm:gap-6">
+        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100">
+          <span className="text-sm text-gray-500">
+            <span className="font-semibold text-gray-800">{search.trim() ? items.length : total}</span> {m.foundCount}
+          </span>
+          <div className="flex items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>{t.admin.rowsPerPage}</span>
             <select
@@ -406,6 +398,7 @@ export default function PayInRequestsPage() {
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
+          </div>
           </div>
         </div>
       </div>

@@ -177,19 +177,13 @@ function MerchantContent() {
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
 
-  const formatDate = (d?: string | null) => {
-    if (!d) return '—'
-    try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) }
-    catch { return d }
-  }
-
   const cols = [
     m.colCode, m.colName, m.colEmail,
     `${m.colPayInCount} / ${m.colPayOutCount}`,
     m.colStatus,
     m.colPayInPercent, m.colPayOutPercent,
     m.colPayInRange, m.colPayOutRange,
-    m.colCreated, m.colAction,
+    m.colBalance, m.colAction,
   ]
 
   return (
@@ -284,7 +278,8 @@ function MerchantContent() {
                   <th
                     key={col}
                     className={clsx(
-                      'px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
+                      'px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
+                      i === cols.length - 2 ? 'text-right' : 'text-left',
                       i === 0 && 'rounded-tl-xl',
                       i === cols.length - 1 && 'rounded-tr-xl'
                     )}
@@ -376,8 +371,18 @@ function MerchantContent() {
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 text-center whitespace-nowrap">
                         {formatRange(merchant.payoutMinAmount, merchant.payoutMaxAmount)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500 whitespace-nowrap">
-                        {formatDate(merchant.createdDate)}
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm whitespace-nowrap text-right">
+                        {merchant.currentBalance != null ? (
+                          <Link
+                            href={`/business-setup/merchant/${merchant.id}/wallet`}
+                            onClick={e => e.stopPropagation()}
+                            className="tabular-nums text-gray-700 hover:underline hover:text-primary-600"
+                          >
+                            {merchant.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </Link>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
 
                       {/* Actions — 3-dot menu */}
@@ -433,14 +438,11 @@ function MerchantContent() {
                               </button>
                               <div className="border-t border-gray-200 my-1" />
                               <button
-                                disabled
-                                className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-gray-300 cursor-not-allowed"
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/merchant/${merchant.id}/wallet`) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <span className="flex items-center gap-2.5">
-                                  <Wallet className="w-4 h-4 flex-shrink-0" />
-                                  {m.walletSummary}
-                                </span>
-                                <span className="text-[10px] bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
+                                <Wallet className="w-4 h-4 flex-shrink-0" />
+                                {m.walletSummary}
                               </button>
                               <div className="border-t border-gray-200 my-1" />
                               <button

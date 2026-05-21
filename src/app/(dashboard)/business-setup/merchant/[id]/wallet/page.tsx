@@ -225,7 +225,6 @@ export default function MerchantWalletPage() {
 
   const [wallet, setWallet] = useState<WalletItem | null>(null)
   const [merchant, setMerchant] = useState<MerchantItem | null>(null)
-  const [allTxs, setAllTxs] = useState<PointTxItem[]>([])
   const [txs, setTxs] = useState<PointTxItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -262,17 +261,26 @@ export default function MerchantWalletPage() {
     }
   }
 
-  const fetchAllTxs = useCallback(async (w: WalletItem) => {
+  const loadTxs = useCallback(async (currentPage: number, limit: number, w: WalletItem) => {
     if (!w.orgId || !w.id) return
     setTxLoading(true)
     try {
-      const res = await walletApi.getPointTxsByWalletId(w.orgId, w.id, { limit: 9999 })
-      const d = res.data as any
-      const all: PointTxItem[] = Array.isArray(d)
-        ? d
-        : (d?.pointTxs ?? d?.PointTxs ?? d?.pointTransactions ?? d?.PointTransactions ?? d?.transactions ?? [])
-      setAllTxs(all)
-      setTotal(all.length)
+      const offset = (currentPage - 1) * limit
+      const [listRes, countRes] = await Promise.allSettled([
+        walletApi.getPointTxsByWalletId(w.orgId, w.id, { Offset: offset, Limit: limit }),
+        walletApi.getPointTxsCountByWalletId(w.orgId, w.id, {}),
+      ])
+      if (listRes.status === 'fulfilled') {
+        const d = listRes.value.data as any
+        const list: PointTxItem[] = Array.isArray(d)
+          ? d
+          : (d?.pointTxs ?? d?.PointTxs ?? d?.pointTransactions ?? d?.PointTransactions ?? d?.transactions ?? [])
+        setTxs(list)
+      }
+      if (countRes.status === 'fulfilled') {
+        const d = countRes.value.data as any
+        setTotal(typeof d === 'number' ? d : (d?.count ?? d?.Count ?? d?.total ?? 0))
+      }
     } catch {
       toast.error(wt.toastFailedToLoadTxs)
     } finally {
@@ -283,13 +291,8 @@ export default function MerchantWalletPage() {
   useEffect(() => { loadWalletAndMerchant() }, [merchantId])
 
   useEffect(() => {
-    if (wallet) fetchAllTxs(wallet)
-  }, [wallet])
-
-  useEffect(() => {
-    const start = (page - 1) * itemsPerPage
-    setTxs(allTxs.slice(start, start + itemsPerPage))
-  }, [allTxs, page, itemsPerPage])
+    if (wallet) loadTxs(page, itemsPerPage, wallet)
+  }, [wallet, page, itemsPerPage])
 
   const handleRefresh = () => {
     loadWalletAndMerchant()

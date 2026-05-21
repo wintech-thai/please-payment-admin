@@ -225,6 +225,7 @@ export default function MerchantWalletPage() {
 
   const [wallet, setWallet] = useState<WalletItem | null>(null)
   const [merchant, setMerchant] = useState<MerchantItem | null>(null)
+  const [allTxs, setAllTxs] = useState<PointTxItem[]>([])
   const [txs, setTxs] = useState<PointTxItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -261,7 +262,7 @@ export default function MerchantWalletPage() {
     }
   }
 
-  const loadTxs = useCallback(async (currentPage: number, limit: number, w: WalletItem) => {
+  const fetchAllTxs = useCallback(async (w: WalletItem) => {
     if (!w.orgId || !w.id) return
     setTxLoading(true)
     try {
@@ -270,9 +271,8 @@ export default function MerchantWalletPage() {
       const all: PointTxItem[] = Array.isArray(d)
         ? d
         : (d?.pointTxs ?? d?.PointTxs ?? d?.pointTransactions ?? d?.PointTransactions ?? d?.transactions ?? [])
+      setAllTxs(all)
       setTotal(all.length)
-      const start = (currentPage - 1) * limit
-      setTxs(all.slice(start, start + limit))
     } catch {
       toast.error(wt.toastFailedToLoadTxs)
     } finally {
@@ -283,8 +283,13 @@ export default function MerchantWalletPage() {
   useEffect(() => { loadWalletAndMerchant() }, [merchantId])
 
   useEffect(() => {
-    if (wallet) loadTxs(page, itemsPerPage, wallet)
-  }, [wallet, page, itemsPerPage])
+    if (wallet) fetchAllTxs(wallet)
+  }, [wallet])
+
+  useEffect(() => {
+    const start = (page - 1) * itemsPerPage
+    setTxs(allTxs.slice(start, start + itemsPerPage))
+  }, [allTxs, page, itemsPerPage])
 
   const handleRefresh = () => {
     loadWalletAndMerchant()

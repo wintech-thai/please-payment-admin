@@ -492,8 +492,8 @@ export interface AddPointPayload {
 }
 
 export interface GetPointTxsPayload {
-  Page?: number
-  Limit?: number
+  page?: number
+  limit?: number
 }
 
 export interface SubmitLinePaymentTxPayload {

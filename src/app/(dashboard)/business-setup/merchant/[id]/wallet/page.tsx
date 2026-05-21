@@ -265,22 +265,14 @@ export default function MerchantWalletPage() {
     if (!w.orgId || !w.id) return
     setTxLoading(true)
     try {
-      const payload = { Page: currentPage, Limit: limit }
-      const [listRes, countRes] = await Promise.allSettled([
-        walletApi.getPointTxsByWalletId(w.orgId, w.id, payload),
-        walletApi.getPointTxsCountByWalletId(w.orgId, w.id, payload),
-      ])
-      if (listRes.status === 'fulfilled') {
-        const d = listRes.value.data as any
-        const list: PointTxItem[] = Array.isArray(d)
-          ? d
-          : (d?.pointTxs ?? d?.PointTxs ?? d?.pointTransactions ?? d?.PointTransactions ?? d?.transactions ?? [])
-        setTxs(list)
-      }
-      if (countRes.status === 'fulfilled') {
-        const d = countRes.value.data as any
-        setTotal(typeof d === 'number' ? d : (d?.count ?? d?.Count ?? d?.total ?? 0))
-      }
+      const res = await walletApi.getPointTxsByWalletId(w.orgId, w.id, { limit: 9999 })
+      const d = res.data as any
+      const all: PointTxItem[] = Array.isArray(d)
+        ? d
+        : (d?.pointTxs ?? d?.PointTxs ?? d?.pointTransactions ?? d?.PointTransactions ?? d?.transactions ?? [])
+      setTotal(all.length)
+      const start = (currentPage - 1) * limit
+      setTxs(all.slice(start, start + limit))
     } catch {
       toast.error(wt.toastFailedToLoadTxs)
     } finally {

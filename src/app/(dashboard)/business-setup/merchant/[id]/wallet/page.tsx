@@ -4,11 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { walletApi } from '@/lib/api/wallet.api'
 import { merchantApi } from '@/lib/api/merchant.api'
-import { bankAccountApi } from '@/lib/api/bank-account.api'
-import { paymentTxApi } from '@/lib/api/payment-tx.api'
 import type { WalletItem, PointTxItem, MerchantItem, AddPointPayload } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, ChevronRight, Plus, TrendingUp, TrendingDown, RefreshCw, ExternalLink, X, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, RefreshCw, ExternalLink, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
@@ -216,219 +214,6 @@ function PointModal({
   )
 }
 
-// ── Create Transaction Modal ──────────────────────────────────────────────────
-
-interface PayInBankAccount {
-  bankAccountId: string
-  bankCode?: string | null
-  bankName?: string | null
-  accountNumber?: string | null
-  accountName?: string | null
-  accountType?: string | null
-}
-
-function CreateTxModal({
-  merchantId,
-  onSuccess,
-  onClose,
-  wt,
-}: {
-  merchantId: string
-  onSuccess: () => void
-  onClose: () => void
-  wt: ReturnType<typeof useLang>['t']['merchant']['wallet']
-}) {
-  const [bankAccounts, setBankAccounts] = useState<PayInBankAccount[]>([])
-  const [bankSearch, setBankSearch] = useState('')
-  const [selectedBank, setSelectedBank] = useState<PayInBankAccount | null>(null)
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [paymentAmount, setPaymentAmount] = useState('')
-  const [sourceBankCode, setSourceBankCode] = useState('')
-  const [sourceBankAccountNo, setSourceBankAccountNo] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [loadingBanks, setLoadingBanks] = useState(false)
-
-  useEffect(() => {
-    const fetchBankAccounts = async () => {
-      setLoadingBanks(true)
-      try {
-        const res = await merchantApi.getPayInBankAccountsForMerchant(merchantId)
-        const data = res.data as any
-        const list: PayInBankAccount[] = Array.isArray(data)
-          ? data
-          : (data?.bankAccounts ?? data?.BankAccounts ?? [])
-        setBankAccounts(list)
-      } catch {
-        toast.error(wt.toastFailedToLoadBanks)
-      } finally {
-        setLoadingBanks(false)
-      }
-    }
-    fetchBankAccounts()
-  }, [merchantId, wt.toastFailedToLoadBanks])
-
-  const filteredBanks = bankAccounts.filter(b => {
-    const q = bankSearch.toLowerCase()
-    return (
-      b.bankCode?.toLowerCase().includes(q) ||
-      b.accountNumber?.toLowerCase().includes(q) ||
-      b.accountName?.toLowerCase().includes(q) ||
-      b.bankName?.toLowerCase().includes(q)
-    )
-  })
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedBank) { toast.error(wt.toastBankRequired); return }
-    const amount = parseFloat(paymentAmount)
-    if (!amount || amount <= 0) { toast.error(wt.toastPaymentAmountRequired); return }
-
-    setLoading(true)
-    try {
-      let apiKey: string | undefined
-      try {
-        const keyRes = await bankAccountApi.getLinePaymentTxNotiApiKeys(selectedBank.bankAccountId)
-        const keyData = keyRes.data as any
-        const keys: any[] = Array.isArray(keyData) ? keyData : (keyData?.apiKeys ?? keyData?.keys ?? [])
-        const active = keys.find((k: any) => k.status?.toLowerCase() === 'active') ?? keys[0]
-        apiKey = active?.key ?? active?.apiKey ?? active?.value
-      } catch {
-        // proceed without key — server may still accept admin token
-      }
-
-      await paymentTxApi.submitLinePaymentTxNotification(selectedBank.bankAccountId, {
-        PaymentAmount: parseFloat(amount.toFixed(2)),
-        RemainAmount: 0,
-        TxType: 'PayIn',
-        SourceBankCode: sourceBankCode || undefined,
-        SourceBankAccountNo: sourceBankAccountNo || undefined,
-      }, apiKey)
-      toast.success(wt.toastCreateSuccess)
-      onSuccess()
-      onClose()
-    } catch {
-      toast.error(wt.toastCreateFailed)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-900">{wt.modalCreateTxTitle}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {/* Bank Account searchable dropdown */}
-          <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
-              {wt.labelBankAccount} <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={selectedBank
-                    ? `${selectedBank.bankCode} · ${selectedBank.accountNumber}`
-                    : bankSearch}
-                  onChange={e => {
-                    setBankSearch(e.target.value)
-                    setSelectedBank(null)
-                    setShowDropdown(true)
-                  }}
-                  onFocus={() => setShowDropdown(true)}
-                  placeholder={loadingBanks ? wt.bankLoadingPlaceholder : wt.bankSearchPlaceholder}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              {showDropdown && filteredBanks.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {filteredBanks.map(b => (
-                    <button
-                      key={b.bankAccountId}
-                      type="button"
-                      onClick={() => {
-                        setSelectedBank(b)
-                        setBankSearch('')
-                        setShowDropdown(false)
-                      }}
-                      className="w-full px-3 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors"
-                    >
-                      <p className="font-semibold text-gray-800">{b.bankCode} · {b.accountNumber}</p>
-                      {b.accountName && <p className="text-xs text-gray-500">{b.accountName}</p>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
-              {wt.labelPaymentAmount} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={paymentAmount}
-              onChange={e => setPaymentAmount(e.target.value)}
-              placeholder={wt.amountPlaceholder}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{wt.labelSourceBankCode}</label>
-              <input
-                type="text"
-                value={sourceBankCode}
-                onChange={e => setSourceBankCode(e.target.value)}
-                placeholder={wt.sourceBankCodePlaceholder}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{wt.labelSourceAccountNo}</label>
-              <input
-                type="text"
-                value={sourceBankAccountNo}
-                onChange={e => setSourceBankAccountNo(e.target.value)}
-                placeholder={wt.sourceAccountNoPlaceholder}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-            >
-              {wt.btnCancel}
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors disabled:opacity-60"
-            >
-              {loading ? wt.btnCreating : wt.btnCreate}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function MerchantWalletPage() {
@@ -446,8 +231,13 @@ export default function MerchantWalletPage() {
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [loading, setLoading] = useState(true)
   const [txLoading, setTxLoading] = useState(false)
-  const [modal, setModal] = useState<'add' | 'deduct' | 'create' | null>(null)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [modal, setModal] = useState<'add' | 'deduct' | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem(`wallet_highlightedId_${merchantId}`) ?? null
+    }
+    return null
+  })
 
   const loadWalletAndMerchant = async () => {
     setLoading(true)
@@ -472,13 +262,13 @@ export default function MerchantWalletPage() {
   }
 
   const loadTxs = useCallback(async (currentPage: number, limit: number, w: WalletItem) => {
-    if (!w.orgId || !w.merchantId) return
+    if (!w.orgId || !w.id) return
     setTxLoading(true)
     try {
       const payload = { Page: currentPage, Limit: limit }
       const [listRes, countRes] = await Promise.allSettled([
-        walletApi.getPointTxsByWalletId(w.orgId, w.merchantId, payload),
-        walletApi.getPointTxsCountByWalletId(w.orgId, w.merchantId, payload),
+        walletApi.getPointTxsByWalletId(w.orgId, w.id, payload),
+        walletApi.getPointTxsCountByWalletId(w.orgId, w.id, payload),
       ])
       if (listRes.status === 'fulfilled') {
         const d = listRes.value.data as any
@@ -529,7 +319,7 @@ export default function MerchantWalletPage() {
       <div className="flex-shrink-0 flex items-start justify-between pb-4">
         <div>
           <button
-            onClick={() => router.push('/business-setup/merchant')}
+            onClick={() => router.push(`/business-setup/merchant?highlight=${merchantId}`)}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-3 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -545,13 +335,6 @@ export default function MerchantWalletPage() {
             className="p-2 text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setModal('create')}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {wt.btnCreateTx}
           </button>
           <button
             onClick={() => setModal('add')}
@@ -639,9 +422,13 @@ export default function MerchantWalletPage() {
                   <th
                     key={col}
                     className={clsx(
-                      'px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
+                      'py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
                       [3, 4, 6, 7].includes(i) ? 'text-right' : 'text-left'
                     )}
+                    style={{
+                      paddingLeft: i === 5 ? '2rem' : i === 6 ? '0.75rem' : '1.5rem',
+                      paddingRight: i === 5 ? '0.75rem' : i === 6 ? '1.5rem' : '1.5rem',
+                    }}
                   >
                     {col}
                   </th>
@@ -677,7 +464,13 @@ export default function MerchantWalletPage() {
                   return (
                     <tr
                       key={tx.id ?? idx}
-                      onClick={() => setSelectedId(prev => prev === (tx.id ?? String(idx)) ? null : (tx.id ?? String(idx)))}
+                      onClick={() => {
+                        const rowId = tx.id ?? String(idx)
+                        const next = selectedId === rowId ? null : rowId
+                        setSelectedId(next)
+                        if (next) sessionStorage.setItem(`wallet_highlightedId_${merchantId}`, next)
+                        else sessionStorage.removeItem(`wallet_highlightedId_${merchantId}`)
+                      }}
                       className={clsx(
                         'cursor-pointer transition-colors',
                         isSelected
@@ -685,30 +478,30 @@ export default function MerchantWalletPage() {
                           : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                       )}
                     >
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">
                         {formatDateTime(tx.createdDate)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 max-w-[220px]">
+                      <td className="px-6 py-3 border-b border-gray-100 max-w-[220px]">
                         <TagsCell tags={tx.tags} />
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 max-w-[200px] truncate">
+                      <td className="px-6 py-3 border-b border-gray-100 text-sm text-gray-600 max-w-[200px] truncate">
                         {tx.description || '—'}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                      <td className="px-6 py-3 border-b border-gray-100 text-right whitespace-nowrap">
                         {isPayIn ? (
                           <span className="text-sm font-semibold text-emerald-700 tabular-nums">
                             +{formatAmount(amount)}
                           </span>
                         ) : <span className="text-gray-300">—</span>}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                      <td className="px-6 py-3 border-b border-gray-100 text-right whitespace-nowrap">
                         {!isPayIn ? (
                           <span className="text-sm font-semibold text-rose-700 tabular-nums">
                             -{formatAmount(amount)}
                           </span>
                         ) : <span className="text-gray-300">—</span>}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="py-3 border-b border-gray-100" style={{ paddingLeft: '2rem', paddingRight: '0.75rem' }}>
                         <span className={clsx(
                           'inline-flex items-center px-2 py-0.5 rounded text-xs font-bold',
                           isPayIn
@@ -718,10 +511,10 @@ export default function MerchantWalletPage() {
                           {isPayIn ? wt.typePayIn : wt.typePayOut}
                         </span>
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap text-sm tabular-nums text-gray-600">
+                      <td className="py-3 border-b border-gray-100 text-right whitespace-nowrap text-sm tabular-nums text-gray-600" style={{ paddingLeft: '0.75rem', paddingRight: '1.5rem' }}>
                         {formatAmount(tx.previousBalanceDecimal ?? tx.previousBalance)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap text-sm tabular-nums font-semibold text-gray-800">
+                      <td className="px-6 py-3 border-b border-gray-100 text-right whitespace-nowrap text-sm tabular-nums font-semibold text-gray-800">
                         {formatAmount(tx.currentBalanceDecimal ?? tx.currentBalance)}
                       </td>
                     </tr>
@@ -777,20 +570,13 @@ export default function MerchantWalletPage() {
           mode={modal}
           wallet={wallet}
           orgId={wallet.orgId ?? ''}
-          merchantId={wallet.merchantId ?? merchantId}
+          merchantId={wallet.id ?? ''}
           onSuccess={() => { loadWalletAndMerchant() }}
           onClose={() => setModal(null)}
           wt={wt}
         />
       )}
-      {modal === 'create' && (
-        <CreateTxModal
-          merchantId={merchantId}
-          onSuccess={() => { loadWalletAndMerchant() }}
-          onClose={() => setModal(null)}
-          wt={wt}
-        />
-      )}
+
     </div>
   )
 }

@@ -7,15 +7,15 @@ export const walletApi = {
   getWalletByMerchantId: (merchantId: string) =>
     client.get<WalletItem>(`${BASE}/GetWalletByMerchantId/${merchantId}`),
 
-  getPointTxsByWalletId: (orgId: string, merchantId: string, payload: GetPointTxsPayload = {}) =>
-    client.post<PointTxItem[]>(`${BASE}/GetPointTxsByWalletId/${orgId}/${merchantId}`, payload),
+  getPointTxsByWalletId: (orgId: string, walletId: string, payload: GetPointTxsPayload = {}) =>
+    client.post<PointTxItem[]>(`${BASE}/GetPointTxsByWalletId/${orgId}/${walletId}`, payload),
 
-  getPointTxsCountByWalletId: (orgId: string, merchantId: string, payload: GetPointTxsPayload = {}) =>
-    client.post<number>(`${BASE}/GetPointTxsCountByWalletId/${orgId}/${merchantId}`, payload),
+  getPointTxsCountByWalletId: (orgId: string, walletId: string, payload: GetPointTxsPayload = {}) =>
+    client.post<number>(`${BASE}/GetPointTxsCountByWalletId/${orgId}/${walletId}`, payload),
 
-  addPoint: (orgId: string, merchantId: string, payload: AddPointPayload) =>
-    client.post(`${BASE}/AddPoint/${orgId}/${merchantId}`, payload),
+  addPoint: (orgId: string, walletId: string, payload: AddPointPayload) =>
+    client.post(`${BASE}/AddPoint/${orgId}/${walletId}`, payload),
 
-  deductPoint: (orgId: string, merchantId: string, payload: AddPointPayload) =>
-    client.post(`${BASE}/DeductPoint/${orgId}/${merchantId}`, payload),
+  deductPoint: (orgId: string, walletId: string, payload: AddPointPayload) =>
+    client.post(`${BASE}/DeductPoint/${orgId}/${walletId}`, payload),
 }

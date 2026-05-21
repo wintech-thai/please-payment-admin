@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { paymentTxApi } from '@/lib/api/payment-tx.api'
-import type { PayInTxItem } from '@/lib/api/types'
+import { bankAccountApi } from '@/lib/api/bank-account.api'
+import type { PayInTxItem, BankAccountItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, Plus, X } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
@@ -107,6 +108,211 @@ function StatusBadge({ status, createdDate, paymentRequestId }: {
   )
 }
 
+// ── Create Transaction Modal ──────────────────────────────────────────────────
+
+function CreatePayInTxModal({
+  onSuccess,
+  onClose,
+}: {
+  onSuccess: () => void
+  onClose: () => void
+}) {
+  const { t } = useLang()
+  const m = t.payInTx
+  const [bankAccounts, setBankAccounts] = useState<BankAccountItem[]>([])
+  const [bankSearch, setBankSearch] = useState('')
+  const [selectedBank, setSelectedBank] = useState<BankAccountItem | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [sourceBankCode, setSourceBankCode] = useState('')
+  const [sourceBankAccountNo, setSourceBankAccountNo] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [loadingBanks, setLoadingBanks] = useState(false)
+
+  useEffect(() => {
+    const fetchBankAccounts = async () => {
+      setLoadingBanks(true)
+      try {
+        const res = await bankAccountApi.getBankAccounts()
+        const data = res.data as any
+        const list: BankAccountItem[] = Array.isArray(data)
+          ? data
+          : (data?.bankAccounts ?? data?.BankAccounts ?? [])
+        setBankAccounts(list)
+      } catch {
+        toast.error(m.toastFailedToLoadBanks)
+      } finally {
+        setLoadingBanks(false)
+      }
+    }
+    fetchBankAccounts()
+  }, [m.toastFailedToLoadBanks])
+
+  const filteredBanks = bankAccounts.filter(b => {
+    const q = bankSearch.toLowerCase()
+    return (
+      b.bankCode?.toLowerCase().includes(q) ||
+      b.accountNumber?.toLowerCase().includes(q) ||
+      b.accountName?.toLowerCase().includes(q) ||
+      b.bankName?.toLowerCase().includes(q)
+    )
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedBank) { toast.error(m.toastBankRequired); return }
+    const amount = parseFloat(paymentAmount)
+    if (!amount || amount <= 0) { toast.error(m.toastPaymentAmountRequired); return }
+
+    setLoading(true)
+    try {
+      const bankId = (selectedBank as any).bankAccountId ?? (selectedBank as any).BankAccountId ?? selectedBank.accountId ?? (selectedBank as any).id ?? ''
+      let apiKey: string | undefined
+      try {
+        const keyRes = await bankAccountApi.getLinePaymentTxNotiApiKeys(bankId)
+        const keyData = keyRes.data as any
+        const keys: any[] = Array.isArray(keyData) ? keyData : (keyData?.apiKeys ?? keyData?.keys ?? [])
+        const active = keys.find((k: any) => k.status?.toLowerCase() === 'active') ?? keys[0]
+        apiKey = active?.key ?? active?.apiKey ?? active?.value
+      } catch {
+        // proceed without key — server may still accept admin token
+      }
+
+      await paymentTxApi.submitLinePaymentTxNotification(bankId, {
+        PaymentAmount: parseFloat(amount.toFixed(2)),
+        RemainAmount: 0,
+        TxType: 'PayIn',
+        SourceBankCode: sourceBankCode || undefined,
+        SourceBankAccountNo: sourceBankAccountNo || undefined,
+      }, apiKey)
+      toast.success(m.toastCreateSuccess)
+      onSuccess()
+      onClose()
+    } catch {
+      toast.error(m.toastCreateFailed)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+          <h3 className="text-base font-bold text-gray-900">{m.modalCreateTxTitle}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Bank Account searchable dropdown */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+              {m.labelBankAccount} <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={selectedBank
+                    ? `${selectedBank.bankCode} · ${selectedBank.accountNumber}`
+                    : bankSearch}
+                  onChange={e => {
+                    setBankSearch(e.target.value)
+                    setSelectedBank(null)
+                    setShowDropdown(true)
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  placeholder={loadingBanks ? m.bankLoadingPlaceholder : m.bankSearchPlaceholder}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              {showDropdown && filteredBanks.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredBanks.map(b => (
+                    <button
+                      key={(b as any).bankAccountId ?? (b as any).id ?? b.accountId}
+                      type="button"
+                      onClick={() => {
+                        setSelectedBank(b)
+                        setBankSearch('')
+                        setShowDropdown(false)
+                      }}
+                      className="w-full px-3 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors"
+                    >
+                      <p className="font-semibold text-gray-800">{b.bankCode} · {b.accountNumber}</p>
+                      {b.accountName && <p className="text-xs text-gray-500">{b.accountName}</p>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+              {m.labelPaymentAmount} <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={paymentAmount}
+              onChange={e => setPaymentAmount(e.target.value)}
+              placeholder={m.amountPlaceholder}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{m.labelSourceBankCode}</label>
+              <input
+                type="text"
+                value={sourceBankCode}
+                onChange={e => setSourceBankCode(e.target.value)}
+                placeholder={m.sourceBankCodePlaceholder}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{m.labelSourceAccountNo}</label>
+              <input
+                type="text"
+                value={sourceBankAccountNo}
+                onChange={e => setSourceBankAccountNo(e.target.value)}
+                placeholder={m.sourceAccountNoPlaceholder}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+            >
+              {m.btnCancel}
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors disabled:opacity-60"
+            >
+              {loading ? m.btnCreating : m.btnCreate}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
 export default function PayInTransactionsPage() {
   const { t } = useLang()
   const m = t.payInTx
@@ -120,6 +326,7 @@ export default function PayInTransactionsPage() {
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [loading, setLoading] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
@@ -198,6 +405,13 @@ export default function PayInTransactionsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{m.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
         </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          {m.btnCreateTx}
+        </button>
       </div>
 
       {/* Filters */}
@@ -441,6 +655,13 @@ export default function PayInTransactionsPage() {
           </div>
         </div>
       </div>
+
+      {showCreateModal && (
+        <CreatePayInTxModal
+          onSuccess={handleRefresh}
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
     </div>
   )
 }

@@ -171,6 +171,8 @@ export interface MerchantItem {
   createdDate?: string | null
   payInBankAccountCount?: number | null
   payOutBankAccountCount?: number | null
+  currentBalance?: number | null
+  currentBalanceDecimal?: number | null
 }
 
 export interface GetMerchantsPayload {

@@ -450,6 +450,60 @@ export interface GetPayInTxPayload {
   Limit?: number
 }
 
+// ─── Wallet ──────────────────────────────────────────────────────────────────
+
+export interface WalletItem {
+  id?: string | null
+  orgId?: string | null
+  merchantId?: string | null
+  pointBalance?: number | null
+  pointBalanceDecimal?: number | null
+  status?: string | null
+  createdDate?: string | null
+  name?: string | null
+  tags?: string | null
+  description?: string | null
+}
+
+export interface PointTxItem {
+  id?: string | null
+  walletId?: string | null
+  orgId?: string | null
+  merchantId?: string | null
+  createdDate?: string | null
+  tags?: string | null
+  description?: string | null
+  txAmount?: number | null
+  txAmountDecimal?: number | null
+  txType?: number | null
+  previousBalance?: number | null
+  previousBalanceDecimal?: number | null
+  currentBalance?: number | null
+  currentBalanceDecimal?: number | null
+}
+
+export interface AddPointPayload {
+  Tags?: string
+  Description?: string
+  TxAmount?: number
+  TxAmountDecimal?: number
+}
+
+export interface GetPointTxsPayload {
+  Page?: number
+  Limit?: number
+}
+
+export interface SubmitLinePaymentTxPayload {
+  PaymentAmount: number
+  RemainAmount?: number
+  TxType?: string
+  SourceBankCode?: string
+  SourceBankAccountNo?: string
+  DestinationBankCode?: string
+  DestinationAccountNo?: string
+}
+
 // ─── Common ──────────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {

@@ -60,7 +60,7 @@ client.interceptors.request.use(
       const url = config.url?.toLowerCase() || ''
       const isPublicPath = url.includes('login')
 
-      if (token && config.headers && !isPublicPath) {
+      if (token && config.headers && !isPublicPath && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${encodeBase64(token)}`
       }
     }

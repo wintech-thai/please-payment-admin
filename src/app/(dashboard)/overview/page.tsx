@@ -76,19 +76,19 @@ function PieTooltip({ active, payload }: any) {
   )
 }
 
-function SummaryCard({ label, value, icon: Icon, iconColor }: {
+function SummaryCard({ label, value, icon: Icon, gradient }: {
   label: string; value: string | number
-  icon: React.ElementType; iconColor: string
+  icon: React.ElementType; gradient: string
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <div className={clsx('rounded-2xl p-5 shadow-md', gradient)}>
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-bold text-gray-900 tabular-nums mt-1">{value}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-white/70 uppercase tracking-wide">{label}</p>
+          <p className="text-2xl font-bold text-white tabular-nums mt-1.5 truncate">{value}</p>
         </div>
-        <div className={clsx('w-9 h-9 rounded-lg flex items-center justify-center', iconColor)}>
-          <Icon className="w-5 h-5" />
+        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 ml-3">
+          <Icon className="w-5 h-5 text-white" />
         </div>
       </div>
     </div>
@@ -196,31 +196,33 @@ export default function OverviewPage() {
   ]
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50">
+    <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
       <div className="p-4 sm:p-6 space-y-5">
 
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{m.title}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
+        <div className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 rounded-2xl px-6 py-5 shadow-lg">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-white">{m.title}</h1>
+              <p className="text-sm text-white/70 mt-0.5">{m.subtitle}</p>
+            </div>
+            <button onClick={() => fetchData(timeRange)} disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-white/20 hover:bg-white/30 rounded-xl transition-colors disabled:opacity-50 border border-white/25">
+              <RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} />
+              {m.refresh}
+            </button>
           </div>
-          <button onClick={() => fetchData(timeRange)} disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50">
-            <RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} />
-            {m.refresh}
-          </button>
         </div>
 
         {/* Date Filter */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1">
+        <div className="bg-white rounded-2xl shadow-sm px-4 py-3 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
             {quickPresets.map(p => (
               <button key={p.key} onClick={() => handlePreset(p.key)}
-                className={clsx('px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
+                className={clsx('px-3 py-1.5 text-xs font-semibold rounded-xl transition-all',
                   curPreset === p.key
-                    ? 'bg-primary-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100')}>
+                    ? 'bg-primary-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700')}>
                 {p.label}
               </button>
             ))}
@@ -244,41 +246,25 @@ export default function OverviewPage() {
           <>
             {/* Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <SummaryCard label={m.totalFeeIncome} value={fmt(totalFee)} icon={Wallet} iconColor="bg-primary-50 text-primary-600" />
-              <SummaryCard label={m.totalMerchants} value={fmtInt(data?.merchantCount)} icon={Users} iconColor="bg-blue-50 text-blue-600" />
-              <SummaryCard label={m.activeMerchants} value={fmtInt(statusCount(data?.merchantCountByStatus, 'active'))} icon={CheckCircle} iconColor="bg-emerald-50 text-emerald-600" />
-              <SummaryCard label={m.disabledMerchants} value={fmtInt(statusCount(data?.merchantCountByStatus, 'disabled'))} icon={XCircle} iconColor="bg-red-50 text-red-500" />
+              <SummaryCard label={m.totalFeeIncome}    value={fmt(totalFee)}                                                icon={Wallet}       gradient="bg-gradient-to-br from-primary-500 to-primary-700" />
+              <SummaryCard label={m.totalMerchants}    value={fmtInt(data?.merchantCount)}                                 icon={Users}        gradient="bg-gradient-to-br from-blue-500 to-blue-700" />
+              <SummaryCard label={m.activeMerchants}   value={fmtInt(statusCount(data?.merchantCountByStatus, 'active'))}  icon={CheckCircle}  gradient="bg-gradient-to-br from-emerald-500 to-teal-600" />
+              <SummaryCard label={m.disabledMerchants} value={fmtInt(statusCount(data?.merchantCountByStatus, 'disabled'))} icon={XCircle}     gradient="bg-gradient-to-br from-slate-500 to-slate-700" />
             </div>
 
-            {/* Pay-In / Pay-Out */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{m.totalPayIn}</p>
-                  <ArrowUpRight className="w-4 h-4 text-emerald-500" />
-                </div>
-                <p className="text-2xl font-bold text-gray-900 tabular-nums">{fmt(totalPayIn)}</p>
-                <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{m.totalPayInFee}</span>
-                  <span className="text-sm font-semibold text-gray-700 tabular-nums">{fmt(totalPayInFee)}</span>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{m.totalPayOut}</p>
-                  <ArrowDownRight className="w-4 h-4 text-rose-500" />
-                </div>
-                <p className="text-2xl font-bold text-gray-900 tabular-nums">{fmt(totalPayOut)}</p>
-                <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{m.totalPayOutFee}</span>
-                  <span className="text-sm font-semibold text-gray-700 tabular-nums">{fmt(totalPayOutFee)}</span>
-                </div>
-              </div>
+            {/* Pay-In / Pay-Out 4 cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <SummaryCard label={m.totalPayIn}     value={fmt(totalPayIn)}     icon={ArrowUpRight}   gradient="bg-gradient-to-br from-emerald-400 to-emerald-600" />
+              <SummaryCard label={m.totalPayOut}    value={fmt(totalPayOut)}    icon={ArrowDownRight} gradient="bg-gradient-to-br from-rose-500 to-rose-700" />
+              <SummaryCard label={m.totalPayInFee}  value={fmt(totalPayInFee)}  icon={TrendingUp}     gradient="bg-gradient-to-br from-violet-500 to-violet-700" />
+              <SummaryCard label={m.totalPayOutFee} value={fmt(totalPayOutFee)} icon={TrendingDown}   gradient="bg-gradient-to-br from-amber-400 to-orange-600" />
             </div>
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-              <div className="lg:col-span-3 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+              <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div className="h-1.5 bg-gradient-to-r from-primary-400 to-primary-600" />
+                <div className="p-5">
                 <p className="text-sm font-semibold text-gray-800 mb-1">{m.chartBalanceTop10}</p>
                 <p className="text-xs text-gray-400 mb-4">{m.sectionBalances}</p>
                 {mounted && barData.length > 0 ? (
@@ -298,9 +284,12 @@ export default function OverviewPage() {
                     <p className="text-sm text-gray-400">{m.noData}</p>
                   </div>
                 )}
+                </div>
               </div>
 
-              <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+              <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div className="h-1.5 bg-gradient-to-r from-blue-400 to-indigo-500" />
+                <div className="p-5">
                 <p className="text-sm font-semibold text-gray-800 mb-1">{m.chartBalancePie}</p>
                 <p className="text-xs text-gray-400 mb-4">{m.sectionBalances}</p>
                 {mounted && pieData.length > 0 ? (
@@ -321,11 +310,13 @@ export default function OverviewPage() {
                     <p className="text-sm text-gray-400">{m.noData}</p>
                   </div>
                 )}
+                </div>
               </div>
             </div>
 
             {/* Breakdown */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="h-1.5 bg-gradient-to-r from-violet-400 to-purple-500" />
               <div className="px-5 pt-4 pb-0">
                 <p className="text-sm font-semibold text-gray-800">{m.sectionBreakdown}</p>
               </div>

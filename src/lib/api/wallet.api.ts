@@ -7,6 +7,9 @@ export const walletApi = {
   getWalletByMerchantId: (merchantId: string) =>
     client.get<WalletItem>(`${BASE}/GetWalletByMerchantId/${merchantId}`),
 
+  getWalletByBankAccountId: (bankAccountId: string) =>
+    client.get<WalletItem>(`${BASE}/GetWalletByBankAccountId/${bankAccountId}`),
+
   getPointTxsByWalletId: (orgId: string, walletId: string, payload: GetPointTxsPayload = {}) =>
     client.post<PointTxItem[]>(`${BASE}/GetPointTxsByWalletId/${orgId}/${walletId}`, payload),
 

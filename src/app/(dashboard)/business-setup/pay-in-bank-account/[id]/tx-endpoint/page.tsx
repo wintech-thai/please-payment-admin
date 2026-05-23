@@ -265,7 +265,7 @@ export default function PayInTxEndpointPage() {
 
       {/* Header */}
       <div className="flex-none flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
+        <button onClick={() => router.push(`/business-setup/pay-in-bank-account?highlight=${bankAccountId}`)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>

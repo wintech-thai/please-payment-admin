@@ -240,7 +240,7 @@ export default function MerchantLinkPage() {
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder={m.searchPlaceholder}
+                  placeholder={m.merchantSearchPlaceholder}
                   className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder-gray-400"
                 />
                 {search && (

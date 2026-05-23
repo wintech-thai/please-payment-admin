@@ -283,6 +283,8 @@ export interface BankAccountItem {
   status?: string | null
   createdDate?: string | null
   merchantLinkCount?: number | null
+  currentWalletBalance?: number | null
+  currentWalletBalanceDecimal?: number | null
 }
 
 export interface GetBankAccountsPayload {
@@ -517,4 +519,21 @@ export interface PaginatedResponse<T> {
 
 export interface CountResponse {
   count: number
+}
+
+export interface MerchantSummaryItem {
+  merchantCode?: string | null
+  merchantStatus?: string | null
+  merchantCount?: number | null
+  txAmount?: number | null
+  feeAmount?: number | null
+  balanceAmount?: number | null
+}
+
+export interface MerchantSummaryResponse {
+  merchantCount?: number | null
+  merchantCountByStatus?: MerchantSummaryItem[] | null
+  merchantsBalances?: MerchantSummaryItem[] | null
+  merchantsPayInSummary?: MerchantSummaryItem[] | null
+  merchantsPayOutSummary?: MerchantSummaryItem[] | null
 }

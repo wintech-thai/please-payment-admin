@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { BankAccountItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Trash2, ChevronLeft, ChevronRight, Landmark, Webhook } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Trash2, ChevronLeft, ChevronRight, Landmark, Webhook, Wallet } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
@@ -135,8 +135,13 @@ function BankAccountContent() {
   const [filterLevel, setFilterLevel] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [selectedRowId, setSelectedRowId] = useState<string | null>(highlightIdParam)
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
+    if (highlightIdParam) return highlightIdParam
+    if (typeof window !== 'undefined') return sessionStorage.getItem('bankaccount_highlight') ?? null
+    return null
+  })
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ type: 'enable' | 'disable'; account: BankAccountItem } | null>(null)
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; accountId?: string; accountName?: string; bulk?: boolean }>({ open: false })
   const [deleting, setDeleting] = useState(false)
@@ -246,7 +251,7 @@ function BankAccountContent() {
     m.colBank, m.colAccountNumber, m.colAccountName, m.colLinkCount,
     m.colAccountType, m.colAccountLevel,
     m.colPayInRange, m.colDailyQuota,
-    m.colStatus, m.colCreated, m.colAction,
+    m.colStatus, m.colBalance, m.colAction,
   ]
 
   return (
@@ -354,10 +359,10 @@ function BankAccountContent() {
                   <th
                     key={i}
                     className={clsx(
-                      'px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
+                      'px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
+                      i === cols.length - 2 ? 'text-right' : 'text-left',
                       i === 0 && 'rounded-tl-xl w-12',
                       i === cols.length - 1 && 'rounded-tr-xl',
-                      false,
                     )}
                   >
                     {i === 0 ? null : col}
@@ -395,7 +400,12 @@ function BankAccountContent() {
                   return (
                     <tr
                       key={account.accountId}
-                      onClick={() => setSelectedRowId(prev => prev === account.accountId ? null : account.accountId)}
+                      onClick={() => {
+                        const next = selectedRowId === account.accountId ? null : account.accountId
+                        setSelectedRowId(next)
+                        if (next) sessionStorage.setItem('bankaccount_highlight', next)
+                        else sessionStorage.removeItem('bankaccount_highlight')
+                      }}
                       className={clsx(
                         'cursor-pointer transition-colors',
                         highlighted
@@ -429,7 +439,7 @@ function BankAccountContent() {
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
                         {account.merchantLinkCount != null ? (
                           <button
-                            onClick={e => { e.stopPropagation(); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/merchant-link`) }}
+                            onClick={e => { e.stopPropagation(); sessionStorage.setItem('bankaccount_highlight', account.accountId); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/merchant-link`) }}
                             className="inline-flex items-center justify-center min-w-[1.5rem] px-2 py-0.5 text-xs font-bold text-primary-700 bg-primary-50 ring-1 ring-primary-200 rounded-full hover:bg-primary-100 transition-colors cursor-pointer"
                           >
                             {account.merchantLinkCount}
@@ -451,19 +461,41 @@ function BankAccountContent() {
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={account.status} />
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500 whitespace-nowrap">
-                        {formatDate(account.createdDate)}
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm whitespace-nowrap text-right">
+                        {account.currentWalletBalanceDecimal != null || account.currentWalletBalance != null ? (
+                          <Link
+                            href={`/business-setup/pay-in-bank-account/${account.accountId}/wallet`}
+                            onClick={e => e.stopPropagation()}
+                            className="tabular-nums text-gray-700 hover:underline hover:text-primary-600"
+                          >
+                            {(account.currentWalletBalanceDecimal ?? account.currentWalletBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </Link>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
                         <div className="relative" ref={el => { menuRefs.current[account.accountId] = el }}>
                           <button
-                            onClick={e => { e.stopPropagation(); setOpenMenuId(prev => prev === account.accountId ? null : account.accountId) }}
+                            onClick={e => {
+                              e.stopPropagation()
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                              const spaceBelow = window.innerHeight - rect.bottom
+                              const right = window.innerWidth - rect.right
+                              if (spaceBelow < 260) {
+                                setMenuPos({ bottom: window.innerHeight - rect.top + 4, right })
+                              } else {
+                                setMenuPos({ top: rect.bottom + 4, right })
+                              }
+                              setOpenMenuId(prev => prev === account.accountId ? null : account.accountId)
+                            }}
                             className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                           >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                           {openMenuId === account.accountId && (
-                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+                            <div className="fixed w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-[9999]"
+                              style={{ top: menuPos?.top, bottom: menuPos?.bottom, right: menuPos?.right }}>
                               {active ? (
                                 <button
                                   onClick={e => { e.stopPropagation(); setOpenMenuId(null); setConfirmDialog({ type: 'disable', account }) }}
@@ -482,18 +514,25 @@ function BankAccountContent() {
                                 </button>
                               )}
                               <button
-                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/merchant-link`) }}
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('bankaccount_highlight', account.accountId); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/merchant-link`) }}
                                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
                                 <Link2 className="w-4 h-4 flex-shrink-0" />
                                 {m.merchantLinkAction}
                               </button>
                               <button
-                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/tx-endpoint`) }}
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('bankaccount_highlight', account.accountId); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/tx-endpoint`) }}
                                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
                                 <Webhook className="w-4 h-4 flex-shrink-0" />
                                 {m.txEndpointAction}
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('bankaccount_highlight', account.accountId); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/wallet`) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap"
+                              >
+                                <Wallet className="w-4 h-4 flex-shrink-0" />
+                                {m.txSummaryAction}
                               </button>
                             </div>
                           )}

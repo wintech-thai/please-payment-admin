@@ -124,6 +124,7 @@ export default function UpdateBankAccountPage() {
     setSaving(true)
     try {
       await bankAccountApi.updateBankAccountById(id, {
+        BankCode: bankCode,
         AccountNumber: accountNumber.trim(),
         AccountName: accountName.trim(),
         PromptPayId: accountType === 'PromptPay' ? promptPayId.trim() : undefined,

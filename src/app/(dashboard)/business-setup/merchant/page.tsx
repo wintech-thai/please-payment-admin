@@ -92,8 +92,13 @@ function MerchantContent() {
   const [appliedSearch, setAppliedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
-  const [selectedRowId, setSelectedRowId] = useState<string | null>(highlightIdParam)
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
+    if (highlightIdParam) return highlightIdParam
+    if (typeof window !== 'undefined') return sessionStorage.getItem('merchant_highlight') ?? null
+    return null
+  })
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ type: 'enable' | 'disable'; merchant: MerchantItem } | null>(null)
   const [qrMerchant, setQrMerchant] = useState<MerchantItem | null>(null)
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -315,7 +320,12 @@ function MerchantContent() {
                   return (
                     <tr
                       key={merchant.id}
-                      onClick={() => setSelectedRowId(prev => prev === merchant.id ? null : merchant.id)}
+                      onClick={() => {
+                        const next = selectedRowId === merchant.id ? null : merchant.id
+                        setSelectedRowId(next)
+                        if (next) sessionStorage.setItem('merchant_highlight', next)
+                        else sessionStorage.removeItem('merchant_highlight')
+                      }}
                       className={clsx(
                         'cursor-pointer transition-colors',
                         highlighted
@@ -341,14 +351,14 @@ function MerchantContent() {
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={e => { e.stopPropagation(); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
+                            onClick={e => { e.stopPropagation(); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
                           >
                             <span className="text-[9px] text-blue-400">IN</span>
                             {merchant.payInBankAccountCount ?? 0}
                           </button>
                           <button
-                            onClick={e => { e.stopPropagation(); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
+                            onClick={e => { e.stopPropagation(); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 ring-1 ring-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
                           >
                             <span className="text-[9px] text-purple-400">OUT</span>
@@ -389,14 +399,26 @@ function MerchantContent() {
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
                         <div className="relative" ref={el => { menuRefs.current[merchant.id] = el }}>
                           <button
-                            onClick={e => { e.stopPropagation(); setOpenMenuId(prev => prev === merchant.id ? null : merchant.id) }}
+                            onClick={e => {
+                              e.stopPropagation()
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                              const spaceBelow = window.innerHeight - rect.bottom
+                              const right = window.innerWidth - rect.right
+                              if (spaceBelow < 300) {
+                                setMenuPos({ bottom: window.innerHeight - rect.top + 4, right })
+                              } else {
+                                setMenuPos({ top: rect.bottom + 4, right })
+                              }
+                              setOpenMenuId(prev => prev === merchant.id ? null : merchant.id)
+                            }}
                             className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                           >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
 
-                          {openMenuId === merchant.id && (
-                            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+                          {openMenuId === merchant.id && menuPos && (
+                            <div className="fixed w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-[9999]"
+                              style={{ top: menuPos.top, bottom: menuPos.bottom, right: menuPos.right }}>
                               {/* Enable / Disable */}
                               {isActive(merchant) ? (
                                 <button
@@ -420,7 +442,7 @@ function MerchantContent() {
 
                               {/* API Keys & Users */}
                               <button
-                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/merchant/${merchant.id}/keys-users`) }}
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/keys-users`) }}
                                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
                                 <Key className="w-4 h-4 flex-shrink-0" />
@@ -438,7 +460,7 @@ function MerchantContent() {
                               </button>
                               <div className="border-t border-gray-200 my-1" />
                               <button
-                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/merchant/${merchant.id}/wallet`) }}
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/wallet`) }}
                                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
                                 <Wallet className="w-4 h-4 flex-shrink-0" />
@@ -446,7 +468,7 @@ function MerchantContent() {
                               </button>
                               <div className="border-t border-gray-200 my-1" />
                               <button
-                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
                                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
                                 <Building2 className="w-4 h-4 flex-shrink-0" />

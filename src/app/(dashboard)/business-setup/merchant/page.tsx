@@ -98,6 +98,7 @@ function MerchantContent() {
     return null
   })
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ type: 'enable' | 'disable'; merchant: MerchantItem } | null>(null)
   const [qrMerchant, setQrMerchant] = useState<MerchantItem | null>(null)
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -398,14 +399,26 @@ function MerchantContent() {
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
                         <div className="relative" ref={el => { menuRefs.current[merchant.id] = el }}>
                           <button
-                            onClick={e => { e.stopPropagation(); setOpenMenuId(prev => prev === merchant.id ? null : merchant.id) }}
+                            onClick={e => {
+                              e.stopPropagation()
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                              const spaceBelow = window.innerHeight - rect.bottom
+                              const right = window.innerWidth - rect.right
+                              if (spaceBelow < 300) {
+                                setMenuPos({ bottom: window.innerHeight - rect.top + 4, right })
+                              } else {
+                                setMenuPos({ top: rect.bottom + 4, right })
+                              }
+                              setOpenMenuId(prev => prev === merchant.id ? null : merchant.id)
+                            }}
                             className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                           >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
 
-                          {openMenuId === merchant.id && (
-                            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+                          {openMenuId === merchant.id && menuPos && (
+                            <div className="fixed w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-[9999]"
+                              style={{ top: menuPos.top, bottom: menuPos.bottom, right: menuPos.right }}>
                               {/* Enable / Disable */}
                               {isActive(merchant) ? (
                                 <button

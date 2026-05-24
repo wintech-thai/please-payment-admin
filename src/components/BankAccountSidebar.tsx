@@ -24,7 +24,6 @@ export default function BankAccountSidebar() {
     {
       href: '/business-setup/pay-out-bank-account',
       label: t.nav.payOutBankAccountSub,
-      comingSoon: true,
       icon: (
         <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -38,7 +37,7 @@ export default function BankAccountSidebar() {
       className={clsx(
         'relative flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out',
         'border-r border-white/10',
-        collapsed ? 'w-14' : 'w-56'
+        collapsed ? 'w-14' : 'w-64'
       )}
       style={{ background: 'linear-gradient(180deg, #96370b 0%, #762c09 100%)' }}
     >

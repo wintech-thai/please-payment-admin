@@ -14,9 +14,9 @@ import { useLang } from '@/context/LanguageContext'
 const PROMPTPAY_RE = /^(0\d{9}|\d{13})$/
 const DIGITS_ONLY_RE = /^\d+$/
 
-export default function UpdateBankAccountPage() {
+export default function UpdatePayOutBankAccountPage() {
   const { t, lang } = useLang()
-  const m = t.bankAccount
+  const m = { ...t.bankAccount, ...t.payOutBankAccount }
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
@@ -28,12 +28,6 @@ export default function UpdateBankAccountPage() {
   const [accountName, setAccountName] = useState('')
   const [promptPayId, setPromptPayId] = useState('')
   const [accountType, setAccountType] = useState<'PromptPay' | 'Native' | ''>('')
-  const [accountLevel, setAccountLevel] = useState<'Global' | 'Selected' | ''>('')
-  const [payInMin, setPayInMin] = useState('')
-  const [payInMax, setPayInMax] = useState('')
-  const [payOutMin, setPayOutMin] = useState('')
-  const [payOutMax, setPayOutMax] = useState('')
-  const [dailyQuota, setDailyQuota] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [loading, setLoading] = useState(true)
@@ -60,16 +54,10 @@ export default function UpdateBankAccountPage() {
         setAccountName(a.accountName ?? '')
         setPromptPayId(a.promptPayId ?? '')
         setAccountType((a.accountType as 'PromptPay' | 'Native') ?? '')
-        setAccountLevel((a.accountLevel as 'Global' | 'Selected') ?? '')
-        setPayInMin(a.payinMinAmount != null ? String(a.payinMinAmount) : '')
-        setPayInMax(a.payinMaxAmount != null ? String(a.payinMaxAmount) : '')
-        setPayOutMin(a.payoutMinAmount != null ? String(a.payoutMinAmount) : '')
-        setPayOutMax(a.payoutMaxAmount != null ? String(a.payoutMaxAmount) : '')
-        setDailyQuota(a.dailyQuota != null ? String(a.dailyQuota) : '')
         setTags(a.tags ? a.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
       } else {
         toast.error(m.failedToLoadAccount)
-        router.push(`/business-setup/pay-in-bank-account?highlight=${id}`)
+        router.push(`/business-setup/pay-out-bank-account?highlight=${id}`)
       }
     }).finally(() => setLoading(false))
   }, [id, router])
@@ -106,21 +94,14 @@ export default function UpdateBankAccountPage() {
         errs.promptPayId = m.promptPayIdInvalid
       }
     }
-    if (!accountLevel) errs.accountLevel = m.accountLevelRequired
-    if (payInMin === '' || isNaN(parseInt(payInMin, 10))) errs.payInMin = m.payInMinRequired
-    if (payInMax === '' || isNaN(parseInt(payInMax, 10))) errs.payInMax = m.payInMaxRequired
-    if (payOutMin === '' || isNaN(parseInt(payOutMin, 10))) errs.payOutMin = m.payOutMinRequired
-    if (payOutMax === '' || isNaN(parseInt(payOutMax, 10))) errs.payOutMax = m.payOutMaxRequired
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
-  const toInt = (v: string) => { const n = parseInt(v, 10); return isNaN(n) ? undefined : n }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    if (!isDirty) { router.push(`/business-setup/pay-in-bank-account?highlight=${id}`); return }
+    if (!isDirty) { router.push(`/business-setup/pay-out-bank-account?highlight=${id}`); return }
     setSaving(true)
     try {
       await bankAccountApi.updateBankAccountById(id, {
@@ -129,17 +110,17 @@ export default function UpdateBankAccountPage() {
         AccountName: accountName.trim(),
         AccountType: accountType,
         PromptPayId: accountType === 'PromptPay' ? promptPayId.trim() : undefined,
-        AccountLevel: accountLevel,
-        PayinMinAmount: toInt(payInMin),
-        PayinMaxAmount: toInt(payInMax),
-        PayoutMinAmount: toInt(payOutMin),
-        PayoutMaxAmount: toInt(payOutMax),
-        DailyQuota: toInt(dailyQuota),
+        AccountLevel: 'Selected',
+        PayinMinAmount: 0,
+        PayinMaxAmount: 0,
+        PayoutMinAmount: 0,
+        PayoutMaxAmount: 0,
+        DailyQuota: 0,
         Tags: tags.length ? tags.join(',') : undefined,
       })
       setIsDirty(false)
       toast.success(m.updatedSuccess)
-      router.push(`/business-setup/pay-in-bank-account?highlight=${id}`)
+      router.push(`/business-setup/pay-out-bank-account?highlight=${id}`)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToUpdate)
     } finally {
@@ -165,7 +146,7 @@ export default function UpdateBankAccountPage() {
 
       <div className="flex-none flex items-center gap-3 mb-6">
         <button
-          onClick={() => guardNavigation(() => router.push(`/business-setup/pay-in-bank-account?highlight=${id}`))}
+          onClick={() => guardNavigation(() => router.push(`/business-setup/pay-out-bank-account?highlight=${id}`))}
           className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -184,7 +165,7 @@ export default function UpdateBankAccountPage() {
             <SectionHeader>{m.accountInfoSection}</SectionHeader>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label={m.fieldBank} required error={errors.bankCode}>
+              <FormField label={m.fieldBank}>
                 <select
                   value={bankCode}
                   disabled
@@ -204,7 +185,7 @@ export default function UpdateBankAccountPage() {
                 </select>
               </FormField>
 
-              <FormField label={m.fieldAccountType} required error={errors.accountType}>
+              <FormField label={m.fieldAccountType}>
                 <select
                   value={accountType}
                   disabled
@@ -261,89 +242,15 @@ export default function UpdateBankAccountPage() {
                 />
               </FormField>
 
-              <FormField label={m.fieldAccountLevel} required error={errors.accountLevel}>
+              <FormField label={m.fieldAccountLevel} required>
                 <select
-                  value={accountLevel}
-                  onChange={e => { setAccountLevel(e.target.value as 'Global' | 'Selected'); mark(); clearErr('accountLevel') }}
-                  className={inputCls(!!errors.accountLevel)}
+                  value="Selected"
+                  onChange={() => {}}
+                  className={inputCls(false)}
                 >
-                  <option value="">—</option>
-                  <option value="Global">{m.accountLevelGlobal}</option>
                   <option value="Selected">{m.accountLevelMerchantSpecify}</option>
                 </select>
               </FormField>
-            </div>
-          </div>
-
-          {/* Amount Limits */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
-            <SectionHeader>{t.merchant.sectionTransactionLimits}</SectionHeader>
-
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-500 mb-3">{t.merchant.fieldPayIn}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label={m.fieldPayInMin} required error={errors.payInMin}>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={payInMin}
-                    onChange={e => { setPayInMin(e.target.value); mark(); clearErr('payInMin') }}
-                    className={inputCls(!!errors.payInMin)}
-                  />
-                </FormField>
-                <FormField label={m.fieldPayInMax} required error={errors.payInMax}>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={payInMax}
-                    onChange={e => { setPayInMax(e.target.value); mark(); clearErr('payInMax') }}
-                    className={inputCls(!!errors.payInMax)}
-                  />
-                </FormField>
-              </div>
-            </div>
-
-            <div className="mb-4 border-t border-gray-100 pt-4">
-              <p className="text-xs font-semibold text-gray-500 mb-3">{t.merchant.fieldPayOut}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label={m.fieldPayOutMin} required error={errors.payOutMin}>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={payOutMin}
-                    onChange={e => { setPayOutMin(e.target.value); mark(); clearErr('payOutMin') }}
-                    className={inputCls(!!errors.payOutMin)}
-                  />
-                </FormField>
-                <FormField label={m.fieldPayOutMax} required error={errors.payOutMax}>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={payOutMax}
-                    onChange={e => { setPayOutMax(e.target.value); mark(); clearErr('payOutMax') }}
-                    className={inputCls(!!errors.payOutMax)}
-                  />
-                </FormField>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-100 pt-4">
-              <div className="max-w-xs">
-                <FormField label={m.fieldDailyQuota}>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={dailyQuota}
-                    onChange={e => { setDailyQuota(e.target.value); mark() }}
-                    className={inputCls(false)}
-                  />
-                </FormField>
-              </div>
             </div>
           </div>
 
@@ -372,7 +279,7 @@ export default function UpdateBankAccountPage() {
         <div className="flex-none -mx-3 sm:-mx-6 px-4 sm:px-8 py-4 flex items-center justify-end gap-3 bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
           <button
             type="button"
-            onClick={() => guardNavigation(() => router.push(`/business-setup/pay-in-bank-account?highlight=${id}`))}
+            onClick={() => guardNavigation(() => router.push(`/business-setup/pay-out-bank-account?highlight=${id}`))}
             className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             {t.admin.cancel}

@@ -63,27 +63,25 @@ function DeleteModal({ bulk, count, accountName, onConfirm, onCancel, deleting }
   const { t } = useLang()
   const m = t.bankAccount
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onCancel}>
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="px-6 pt-6 pb-5 text-center">
-          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <Trash2 className="w-5 h-5 text-red-600" />
-          </div>
-          <h3 className="text-base font-bold text-gray-900 mb-1">
-            {bulk ? m.deleteBulkTitle.replace('{count}', String(count)) : m.deleteTitle}
-          </h3>
-          <p className="text-sm text-gray-500">
-            {bulk
-              ? m.deleteBulkDesc.replace('{count}', String(count))
-              : <>{m.deleteSingleDesc} <span className="font-semibold text-gray-700">&ldquo;{accountName}&rdquo;</span>?</>}
-            {' '}{m.deleteCannotUndo}
-          </p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onCancel}>
+      <div className="w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden text-center px-8 py-8" style={{ background: 'linear-gradient(135deg, #96370b 0%, #762c09 100%)' }} onClick={e => e.stopPropagation()}>
+        <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-5">
+          <Trash2 className="w-7 h-7 text-white" />
         </div>
-        <div className="flex gap-2 px-6 pb-5">
-          <button onClick={onCancel} className="flex-1 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+        <h3 className="text-lg font-bold text-white mb-1">
+          {bulk ? m.deleteBulkTitle.replace('{count}', String(count)) : m.deleteTitle}
+        </h3>
+        <p className="text-sm text-white/60 mb-7">
+          {bulk
+            ? m.deleteBulkDesc.replace('{count}', String(count))
+            : <>{m.deleteSingleDesc} <span className="font-semibold text-white/90">&ldquo;{accountName}&rdquo;</span>?</>}
+          {' '}{m.deleteCannotUndo}
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="flex-1 py-2.5 text-sm font-semibold text-white/80 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-colors uppercase">
             {t.admin.cancel}
           </button>
-          <button onClick={onConfirm} disabled={deleting} className="flex-1 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-60 transition-colors">
+          <button onClick={onConfirm} disabled={deleting} className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600/80 rounded-xl hover:bg-red-600 disabled:opacity-60 transition-colors uppercase">
             {deleting ? t.admin.deleting : t.admin.delete}
           </button>
         </div>

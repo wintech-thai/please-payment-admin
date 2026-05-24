@@ -542,6 +542,15 @@ export const translations = {
       rowsPerPage: 'จำนวนแถวต่อหน้า',
       of: 'จาก',
     },
+    payOutBankAccount: {
+      title: 'บัญชีธนาคาร Pay-Out',
+      subtitle: 'จัดการบัญชีธนาคารสำหรับโอนเงินออก (Pay-Out)',
+      createTitle: 'เพิ่มบัญชีธนาคาร Pay-Out',
+      createSubtitle: 'เพิ่มบัญชีธนาคารสำหรับโอนเงินออก',
+      noAccountsSubtitle: 'เพิ่มบัญชีธนาคาร Pay-Out เพื่อเริ่มต้น',
+      confirmEnableDesc: 'บัญชีนี้จะพร้อมรับโอนออกได้ทันที',
+      confirmDisableDesc: 'บัญชีนี้จะหยุดรับโอนออกจนกว่าจะเปิดใช้งานอีกครั้ง',
+    },
     merchant: {
       title: 'ร้านค้า',
       subtitle: 'จัดการบัญชีร้านค้าและการตั้งค่า',
@@ -1440,6 +1449,15 @@ export const translations = {
       selectAll: 'Select All',
       rowsPerPage: 'Rows per page',
       of: 'of',
+    },
+    payOutBankAccount: {
+      title: 'Pay-Out Bank Account',
+      subtitle: 'Manage bank accounts for outgoing transfers (Pay-Out)',
+      createTitle: 'Add Pay-Out Bank Account',
+      createSubtitle: 'Add a new bank account for outgoing transfers',
+      noAccountsSubtitle: 'Add a Pay-Out bank account to get started',
+      confirmEnableDesc: 'This account will be ready for outgoing transfers immediately.',
+      confirmDisableDesc: 'This account will stop outgoing transfers until re-enabled.',
     },
     merchant: {
       title: 'Merchant',

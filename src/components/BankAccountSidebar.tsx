@@ -24,7 +24,6 @@ export default function BankAccountSidebar() {
     {
       href: '/business-setup/pay-out-bank-account',
       label: t.nav.payOutBankAccountSub,
-      comingSoon: true,
       icon: (
         <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -38,7 +37,7 @@ export default function BankAccountSidebar() {
       className={clsx(
         'relative flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out',
         'border-r border-white/10',
-        collapsed ? 'w-14' : 'w-56'
+        collapsed ? 'w-14' : 'w-64'
       )}
       style={{ background: 'linear-gradient(180deg, #96370b 0%, #762c09 100%)' }}
     >
@@ -67,25 +66,6 @@ export default function BankAccountSidebar() {
       <nav className="flex flex-col gap-1 px-2">
         {menuItems.map((item) => {
           const isActive = pathname.startsWith(item.href)
-          if (item.comingSoon) {
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : undefined}
-                className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  collapsed && 'justify-center px-2',
-                  isActive
-                    ? 'bg-white/20 text-white'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white/80'
-                )}
-              >
-                {item.icon}
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            )
-          }
           return (
             <Link
               key={item.href}

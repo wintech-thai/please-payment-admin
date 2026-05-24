@@ -273,7 +273,7 @@ export interface BankAccountItem {
   promptPayId?: string | null
   tags?: string | null
   accountType?: string | null       // "PromptPay" | "Native"
-  accountCategory?: string | null   // "PayIn"
+  accountCategory?: string | null   // "PayIn" | "PayOut"
   accountLevel?: string | null      // "Global" | "Selected"
   payinMinAmount?: number | null
   payinMaxAmount?: number | null

@@ -23,6 +23,18 @@ export const bankAccountApi = {
       ...payload,
     }),
 
+  getPayOutBankAccounts: (payload: GetBankAccountsPayload = {}) =>
+    client.post<{ bankAccounts: BankAccountItem[] }>(`${BASE}/GetBankAccounts`, {
+      AccountCategory: 'PayOut',
+      ...payload,
+    }),
+
+  getPayOutBankAccountCount: (payload: GetBankAccountsPayload = {}) =>
+    client.post<{ count: number }>(`${BASE}/GetBankAccountCount`, {
+      AccountCategory: 'PayOut',
+      ...payload,
+    }),
+
   getBankAccountById: (id: string) =>
     client.get<{ bankAccount: BankAccountItem }>(`${BASE}/GetBankAccountById/${id}`),
 

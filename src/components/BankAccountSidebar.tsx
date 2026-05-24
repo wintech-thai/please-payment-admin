@@ -66,25 +66,6 @@ export default function BankAccountSidebar() {
       <nav className="flex flex-col gap-1 px-2">
         {menuItems.map((item) => {
           const isActive = pathname.startsWith(item.href)
-          if (item.comingSoon) {
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : undefined}
-                className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  collapsed && 'justify-center px-2',
-                  isActive
-                    ? 'bg-white/20 text-white'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white/80'
-                )}
-              >
-                {item.icon}
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            )
-          }
           return (
             <Link
               key={item.href}

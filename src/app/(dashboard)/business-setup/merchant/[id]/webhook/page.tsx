@@ -20,6 +20,15 @@ function isActive(w: WebhookConfigItem): boolean {
   return w.isActive === true
 }
 
+function isValidWebhookUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw)
+    return u.protocol === 'https:' && u.hostname.includes('.')
+  } catch {
+    return false
+  }
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
@@ -130,6 +139,7 @@ function WebhookFormModal({ orgId, merchantId, editing, onClose, onSaved, m }: {
   const validate = () => {
     const errs: Record<string, string> = {}
     if (!endpointUrl.trim()) errs.endpointUrl = m.endpointRequired
+    else if (!isValidWebhookUrl(endpointUrl.trim())) errs.endpointUrl = m.endpointInvalid
     if (!eventName) errs.eventName = m.eventNameRequired
     if (!httpMethod) errs.httpMethod = m.httpMethodRequired
     if (!signatureAlgorithm) errs.signatureAlgorithm = m.signatureAlgorithmRequired
@@ -205,7 +215,7 @@ function WebhookFormModal({ orgId, merchantId, editing, onClose, onSaved, m }: {
         </div>
 
         {/* Scrollable body */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+        <form onSubmit={handleSubmit} onKeyDown={e => { if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') e.preventDefault() }} className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 custom-scrollbar">
 
             {apiError && (

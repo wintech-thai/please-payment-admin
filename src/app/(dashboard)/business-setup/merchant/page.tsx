@@ -449,14 +449,11 @@ function MerchantContent() {
                                 {m.apiKeysAndUsers}
                               </button>
                               <button
-                                disabled
-                                className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-gray-300 cursor-not-allowed"
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/webhook`) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <span className="flex items-center gap-2.5">
-                                  <Webhook className="w-4 h-4 flex-shrink-0" />
-                                  {t.nav.webhook}
-                                </span>
-                                <span className="text-[10px] bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-full">{t.nav.comingSoon}</span>
+                                <Webhook className="w-4 h-4 flex-shrink-0" />
+                                {t.nav.webhook}
                               </button>
                               <div className="border-t border-gray-200 my-1" />
                               <button

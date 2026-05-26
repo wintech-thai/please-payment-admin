@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { RefreshCw, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, DollarSign, Download, BarChart2, Calendar, List } from 'lucide-react'
+import { RefreshCw, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, DollarSign, Download, BarChart2, Calendar, List, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -14,6 +14,8 @@ import { toast } from 'sonner'
 import { useLang } from '@/context/LanguageContext'
 
 const PIE_COLORS = ['#059669', '#f59e0b']
+const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100]
+const HIGHLIGHTED_KEY = 'revenueSummary_highlightedKey'
 
 function getTimeFilter(tr: TimeRangeValue): { FromDate: string; ToDate: string } {
   if (tr.type === 'absolute' && tr.start && tr.end) {
@@ -99,6 +101,11 @@ export default function RevenueSummaryPage() {
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '30d' })
   const [merchantFilter, setMerchantFilter] = useState<string>('__all__')
+  const [highlightedKey, setHighlightedKey] = useState<string>(() => {
+    try { return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? '' } catch { return '' }
+  })
+  const [page, setPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(25)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -200,7 +207,7 @@ export default function RevenueSummaryPage() {
         !!x.date && !!x.merchantCode)
       .sort((a, b) => a.date.localeCompare(b.date) || a.merchantCode.localeCompare(b.merchantCode))
       .map(x => ({
-        date: new Date(x.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }),
+        date: new Date(x.date).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }),
         merchant: x.merchantCode,
         payInAmt:  x.payInAmount  ?? 0,
         payOutAmt: x.payOutAmount ?? 0,
@@ -210,6 +217,13 @@ export default function RevenueSummaryPage() {
       }))
     return merchantFilter === '__all__' ? rows : rows.filter(r => r.merchant === merchantFilter)
   }, [data, merchantFilter])
+
+  useEffect(() => { setPage(1) }, [tableRows])
+
+  const totalPages = Math.max(1, Math.ceil(tableRows.length / itemsPerPage))
+  const startRow = tableRows.length === 0 ? 0 : (page - 1) * itemsPerPage + 1
+  const endRow = Math.min(page * itemsPerPage, tableRows.length)
+  const pagedRows = tableRows.slice((page - 1) * itemsPerPage, page * itemsPerPage)
 
   const curPreset = activePreset(timeRange)
   const quickPresets: { key: QuickPreset; label: string }[] = [
@@ -221,7 +235,7 @@ export default function RevenueSummaryPage() {
 
   const handleExportCsv = () => {
     const headers = [m.colDate, m.colMerchant, m.colPayInAmount, m.colPayOutAmount, m.colPayInFee, m.colPayOutFee, m.colTotalFee]
-    const rows = tableRows.map(r => [
+    const rows = pagedRows.map(r => [
       r.date,
       r.merchant,
       r.payInAmt.toFixed(2),
@@ -238,19 +252,17 @@ export default function RevenueSummaryPage() {
     URL.revokeObjectURL(url)
   }
 
-  const handleExportPdf = () => { window.print() }
-
   const yTickFormatter = (v: number) =>
     v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M`
     : v >= 1000 ? `${(v / 1000).toFixed(0)}k`
     : String(v)
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 print:bg-white print:overflow-visible">
+    <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50">
       <div className="p-4 sm:p-6 space-y-5">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl px-6 py-5 shadow-md shadow-primary-200 print:hidden">
+        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl px-6 py-5 shadow-md shadow-primary-200">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -270,7 +282,7 @@ export default function RevenueSummaryPage() {
         </div>
 
         {/* Date Filter */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 flex flex-wrap items-center gap-3 print:hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1">
             {quickPresets.map(p => (
               <button key={p.key} onClick={() => handlePreset(p.key)}
@@ -297,7 +309,7 @@ export default function RevenueSummaryPage() {
         ) : (
           <>
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 print:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               {([
                 { label: m.cardTotalFeeIncome, value: fmt(totalFeeIncome), icon: DollarSign,     gradient: 'bg-gradient-to-br from-primary-500 to-primary-700' },
                 { label: m.cardPayInFee,        value: fmt(totalPayInFee),  icon: TrendingUp,    gradient: 'bg-gradient-to-br from-emerald-400 to-emerald-600' },
@@ -320,9 +332,8 @@ export default function RevenueSummaryPage() {
             </div>
 
             {/* Pie + Fee by merchant stacked bar */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 print:grid-cols-2 gap-4">
-              {/* Pie: pay-in fee vs pay-out fee */}
-              <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden print:break-inside-avoid">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+              <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="h-1.5 bg-gradient-to-r from-primary-400 to-primary-600" />
                 <div className="px-5 pt-4 pb-1">
                   <p className="text-sm font-semibold text-gray-800">{m.chartFeeProportionTitle}</p>
@@ -349,8 +360,7 @@ export default function RevenueSummaryPage() {
                 </div>
               </div>
 
-              {/* Stacked bar by merchant: pay-in fee + pay-out fee */}
-              <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden print:break-inside-avoid">
+              <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
                 <div className="px-5 pt-4 pb-1">
                   <p className="text-sm font-semibold text-gray-800">{m.chartFeeByMerchantTitle}</p>
@@ -380,7 +390,7 @@ export default function RevenueSummaryPage() {
             </div>
 
             {/* Daily fee chart */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden print:break-inside-avoid">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="h-1.5 bg-gradient-to-r from-violet-400 to-violet-600" />
               <div className="px-5 pt-4 pb-1">
                 <p className="text-sm font-semibold text-gray-800">{m.chartDailyFeeTitle}</p>
@@ -417,7 +427,7 @@ export default function RevenueSummaryPage() {
             </div>
 
             {/* Pay-In vs Pay-Out amount by merchant */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden print:break-inside-avoid">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="h-1.5 bg-gradient-to-r from-blue-400 to-indigo-500" />
               <div className="px-5 pt-4 pb-1">
                 <p className="text-sm font-semibold text-gray-800">{m.chartAmountByMerchantTitle}</p>
@@ -446,11 +456,11 @@ export default function RevenueSummaryPage() {
             </div>
 
             {/* Detail table by merchant */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden print:overflow-visible print:shadow-none print:break-inside-avoid">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="h-1.5 bg-gradient-to-r from-primary-400 to-primary-600" />
               <div className="px-5 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-gray-800">{m.tableTitle}</p>
-                <div className="flex items-center gap-2 print:hidden">
+                <div className="flex items-center gap-2">
                   <select
                     value={merchantFilter}
                     onChange={e => setMerchantFilter(e.target.value)}
@@ -463,15 +473,10 @@ export default function RevenueSummaryPage() {
                     <Download className="w-3.5 h-3.5" />
                     {m.exportExcel}
                   </button>
-                  <button onClick={handleExportPdf}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors">
-                    <Download className="w-3.5 h-3.5" />
-                    {m.exportPdf}
-                  </button>
                 </div>
               </div>
-              {/* Screen: scrollable table */}
-              <div className="overflow-auto custom-scrollbar max-h-[420px] print:hidden">
+
+              <div className="overflow-auto custom-scrollbar">
                 <table className="w-full text-sm table-fixed min-w-[760px]">
                   <colgroup>
                     <col className="w-[12%]" />
@@ -482,7 +487,7 @@ export default function RevenueSummaryPage() {
                     <col className="w-[14%]" />
                     <col className="w-[14%]" />
                   </colgroup>
-                  <thead className="sticky top-0 z-10 bg-white">
+                  <thead>
                     <tr className="border-b border-gray-100">
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">{m.colDate}</th>
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colMerchant}</th>
@@ -493,76 +498,91 @@ export default function RevenueSummaryPage() {
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">{m.colTotalFee}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {tableRows.length === 0 ? (
+                  <tbody>
+                    {pagedRows.length === 0 ? (
                       <tr><td colSpan={7} className="py-12 text-center text-sm text-gray-400">{m.noData}</td></tr>
-                    ) : tableRows.map((r, i) => (
-                      <tr key={`${r.date}-${r.merchant}-${i}`} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-5 text-xs text-gray-500 whitespace-nowrap">{r.date}</td>
-                        <td className="py-3 px-3 text-sm font-medium text-gray-800 truncate">{r.merchant}</td>
-                        <td className="py-3 px-3 text-sm tabular-nums text-right text-blue-700">{fmt(r.payInAmt)}</td>
-                        <td className="py-3 px-3 text-sm tabular-nums text-right text-orange-600">{fmt(r.payOutAmt)}</td>
-                        <td className="py-3 px-3 text-sm tabular-nums text-right text-emerald-700">{fmt(r.payInFee)}</td>
-                        <td className="py-3 px-3 text-sm tabular-nums text-right text-amber-600">{fmt(r.payOutFee)}</td>
-                        <td className="py-3 px-5 text-sm tabular-nums text-right font-semibold text-gray-900">{fmt(r.totalFee)}</td>
-                      </tr>
-                    ))}
+                    ) : pagedRows.map((r, i) => {
+                      const rowKey = `${r.date}-${r.merchant}-${i}`
+                      const isHighlighted = highlightedKey === rowKey
+                      return (
+                        <tr
+                          key={rowKey}
+                          onClick={() => {
+                          const next = isHighlighted ? '' : rowKey
+                          setHighlightedKey(next)
+                          try { sessionStorage.setItem(HIGHLIGHTED_KEY, next) } catch {}
+                        }}
+                          className={clsx(
+                            'cursor-pointer transition-colors',
+                            isHighlighted
+                              ? '!bg-primary-100 border-l-[3px] border-l-primary-500'
+                              : i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'
+                          )}
+                        >
+                          <td className="py-3 px-5 text-xs text-gray-500 whitespace-nowrap border-b border-gray-100">{r.date}</td>
+                          <td className="py-3 px-3 text-sm font-medium text-gray-800 truncate border-b border-gray-100">{r.merchant}</td>
+                          <td className="py-3 px-3 text-sm tabular-nums text-right text-blue-700 border-b border-gray-100">{fmt(r.payInAmt)}</td>
+                          <td className="py-3 px-3 text-sm tabular-nums text-right text-orange-600 border-b border-gray-100">{fmt(r.payOutAmt)}</td>
+                          <td className="py-3 px-3 text-sm tabular-nums text-right text-emerald-700 border-b border-gray-100">{fmt(r.payInFee)}</td>
+                          <td className="py-3 px-3 text-sm tabular-nums text-right text-amber-600 border-b border-gray-100">{fmt(r.payOutFee)}</td>
+                          <td className="py-3 px-5 text-sm tabular-nums text-right font-semibold text-gray-900 border-b border-gray-100">{fmt(r.totalFee)}</td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
-                  {tableRows.length > 0 && (
-                    <tfoot className="sticky bottom-0 bg-white border-t-2 border-gray-200">
+                  {pagedRows.length > 0 && (
+                    <tfoot className="bg-white border-t-2 border-gray-200">
                       <tr>
-                        <td colSpan={2} className="py-3 px-5 text-xs font-bold text-gray-600 uppercase tracking-wide">Total</td>
-                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-blue-700">{fmt(tableRows.reduce((s, r) => s + r.payInAmt, 0))}</td>
-                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-orange-600">{fmt(tableRows.reduce((s, r) => s + r.payOutAmt, 0))}</td>
-                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-emerald-700">{fmt(tableRows.reduce((s, r) => s + r.payInFee, 0))}</td>
-                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-amber-600">{fmt(tableRows.reduce((s, r) => s + r.payOutFee, 0))}</td>
-                        <td className="py-3 px-5 text-sm tabular-nums text-right font-bold text-gray-900">{fmt(tableRows.reduce((s, r) => s + r.totalFee, 0))}</td>
+                        <td colSpan={2} className="py-3 px-5 text-xs font-bold text-gray-600 uppercase tracking-wide">{m.colTotal}</td>
+                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-blue-700">{fmt(pagedRows.reduce((s, r) => s + r.payInAmt, 0))}</td>
+                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-orange-600">{fmt(pagedRows.reduce((s, r) => s + r.payOutAmt, 0))}</td>
+                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-emerald-700">{fmt(pagedRows.reduce((s, r) => s + r.payInFee, 0))}</td>
+                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-amber-600">{fmt(pagedRows.reduce((s, r) => s + r.payOutFee, 0))}</td>
+                        <td className="py-3 px-5 text-sm tabular-nums text-right font-bold text-gray-900">{fmt(pagedRows.reduce((s, r) => s + r.totalFee, 0))}</td>
                       </tr>
                     </tfoot>
                   )}
                 </table>
               </div>
 
-              {/* Print: flat table (no scroll/sticky) */}
-              <div className="hidden print:block px-5 pb-4">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left text-xs font-semibold text-gray-500 uppercase py-2 pr-3">{m.colDate}</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 uppercase py-2 pr-3">{m.colMerchant}</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 uppercase py-2 px-3">{m.colPayInAmount}</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 uppercase py-2 px-3">{m.colPayOutAmount}</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 uppercase py-2 px-3">{m.colPayInFee}</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 uppercase py-2 px-3">{m.colPayOutFee}</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 uppercase py-2">{m.colTotalFee}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableRows.map((r, i) => (
-                      <tr key={`print-${r.date}-${r.merchant}-${i}`} className="border-b border-gray-50">
-                        <td className="py-2 text-xs text-gray-500 pr-3">{r.date}</td>
-                        <td className="py-2 text-xs font-medium text-gray-800 pr-3">{r.merchant}</td>
-                        <td className="py-2 text-xs tabular-nums text-right text-blue-700 px-3">{fmt(r.payInAmt)}</td>
-                        <td className="py-2 text-xs tabular-nums text-right text-orange-600 px-3">{fmt(r.payOutAmt)}</td>
-                        <td className="py-2 text-xs tabular-nums text-right text-emerald-700 px-3">{fmt(r.payInFee)}</td>
-                        <td className="py-2 text-xs tabular-nums text-right text-amber-600 px-3">{fmt(r.payOutFee)}</td>
-                        <td className="py-2 text-xs tabular-nums text-right font-semibold text-gray-900">{fmt(r.totalFee)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  {tableRows.length > 0 && (
-                    <tfoot className="border-t-2 border-gray-300">
-                      <tr>
-                        <td colSpan={2} className="py-2 text-xs font-bold text-gray-600 uppercase">Total</td>
-                        <td className="py-2 text-xs tabular-nums text-right font-bold text-blue-700 px-3">{fmt(tableRows.reduce((s, r) => s + r.payInAmt, 0))}</td>
-                        <td className="py-2 text-xs tabular-nums text-right font-bold text-orange-600 px-3">{fmt(tableRows.reduce((s, r) => s + r.payOutAmt, 0))}</td>
-                        <td className="py-2 text-xs tabular-nums text-right font-bold text-emerald-700 px-3">{fmt(tableRows.reduce((s, r) => s + r.payInFee, 0))}</td>
-                        <td className="py-2 text-xs tabular-nums text-right font-bold text-amber-600 px-3">{fmt(tableRows.reduce((s, r) => s + r.payOutFee, 0))}</td>
-                        <td className="py-2 text-xs tabular-nums text-right font-bold text-gray-900">{fmt(tableRows.reduce((s, r) => s + r.totalFee, 0))}</td>
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
+              {/* Pagination */}
+              <div className="px-5 py-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500">
+                <span>
+                  <span className="font-semibold text-gray-800">{tableRows.length}</span> {m.totalItems}
+                </span>
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">{m.rowsPerPage}</span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={e => { setItemsPerPage(Number(e.target.value)); setPage(1) }}
+                      className="bg-transparent border-none text-gray-700 focus:ring-0 cursor-pointer font-medium outline-none text-sm"
+                    >
+                      {ITEMS_PER_PAGE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs text-gray-400">
+                      {tableRows.length === 0 ? '0-0' : `${startRow}-${endRow}`} of {tableRows.length}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setPage(p => p - 1)}
+                        disabled={page <= 1}
+                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setPage(p => p + 1)}
+                        disabled={page >= totalPages}
+                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </>

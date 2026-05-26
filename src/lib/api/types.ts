@@ -537,3 +537,29 @@ export interface MerchantSummaryResponse {
   merchantsPayInSummary?: MerchantSummaryItem[] | null
   merchantsPayOutSummary?: MerchantSummaryItem[] | null
 }
+
+export interface DailyRevenueItem {
+  date?: string | null
+  payInFee?: number | null
+  payOutFee?: number | null
+}
+
+export interface DailyMerchantRevenueItem {
+  date?: string | null
+  merchantCode?: string | null
+  payInAmount?: number | null
+  payOutAmount?: number | null
+  payInFee?: number | null
+  payOutFee?: number | null
+}
+
+export interface RevenueSummaryResponse {
+  totalPayInAmount?: number | null
+  totalPayOutAmount?: number | null
+  totalPayInFee?: number | null
+  totalPayOutFee?: number | null
+  payInByMerchant?: MerchantSummaryItem[] | null
+  payOutByMerchant?: MerchantSummaryItem[] | null
+  dailyRevenue?: DailyRevenueItem[] | null
+  dailyMerchantRevenue?: DailyMerchantRevenueItem[] | null
+}

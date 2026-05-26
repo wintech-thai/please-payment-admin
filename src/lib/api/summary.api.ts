@@ -9,7 +9,18 @@ export interface GetMerchantSummaryPayload {
   toDate?: string
 }
 
+export interface GetRevenueSummaryPayload {
+  fromDate?: string
+  toDate?: string
+  offset?: number
+  limit?: number
+  needMerchantSummary?: boolean
+}
+
 export const summaryApi = {
   getMerchantSummary: (payload: GetMerchantSummaryPayload = {}) =>
     client.post(`${BASE}/GetMerchantSummary`, payload),
+
+  getRevenueSummary: (payload: GetRevenueSummaryPayload = {}) =>
+    client.post(`${BASE}/GetRevenueSummary`, payload),
 }

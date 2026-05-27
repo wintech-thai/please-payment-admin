@@ -408,6 +408,29 @@ export interface GetPayInRequestsPayload {
 
 // ─── Pay-In Transactions ─────────────────────────────────────────────────────
 
+export interface PaymentTxJobParameter {
+  name?: string | null
+  value?: string | null
+}
+
+export interface PaymentTxJob {
+  id?: string | null
+  orgId?: string | null
+  status?: string | null
+  jobMessage?: string | null
+  name?: string | null
+  tags?: string | null
+  description?: string | null
+  type?: string | null
+  progressPct?: number | null
+  succeedCount?: number | null
+  failedCount?: number | null
+  createdDate?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  parameters?: PaymentTxJobParameter[] | null
+}
+
 export interface PayInTxItem {
   id: string
   orgId?: string | null
@@ -438,6 +461,7 @@ export interface PayInTxItem {
   createdDate?: string | null
   processingSteps?: string[] | null
   rawInputObj?: unknown | null
+  jobId?: string | null
 }
 
 export interface PayInTxDetail extends PayInTxItem {
@@ -562,4 +586,89 @@ export interface RevenueSummaryResponse {
   payOutByMerchant?: MerchantSummaryItem[] | null
   dailyRevenue?: DailyRevenueItem[] | null
   dailyMerchantRevenue?: DailyMerchantRevenueItem[] | null
+}
+
+// ─── Pay-In Slip (Payment Document) ─────────────────────────────────────────
+
+export interface PayInSlipItem {
+  id: string                           // primary key from API
+  orgId?: string | null
+  merchantId?: string | null
+  merchantCode?: string | null
+  merchantName?: string | null
+  paymentRequestId?: string | null
+  description?: string | null
+  currency?: string | null
+  tags?: string | null
+  status?: string | null              // Pending | Approved | Rejected
+  direction?: string | null
+  txAmount?: number | null
+  txAmountDecimal?: number | null
+  txAmountStr?: string | null
+  fileDocumentId?: string | null
+  uploadedFilePath?: string | null
+  refId?: string | null
+  payInBankAccountId?: string | null
+  payInBankCode?: string | null
+  payInBankAccountNo?: string | null
+  payInBankAccountName?: string | null
+  payOutBankAccountId?: string | null
+  payOutBankCode?: string | null
+  payOutBankAccountNo?: string | null
+  payOutBankAccountName?: string | null
+  fromBankCode?: string | null
+  fromBankAccountNo?: string | null
+  fromBankAccountName?: string | null
+  rejectReason?: string | null
+  processingMessages?: string | null
+  processingSteps?: string[] | null
+  mimeType?: string | null
+  documentType?: string | null
+  previewUrl?: string | null
+  createdDate?: string | null
+}
+
+export interface PayInSlipDetail extends PayInSlipItem {}
+
+export interface GetPayInDocumentsPayload {
+  FullTextSearch?: string
+  Status?: string
+}
+
+export interface GetPresignedUrlPayload {
+  MimeType: string
+}
+
+export interface AddPayInDocumentPayload {
+  UploadedFilePath: string
+  MimeType: string
+  TxAmountDecimal: number
+  PayInBankAccountId: string
+  MerchantId: string
+  RefId: string
+}
+
+export interface UpdatePayInDocumentPayload {
+  TxAmountDecimal?: number
+  PayInBankAccountId?: string
+  RefId?: string
+}
+
+export interface ApprovePayInDocumentPayload {
+  TxAmountDecimal: number
+  TxAmount?: number
+  Currency?: string
+  RefId: string
+  PayInBankAccountId: string
+  MerchantId: string
+}
+
+export interface RejectPayInDocumentPayload {
+  TxAmountDecimal: number
+  TxAmount?: number
+  Currency?: string
+  RefId: string
+  PayInBankAccountId: string
+  MerchantId: string
+  RejectReason: string
 }

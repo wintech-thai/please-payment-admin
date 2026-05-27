@@ -479,13 +479,7 @@ export default function RevenueSummaryPage() {
               <div className="overflow-auto custom-scrollbar">
                 <table className="w-full text-sm table-fixed min-w-[760px]">
                   <colgroup>
-                    <col className="w-[12%]" />
-                    <col className="w-[18%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[14%]" />
+                    <col className="w-[12%]" /><col className="w-[18%]" /><col className="w-[14%]" /><col className="w-[14%]" /><col className="w-[14%]" /><col className="w-[14%]" /><col className="w-[14%]" />
                   </colgroup>
                   <thead>
                     <tr className="border-b border-gray-100">

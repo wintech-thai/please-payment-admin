@@ -38,6 +38,11 @@ async function handler(request: NextRequest, { params }: { params: { path: strin
     body,
   })
 
+  // 204 / 205 have no body — NextResponse.json() throws on these status codes
+  if (response.status === 204 || response.status === 205) {
+    return new NextResponse(null, { status: response.status })
+  }
+
   const data = await response.json().catch(() => null)
 
   return NextResponse.json(data, { status: response.status })

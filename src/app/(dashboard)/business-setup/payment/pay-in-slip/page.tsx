@@ -244,7 +244,7 @@ export default function PayInSlipListPage() {
                         : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                     )}
                   >
-                    {/* Ref ID — clickable link */}
+                    {/* Ref ID */}
                     <td
                       className="px-4 py-3 border-b border-gray-100 overflow-hidden cursor-pointer group"
                       onClick={e => { e.stopPropagation(); handleNavigate(id) }}

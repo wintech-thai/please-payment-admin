@@ -612,6 +612,8 @@ export interface PayInSlipItem {
   payInBankCode?: string | null
   payInBankAccountNo?: string | null
   payInBankAccountName?: string | null
+  payInAccountType?: string | null      // "PromptPay" | "Native"
+  payInPromptPayId?: string | null
   payOutBankAccountId?: string | null
   payOutBankCode?: string | null
   payOutBankAccountNo?: string | null
@@ -620,6 +622,7 @@ export interface PayInSlipItem {
   fromBankAccountNo?: string | null
   fromBankAccountName?: string | null
   rejectReason?: string | null
+  paymentTransactionId?: string | null
   processingMessages?: string | null
   processingSteps?: string[] | null
   mimeType?: string | null

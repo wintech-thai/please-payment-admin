@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { paymentDocumentApi } from '@/lib/api/payment-document.api'
 import { merchantApi } from '@/lib/api/merchant.api'
@@ -26,28 +26,87 @@ function buildStorageUrl(presignedUrl: string): string {
 }
 
 async function decodeQrFromImage(file: File): Promise<string | null> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        canvas.width = img.naturalWidth
-        canvas.height = img.naturalHeight
-        const ctx = canvas.getContext('2d')
-        if (!ctx) { URL.revokeObjectURL(url); resolve(null); return }
-        ctx.drawImage(img, 0, 0)
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-        import('jsqr').then(({ default: jsQR }) => {
-          const code = jsQR(imageData.data, imageData.width, imageData.height)
-          URL.revokeObjectURL(url)
-          resolve(code?.data ?? null)
-        }).catch(() => { URL.revokeObjectURL(url); resolve(null) })
-      } catch { URL.revokeObjectURL(url); resolve(null) }
+  const url = URL.createObjectURL(file)
+  try {
+    // Load image element
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image()
+      i.onload = () => resolve(i)
+      i.onerror = reject
+      i.src = url
+    })
+
+    // Draw image to canvas — optional upscale and binarize (high-contrast B&W)
+    const toCanvas = (scale: number, binarize = false): HTMLCanvasElement => {
+      const w = Math.round(img.naturalWidth * scale)
+      const h = Math.round(img.naturalHeight * scale)
+      const c = document.createElement('canvas')
+      c.width = w; c.height = h
+      const ctx = c.getContext('2d')!
+      ctx.drawImage(img, 0, 0, w, h)
+      if (binarize) {
+        const id = ctx.getImageData(0, 0, w, h)
+        const d = id.data
+        for (let i = 0; i < d.length; i += 4) {
+          // Weighted grayscale → hard threshold at 128
+          const lum = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114
+          const v = lum < 128 ? 0 : 255
+          d[i] = d[i + 1] = d[i + 2] = v
+        }
+        ctx.putImageData(id, 0, 0)
+      }
+      return c
     }
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
-    img.src = url
-  })
+
+    // ZXing decode — uses RGBLuminanceSource for better accuracy than jsQR
+    const zxingDecode = async (canvas: HTMLCanvasElement): Promise<string | null> => {
+      try {
+        const { QRCodeReader, BinaryBitmap, HybridBinarizer, RGBLuminanceSource } =
+          await import('@zxing/library')
+        const ctx = canvas.getContext('2d')!
+        const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        // RGBA → RGB (ZXing expects 3-channel)
+        const rgb = new Uint8ClampedArray(width * height * 3)
+        for (let i = 0, j = 0; i < data.length; i += 4, j += 3) {
+          rgb[j] = data[i]; rgb[j + 1] = data[i + 1]; rgb[j + 2] = data[i + 2]
+        }
+        const source = new RGBLuminanceSource(rgb, width, height)
+        const bitmap = new BinaryBitmap(new HybridBinarizer(source))
+        return new QRCodeReader().decode(bitmap).getText()
+      } catch { return null }
+    }
+
+    // jsQR fallback decode
+    const jsqrDecode = async (canvas: HTMLCanvasElement): Promise<string | null> => {
+      try {
+        const ctx = canvas.getContext('2d')!
+        const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const { default: jsQR } = await import('jsqr')
+        return jsQR(data, width, height)?.data ?? null
+      } catch { return null }
+    }
+
+    // Try strategies in order — stop as soon as one succeeds
+    // Each strategy trades more processing for better coverage of edge cases
+    const strategies: Array<() => Promise<string | null>> = [
+      () => zxingDecode(toCanvas(1)),          // 1. ZXing — original size
+      () => zxingDecode(toCanvas(2)),          // 2. ZXing — 2× upscale (helps small/dense QR)
+      () => zxingDecode(toCanvas(1, true)),    // 3. ZXing — binarized (helps low-contrast)
+      () => zxingDecode(toCanvas(2, true)),    // 4. ZXing — 2× + binarized
+      () => jsqrDecode(toCanvas(1)),           // 5. jsQR  — original (legacy fallback)
+      () => jsqrDecode(toCanvas(2)),           // 6. jsQR  — 2× upscale fallback
+    ]
+
+    for (const strategy of strategies) {
+      const result = await strategy()
+      if (result) return result
+    }
+    return null
+  } catch {
+    return null
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }
 
 /**
@@ -266,6 +325,9 @@ export default function UploadPayInSlipPage() {
 
   const [merchants, setMerchants] = useState<MerchantItem[]>([])
   const [merchantId, setMerchantId] = useState('')
+  const [merchantQuery, setMerchantQuery] = useState('')
+  const [merchantDropdownOpen, setMerchantDropdownOpen] = useState(false)
+  const merchantDropdownRef = useRef<HTMLDivElement>(null)
   const [bankAccounts, setBankAccounts] = useState<BankAccountItem[]>([])
   const [bankAccountId, setBankAccountId] = useState('')
   const [amount, setAmount] = useState('')
@@ -273,6 +335,26 @@ export default function UploadPayInSlipPage() {
   const [saving, setSaving] = useState(false)
   const [loadingMerchants, setLoadingMerchants] = useState(true)
   const [loadingBanks, setLoadingBanks] = useState(false)
+
+  // Close merchant dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (merchantDropdownRef.current && !merchantDropdownRef.current.contains(e.target as Node)) {
+        setMerchantDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Filtered merchants for searchable dropdown
+  const filteredMerchants = useMemo(() => {
+    if (!merchantQuery) return merchants
+    const q = merchantQuery.toLowerCase()
+    return merchants.filter(
+      mc => mc.code?.toLowerCase().includes(q) || mc.name?.toLowerCase().includes(q)
+    )
+  }, [merchants, merchantQuery])
 
   // Load merchants
   useEffect(() => {
@@ -574,24 +656,58 @@ export default function UploadPayInSlipPage() {
           <div className="space-y-5">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-5 space-y-4">
-                {/* Merchant */}
+                {/* Merchant — searchable combobox */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                     {m.labelMerchant} <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    value={merchantId}
-                    onChange={e => setMerchantId(e.target.value)}
-                    disabled={loadingMerchants}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 bg-white disabled:bg-gray-50 disabled:text-gray-400"
-                  >
-                    <option value="">{loadingMerchants ? 'Loading...' : m.placeholderMerchant}</option>
-                    {merchants.map(merchant => (
-                      <option key={merchant.id} value={merchant.id}>
-                        {merchant.code} — {merchant.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div ref={merchantDropdownRef} className="relative">
+                    <input
+                      type="text"
+                      value={
+                        merchantId
+                          ? (merchants.find(mc => mc.id === merchantId)
+                              ? `${merchants.find(mc => mc.id === merchantId)!.code} — ${merchants.find(mc => mc.id === merchantId)!.name}`
+                              : merchantQuery)
+                          : merchantQuery
+                      }
+                      onChange={e => {
+                        setMerchantQuery(e.target.value)
+                        setMerchantId('')
+                        setMerchantDropdownOpen(true)
+                      }}
+                      onFocus={() => setMerchantDropdownOpen(true)}
+                      placeholder={loadingMerchants ? 'Loading...' : m.placeholderMerchant}
+                      disabled={loadingMerchants}
+                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                    />
+                    {merchantDropdownOpen && !loadingMerchants && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                        {filteredMerchants.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-gray-400">ไม่พบร้านค้า</div>
+                        ) : (
+                          filteredMerchants.map(mc => (
+                            <div
+                              key={mc.id}
+                              onMouseDown={e => {
+                                e.preventDefault()
+                                setMerchantId(mc.id)
+                                setMerchantQuery('')
+                                setMerchantDropdownOpen(false)
+                              }}
+                              className={clsx(
+                                'px-4 py-2.5 text-sm cursor-pointer hover:bg-primary-50 transition-colors',
+                                merchantId === mc.id && 'bg-primary-50 text-primary-700 font-medium'
+                              )}
+                            >
+                              <span className="font-semibold">{mc.code}</span>
+                              {mc.name && <span className="text-gray-500"> — {mc.name}</span>}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Bank Account */}

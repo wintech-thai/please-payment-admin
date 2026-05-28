@@ -36,4 +36,14 @@ export const paymentDocumentApi = {
 
   rejectPayInDocumentById: (id: string, payload: RejectPayInDocumentPayload) =>
     client.post(`${BASE}/RejectPayInDocumentById/${id}`, payload),
+
+  getPendingPayInRequestsForPaymentTx: (payload: {
+    GeneratedAmountStr?: string
+    BankAccountId?: string
+    MerchantId?: string
+  }) =>
+    client.post(
+      '/admin-api/AdminPaymentTx/org/global/action/GetPendingPayInRequestsForPaymentTx',
+      payload
+    ),
 }

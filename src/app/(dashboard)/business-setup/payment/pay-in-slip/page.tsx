@@ -6,7 +6,7 @@ import { paymentDocumentApi } from '@/lib/api/payment-document.api'
 import type { PayInSlipItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, Upload } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, Upload, ExternalLink } from 'lucide-react'
 import clsx from 'clsx'
 
 const HIGHLIGHTED_KEY = 'payInSlip_highlightedId'
@@ -115,7 +115,7 @@ export default function PayInSlipListPage() {
   const startRow = items.length === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, items.length)
 
-  const cols = [m.colRefId, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, m.colCreatedDate]
+  const cols = [m.colRefId, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colCreatedDate]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -192,7 +192,7 @@ export default function PayInSlipListPage() {
         <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="w-full text-sm border-separate border-spacing-0 table-fixed min-w-[800px]">
             <colgroup>
-              <col className="w-[18%]" /><col className="w-[16%]" /><col className="w-[12%]" /><col className="w-[10%]" /><col className="w-[18%]" /><col className="w-[10%]" /><col className="w-[16%]" />
+              <col className="w-[18%]" /><col className="w-[18%]" /><col className="w-[13%]" /><col className="w-[24%]" /><col className="w-[12%]" /><col className="w-[15%]" />
             </colgroup>
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50">
@@ -203,7 +203,7 @@ export default function PayInSlipListPage() {
                       'px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 text-left',
                       i === 0 && 'rounded-tl-xl',
                       i === cols.length - 1 && 'rounded-tr-xl',
-                      (i === 2 || i === 3) && 'text-right'
+                      i === 2 && 'text-right'
                     )}
                   >
                     {col}
@@ -271,26 +271,52 @@ export default function PayInSlipListPage() {
                       <p className="text-sm font-semibold text-gray-800 tabular-nums">{formatAmount(item.txAmountDecimal)}</p>
                     </td>
 
-                    {/* Fee — not returned in list API */}
-                    <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
-                      <p className="text-sm text-gray-400 tabular-nums">—</p>
-                    </td>
-
                     {/* Bank Account */}
                     <td className="px-4 py-3 border-b border-gray-100 overflow-hidden">
                       {item.payInBankCode || item.payInBankAccountNo ? (
                         <>
-                          <p className="text-sm font-semibold text-gray-800 truncate">{item.payInBankCode ?? '—'}</p>
-                          {item.payInBankAccountNo && <p className="text-xs text-gray-500 mt-0.5 truncate">{item.payInBankAccountNo}</p>}
+                          <p className="text-sm font-semibold text-gray-800 truncate">
+                            {[item.payInBankCode, item.payInBankAccountNo].filter(Boolean).join(' · ')}
+                          </p>
+                          {item.payInBankAccountName && (
+                            <p className="text-xs text-gray-500 mt-0.5 truncate">{item.payInBankAccountName}</p>
+                          )}
+                          {(item.payInAccountType || item.payInPromptPayId) && (
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              {item.payInAccountType && (
+                                <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
+                                  {item.payInAccountType}
+                                </span>
+                              )}
+                              {item.payInAccountType?.toLowerCase() === 'promptpay' && item.payInPromptPayId && (
+                                <span className="text-[10px] text-gray-500">{item.payInPromptPayId}</span>
+                              )}
+                            </div>
+                          )}
                         </>
                       ) : (
                         <p className="text-sm text-gray-400">—</p>
                       )}
                     </td>
 
-                    {/* Status */}
+                    {/* Status + Reject Reason / Payment Tx link */}
                     <td className="px-4 py-3 border-b border-gray-100">
                       <StatusBadge status={item.status} />
+                      {item.status?.toLowerCase() === 'approved' && item.paymentTransactionId && (
+                        <a
+                          href={`/business-setup/payment/pay-in-transactions/${item.paymentTransactionId}`}
+                          onClick={e => e.stopPropagation()}
+                          className="flex items-center gap-1 mt-1 text-[11px] text-primary-600 hover:text-primary-800 hover:underline"
+                        >
+                          <span className="truncate max-w-[120px]">{item.paymentTransactionId}</span>
+                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                        </a>
+                      )}
+                      {item.rejectReason && (
+                        <p className="text-[11px] text-red-500 mt-1 truncate max-w-[140px]" title={item.rejectReason}>
+                          {item.rejectReason}
+                        </p>
+                      )}
                     </td>
 
                     {/* Created Date */}

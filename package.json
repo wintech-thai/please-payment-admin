@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^8.19.1",
+    "@zxing/library": "^0.23.0",
     "axios": "^1.16.0",
     "clsx": "^2.1.1",
     "jsqr": "^1.4.0",

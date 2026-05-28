@@ -7,7 +7,7 @@ import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { PayInSlipDetail, BankAccountItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, XCircle, Clock, ImageIcon } from 'lucide-react'
+import { ChevronLeft, CheckCircle, XCircle, Clock, ImageIcon, Save, ShieldCheck } from 'lucide-react'
 import clsx from 'clsx'
 
 function buildStorageUrl(rawUrl: string): string {
@@ -148,9 +148,12 @@ export default function PayInSlipDetailPage() {
   const [amount, setAmount] = useState('')
   const [refId, setRefId] = useState('')
 
+  const [saving, setSaving] = useState(false)
   const [approving, setApproving] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejecting, setRejecting] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [verifyResult, setVerifyResult] = useState<{ found: boolean; item: any } | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -186,10 +189,70 @@ export default function PayInSlipDetailPage() {
   const isPending = detail?.status?.toLowerCase() === 'pending'
   const isReadOnly = !isPending
 
+  const handleUpdate = async () => {
+    if (!bankAccountId) { toast.error(m.validBankRequired); return }
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) { toast.error(m.validAmountRequired); return }
+    if (!refId.trim()) { toast.error(m.validRefIdRequired); return }
+    setSaving(true)
+    try {
+      await paymentDocumentApi.updatePayInDocumentById(id, {
+        TxAmountDecimal: parseFloat(amount),
+        PayInBankAccountId: bankAccountId,
+        RefId: refId.trim(),
+      })
+      toast.success(m.toastUpdateSuccess)
+    } catch (err: any) {
+      toast.error(err?.message ?? m.toastUpdateFailed)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleVerify = async () => {
+    setVerifying(true)
+    setVerifyResult(null)
+    try {
+      const res = await paymentDocumentApi.getPendingPayInRequestsForPaymentTx({
+        GeneratedAmountStr: amount ? String(parseFloat(amount)) : undefined,
+        BankAccountId: bankAccountId || undefined,
+        MerchantId: detail?.merchantId || undefined,
+      })
+      const data = res.data as any
+      const list: any[] = Array.isArray(data)
+        ? data
+        : (data?.payInRequests ?? data?.PayInRequests ?? data?.requests ?? data?.items ?? [])
+      setVerifyResult({ found: list.length > 0, item: list[0] ?? null })
+    } catch (err: any) {
+      toast.error(err?.message ?? m.toastVerifyFailed)
+    } finally {
+      setVerifying(false)
+    }
+  }
+
   const handleApprove = async () => {
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) { toast.error(m.validAmountRequired); return }
     if (!bankAccountId) { toast.error(m.validBankRequired); return }
     if (!refId.trim()) { toast.error(m.validRefIdRequired); return }
+
+    // Pre-validate: check for matching pending request
+    try {
+      const res = await paymentDocumentApi.getPendingPayInRequestsForPaymentTx({
+        GeneratedAmountStr: String(parseFloat(amount)),
+        BankAccountId: bankAccountId || undefined,
+        MerchantId: detail?.merchantId || undefined,
+      })
+      const data = res.data as any
+      const list: any[] = Array.isArray(data)
+        ? data
+        : (data?.payInRequests ?? data?.PayInRequests ?? data?.requests ?? data?.items ?? [])
+      if (list.length === 0) {
+        toast.error(m.toastApproveBlockedNoRequest)
+        return
+      }
+    } catch {
+      // If API call fails, don't block approve
+    }
+
     setApproving(true)
     try {
       await paymentDocumentApi.approvePayInDocumentById(id, {
@@ -386,8 +449,73 @@ export default function PayInSlipDetailPage() {
               </div>
             </div>
 
+            {/* Verify result */}
+            {verifyResult !== null && (
+              <div className={clsx(
+                'rounded-xl border px-4 py-3',
+                verifyResult.found ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'
+              )}>
+                <p className="text-xs font-bold uppercase tracking-wide mb-1 text-gray-500">{m.verifyResultTitle}</p>
+                {verifyResult.found ? (
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-semibold text-emerald-700">{m.verifyFound}</p>
+                    {verifyResult.item?.refId && (
+                      <p className="text-xs text-gray-600">Ref ID: <span className="font-medium">{verifyResult.item.refId}</span></p>
+                    )}
+                    {verifyResult.item?.status && (
+                      <p className="text-xs text-gray-600">Status: <span className="font-medium">{verifyResult.item.status}</span></p>
+                    )}
+                    {(verifyResult.item?.requestedAmount ?? verifyResult.item?.generatedAmount) != null && (
+                      <p className="text-xs text-gray-600">
+                        Amount: <span className="font-medium tabular-nums">
+                          {(verifyResult.item.requestedAmount ?? verifyResult.item.generatedAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm font-semibold text-amber-700">{m.verifyNotFound}</p>
+                )}
+              </div>
+            )}
+
             {/* Action buttons */}
             <div className="flex flex-wrap items-center gap-3 justify-end">
+              {/* Verify */}
+              <button
+                onClick={handleVerify}
+                disabled={verifying}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-colors bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 disabled:opacity-50"
+              >
+                {verifying ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : <ShieldCheck className="w-4 h-4" />}
+                {verifying ? m.btnVerifying : m.btnVerify}
+              </button>
+
+              {/* Save (Pending only) */}
+              <button
+                onClick={handleUpdate}
+                disabled={!isPending || saving}
+                className={clsx(
+                  'flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-colors',
+                  !isPending
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-primary-500 hover:bg-primary-600 text-white shadow-md shadow-primary-200 disabled:opacity-50'
+                )}
+              >
+                {saving ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : <Save className="w-4 h-4" />}
+                {saving ? m.btnUpdating : m.btnUpdate}
+              </button>
+
               {/* Reject */}
               <button
                 onClick={() => setShowRejectModal(true)}

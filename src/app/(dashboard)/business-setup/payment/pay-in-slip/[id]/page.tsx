@@ -203,7 +203,7 @@ export default function PayInSlipDetailPage() {
       toast.success(m.toastApproveSuccess)
       router.push('/business-setup/payment/pay-in-slip')
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? m.toastApproveFailed)
+      toast.error(err?.message ?? err?.response?.data?.description ?? err?.response?.data?.message ?? m.toastApproveFailed)
     } finally {
       setApproving(false)
     }
@@ -225,7 +225,7 @@ export default function PayInSlipDetailPage() {
       setShowRejectModal(false)
       router.push('/business-setup/payment/pay-in-slip')
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? m.toastRejectFailed)
+      toast.error(err?.message ?? err?.response?.data?.description ?? err?.response?.data?.message ?? m.toastRejectFailed)
     } finally {
       setRejecting(false)
     }
@@ -336,7 +336,7 @@ export default function PayInSlipDetailPage() {
                   >
                     <option value="">{loadingBanks ? 'Loading...' : m.placeholderBankAccount}</option>
                     {bankAccounts.map(ba => {
-                      const baId = ba.bankAccountId ?? ba.accountId
+                      const baId = ba.bankAccountId ?? (ba as any).id ?? ba.accountId ?? ''
                       return (
                         <option key={baId} value={baId}>
                           {ba.bankCode} — {ba.accountNumber} ({ba.accountName})

@@ -88,7 +88,14 @@ client.interceptors.response.use(
     ])
     const statusUpper = typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : ''
 
-    if (!API_ENVELOPE_STATUSES.has(statusUpper)) return response // not an API envelope — pass through
+    // Also treat any status starting with ERROR_ or FAILED_ as an API envelope error
+    // e.g. ERROR_REF_ID_ALREADY_USED_BY_APPROVED_PAYMENT_DOCUMENT
+    const isEnvelopeStatus =
+      API_ENVELOPE_STATUSES.has(statusUpper) ||
+      statusUpper.startsWith('ERROR_') ||
+      statusUpper.startsWith('FAILED_')
+
+    if (!isEnvelopeStatus) return response // not an API envelope — pass through
 
     const isSuccess = statusUpper === 'OK' || statusUpper === 'SUCCESS'
 

@@ -609,7 +609,7 @@ export default function UploadPayInSlipPage() {
                       {!merchantId ? m.placeholderMerchant : loadingBanks ? 'Loading...' : m.placeholderBankAccount}
                     </option>
                     {bankAccounts.map(ba => {
-                      const baId = ba.bankAccountId ?? ba.accountId
+                      const baId = ba.bankAccountId ?? (ba as any).id ?? ba.accountId ?? ''
                       return (
                         <option key={baId} value={baId}>
                           {ba.bankCode} — {ba.accountNumber} ({ba.accountName})

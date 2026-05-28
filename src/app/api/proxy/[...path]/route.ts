@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || ''
 
 async function handler(request: NextRequest, { params }: { params: { path: string[] } }) {
@@ -37,6 +39,11 @@ async function handler(request: NextRequest, { params }: { params: { path: strin
     headers,
     body,
   })
+
+  // 204 / 205 have no body — NextResponse.json() throws on these status codes
+  if (response.status === 204 || response.status === 205) {
+    return new NextResponse(null, { status: response.status })
+  }
 
   const data = await response.json().catch(() => null)
 

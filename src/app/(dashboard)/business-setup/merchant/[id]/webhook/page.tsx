@@ -517,11 +517,7 @@ export default function WebhookPage() {
               <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
                 <table className="w-full table-fixed">
                   <colgroup>
-                    <col className="w-[15%]" />
-                    <col className="w-[18%]" />
-                    <col className="w-[37%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[18%]" />
+                    <col className="w-[15%]" /><col className="w-[18%]" /><col className="w-[37%]" /><col className="w-[12%]" /><col className="w-[18%]" />
                   </colgroup>
                   <thead>
                     <tr className="bg-gray-50/80">

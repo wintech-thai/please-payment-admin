@@ -78,7 +78,25 @@ client.interceptors.response.use(
     const { status, description, message } = data
     if (status === undefined || status === null) return response
 
-    const statusUpper = typeof status === 'string' ? status.toUpperCase() : ''
+    // Only treat as an API envelope when status is a known short code.
+    // Job / task responses carry their own status field ("Done", "Processing", etc.)
+    // and must NOT be intercepted here.
+    const API_ENVELOPE_STATUSES = new Set([
+      'OK', 'SUCCESS', 'ERROR', 'FAILED', 'UNAUTHORIZED',
+      'FORBIDDEN', 'NOT_FOUND', 'VALIDATION_ERROR', 'BAD_REQUEST',
+      'INTERNAL_SERVER_ERROR',
+    ])
+    const statusUpper = typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : ''
+
+    // Also treat any status starting with ERROR_ or FAILED_ as an API envelope error
+    // e.g. ERROR_REF_ID_ALREADY_USED_BY_APPROVED_PAYMENT_DOCUMENT
+    const isEnvelopeStatus =
+      API_ENVELOPE_STATUSES.has(statusUpper) ||
+      statusUpper.startsWith('ERROR_') ||
+      statusUpper.startsWith('FAILED_')
+
+    if (!isEnvelopeStatus) return response // not an API envelope — pass through
+
     const isSuccess = statusUpper === 'OK' || statusUpper === 'SUCCESS'
 
     if (!isSuccess) {

@@ -77,5 +77,6 @@ export const bankAccountApi = {
   createLinePaymentTxNotiApiKey: (id: string) =>
     client.post(`${BASE}/CreateLinePaymentTxNotiApiKey/${id}`, {}),
 
-
+  getPayInBankAccountsForMerchant: (merchantId: string) =>
+    client.get<{ bankAccounts: BankAccountItem[] }>(`${BASE}/GetPayInBankAccountsWithGlobalForMerchant/${merchantId}`),
 }

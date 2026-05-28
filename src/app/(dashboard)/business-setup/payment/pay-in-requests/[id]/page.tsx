@@ -40,7 +40,7 @@ function StatusBadge({ status, createdDate }: { status?: string | null; createdD
     </span>
   )
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5 w-fit">
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
         <Clock className="w-3.5 h-3.5" />{status ?? 'Pending'}
       </span>

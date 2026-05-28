@@ -1,5 +1,5 @@
 import { client } from '@/lib/axios'
-import type { PayInTxItem, PayInTxDetail, GetPayInTxPayload, SubmitLinePaymentTxPayload } from './types'
+import type { PayInTxItem, PayInTxDetail, PaymentTxJob, GetPayInTxPayload, SubmitLinePaymentTxPayload } from './types'
 
 const BASE = '/admin-api/AdminPaymentTx/org/global/action'
 
@@ -12,6 +12,9 @@ export const paymentTxApi = {
 
   getPaymentTransactionById: (id: string) =>
     client.get<{ paymentTransaction: PayInTxDetail }>(`${BASE}/GetPaymentTransactionById/${id}`),
+
+  getPaymentTransactionJobById: (pmtId: string, jobId: string) =>
+    client.get<PaymentTxJob>(`${BASE}/GetPaymentTransactionJobById/${pmtId}/${jobId}`),
 
   submitLinePaymentTxNotification: (bankAccountId: string, payload: SubmitLinePaymentTxPayload, apiKey?: string) =>
     client.post(`${BASE}/SubmitLinePaymentTxNotification/${bankAccountId}`, payload, {

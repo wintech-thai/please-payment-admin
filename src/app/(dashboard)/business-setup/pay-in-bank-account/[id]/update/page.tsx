@@ -140,8 +140,14 @@ export default function UpdateBankAccountPage() {
       setIsDirty(false)
       toast.success(m.updatedSuccess)
       router.push(`/business-setup/pay-in-bank-account?highlight=${id}`)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : m.failedToUpdate)
+    } catch (err: any) {
+      const msg = err?.response?.data?.description
+        || err?.response?.data?.message
+        || err?.response?.data?.Description
+        || err?.response?.data?.Message
+        || err?.message
+        || m.failedToUpdate
+      toast.error(msg)
     } finally {
       setSaving(false)
     }

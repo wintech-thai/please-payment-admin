@@ -148,6 +148,11 @@ export default function PayInSlipDetailPage() {
   const [amount, setAmount] = useState('')
   const [refId, setRefId] = useState('')
 
+  // Original values for dirty check
+  const [origBankAccountId, setOrigBankAccountId] = useState('')
+  const [origAmount, setOrigAmount] = useState('')
+  const [origRefId, setOrigRefId] = useState('')
+
   const [saving, setSaving] = useState(false)
   const [approving, setApproving] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
@@ -163,9 +168,15 @@ export default function PayInSlipDetailPage() {
         const d = res.data as any
         const doc: PayInSlipDetail = (d?.paymentDocument ?? d?.PaymentDocument ?? d) as PayInSlipDetail
         setDetail(doc)
-        setBankAccountId(doc.payInBankAccountId ?? '')
-        setAmount(doc.txAmountDecimal != null ? String(doc.txAmountDecimal) : '')
-        setRefId(doc.refId ?? '')
+        const initBankId = doc.payInBankAccountId ?? ''
+        const initAmount = doc.txAmountDecimal != null ? String(doc.txAmountDecimal) : ''
+        const initRefId = doc.refId ?? ''
+        setBankAccountId(initBankId)
+        setAmount(initAmount)
+        setRefId(initRefId)
+        setOrigBankAccountId(initBankId)
+        setOrigAmount(initAmount)
+        setOrigRefId(initRefId)
 
         // Load bank accounts for the merchant
         if (doc.merchantId) {
@@ -193,6 +204,17 @@ export default function PayInSlipDetailPage() {
     if (!bankAccountId) { toast.error(m.validBankRequired); return }
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) { toast.error(m.validAmountRequired); return }
     if (!refId.trim()) { toast.error(m.validRefIdRequired); return }
+
+    // No changes — go back without calling API
+    const isDirty =
+      bankAccountId !== origBankAccountId ||
+      amount !== origAmount ||
+      refId.trim() !== origRefId.trim()
+    if (!isDirty) {
+      router.push('/business-setup/payment/pay-in-slip')
+      return
+    }
+
     setSaving(true)
     try {
       await paymentDocumentApi.updatePayInDocumentById(id, {
@@ -201,6 +223,7 @@ export default function PayInSlipDetailPage() {
         RefId: refId.trim(),
       })
       toast.success(m.toastUpdateSuccess)
+      router.push('/business-setup/payment/pay-in-slip')
     } catch (err: any) {
       toast.error(err?.message ?? m.toastUpdateFailed)
     } finally {

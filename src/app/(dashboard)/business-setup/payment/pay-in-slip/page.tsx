@@ -305,6 +305,8 @@ export default function PayInSlipListPage() {
                       {item.status?.toLowerCase() === 'approved' && item.paymentTransactionId && (
                         <a
                           href={`/business-setup/payment/pay-in-transactions/${item.paymentTransactionId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           onClick={e => e.stopPropagation()}
                           className="flex items-center gap-1 mt-1 text-[11px] text-primary-600 hover:text-primary-800 hover:underline"
                         >

@@ -11,6 +11,29 @@ import { toast } from 'sonner'
 import { ChevronLeft, Upload, ImageIcon, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import clsx from 'clsx'
 
+// ── Tesseract worker singleton ─────────────────────────────────────────────────
+// Create once per page load; reuse across all uploads to avoid WASM re-init cost
+// and reduce non-determinism from worker startup failures.
+let _tesseractWorker: any = null
+let _tesseractWorkerLoading: Promise<any> | null = null
+
+async function getTesseractWorker() {
+  if (_tesseractWorker) return _tesseractWorker
+  if (_tesseractWorkerLoading) return _tesseractWorkerLoading
+  _tesseractWorkerLoading = (async () => {
+    try {
+      const { createWorker } = await import('tesseract.js')
+      const worker = await createWorker(['tha', 'eng'])
+      _tesseractWorker = worker
+      return worker
+    } catch {
+      _tesseractWorkerLoading = null
+      return null
+    }
+  })()
+  return _tesseractWorkerLoading
+}
+
 function buildStorageUrl(presignedUrl: string): string {
   // Replace <STORAGE-API-BASE> with the correct storage API base.
   // Strategy: derive from the current web origin by swapping the subdomain to "storage-api".
@@ -115,8 +138,8 @@ async function decodeQrFromImage(file: File): Promise<string | null> {
  */
 async function analyzeSlipImage(file: File): Promise<{ amount: string | null; isSlip: boolean }> {
   try {
-    const { createWorker } = await import('tesseract.js')
-    const worker = await createWorker(['tha', 'eng'])
+    const worker = await getTesseractWorker()
+    if (!worker) return { amount: null, isSlip: false }
     const url = URL.createObjectURL(file)
     try {
       const { data: { text } } = await worker.recognize(url)
@@ -136,23 +159,34 @@ async function analyzeSlipImage(file: File): Promise<{ amount: string | null; is
 
       // ── Amount extraction ──────────────────────────────────────────────────
       const amountPatterns = [
-        /(?:จำนวนเงิน|จำนวน)\s*[\r\n]*\s*([\d,]+\.?\d*)/,
-        /([\d,]+\.\d{2})\s*(?:บาท|THB|฿)/i,
-        /(?:amount|amt)\s*:?\s*([\d,]+\.?\d*)/i,
-        /\b([\d]{1,3}(?:,\d{3})+\.\d{2})\b/,
+        // Pattern 1: after จำนวน/จำนวนเงิน label — now handles optional colon ":"
+        /(?:จำนวนเงิน|จำนวน):?\s*[\r\n]*\s*([\d,]+[.,]\d{1,2})/,
+        // Pattern 2: amount then บาท/THB — handle period-or-comma decimal, บาท may be on next line
+        /([\d,]+[.,]\d{2})\s*[\r\n]?\s*(?:บาท|THB|฿)/i,
+        /(?:amount|amt)\s*:?\s*([\d,]+[.,]?\d*)/i,
+        /\b([\d]{1,3}(?:,\d{3})+[.,]\d{2})\b/,
+        // Fallback: any plausible decimal number followed by บาท (catches OCR spacing issues)
+        /([\d]+[.,]\d{1,2})\s*(?:บาท)/,
       ]
+      // Normalise: handle OCR reading "." as "," (e.g. "118,00" → 118.00)
+      const normalizeAmount = (raw: string): number => {
+        // If ends with ,XX treat comma as decimal separator
+        const fixed = /,\d{1,2}$/.test(raw)
+          ? raw.replace(/\./g, '').replace(',', '.')
+          : raw.replace(/,/g, '')
+        return parseFloat(fixed)
+      }
       let amount: string | null = null
       for (const pattern of amountPatterns) {
         const match = text.match(pattern)
         if (match) {
-          const num = parseFloat(match[1].replace(/,/g, ''))
-          if (!isNaN(num) && num > 0) { amount = match[1].replace(/,/g, ''); break }
+          const num = normalizeAmount(match[1])
+          if (!isNaN(num) && num > 0 && num < 10_000_000) { amount = num.toFixed(2); break }
         }
       }
 
       return { amount, isSlip }
     } finally {
-      await worker.terminate()
       URL.revokeObjectURL(url)
     }
   } catch {
@@ -355,6 +389,9 @@ export default function UploadPayInSlipPage() {
       mc => mc.code?.toLowerCase().includes(q) || mc.name?.toLowerCase().includes(q)
     )
   }, [merchants, merchantQuery])
+
+  // Pre-warm Tesseract worker on mount so it's ready before the user picks a file
+  useEffect(() => { getTesseractWorker() }, [])
 
   // Load merchants
   useEffect(() => {

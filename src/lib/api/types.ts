@@ -675,3 +675,92 @@ export interface RejectPayInDocumentPayload {
   MerchantId: string
   RejectReason: string
 }
+
+// ─── Pay-Out Requests ────────────────────────────────────────────────────────
+
+export interface PayOutRequestItem {
+  id: string
+  createdDate?: string | null
+  orgId?: string | null
+  merchantId?: string | null
+  merchantId2?: string | null
+  merchantCode?: string | null
+  merchantName?: string | null
+  description?: string | null
+  currency?: string | null
+  status?: string | null            // "Pending" | "Paid" | "Rejected"
+  direction?: string | null
+  generatedAmount?: number | null
+  requestedAmount?: number | null
+  tags?: string | null
+  refId?: string | null
+  refId1?: string | null
+  refId2?: string | null
+  rejectReason?: string | null
+  paymentTxId?: string | null
+  // Source (PayIn) bank account — API uses camelCase "payin" (lowercase)
+  payinBankAccountId?: string | null
+  payinBankCode?: string | null
+  payinBankAccountNo?: string | null
+  payinBankAccountName?: string | null
+  payinAccountType?: string | null
+  payinAccountLevel?: string | null
+  payinPromptPayId?: string | null
+  payInFeePct?: number | null
+  selectedPayInBankAccountId?: string | null
+  // Destination (PayOut) bank account — API uses camelCase "payout" (lowercase)
+  payoutBankAccountId?: string | null
+  payoutBankCode?: string | null
+  payoutBankAccountNo?: string | null
+  payoutBankAccountName?: string | null
+  payoutPromptPayId?: string | null
+  payoutAccountType?: string | null
+  payoutAccountLevel?: string | null
+  payoutFeePct?: number | null
+  payoutFeeDecimal?: number | null
+  payOutTotalAmountDecimal?: number | null
+}
+
+export interface PayOutRequestDetail extends PayOutRequestItem {
+  processingMessages?: string | null
+  processingSteps?: string[] | null
+  responseData?: string | null
+  responseDataObj?: unknown | null
+}
+
+export interface GetPayOutRequestsPayload {
+  FullTextSearch?: string
+  Status?: string
+  FromDate?: string
+  ToDate?: string
+  Page?: number
+  Limit?: number
+}
+
+export interface CreatePayOutRequestPayload {
+  MerchantId: string
+  RefId: string
+  RefId1?: string
+  RefId2?: string
+  Description?: string
+  Currency?: string
+  RequestedAmount: number
+  QrProvider?: string
+  Tags?: string
+  PayinBankAccountId: string
+}
+
+export interface UpdatePayOutRequestPayload {
+  MerchantId?: string
+  PayoutBankAccountId?: string
+  Description?: string
+  RefId?: string
+}
+
+export interface ApprovePayOutRequestPayload {
+  PayoutBankAccountId?: string
+}
+
+export interface RejectPayOutRequestPayload {
+  RejectReason: string
+}

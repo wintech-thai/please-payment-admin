@@ -40,9 +40,10 @@ function TagsCell({ tags }: { tags?: string | null }) {
   return (
     <div className="flex flex-col gap-1">
       {parts.map((part, i) => {
-        const match = part.match(/PaymentTxId=\[?([0-9a-f-]{36})\]?/i)
-        if (match) {
-          const uuid = match[1]
+        // PayIn Transaction link
+        const payInMatch = part.match(/PaymentTxId=\[?([0-9a-f-]{36})\]?/i)
+        if (payInMatch) {
+          const uuid = payInMatch[1]
           return (
             <a
               key={i}
@@ -57,6 +58,26 @@ function TagsCell({ tags }: { tags?: string | null }) {
             </a>
           )
         }
+
+        // PayOut Request link
+        const payOutMatch = part.match(/PayOutRequestId=\[?([0-9a-f-]{36})\]?/i)
+        if (payOutMatch) {
+          const uuid = payOutMatch[1]
+          return (
+            <a
+              key={i}
+              href={`/business-setup/payment/withdraw-request/${uuid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-xs text-amber-600 hover:underline"
+            >
+              <span className="truncate max-w-[160px]">{uuid}</span>
+              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+            </a>
+          )
+        }
+
         return (
           <span key={i} className="inline-flex w-fit items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs ring-1 ring-blue-200">
             {part}

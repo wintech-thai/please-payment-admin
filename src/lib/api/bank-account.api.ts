@@ -79,4 +79,7 @@ export const bankAccountApi = {
 
   getPayInBankAccountsForMerchant: (merchantId: string) =>
     client.get<{ bankAccounts: BankAccountItem[] }>(`${BASE}/GetPayInBankAccountsWithGlobalForMerchant/${merchantId}`),
+
+  getPayOutBankAccountsForMerchant: (merchantId: string) =>
+    client.get<{ bankAccounts: BankAccountItem[] }>(`/admin-api/AdminMerchant/org/global/action/GetPayOutBankAccountsForMerchant/${merchantId}`),
 }

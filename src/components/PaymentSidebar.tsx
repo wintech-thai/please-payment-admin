@@ -6,7 +6,7 @@ import { useState } from 'react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
-type NavItem = { href: string; label: string; icon: React.ReactNode; comingSoon?: boolean; divider?: boolean }
+type NavItem = { href: string; label: string; icon: React.ReactNode; comingSoon?: boolean; divider?: boolean; hidden?: boolean }
 type DividerItem = { divider: true; href?: never; label?: never; icon?: never; comingSoon?: never }
 type MenuItem = NavItem | DividerItem
 
@@ -56,6 +56,7 @@ export default function PaymentSidebar() {
     {
       href: '/business-setup/payment/withdraw-transactions',
       label: t.nav.withdrawTransactions,
+      hidden: true,
       icon: (
         <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -100,6 +101,7 @@ export default function PaymentSidebar() {
           if (item.divider) {
             return <div key={`divider-${i}`} className="my-1 border-t border-white/15" />
           }
+          if (item.hidden) return null
           if (item.comingSoon) {
             return (
               <div

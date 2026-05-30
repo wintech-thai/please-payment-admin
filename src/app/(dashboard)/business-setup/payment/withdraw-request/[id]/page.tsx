@@ -386,6 +386,25 @@ export default function PayOutRequestDetailPage() {
                 : '—'}
             </InfoRow>
 
+            <InfoRow label={m.fieldFee}>
+              {detail?.payoutFeeDecimal != null && detail.payoutFeeDecimal > 0 ? (
+                <span className="font-semibold tabular-nums text-red-600">
+                  -{formatAmount(detail.payoutFeeDecimal)}
+                  {detail.payoutFeePct ? <span className="text-xs font-normal text-gray-400 ml-1">({detail.payoutFeePct}%)</span> : null}
+                </span>
+              ) : (
+                <span className="font-semibold text-gray-400">0.00</span>
+              )}
+            </InfoRow>
+
+            <InfoRow label={m.fieldNetAmount}>
+              {detail?.payOutTotalAmountDecimal != null ? (
+                <span className="font-bold tabular-nums text-emerald-700 text-xl">
+                  {formatAmount(detail.payOutTotalAmountDecimal)}
+                </span>
+              ) : '—'}
+            </InfoRow>
+
             <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
 
             {(detail?.refId1 || detail?.refId2) && (

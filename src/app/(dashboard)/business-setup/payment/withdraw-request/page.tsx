@@ -144,7 +144,7 @@ export default function WithdrawRequestPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colDestBank, m.colDescription, m.colStatus, m.colRefId1, m.colRefId2]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colDestBank, m.colSourceBank, m.colStatus, m.colRefId1, m.colRefId2]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -326,9 +326,28 @@ export default function WithdrawRequestPage() {
                         </div>
                       </td>
 
-                      {/* Description */}
-                      <td className="px-4 py-3 border-b border-gray-100 max-w-[200px]">
-                        <span className="text-sm text-gray-600 line-clamp-2">{item.description ?? '—'}</span>
+                      {/* Source bank — stored in payoutBank* fields */}
+                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
+                        {item.payoutBankCode || item.payoutBankAccountNo ? (
+                          <p className="text-sm font-semibold text-gray-800">
+                            {[item.payoutBankCode, item.payoutBankAccountNo].filter(Boolean).join(' · ')}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-400">—</p>
+                        )}
+                        {item.payoutBankAccountName && (
+                          <p className="text-xs text-gray-500 mt-0.5">{item.payoutBankAccountName}</p>
+                        )}
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          {item.payoutAccountType && (
+                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
+                              {item.payoutAccountType}
+                            </span>
+                          )}
+                          {item.payoutAccountType?.toLowerCase() === 'promptpay' && item.payoutPromptPayId && (
+                            <span className="text-[10px] text-gray-500">{item.payoutPromptPayId}</span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Status */}

@@ -144,7 +144,7 @@ export default function WithdrawRequestPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colDestBank, m.colSourceBank, m.colStatus, m.colRefId1, m.colRefId2]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colDestBank, m.colSourceBank, m.colStatus, m.colRefId1, m.colRefId2]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -236,7 +236,7 @@ export default function WithdrawRequestPage() {
                       'px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
                       i === 0 && 'rounded-tl-xl text-left',
                       i === cols.length - 1 && 'rounded-tr-xl text-left',
-                      i === 2 ? 'text-right' : 'text-left'
+                      (i === 2 || i === 3) ? 'text-right' : 'text-left'
                     )}
                   >
                     {col}
@@ -300,6 +300,22 @@ export default function WithdrawRequestPage() {
                           {formatAmount(item.generatedAmount)}
                         </p>
                         <p className="text-xs text-gray-400">{item.currency ?? '—'}</p>
+                      </td>
+
+                      {/* Fee */}
+                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                        {item.payoutFeeDecimal != null && item.payoutFeeDecimal > 0 ? (
+                          <>
+                            <p className="text-sm font-semibold tabular-nums text-red-600">
+                              -{formatAmount(item.payoutFeeDecimal)}
+                            </p>
+                            {item.payoutFeePct != null && (
+                              <p className="text-xs text-gray-400">{item.payoutFeePct}%</p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-400">—</p>
+                        )}
                       </td>
 
                       {/* Destination bank — stored in payinBank* fields */}

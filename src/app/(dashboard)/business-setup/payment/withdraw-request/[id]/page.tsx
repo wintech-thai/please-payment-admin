@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
-import type { PayOutRequestDetail, BankItem } from '@/lib/api/types'
+import type { PayOutRequestDetail } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X } from 'lucide-react'
 import clsx from 'clsx'
 
 interface AccountOption {
@@ -143,13 +143,14 @@ export default function PayOutRequestDetailPage() {
 
   // Data
   const [detail, setDetail] = useState<PayOutRequestDetail | null>(null)
-  const [qrBanks, setQrBanks] = useState<BankItem[]>([])
   const [allAccounts, setAllAccounts] = useState<AccountOption[]>([])
 
   // Bank selection state
-  const [selectedBankCode, setSelectedBankCode] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState('')
+  const [accountSearch, setAccountSearch] = useState('')
+  const [showDropdown, setShowDropdown] = useState(false)
   const [bankErrors, setBankErrors] = useState<Record<string, string>>({})
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // UI state
   const [loading, setLoading] = useState(true)
@@ -163,26 +164,19 @@ export default function PayOutRequestDetailPage() {
 
   // ── Computed ────────────────────────────────────────────────────────────────
 
-  const filteredAccounts = selectedBankCode
-    ? allAccounts.filter(a =>
-        selectedBankCode === 'PP'
-          ? a.accountType?.toLowerCase() === 'promptpay' || a.bankCode === 'PP'
-          : a.bankCode === selectedBankCode
-      )
-    : []
+  const accountLabel = (a: AccountOption) =>
+    [a.bankCode, a.accountNumber, a.accountName ? `— ${a.accountName}` : ''].filter(Boolean).join(' ')
 
-  // Only show banks that actually have accounts for this merchant
-  const availableBankCodes = new Set(
-    allAccounts.map(a =>
-      a.accountType?.toLowerCase() === 'promptpay' || a.bankCode === 'PP' ? 'PP' : a.bankCode
-    ).filter(Boolean) as string[]
-  )
-  const availableBanks = qrBanks.filter(b => availableBankCodes.has(b.bankCode ?? ''))
-
-  const bankLabel = (b: BankItem) =>
-    lang === 'th'
-      ? (b.bankNameTh || b.bankNameEng || b.bankShortName || b.bankCode || '')
-      : (b.bankNameEng || b.bankNameTh || b.bankShortName || b.bankCode || '')
+  const filteredAccounts = accountSearch.trim()
+    ? allAccounts.filter(a => {
+        const q = accountSearch.toLowerCase()
+        return (
+          a.bankCode?.toLowerCase().includes(q) ||
+          a.accountNumber?.toLowerCase().includes(q) ||
+          a.accountName?.toLowerCase().includes(q)
+        )
+      })
+    : allAccounts
 
   // ── Load ────────────────────────────────────────────────────────────────────
 
@@ -195,50 +189,32 @@ export default function PayOutRequestDetailPage() {
         const req: PayOutRequestDetail = data?.paymentRequest ?? data?.paymentRequests ?? data
         setDetail(req)
 
-        if (req.merchantId) {
-          const [banksRes, accountsRes] = await Promise.allSettled([
-            bankAccountApi.getAvailableSupportQrBanks(),
-            bankAccountApi.getPayInBankAccountsForMerchant(req.merchantId),
-          ])
+        const accountsRes = await bankAccountApi.getPayInBankAccountsWithGlobalAll().catch(() => null)
+        if (accountsRes) {
+          const raw = accountsRes.data as any
+          const list: any[] = Array.isArray(raw)
+            ? raw
+            : (raw?.bankAccounts ?? raw?.BankAccounts ?? raw?.accounts ?? [])
+          const mapped: AccountOption[] = list.map(a => ({
+            bankAccountId: a.bankAccountId ?? a.BankAccountId ?? a.id ?? a.Id ?? '',
+            bankCode: a.bankCode ?? a.BankCode ?? null,
+            accountNumber: a.accountNumber ?? a.AccountNumber ?? null,
+            accountName: a.accountName ?? a.AccountName ?? null,
+            accountType: a.accountType ?? a.AccountType ?? null,
+          }))
+          setAllAccounts(mapped)
 
-          if (banksRes.status === 'fulfilled') {
-            const raw = banksRes.value.data as any
-            setQrBanks(Array.isArray(raw) ? raw : (raw?.banks ?? raw?.Banks ?? []))
-          }
-
-          if (accountsRes.status === 'fulfilled') {
-            const raw = accountsRes.value.data as any
-            const list: any[] = Array.isArray(raw)
-              ? raw
-              : (raw?.bankAccounts ?? raw?.BankAccounts ?? raw?.accounts ?? [])
-            // Map same way as QR Payment modal — handle both camelCase and PascalCase
-            const mapped: AccountOption[] = list.map(a => ({
-              // Global accounts have bankAccountId=null — fall back to their top-level id
-              bankAccountId: a.bankAccountId ?? a.BankAccountId ?? a.id ?? a.Id ?? '',
-              bankCode: a.bankCode ?? a.BankCode ?? null,
-              accountNumber: a.accountNumber ?? a.AccountNumber ?? null,
-              accountName: a.accountName ?? a.AccountName ?? null,
-              accountType: a.accountType ?? a.AccountType ?? null,
-            }))
-            setAllAccounts(mapped)
-
-            // Pre-select previously saved source bank account (stored as payoutBankAccountId)
-            const savedAccountId = (req as any).payoutBankAccountId ?? null
-            if (savedAccountId) {
-              const savedAccount = mapped.find(a => a.bankAccountId === savedAccountId)
-              if (savedAccount) {
-                setSelectedAccountId(savedAccountId)
-                // Determine bank code: PP for PromptPay accounts, otherwise use bankCode
-                const bankCode =
-                  savedAccount.accountType?.toLowerCase() === 'promptpay' || savedAccount.bankCode === 'PP'
-                    ? 'PP'
-                    : (savedAccount.bankCode ?? '')
-                setSelectedBankCode(bankCode)
-              }
+          // Pre-fill search box with previously saved account label
+          const savedAccountId = (req as any).payoutBankAccountId ?? null
+          if (savedAccountId) {
+            const saved = mapped.find(a => a.bankAccountId === savedAccountId)
+            if (saved) {
+              setSelectedAccountId(savedAccountId)
+              setAccountSearch([saved.bankCode, saved.accountNumber, saved.accountName ? `— ${saved.accountName}` : ''].filter(Boolean).join(' '))
             }
-          } else {
-            toast.error(m.toastFailedToLoadBanks)
           }
+        } else {
+          toast.error(m.toastFailedToLoadBanks)
         }
       } catch {
         toast.error(m.toastFailedToLoad)
@@ -467,54 +443,84 @@ export default function PayOutRequestDetailPage() {
               </InfoRow>
             </div>
           ) : (
-            /* Pending — editable bank selection */
-            <div className="max-w-md grid grid-cols-1 gap-3">
-                  {/* BANK */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                      {t.merchant.qrFieldBank} <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={selectedBankCode}
-                      onChange={e => { setSelectedBankCode(e.target.value); setSelectedAccountId(''); setBankErrors(p => ({ ...p, account: '' })) }}
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+            /* Pending — searchable single account picker */
+            <div className="max-w-md">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                {m.fieldSourceAccount} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative" ref={dropdownRef}>
+                <div className={clsx(
+                  'flex items-center border rounded-lg bg-white overflow-hidden',
+                  bankErrors.account ? 'border-red-400' : 'border-gray-200',
+                )}>
+                  <Search className="w-4 h-4 text-gray-400 ml-3 flex-shrink-0" />
+                  <input
+                    type="text"
+                    value={accountSearch}
+                    onChange={e => {
+                      setAccountSearch(e.target.value)
+                      setSelectedAccountId('')
+                      setBankErrors(p => ({ ...p, account: '' }))
+                      setShowDropdown(true)
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                    placeholder={m.placeholderSourceAccount}
+                    className="flex-1 px-3 py-2.5 text-sm focus:outline-none bg-transparent"
+                  />
+                  {(accountSearch || selectedAccountId) && (
+                    <button
+                      type="button"
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={() => { setAccountSearch(''); setSelectedAccountId(''); setBankErrors(p => ({ ...p, account: '' })) }}
+                      className="p-2 text-gray-400 hover:text-gray-600"
                     >
-                      <option value="">{t.merchant.qrSelectBankPlaceholder}</option>
-                      {availableBanks.map(b => (
-                        <option key={b.bankCode} value={b.bankCode ?? ''}>
-                          {b.bankCode} — {bankLabel(b)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
 
-                  {/* BANK ACCOUNT */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                      {t.merchant.qrFieldBankAccount} <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={selectedAccountId}
-                      onChange={e => { setSelectedAccountId(e.target.value); setBankErrors(p => ({ ...p, account: '' })) }}
-                      disabled={!selectedBankCode}
-                      className={clsx(
-                        'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 bg-white',
-                        bankErrors.account ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-primary-300',
-                        !selectedBankCode && 'opacity-50 cursor-not-allowed'
-                      )}
-                    >
-                      <option value="">{t.merchant.qrSelectAccountPlaceholder}</option>
-                      {filteredAccounts.map(a => (
-                        <option key={a.bankAccountId} value={a.bankAccountId}>
-                          {[a.bankCode, a.accountNumber, a.accountName ? `— ${a.accountName}` : ''].filter(Boolean).join(' ')}
-                        </option>
-                      ))}
-                    </select>
-                    {bankErrors.account && <p className="text-red-500 text-xs mt-1">{bankErrors.account}</p>}
-                    {selectedBankCode && filteredAccounts.length === 0 && (
-                      <p className="text-xs text-gray-400 mt-1">{t.merchant.qrNoAccountFound}</p>
+                {showDropdown && (
+                  <div className="absolute z-20 w-full bottom-full mb-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                    {filteredAccounts.length === 0 ? (
+                      <p className="px-4 py-3 text-sm text-gray-400">{m.noSourceAccounts}</p>
+                    ) : (
+                      filteredAccounts.map(a => (
+                        <button
+                          key={a.bankAccountId}
+                          type="button"
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => {
+                            setSelectedAccountId(a.bankAccountId)
+                            setAccountSearch(accountLabel(a))
+                            setBankErrors(p => ({ ...p, account: '' }))
+                            setShowDropdown(false)
+                          }}
+                          className={clsx(
+                            'w-full px-4 py-2.5 text-left text-sm transition-colors',
+                            selectedAccountId === a.bankAccountId
+                              ? 'bg-primary-50 text-primary-700 font-semibold'
+                              : 'hover:bg-gray-50 text-gray-700'
+                          )}
+                        >
+                          <span className="font-medium">{a.bankCode}</span>
+                          {a.accountNumber && <span className="ml-1.5">{a.accountNumber}</span>}
+                          {a.accountName && <span className="ml-1.5 text-gray-400 text-xs">— {a.accountName}</span>}
+                          {a.accountType && (
+                            <span className="ml-2 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
+                              {a.accountType}
+                            </span>
+                          )}
+                        </button>
+                      ))
                     )}
                   </div>
+                )}
+              </div>
+              {bankErrors.account && <p className="text-red-500 text-xs mt-1">{bankErrors.account}</p>}
+              {selectedAccountId && (
+                <p className="text-xs text-emerald-600 mt-1">✓ Selected</p>
+              )}
             </div>
           )}
         </div>

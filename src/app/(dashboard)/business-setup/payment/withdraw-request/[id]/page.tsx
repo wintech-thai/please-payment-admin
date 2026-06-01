@@ -8,6 +8,7 @@ import type { PayOutRequestDetail } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X } from 'lucide-react'
+import QRCode from 'react-qr-code'
 import clsx from 'clsx'
 
 interface AccountOption {
@@ -16,6 +17,7 @@ interface AccountOption {
   accountNumber?: string | null
   accountName?: string | null
   accountType?: string | null
+  currentWalletBalance?: number | null
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -201,6 +203,7 @@ export default function PayOutRequestDetailPage() {
             accountNumber: a.accountNumber ?? a.AccountNumber ?? null,
             accountName: a.accountName ?? a.AccountName ?? null,
             accountType: a.accountType ?? a.AccountType ?? null,
+            currentWalletBalance: a.currentWalletBalance ?? a.CurrentWalletBalance ?? a.currentWalletBalanceDecimal ?? null,
           }))
           setAllAccounts(mapped)
 
@@ -260,6 +263,17 @@ export default function PayOutRequestDetailPage() {
 
   const handleApprove = async () => {
     if (!validateBankSelection()) return
+    const amt = detail?.generatedAmount ?? 0
+    const min = (detail as any)?.merchantMinPayout
+    const max = (detail as any)?.merchantMaxPayout
+    if (min != null && amt < min) {
+      toast.error(`ยอด ${amt.toLocaleString()} ต่ำกว่าขั้นต่ำ ${min.toLocaleString()}`)
+      return
+    }
+    if (max != null && amt > max) {
+      toast.error(`ยอด ${amt.toLocaleString()} เกินขีดสูงสุด ${max.toLocaleString()}`)
+      return
+    }
     setApproving(true)
     try {
       await paymentRequestApi.approvePayOutRequestById(id, {
@@ -339,7 +353,8 @@ export default function PayOutRequestDetailPage() {
         {/* ── Section 1: Request Info (always read-only) ── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{m.sectionDestination}</SectionHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 max-w-4xl">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
 
             <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
 
@@ -361,6 +376,21 @@ export default function PayOutRequestDetailPage() {
                 ? <span className="font-semibold tabular-nums">{formatAmount(detail.generatedAmount)}</span>
                 : '—'}
             </InfoRow>
+
+            {(detail?.merchantMinPayout != null || detail?.merchantMaxPayout != null) && (
+              <InfoRow label={m.payoutRange ?? 'Payout Range'}>
+                <div className="flex gap-3 mt-0.5">
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">{m.minAmount ?? 'Min'}</span>
+                    <span className="text-sm font-semibold text-gray-700 tabular-nums">{formatAmount(detail.merchantMinPayout)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">{m.maxAmount ?? 'Max'}</span>
+                    <span className="text-sm font-semibold text-gray-700 tabular-nums">{formatAmount(detail.merchantMaxPayout)}</span>
+                  </div>
+                </div>
+              </InfoRow>
+            )}
 
             <InfoRow label={m.fieldFee}>
               {detail?.payoutFeeDecimal != null && detail.payoutFeeDecimal > 0 ? (
@@ -417,6 +447,26 @@ export default function PayOutRequestDetailPage() {
                 </InfoRow>
               </div>
             )}
+
+          </div>
+
+          {/* QR Code — shown on the right when qrCode or qrCodeImage field has data */}
+          {(detail?.qrCodeImage || detail?.qrCode) && (
+            <div className="flex-shrink-0 flex flex-col items-center gap-2 pt-1">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">QR Code</p>
+              {detail.qrCodeImage ? (
+                <img
+                  src={detail.qrCodeImage.startsWith('data:') ? detail.qrCodeImage : `data:image/png;base64,${detail.qrCodeImage}`}
+                  alt="QR Code"
+                  className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
+                />
+              ) : (
+                <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
+                  <QRCode value={detail.qrCode!} size={200} />
+                </div>
+              )}
+            </div>
+          )}
 
           </div>
         </div>
@@ -503,13 +553,31 @@ export default function PayOutRequestDetailPage() {
                               : 'hover:bg-gray-50 text-gray-700'
                           )}
                         >
-                          <span className="font-medium">{a.bankCode}</span>
-                          {a.accountNumber && <span className="ml-1.5">{a.accountNumber}</span>}
-                          {a.accountName && <span className="ml-1.5 text-gray-400 text-xs">— {a.accountName}</span>}
-                          {a.accountType && (
-                            <span className="ml-2 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
-                              {a.accountType}
-                            </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-medium">{a.bankCode}</span>
+                            {a.accountNumber && <span>{a.accountNumber}</span>}
+                            {a.accountName && <span className="text-gray-400 text-xs">— {a.accountName}</span>}
+                            {a.accountType && (
+                              <span className={clsx(
+                                'px-1.5 py-0.5 text-[10px] font-bold rounded-full ring-1',
+                                a.accountType.toLowerCase() === 'promptpay'
+                                  ? 'bg-blue-50 text-blue-700 ring-blue-200'
+                                  : 'bg-blue-50 text-blue-700 ring-blue-200'
+                              )}>
+                                {a.accountType}
+                              </span>
+                            )}
+                          </div>
+                          {a.currentWalletBalance != null && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <span className="text-[10px] text-gray-400">Balance:</span>
+                              <span className={clsx(
+                                'text-xs font-semibold tabular-nums',
+                                a.currentWalletBalance > 0 ? 'text-emerald-600' : 'text-red-500'
+                              )}>
+                                {a.currentWalletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
                           )}
                         </button>
                       ))

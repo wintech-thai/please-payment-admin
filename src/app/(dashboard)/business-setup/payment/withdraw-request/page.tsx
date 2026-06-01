@@ -306,10 +306,8 @@ export default function WithdrawRequestPage() {
                       <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
                         {item.payoutFeeDecimal != null && item.payoutFeeDecimal > 0 ? (
                           <>
-                            <p className="text-sm font-semibold tabular-nums text-red-600">
-                              -{formatAmount(item.payoutFeeDecimal)}
-                            </p>
-                            {item.payoutFeePct != null && (
+                            <p className="text-sm font-semibold tabular-nums text-gray-800">{formatAmount(item.payoutFeeDecimal)}</p>
+                            {item.payoutFeePct != null && item.payoutFeePct > 0 && (
                               <p className="text-xs text-gray-400">{item.payoutFeePct}%</p>
                             )}
                           </>

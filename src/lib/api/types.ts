@@ -582,6 +582,8 @@ export interface RevenueSummaryResponse {
   totalPayOutAmount?: number | null
   totalPayInFee?: number | null
   totalPayOutFee?: number | null
+  totalPayInCount?: number | null
+  totalPayOutCount?: number | null
   payInByMerchant?: MerchantSummaryItem[] | null
   payOutByMerchant?: MerchantSummaryItem[] | null
   dailyRevenue?: DailyRevenueItem[] | null
@@ -726,6 +728,10 @@ export interface PayOutRequestDetail extends PayOutRequestItem {
   processingSteps?: string[] | null
   responseData?: string | null
   responseDataObj?: unknown | null
+  merchantMinPayout?: number | null
+  merchantMaxPayout?: number | null
+  qrCode?: string | null
+  qrCodeImage?: string | null
 }
 
 export interface GetPayOutRequestsPayload {

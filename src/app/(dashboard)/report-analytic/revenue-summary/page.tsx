@@ -9,6 +9,7 @@ import {
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import { summaryApi } from '@/lib/api/summary.api'
+import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { RevenueSummaryResponse, DailyRevenueItem, DailyMerchantRevenueItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useLang } from '@/context/LanguageContext'
@@ -98,6 +99,8 @@ export default function RevenueSummaryPage() {
   const { t } = useLang()
   const m = t.revenueSummary
   const [data, setData] = useState<RevenueSummaryResponse | null>(null)
+  const [payInCount, setPayInCount] = useState<number | null>(null)
+  const [payOutCount, setPayOutCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '30d' })
   const [merchantFilter, setMerchantFilter] = useState<string>('__all__')
@@ -114,9 +117,25 @@ export default function RevenueSummaryPage() {
     setLoading(true)
     try {
       const { FromDate, ToDate } = getTimeFilter(tr)
-      const res = await summaryApi.getRevenueSummary({ fromDate: FromDate, toDate: ToDate, needMerchantSummary: true })
-      const d = res.data as any
-      setData(d?.revenueSummary ?? d?.RevenueSummary ?? d)
+      const [summaryRes, payInCountRes, payOutCountRes] = await Promise.allSettled([
+        summaryApi.getRevenueSummary({ fromDate: FromDate, toDate: ToDate, needMerchantSummary: true }),
+        paymentRequestApi.getPayInRequestCount({ FromDate, ToDate }),
+        paymentRequestApi.getPayOutRequestCount({ FromDate, ToDate }),
+      ])
+      if (summaryRes.status === 'fulfilled') {
+        const d = summaryRes.value.data as any
+        setData(d?.revenueSummary ?? d?.RevenueSummary ?? d)
+      } else {
+        toast.error(m.failedToLoad)
+      }
+      if (payInCountRes.status === 'fulfilled') {
+        const d = payInCountRes.value.data as any
+        setPayInCount(typeof d === 'number' ? d : (d?.count ?? null))
+      }
+      if (payOutCountRes.status === 'fulfilled') {
+        const d = payOutCountRes.value.data as any
+        setPayOutCount(typeof d === 'number' ? d : (d?.count ?? null))
+      }
     } catch {
       toast.error(m.failedToLoad)
     } finally {
@@ -134,6 +153,8 @@ export default function RevenueSummaryPage() {
   const totalFeeIncome = totalPayInFee + totalPayOutFee
   const totalPayIn     = data?.totalPayInAmount  ?? 0
   const totalPayOut    = data?.totalPayOutAmount ?? 0
+  const totalPayInCount  = payInCount
+  const totalPayOutCount = payOutCount
 
   const pieData = useMemo(() => {
     if (!totalFeeIncome) return []
@@ -311,17 +332,22 @@ export default function RevenueSummaryPage() {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               {([
-                { label: m.cardTotalFeeIncome, value: fmt(totalFeeIncome), icon: DollarSign,     gradient: 'bg-gradient-to-br from-primary-500 to-primary-700' },
-                { label: m.cardPayInFee,        value: fmt(totalPayInFee),  icon: TrendingUp,    gradient: 'bg-gradient-to-br from-emerald-400 to-emerald-600' },
-                { label: m.cardPayOutFee,       value: fmt(totalPayOutFee), icon: TrendingDown,  gradient: 'bg-gradient-to-br from-amber-400 to-orange-500' },
-                { label: m.cardTotalPayIn,      value: fmt(totalPayIn),     icon: ArrowUpRight,  gradient: 'bg-gradient-to-br from-blue-500 to-blue-700' },
-                { label: m.cardTotalPayOut,     value: fmt(totalPayOut),    icon: ArrowDownRight, gradient: 'bg-gradient-to-br from-rose-500 to-rose-700' },
+                { label: m.cardTotalFeeIncome, value: fmt(totalFeeIncome), icon: DollarSign,     gradient: 'bg-gradient-to-br from-primary-500 to-primary-700', count: null },
+                { label: m.cardPayInFee,        value: fmt(totalPayInFee),  icon: TrendingUp,    gradient: 'bg-gradient-to-br from-emerald-400 to-emerald-600', count: totalPayInCount },
+                { label: m.cardPayOutFee,       value: fmt(totalPayOutFee), icon: TrendingDown,  gradient: 'bg-gradient-to-br from-amber-400 to-orange-500',    count: totalPayOutCount },
+                { label: m.cardTotalPayIn,      value: fmt(totalPayIn),     icon: ArrowUpRight,  gradient: 'bg-gradient-to-br from-blue-500 to-blue-700',       count: totalPayInCount },
+                { label: m.cardTotalPayOut,     value: fmt(totalPayOut),    icon: ArrowDownRight, gradient: 'bg-gradient-to-br from-rose-500 to-rose-700',      count: totalPayOutCount },
               ] as const).map((s, i) => (
                 <div key={i} className={clsx('rounded-2xl p-5 shadow-md', s.gradient)}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-white/70 uppercase tracking-wide">{s.label}</p>
                       <p className="text-2xl font-bold text-white tabular-nums mt-1.5 truncate">{s.value}</p>
+                      {s.count != null && (
+                        <p className="text-xs text-white/70 tabular-nums mt-1">
+                          {s.count.toLocaleString()} {m.txCountUnit}
+                        </p>
+                      )}
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 ml-3">
                       <s.icon className="w-5 h-5 text-white" />

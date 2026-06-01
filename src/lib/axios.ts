@@ -88,9 +88,13 @@ client.interceptors.response.use(
     ])
     const statusUpper = typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : ''
 
-    // Also treat any status starting with ERROR_ or FAILED_ as an API envelope error
-    // e.g. ERROR_REF_ID_ALREADY_USED_BY_APPROVED_PAYMENT_DOCUMENT
+    // Screaming-snake-case strings (e.g. ACCOUNT_NUMBER_DUPLICATE, ERROR_TOKEN_EXPIRED)
+    // are always API envelope statuses. Mixed-case job statuses (Done, Processing, Pending)
+    // are NOT envelopes and must pass through untouched.
+    const isScreamingCase = typeof status === 'string' && /^[A-Z][A-Z0-9_]*$/.test(status)
+
     const isEnvelopeStatus =
+      isScreamingCase ||
       API_ENVELOPE_STATUSES.has(statusUpper) ||
       statusUpper.startsWith('ERROR_') ||
       statusUpper.startsWith('FAILED_')

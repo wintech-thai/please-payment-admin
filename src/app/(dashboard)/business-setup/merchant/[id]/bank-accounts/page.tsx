@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
+import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Clock } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
@@ -13,6 +14,18 @@ interface PayInAccount {
   bankAccountId: string
   bankCode?: string | null
   bankName?: string | null
+  accountNumber?: string | null
+  accountName?: string | null
+  promptPayId?: string | null
+  accountType?: string | null
+  accountLevel?: string | null
+  status?: string | null
+  createdDate?: string | null
+}
+
+interface PayOutAccount {
+  id: string
+  bankCode?: string | null
   accountNumber?: string | null
   accountName?: string | null
   promptPayId?: string | null
@@ -63,6 +76,7 @@ export default function MerchantBankAccountsPage() {
 
   const [merchant, setMerchant] = useState<MerchantItem | null>(null)
   const [payInAccounts, setPayInAccounts] = useState<PayInAccount[]>([])
+  const [payOutAccounts, setPayOutAccounts] = useState<PayOutAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -74,21 +88,43 @@ export default function MerchantBankAccountsPage() {
         const raw = (merchantRes.data as any)?.merchant ?? merchantRes.data
         setMerchant(raw)
 
-        const accountsRes = await merchantApi.getPayInBankAccountsForMerchant(merchantId)
-        const aRaw = accountsRes.data as any
-        const list: any[] = Array.isArray(aRaw) ? aRaw : (aRaw?.bankAccounts ?? aRaw?.BankAccounts ?? aRaw?.accounts ?? [])
-        setPayInAccounts(list.map(a => ({
-          bankAccountId: a.bankAccountId ?? a.BankAccountId ?? a.accountId ?? a.id ?? '',
-          bankCode: a.bankCode ?? a.BankCode,
-          bankName: a.bankName ?? a.BankName,
-          accountNumber: a.accountNumber ?? a.AccountNumber,
-          accountName: a.accountName ?? a.AccountName,
-          promptPayId: a.promptPayId ?? a.PromptPayId,
-          accountType: a.accountType ?? a.AccountType,
-          accountLevel: a.accountLevel ?? a.AccountLevel,
-          status: a.status ?? a.Status ?? a.bankAccountStatus ?? a.BankAccountStatus,
-          createdDate: a.createdDate ?? a.CreatedDate,
-        })))
+        const [payInRes, payOutRes] = await Promise.allSettled([
+          merchantApi.getPayInBankAccountsForMerchant(merchantId),
+          bankAccountApi.getPayOutBankAccountsForMerchant(merchantId),
+        ])
+
+        if (payInRes.status === 'fulfilled') {
+          const aRaw = payInRes.value.data as any
+          const list: any[] = Array.isArray(aRaw) ? aRaw : (aRaw?.bankAccounts ?? aRaw?.BankAccounts ?? aRaw?.accounts ?? [])
+          setPayInAccounts(list.map(a => ({
+            bankAccountId: a.bankAccountId ?? a.BankAccountId ?? a.accountId ?? a.id ?? '',
+            bankCode: a.bankCode ?? a.BankCode,
+            bankName: a.bankName ?? a.BankName,
+            accountNumber: a.accountNumber ?? a.AccountNumber,
+            accountName: a.accountName ?? a.AccountName,
+            promptPayId: a.promptPayId ?? a.PromptPayId,
+            accountType: a.accountType ?? a.AccountType,
+            accountLevel: a.accountLevel ?? a.AccountLevel,
+            status: a.status ?? a.Status ?? a.bankAccountStatus ?? a.BankAccountStatus,
+            createdDate: a.createdDate ?? a.CreatedDate,
+          })))
+        }
+
+        if (payOutRes.status === 'fulfilled') {
+          const aRaw = payOutRes.value.data as any
+          const list: any[] = Array.isArray(aRaw) ? aRaw : (aRaw?.bankAccounts ?? aRaw?.BankAccounts ?? aRaw?.accounts ?? [])
+          setPayOutAccounts(list.map(a => ({
+            id: a.bankAccountId ?? a.BankAccountId ?? a.id ?? a.Id ?? '',
+            bankCode: a.bankCode ?? a.BankCode,
+            accountNumber: a.accountNumber ?? a.AccountNumber,
+            accountName: a.accountName ?? a.AccountName,
+            promptPayId: a.promptPayId ?? a.PromptPayId,
+            accountType: a.accountType ?? a.AccountType,
+            accountLevel: a.accountLevel ?? a.AccountLevel,
+            status: a.bankAccountStatus ?? a.BankAccountStatus ?? a.status ?? a.Status,
+            createdDate: a.createdDate ?? a.CreatedDate,
+          })))
+        }
       } catch {
         toast.error(m.failedToLoadBankAccounts)
       } finally {
@@ -142,7 +178,11 @@ export default function MerchantBankAccountsPage() {
             <p className="text-sm text-gray-400 text-center py-8">{m.noBankAccountsFound}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm border-separate border-spacing-0 min-w-[700px]">
+              <table className="w-full text-sm border-separate border-spacing-0 min-w-[700px] table-fixed">
+                <colgroup>
+                  <col className="w-[10%]" /><col className="w-[16%]" /><col className="w-[24%]" />
+                  <col className="w-[20%]" /><col className="w-[12%]" /><col className="w-[10%]" /><col className="w-[8%]" />
+                </colgroup>
                 <thead>
                   <tr className="bg-gray-50">
                     {[b.colBank, b.colAccountNumber, b.colAccountName, b.colPromptPayId, b.colAccountType, b.colAccountLevel, b.colStatus].map((col, i) => (
@@ -199,14 +239,70 @@ export default function MerchantBankAccountsPage() {
           )}
         </div>
 
-        {/* Pay-Out Section — Coming Soon */}
+        {/* Pay-Out Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{m.payOutSection}</SectionHeader>
-          <div className="flex flex-col items-center justify-center py-10 gap-3 text-gray-400">
-            <Clock className="w-8 h-8 text-gray-300" />
-            <p className="text-sm font-semibold">{m.payOutComingSoon}</p>
-            <p className="text-xs">{m.payOutComingSoonDesc}</p>
-          </div>
+
+          {payOutAccounts.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">{m.noBankAccountsFound}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-separate border-spacing-0 min-w-[700px] table-fixed">
+                <colgroup>
+                  <col className="w-[10%]" /><col className="w-[16%]" /><col className="w-[24%]" />
+                  <col className="w-[20%]" /><col className="w-[12%]" /><col className="w-[10%]" /><col className="w-[8%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-gray-50">
+                    {[b.colBank, b.colAccountNumber, b.colAccountName, b.colPromptPayId, b.colAccountType, b.colAccountLevel, b.colStatus].map((col, i) => (
+                      <th key={col} className={clsx('px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap', i === 0 && 'rounded-tl-xl')}>
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {payOutAccounts.map((a, idx) => (
+                    <tr
+                      key={a.id}
+                      className={clsx(
+                        'transition-colors',
+                        idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'
+                      )}
+                    >
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <span className="text-sm font-semibold text-gray-800">{a.bankCode ?? '—'}</span>
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <span className="text-sm text-gray-600">{a.accountNumber ?? '—'}</span>
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">
+                        {a.accountName ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        {a.promptPayId ? (
+                          <span className="text-sm text-gray-600">{a.promptPayId}</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        {a.accountType ? (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">{a.accountType}</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        {a.accountLevel ? (
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-full">{a.accountLevel}</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <StatusBadge status={a.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
       </div>

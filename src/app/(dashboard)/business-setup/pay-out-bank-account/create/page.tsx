@@ -102,8 +102,14 @@ export default function CreatePayOutBankAccountPage() {
       setIsDirty(false)
       toast.success(m.createdSuccess)
       router.push('/business-setup/pay-out-bank-account')
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : m.failedToCreate)
+    } catch (err: any) {
+      const msg = err?.response?.data?.description
+        || err?.response?.data?.message
+        || err?.response?.data?.Description
+        || err?.response?.data?.Message
+        || err?.message
+        || m.failedToCreate
+      toast.error(msg)
     } finally {
       setSaving(false)
     }

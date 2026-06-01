@@ -76,26 +76,8 @@ export default function UpdatePayOutBankAccountPage() {
   const removeTag = (tag: string) => { setTags(prev => prev.filter(tg => tg !== tag)); mark() }
 
   const validate = () => {
-    const errs: Record<string, string> = {}
-    if (!accountNumber.trim()) {
-      errs.accountNumber = m.accountNumberRequired
-    } else if (!DIGITS_ONLY_RE.test(accountNumber.trim())) {
-      errs.accountNumber = m.accountNumberInvalid
-    }
-    if (!accountName.trim()) {
-      errs.accountName = m.accountNameRequired
-    } else if (accountName.trim().length > 100) {
-      errs.accountName = m.accountNameTooLong
-    }
-    if (accountType === 'PromptPay') {
-      if (!promptPayId.trim()) {
-        errs.promptPayId = m.promptPayIdRequired
-      } else if (!PROMPTPAY_RE.test(promptPayId.trim())) {
-        errs.promptPayId = m.promptPayIdInvalid
-      }
-    }
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+    setErrors({})
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,8 +103,14 @@ export default function UpdatePayOutBankAccountPage() {
       setIsDirty(false)
       toast.success(m.updatedSuccess)
       router.push(`/business-setup/pay-out-bank-account?highlight=${id}`)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : m.failedToUpdate)
+    } catch (err: any) {
+      const msg = err?.response?.data?.description
+        || err?.response?.data?.message
+        || err?.response?.data?.Description
+        || err?.response?.data?.Message
+        || err?.message
+        || m.failedToUpdate
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -197,48 +185,36 @@ export default function UpdatePayOutBankAccountPage() {
                 </select>
               </FormField>
 
-              <FormField label={m.fieldAccountNumber} required error={errors.accountNumber}>
+              <FormField label={m.fieldAccountNumber} required>
                 <input
                   value={accountNumber}
-                  onChange={e => {
-                    const v = e.target.value.replace(/\D/g, '')
-                    setAccountNumber(v); mark(); clearErr('accountNumber')
-                  }}
+                  readOnly
                   placeholder={m.fieldAccountNumberPlaceholder}
                   inputMode="numeric"
-                  className={inputCls(!!errors.accountNumber)}
+                  className={clsx(inputCls(false), 'bg-gray-50 text-gray-500 cursor-not-allowed')}
                 />
               </FormField>
 
-              <FormField label={m.fieldAccountName} required error={errors.accountName}
-                hint={`${accountName.length}/100`}>
+              <FormField label={m.fieldAccountName} required>
                 <input
                   value={accountName}
-                  onChange={e => {
-                    if (e.target.value.length <= 100) { setAccountName(e.target.value); mark(); clearErr('accountName') }
-                  }}
+                  readOnly
                   placeholder={m.fieldAccountNamePlaceholder}
-                  maxLength={100}
-                  className={inputCls(!!errors.accountName)}
+                  className={clsx(inputCls(false), 'bg-gray-50 text-gray-500 cursor-not-allowed')}
                 />
               </FormField>
 
               <FormField
                 label={m.fieldPromptPayId}
                 required={accountType === 'PromptPay'}
-                error={errors.promptPayId}
-                hint={accountType === 'PromptPay' ? '10 or 13 digits' : undefined}
               >
                 <input
                   value={promptPayId}
-                  onChange={e => {
-                    const v = e.target.value.replace(/\D/g, '')
-                    setPromptPayId(v); mark(); clearErr('promptPayId')
-                  }}
+                  readOnly
                   disabled={accountType !== 'PromptPay'}
                   placeholder={accountType === 'PromptPay' ? m.fieldPromptPayIdPlaceholder : '—'}
                   inputMode="numeric"
-                  className={clsx(inputCls(!!errors.promptPayId), accountType !== 'PromptPay' && 'bg-gray-50 text-gray-400 cursor-not-allowed')}
+                  className={clsx(inputCls(false), 'bg-gray-50 text-gray-400 cursor-not-allowed')}
                 />
               </FormField>
 

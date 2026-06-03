@@ -11,11 +11,13 @@ import { toast } from 'sonner'
 import ProfileModal from '@/components/ProfileModal'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import { AppVersionDisplay } from '@/components/AppVersionDisplay'
+import { useBrand } from '@/context/BrandContext'
 
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { t, lang, setLang } = useLang()
+  const { brandName, logoUrl } = useBrand()
   const [loggingOut, setLoggingOut] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -60,9 +62,12 @@ export default function Navbar() {
       <div className="flex items-center h-14 px-4 gap-4">
         {/* Brand */}
         <Link href="/overview" className="flex items-center gap-2.5 flex-shrink-0">
-          <img src="/img/please-payment.svg" alt="Please Payment" className="w-9 h-9" />
+          {logoUrl
+            ? <img src={logoUrl} alt={brandName || 'Please Payment'} className="w-9 h-9 object-contain" />
+            : <img src="/img/please-payment.svg" alt="Please Payment" className="w-9 h-9" />
+          }
           <div className="hidden sm:block">
-            <p className="text-white font-bold text-sm leading-tight">PLEASE-PAYMENT</p>
+            <p className="text-white font-bold text-sm leading-tight">{brandName || 'PLEASE-PAYMENT'}</p>
             <p className="text-orange-300 text-xs leading-tight">Admin</p>
           </div>
         </Link>

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { applyTheme, DEFAULT_THEME } from '@/lib/brand-themes'
 import { resolveStorageUrl } from '@/lib/storage'
@@ -112,7 +112,7 @@ function applyFaviconDataUrl() {
 function BrandApplier({ config, loading }: { config: AdminConfig | null; loading: boolean }) {
   const pathname = usePathname()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Skip during initial load to preserve localStorage theme (prevents flash)
     if (loading && config === null) return
 

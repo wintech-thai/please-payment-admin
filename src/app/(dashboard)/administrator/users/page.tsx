@@ -467,7 +467,7 @@ function ResetLinkModal({ link, loading, onClose }: { link?: string; loading?: b
         {/* Header — blue gradient */}
         <div
           className="px-7 py-5 flex items-center justify-between"
-          style={{ background: 'linear-gradient(135deg, #96370b 0%, #b8440d 40%, #f06b1e 100%)' }}
+          style={{ background: 'linear-gradient(135deg, rgb(var(--color-primary-800)) 0%, rgb(var(--color-primary-700)) 40%, rgb(var(--color-primary-500)) 100%)' }}
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">

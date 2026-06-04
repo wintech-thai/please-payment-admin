@@ -39,7 +39,7 @@ export default function BankAccountSidebar() {
         'border-r border-white/10',
         collapsed ? 'w-14' : 'w-64'
       )}
-      style={{ background: 'linear-gradient(180deg, #96370b 0%, #762c09 100%)' }}
+      style={{ background: 'linear-gradient(180deg, rgb(var(--color-primary-800)) 0%, rgb(var(--color-primary-900)) 100%)' }}
     >
       {/* Collapse toggle */}
       <button

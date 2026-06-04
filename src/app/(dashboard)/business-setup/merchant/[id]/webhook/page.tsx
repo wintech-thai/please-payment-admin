@@ -75,7 +75,7 @@ function ConfirmModal({ title, desc, confirmLabel, cancelLabel, onConfirm, onCan
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onCancel}>
       <div className="w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden text-center px-8 py-8"
-        style={{ background: 'linear-gradient(135deg, #96370b 0%, #762c09 100%)' }}
+        style={{ background: 'linear-gradient(135deg, rgb(var(--color-primary-800)) 0%, rgb(var(--color-primary-900)) 100%)' }}
         onClick={e => e.stopPropagation()}
       >
         <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-5">

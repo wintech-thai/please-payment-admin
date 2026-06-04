@@ -142,6 +142,7 @@ export default function BrandThemePage() {
 
   async function handleSave() {
     if (!brandName.trim()) { toast.error(bt.toastBrandNameRequired); return }
+    if (!logoFile && !logoPreview) { toast.error(bt.toastLogoRequired); return }
     setSaving(true)
     try {
       let logoPath = config?.brandConfig?.logoPath || ''
@@ -306,12 +307,15 @@ export default function BrandThemePage() {
                     </svg>
                     {bt.logoUpload}
                   </button>
-                  {logoFile && (
+                  {logoPreview && (
                     <button
                       type="button"
-                      onClick={() => { setLogoFile(null); setLogoPreview(config?.brandConfig?.logoImageUrl || ''); setLogoError('') }}
-                      className="text-xs text-red-500 hover:text-red-700"
+                      onClick={() => { setLogoFile(null); setLogoPreview(''); setLogoError('') }}
+                      className="flex items-center gap-2 px-4 py-2 border border-red-200 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors"
                     >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                       {bt.logoRemove}
                     </button>
                   )}

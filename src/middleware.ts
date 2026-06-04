@@ -8,9 +8,9 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('accessToken')?.value
 
-  // Always allow auth API routes and static assets
+  // Always allow API routes and static assets
   if (
-    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon')
   ) {

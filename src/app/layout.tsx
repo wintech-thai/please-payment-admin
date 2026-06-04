@@ -23,10 +23,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
           try {
+            var root = document.documentElement;
+            var tn = localStorage.getItem('brandThemeName');
+            if (tn) root.setAttribute('data-theme', tn);
             var v = localStorage.getItem('brandThemeVars');
             if (v) {
               var vars = JSON.parse(v);
-              var root = document.documentElement;
               Object.keys(vars).forEach(function(k){ root.style.setProperty(k, vars[k]); });
             }
           } catch(e) {}

@@ -61,10 +61,14 @@ export const DEFAULT_THEME: ThemeName = 'ORANGE_DEFAULT'
 export function applyTheme(name: ThemeName | string) {
   const theme = THEMES[name as ThemeName] ?? THEMES[DEFAULT_THEME]
   const root = document.documentElement
+  // Set data-theme attribute — CSS selector applies vars immediately without JS timing dependency
+  root.setAttribute('data-theme', theme.name)
+  // Also set inline styles as fallback
   const vars: Record<string, string> = {}
   Object.entries(theme.colors).forEach(([shade, value]) => {
     root.style.setProperty(`--color-primary-${shade}`, value)
     vars[`--color-primary-${shade}`] = value
   })
+  try { localStorage.setItem('brandThemeName', theme.name) } catch {}
   try { localStorage.setItem('brandThemeVars', JSON.stringify(vars)) } catch {}
 }

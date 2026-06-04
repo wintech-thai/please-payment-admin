@@ -69,6 +69,12 @@ export function applyTheme(name: ThemeName | string) {
     root.style.setProperty(`--color-primary-${shade}`, value)
     vars[`--color-primary-${shade}`] = value
   })
-  try { localStorage.setItem('brandThemeName', theme.name) } catch {}
-  try { localStorage.setItem('brandThemeVars', JSON.stringify(vars)) } catch {}
+  // Only cache non-default themes — prevents logout (failed API → DEFAULT_THEME) from corrupting cache
+  if (theme.name !== DEFAULT_THEME) {
+    try { localStorage.setItem('brandThemeName', theme.name) } catch {}
+    try { localStorage.setItem('brandThemeVars', JSON.stringify(vars)) } catch {}
+  } else {
+    try { localStorage.removeItem('brandThemeName') } catch {}
+    try { localStorage.removeItem('brandThemeVars') } catch {}
+  }
 }

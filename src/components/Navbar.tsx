@@ -147,7 +147,7 @@ export default function Navbar() {
 
           {/* Report & Analytic */}
           <Link
-            href="/report-analytic"
+            href="/report-analytic/revenue-summary"
             className={clsx(
               'flex items-center px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
               pathname.startsWith('/report-analytic')
@@ -173,7 +173,7 @@ export default function Navbar() {
 
           {/* Setting */}
           <Link
-            href="/setting"
+            href="/setting/brand-theme"
             className={clsx(
               'flex items-center px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
               pathname.startsWith('/setting')
@@ -366,7 +366,7 @@ export default function Navbar() {
 
           {/* Report & Analytic */}
           <Link
-            href="/report-analytic"
+            href="/report-analytic/revenue-summary"
             onClick={() => setMobileMenuOpen(false)}
             className={clsx(
               'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
@@ -397,7 +397,7 @@ export default function Navbar() {
 
           {/* Setting */}
           <Link
-            href="/setting"
+            href="/setting/brand-theme"
             onClick={() => setMobileMenuOpen(false)}
             className={clsx(
               'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',

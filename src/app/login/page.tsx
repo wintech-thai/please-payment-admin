@@ -8,7 +8,7 @@ import { useBrand } from '@/context/BrandContext'
 
 function LoginForm() {
   const { t } = useLang()
-  const { brandName, logoUrl } = useBrand()
+  const { brandName, logoUrl, refresh: refreshBrand } = useBrand()
   const router = useRouter()
 
   const [username, setUsername] = useState('')
@@ -48,6 +48,7 @@ function LoginForm() {
       }
 
       toast.success(t.login.success, { duration: 1500 })
+      refreshBrand()
       await new Promise((resolve) => setTimeout(resolve, 1000))
       router.push('/overview')
     } catch {

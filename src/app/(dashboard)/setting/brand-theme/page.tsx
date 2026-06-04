@@ -60,8 +60,12 @@ export default function BrandThemePage() {
       const data: AdminConfig = raw?.configuration ?? raw?.data ?? raw
       setConfig(data)
       resetForm(data)
-    } catch {
-      toast.error(bt.toastLoadFailed)
+    } catch (err: any) {
+      if (err?.response?.status !== 404) {
+        toast.error(bt.toastLoadFailed)
+      }
+      setConfig(null)
+      resetForm(null)
     } finally {
       setLoading(false)
     }
@@ -249,7 +253,7 @@ export default function BrandThemePage() {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {!editing && !isEnabled && (
+            {!editing && !!config?.configId && !isEnabled && (
               <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
                 {bt.hintEnableFirst}
               </p>
@@ -257,7 +261,7 @@ export default function BrandThemePage() {
             {!editing && (
               <button
                 onClick={() => setEditing(true)}
-                disabled={!isEnabled}
+                disabled={!!config?.configId && !isEnabled}
                 title={!isEnabled ? 'Enable config first to edit' : 'Click to edit brand settings'}
                 className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >

@@ -419,13 +419,16 @@ function TransitBankAccountContent() {
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={account.status} />
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-sm whitespace-nowrap text-right">
+                      <td
+                        className="px-4 py-3 border-b border-gray-100 text-sm whitespace-nowrap text-right cursor-pointer group"
+                        onClick={e => { e.stopPropagation(); sessionStorage.setItem('transitbankaccount_highlight', account.accountId); router.push(`/business-setup/transit-bank-account/${account.accountId}/wallet`) }}
+                      >
                         {account.currentWalletBalanceDecimal != null || account.currentWalletBalance != null ? (
-                          <span className="tabular-nums text-gray-700">
+                          <span className="tabular-nums text-gray-700 group-hover:underline group-hover:text-primary-600 font-medium">
                             {(account.currentWalletBalanceDecimal ?? account.currentWalletBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-gray-400 group-hover:text-primary-500">—</span>
                         )}
                       </td>
                       <td className="pl-24 pr-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>

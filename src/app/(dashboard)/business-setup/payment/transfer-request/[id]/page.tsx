@@ -504,6 +504,7 @@ export default function TransferRequestDetailPage() {
                 )}
               </div>
               {bankErrors.account && <p className="text-red-500 text-xs mt-1">{bankErrors.account}</p>}
+              {selectedAccountId && <p className="text-xs text-emerald-600 mt-1">✓ Selected</p>}
             </div>
           )}
         </div>

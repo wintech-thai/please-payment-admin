@@ -153,6 +153,7 @@ export default function PayOutRequestDetailPage() {
   const [accountSearch, setAccountSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [bankErrors, setBankErrors] = useState<Record<string, string>>({})
+  const [sourceTab, setSourceTab] = useState<'PayIn' | 'Transit'>('PayIn')
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // UI state
@@ -170,8 +171,9 @@ export default function PayOutRequestDetailPage() {
   const accountLabel = (a: AccountOption) =>
     [a.bankCode, a.accountNumber, a.accountName ? `— ${a.accountName}` : ''].filter(Boolean).join(' ')
 
+  const tabAccounts = allAccounts.filter(a => a.category === sourceTab)
   const filteredAccounts = accountSearch.trim()
-    ? allAccounts.filter(a => {
+    ? tabAccounts.filter(a => {
         const q = accountSearch.toLowerCase()
         return (
           a.bankCode?.toLowerCase().includes(q) ||
@@ -179,7 +181,7 @@ export default function PayOutRequestDetailPage() {
           a.accountName?.toLowerCase().includes(q)
         )
       })
-    : allAccounts
+    : tabAccounts
 
   // ── Load ────────────────────────────────────────────────────────────────────
 
@@ -500,8 +502,36 @@ export default function PayOutRequestDetailPage() {
               </InfoRow>
             </div>
           ) : (
-            /* Pending — searchable single account picker */
+            /* Pending — tab switch + searchable single account picker */
             <div className="max-w-md">
+              {/* Source type tabs */}
+              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg mb-3 w-fit">
+                <button
+                  type="button"
+                  onClick={() => { setSourceTab('PayIn'); setAccountSearch(''); setSelectedAccountId(''); setBankErrors({}) }}
+                  className={clsx(
+                    'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
+                    sourceTab === 'PayIn'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  )}
+                >
+                  PayIn
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSourceTab('Transit'); setAccountSearch(''); setSelectedAccountId(''); setBankErrors({}) }}
+                  className={clsx(
+                    'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
+                    sourceTab === 'Transit'
+                      ? 'bg-white text-purple-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  )}
+                >
+                  Transit
+                </button>
+              </div>
+
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 {m.fieldSourceAccount} <span className="text-red-500">*</span>
               </label>

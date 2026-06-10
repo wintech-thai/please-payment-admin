@@ -131,7 +131,7 @@ export default function TransferRequestDetailPage() {
   const id = params.id as string
 
   const [detail, setDetail] = useState<TransferRequestDetail | null>(null)
-  const [transitAccounts, setTransitAccounts] = useState<AccountOption[]>([])
+  const [sourceAccounts, setSourceAccounts] = useState<AccountOption[]>([])
   const [payinMerchantId, setPayinMerchantId] = useState<string>('')
 
   const [selectedAccountId, setSelectedAccountId] = useState('')
@@ -153,7 +153,7 @@ export default function TransferRequestDetailPage() {
     [a.bankCode, a.accountNumber, a.accountName ? `— ${a.accountName}` : ''].filter(Boolean).join(' ')
 
   const filteredAccounts = accountSearch.trim()
-    ? transitAccounts.filter(a => {
+    ? sourceAccounts.filter(a => {
         const q = accountSearch.toLowerCase()
         return (
           a.bankCode?.toLowerCase().includes(q) ||
@@ -161,7 +161,7 @@ export default function TransferRequestDetailPage() {
           a.accountName?.toLowerCase().includes(q)
         )
       })
-    : transitAccounts
+    : sourceAccounts
 
   useEffect(() => {
     const load = async () => {
@@ -172,16 +172,8 @@ export default function TransferRequestDetailPage() {
         const req: TransferRequestDetail = data?.paymentRequest ?? data?.paymentRequests ?? data
         setDetail(req)
 
-        // Load PayIn bank account's merchant so we can pass MerchantId to approve
-        if ((req as any).payinBankAccountId) {
-          const merchantsRes = await bankAccountApi.getMerchantsForBankAccount((req as any).payinBankAccountId).catch(() => null)
-          const raw = merchantsRes?.data as any
-          const merchants: any[] = Array.isArray(raw) ? raw : (raw?.merchants ?? [])
-          const picked = merchants.find((m: any) => m.isSelected) ?? merchants[0]
-          if (picked?.merchantId) setPayinMerchantId(picked.merchantId)
-        }
-
-        const accountsRes = await bankAccountApi.getTransitBankAccountsAll().catch(() => null)
+        // Load source (PayIn) accounts for the picker
+        const accountsRes = await bankAccountApi.getPayInBankAccountsWithGlobalAll().catch(() => null)
         if (accountsRes) {
           const raw = accountsRes.data as any
           const list: any[] = Array.isArray(raw)
@@ -194,9 +186,10 @@ export default function TransferRequestDetailPage() {
             accountName: a.accountName ?? a.AccountName ?? null,
             accountType: a.accountType ?? a.AccountType ?? null,
           }))
-          setTransitAccounts(mapped)
+          setSourceAccounts(mapped)
 
-          const savedAccountId = (req as any).payoutBankAccountId ?? null
+          // Pre-fill source picker from payinBankAccountId (source = PayIn)
+          const savedAccountId = (req as any).payinBankAccountId ?? null
           if (savedAccountId) {
             const saved = mapped.find(a => a.bankAccountId === savedAccountId)
             if (saved) {
@@ -206,6 +199,15 @@ export default function TransferRequestDetailPage() {
           }
         } else {
           toast.error(m.toastFailedToLoadBanks)
+        }
+
+        // Fetch merchant for the saved source (PayIn) account
+        if ((req as any).payinBankAccountId) {
+          const merchantsRes = await bankAccountApi.getMerchantsForBankAccount((req as any).payinBankAccountId).catch(() => null)
+          const raw = merchantsRes?.data as any
+          const merchants: any[] = Array.isArray(raw) ? raw : (raw?.merchants ?? [])
+          const picked = merchants.find((m: any) => m.isSelected) ?? merchants[0]
+          if (picked?.merchantId) setPayinMerchantId(picked.merchantId)
         }
       } catch {
         toast.error(m.toastFailedToLoad)
@@ -229,8 +231,10 @@ export default function TransferRequestDetailPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const payload: { PayoutBankAccountId?: string } = {}
-      if (selectedAccountId) payload.PayoutBankAccountId = selectedAccountId
+      const d = detail as any
+      const payload: Record<string, string | undefined> = {}
+      if (selectedAccountId) payload.PayinBankAccountId = selectedAccountId
+      if (d?.payoutBankAccountId) payload.PayoutBankAccountId = d.payoutBankAccountId
       await paymentRequestApi.updateTransferRequestById(id, payload)
       toast.success(m.toastSaveSuccess)
       router.push('/business-setup/payment/transfer-request')
@@ -250,9 +254,13 @@ export default function TransferRequestDetailPage() {
         ...d,
         MerchantId: payinMerchantId || d?.merchantId || undefined,
         merchantId: payinMerchantId || d?.merchantId || undefined,
-        PayoutBankAccountId: selectedAccountId || d?.payoutBankAccountId || undefined,
-        payoutBankAccountId: selectedAccountId || d?.payoutBankAccountId || undefined,
-        SelectedPayInBankAccountId: d?.payinBankAccountId || d?.SelectedPayInBankAccountId || undefined,
+        // Source = PayIn (user can change via picker)
+        PayinBankAccountId: selectedAccountId || d?.payinBankAccountId || undefined,
+        payinBankAccountId: selectedAccountId || d?.payinBankAccountId || undefined,
+        SelectedPayInBankAccountId: selectedAccountId || d?.payinBankAccountId || d?.SelectedPayInBankAccountId || undefined,
+        // Destination = Transit (locked, from record)
+        PayoutBankAccountId: d?.payoutBankAccountId || undefined,
+        payoutBankAccountId: d?.payoutBankAccountId || undefined,
         QrProvider: 'PP',
         qrProvider: 'PP',
       }
@@ -361,17 +369,17 @@ export default function TransferRequestDetailPage() {
               <span className="text-gray-600">{detail?.description ?? '—'}</span>
             </InfoRow>
 
-            {/* Destination bank */}
+            {/* Destination bank (Transit) — stored in payout* fields */}
             <InfoRow label={m.fieldDestBank}>
-              {detail?.payinBankCode || detail?.payinBankAccountNo ? (
+              {detail?.payoutBankCode || detail?.payoutBankAccountNo ? (
                 <div className="flex flex-col gap-0.5">
                   <span className="font-semibold">
-                    {[detail.payinBankCode, detail.payinBankAccountNo].filter(Boolean).join(' · ')}
+                    {[detail.payoutBankCode, detail.payoutBankAccountNo].filter(Boolean).join(' · ')}
                   </span>
-                  {detail.payinBankAccountName && (
-                    <span className="text-gray-500 text-xs">{detail.payinBankAccountName}</span>
+                  {detail.payoutBankAccountName && (
+                    <span className="text-gray-500 text-xs">{detail.payoutBankAccountName}</span>
                   )}
-                  <PromptPayBadge accountType={detail.payinAccountType} />
+                  <PromptPayBadge accountType={detail.payoutAccountType} />
                 </div>
               ) : '—'}
             </InfoRow>
@@ -414,15 +422,15 @@ export default function TransferRequestDetailPage() {
           {!isPending ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <InfoRow label={m.fieldSourceAccount}>
-                {detail?.payoutBankCode || detail?.payoutBankAccountNo ? (
+                {detail?.payinBankCode || detail?.payinBankAccountNo ? (
                   <div className="flex flex-col gap-0.5">
                     <span className="font-semibold">
-                      {[detail.payoutBankCode, detail.payoutBankAccountNo].filter(Boolean).join(' · ')}
+                      {[detail.payinBankCode, detail.payinBankAccountNo].filter(Boolean).join(' · ')}
                     </span>
-                    {detail.payoutBankAccountName && (
-                      <span className="text-gray-500 text-xs">{detail.payoutBankAccountName}</span>
+                    {detail.payinBankAccountName && (
+                      <span className="text-gray-500 text-xs">{detail.payinBankAccountName}</span>
                     )}
-                    <PromptPayBadge accountType={detail.payoutAccountType} />
+                    <PromptPayBadge accountType={detail.payinAccountType} />
                   </div>
                 ) : '—'}
               </InfoRow>

@@ -7,7 +7,7 @@ import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { BankAccountItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, RefreshCw } from 'lucide-react'
+import { ChevronLeft, RefreshCw, Search, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
@@ -46,6 +46,8 @@ export default function CreateTransferRequestPage() {
   const transitRef = useRef<HTMLDivElement>(null)
   const [destOpen, setDestOpen] = useState(false)
   const [transitOpen, setTransitOpen] = useState(false)
+  const [destSearch, setDestSearch] = useState('')
+  const [transitSearch, setTransitSearch] = useState('')
 
   const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
 
@@ -192,57 +194,47 @@ export default function CreateTransferRequestPage() {
             <div className="max-w-md">
               <FormField label={m.fieldSourceAccount} required error={errors.payinBankAccountId}>
                 <div ref={destRef} className="relative">
-                  <button
-                    type="button"
-                    disabled={loadingDest}
-                    onClick={() => { if (!loadingDest) setDestOpen(p => !p) }}
-                    className={clsx(
-                      'w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm border rounded-lg text-left transition-colors focus:outline-none focus:ring-2 focus:border-transparent',
-                      errors.payinBankAccountId ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary-500',
-                      loadingDest ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'
+                  <div className={clsx(
+                    'flex items-center border rounded-lg bg-white overflow-hidden',
+                    errors.payinBankAccountId ? 'border-red-400' : 'border-gray-200',
+                  )}>
+                    <Search className="w-4 h-4 text-gray-400 ml-3 flex-shrink-0" />
+                    <input
+                      type="text"
+                      value={destSearch}
+                      onChange={e => { setDestSearch(e.target.value); setPayinBankAccountId(''); setDestOpen(true); mark(); clearErr('payinBankAccountId') }}
+                      onFocus={() => setDestOpen(true)}
+                      onBlur={() => setTimeout(() => setDestOpen(false), 150)}
+                      placeholder={loadingDest ? t.admin.loading : m.placeholderSourceAccount}
+                      disabled={loadingDest}
+                      className="flex-1 px-3 py-2.5 text-sm focus:outline-none bg-transparent"
+                    />
+                    {(destSearch || payinBankAccountId) && (
+                      <button type="button" onMouseDown={e => e.preventDefault()}
+                        onClick={() => { setDestSearch(''); selectPayinAccount(''); clearErr('payinBankAccountId') }}
+                        className="p-2 text-gray-400 hover:text-gray-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     )}
-                  >
-                    <span className="flex items-center gap-2 min-w-0 flex-1">
-                      {selectedDest ? (
-                        <span className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1">
-                          <span className="font-semibold text-gray-900 text-sm">
-                            {[selectedDest.bankCode, selectedDest.accountNumber].filter(Boolean).join(' ')}
-                          </span>
-                          {selectedDest.accountName && (
-                            <span className="text-gray-400 text-sm font-normal">— {selectedDest.accountName}</span>
-                          )}
-                          <AccountTypeBadge type={selectedDest.accountType} />
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">
-                          {loadingDest ? t.admin.loading : m.placeholderSourceAccount}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-gray-400 text-xs flex-shrink-0">▾</span>
-                  </button>
-
+                  </div>
                   {destOpen && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto custom-scrollbar">
-                      <button
-                        type="button"
-                        onClick={() => { selectPayinAccount(''); setDestOpen(false); mark(); clearErr('payinBankAccountId') }}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50"
-                      >
-                        {m.placeholderSourceAccount}
-                      </button>
-                      {destAccounts.length === 0 ? (
-                        <div className="px-3 py-2.5 text-sm text-gray-400">{m.noSourceAccounts}</div>
+                      {destAccounts.filter(ba => {
+                        const q = destSearch.toLowerCase()
+                        return !q || ba.bankCode?.toLowerCase().includes(q) || ba.accountNumber?.toLowerCase().includes(q) || ba.accountName?.toLowerCase().includes(q)
+                      }).length === 0 ? (
+                        <div className="px-4 py-3 text-sm text-gray-400">{m.noSourceAccounts}</div>
                       ) : (
-                        destAccounts.map(ba => {
+                        destAccounts.filter(ba => {
+                          const q = destSearch.toLowerCase()
+                          return !q || ba.bankCode?.toLowerCase().includes(q) || ba.accountNumber?.toLowerCase().includes(q) || ba.accountName?.toLowerCase().includes(q)
+                        }).map(ba => {
                           const id = ba.accountId
                           return (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => { selectPayinAccount(id); setDestOpen(false); mark(); clearErr('payinBankAccountId') }}
+                            <button key={id} type="button" onMouseDown={e => e.preventDefault()}
+                              onClick={() => { selectPayinAccount(id); setDestSearch(getBankLabel(ba)); setDestOpen(false); mark(); clearErr('payinBankAccountId') }}
                               className={clsx(
-                                'w-full text-left px-4 py-3 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-b-0',
+                                'w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-b-0',
                                 payinBankAccountId === id ? 'bg-primary-50' : 'hover:bg-gray-50'
                               )}
                             >
@@ -269,57 +261,47 @@ export default function CreateTransferRequestPage() {
             <div className="max-w-md">
               <FormField label={m.fieldDestBankAccount} required error={errors.payoutBankAccountId}>
                 <div ref={transitRef} className="relative">
-                  <button
-                    type="button"
-                    disabled={loadingTransit}
-                    onClick={() => { if (!loadingTransit) setTransitOpen(p => !p) }}
-                    className={clsx(
-                      'w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm border rounded-lg text-left transition-colors focus:outline-none focus:ring-2 focus:border-transparent',
-                      errors.payoutBankAccountId ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary-500',
-                      loadingTransit ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'
+                  <div className={clsx(
+                    'flex items-center border rounded-lg bg-white overflow-hidden',
+                    errors.payoutBankAccountId ? 'border-red-400' : 'border-gray-200',
+                  )}>
+                    <Search className="w-4 h-4 text-gray-400 ml-3 flex-shrink-0" />
+                    <input
+                      type="text"
+                      value={transitSearch}
+                      onChange={e => { setTransitSearch(e.target.value); setPayoutBankAccountId(''); setTransitOpen(true); mark(); clearErr('payoutBankAccountId') }}
+                      onFocus={() => setTransitOpen(true)}
+                      onBlur={() => setTimeout(() => setTransitOpen(false), 150)}
+                      placeholder={loadingTransit ? t.admin.loading : m.placeholderDestBankAccount}
+                      disabled={loadingTransit}
+                      className="flex-1 px-3 py-2.5 text-sm focus:outline-none bg-transparent"
+                    />
+                    {(transitSearch || payoutBankAccountId) && (
+                      <button type="button" onMouseDown={e => e.preventDefault()}
+                        onClick={() => { setTransitSearch(''); setPayoutBankAccountId(''); clearErr('payoutBankAccountId') }}
+                        className="p-2 text-gray-400 hover:text-gray-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     )}
-                  >
-                    <span className="flex items-center gap-2 min-w-0 flex-1">
-                      {selectedTransit ? (
-                        <span className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1">
-                          <span className="font-semibold text-gray-900 text-sm">
-                            {[selectedTransit.bankCode, selectedTransit.accountNumber].filter(Boolean).join(' ')}
-                          </span>
-                          {selectedTransit.accountName && (
-                            <span className="text-gray-400 text-sm font-normal">— {selectedTransit.accountName}</span>
-                          )}
-                          <AccountTypeBadge type={selectedTransit.accountType} color="purple" />
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">
-                          {loadingTransit ? t.admin.loading : m.placeholderDestBankAccount}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-gray-400 text-xs flex-shrink-0">▾</span>
-                  </button>
-
+                  </div>
                   {transitOpen && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto custom-scrollbar">
-                      <button
-                        type="button"
-                        onClick={() => { setPayoutBankAccountId(''); setTransitOpen(false); mark(); clearErr('payoutBankAccountId') }}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50"
-                      >
-                        {m.placeholderDestBankAccount}
-                      </button>
-                      {transitAccounts.length === 0 ? (
-                        <div className="px-3 py-2.5 text-sm text-gray-400">{m.noDestAccounts}</div>
+                      {transitAccounts.filter(ba => {
+                        const q = transitSearch.toLowerCase()
+                        return !q || ba.bankCode?.toLowerCase().includes(q) || ba.accountNumber?.toLowerCase().includes(q) || ba.accountName?.toLowerCase().includes(q)
+                      }).length === 0 ? (
+                        <div className="px-4 py-3 text-sm text-gray-400">{m.noDestAccounts}</div>
                       ) : (
-                        transitAccounts.map(ba => {
+                        transitAccounts.filter(ba => {
+                          const q = transitSearch.toLowerCase()
+                          return !q || ba.bankCode?.toLowerCase().includes(q) || ba.accountNumber?.toLowerCase().includes(q) || ba.accountName?.toLowerCase().includes(q)
+                        }).map(ba => {
                           const id = ba.accountId
                           return (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => { setPayoutBankAccountId(id); setTransitOpen(false); mark(); clearErr('payoutBankAccountId') }}
+                            <button key={id} type="button" onMouseDown={e => e.preventDefault()}
+                              onClick={() => { setPayoutBankAccountId(id); setTransitSearch(getBankLabel(ba)); setTransitOpen(false); mark(); clearErr('payoutBankAccountId') }}
                               className={clsx(
-                                'w-full text-left px-4 py-3 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-b-0',
+                                'w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-b-0',
                                 payoutBankAccountId === id ? 'bg-primary-50' : 'hover:bg-gray-50'
                               )}
                             >

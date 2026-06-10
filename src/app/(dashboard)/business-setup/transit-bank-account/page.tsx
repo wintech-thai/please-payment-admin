@@ -225,7 +225,7 @@ function TransitBankAccountContent() {
   const cols = [
     '', // checkbox
     m.colBank, m.colAccountNumber, m.colAccountName,
-    m.colAccountType, m.colAccountLevel, m.colStatus, m.colBalance, m.colAction,
+    m.colAccountType, m.colAccountLevel, m.colStatus, m.colAction,
   ]
 
   return (
@@ -332,9 +332,8 @@ function TransitBankAccountContent() {
                   <th
                     key={i}
                     className={clsx(
-                      'py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
-                      i === cols.length - 1 ? 'pl-24 pr-4' : 'px-4',
-                      i === cols.length - 2 ? 'text-right' : 'text-left',
+                      'py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap text-left',
+                      i === cols.length - 1 ? 'px-4' : 'px-4',
                       i === 0 && 'rounded-tl-xl w-12',
                       i === cols.length - 1 && 'rounded-tr-xl',
                     )}
@@ -419,19 +418,7 @@ function TransitBankAccountContent() {
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={account.status} />
                       </td>
-                      <td
-                        className="px-4 py-3 border-b border-gray-100 text-sm whitespace-nowrap text-right cursor-pointer group"
-                        onClick={e => { e.stopPropagation(); sessionStorage.setItem('transitbankaccount_highlight', account.accountId); router.push(`/business-setup/transit-bank-account/${account.accountId}/wallet`) }}
-                      >
-                        {account.currentWalletBalanceDecimal != null || account.currentWalletBalance != null ? (
-                          <span className="tabular-nums text-gray-700 group-hover:underline group-hover:text-primary-600 font-medium">
-                            {(account.currentWalletBalanceDecimal ?? account.currentWalletBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 group-hover:text-primary-500">—</span>
-                        )}
-                      </td>
-                      <td className="pl-24 pr-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
+                      <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
                         <div className="relative" ref={el => { menuRefs.current[account.accountId] = el }}>
                           <button
                             onClick={e => {
@@ -470,15 +457,6 @@ function TransitBankAccountContent() {
                                   {m.enableAction}
                                 </button>
                               )}
-                              <button
-                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('transitbankaccount_highlight', account.accountId); router.push(`/business-setup/transit-bank-account/${account.accountId}/wallet`) }}
-                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap"
-                              >
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                </svg>
-                                {m.txSummaryAction}
-                              </button>
                             </div>
                           )}
                         </div>

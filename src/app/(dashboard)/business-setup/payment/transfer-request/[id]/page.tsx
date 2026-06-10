@@ -17,6 +17,7 @@ interface AccountOption {
   accountNumber?: string | null
   accountName?: string | null
   accountType?: string | null
+  currentWalletBalance?: number | null
 }
 
 function formatAmount(n?: number | null): string {
@@ -71,13 +72,14 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
   )
 }
 
-function PromptPayBadge({ accountType, promptPayId }: { accountType?: string | null; promptPayId?: string | null }) {
+function PromptPayBadge({ accountType, promptPayId, color = 'blue' }: { accountType?: string | null; promptPayId?: string | null; color?: 'blue' | 'purple' }) {
+  const cls = color === 'purple'
+    ? 'px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full ring-1 ring-purple-200'
+    : 'px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200'
   return (
     <div className="flex gap-1.5 flex-wrap mt-1">
       {accountType && (
-        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
-          {accountType}
-        </span>
+        <span className={cls}>{accountType}</span>
       )}
       {accountType?.toLowerCase() === 'promptpay' && promptPayId && (
         <span className="text-[10px] text-gray-500">{promptPayId}</span>
@@ -185,6 +187,7 @@ export default function TransferRequestDetailPage() {
             accountNumber: a.accountNumber ?? a.AccountNumber ?? null,
             accountName: a.accountName ?? a.AccountName ?? null,
             accountType: a.accountType ?? a.AccountType ?? null,
+            currentWalletBalance: a.currentWalletBalanceDecimal ?? a.currentWalletBalance ?? a.CurrentWalletBalance ?? null,
           }))
           setSourceAccounts(mapped)
 
@@ -379,7 +382,7 @@ export default function TransferRequestDetailPage() {
                   {detail.payoutBankAccountName && (
                     <span className="text-gray-500 text-xs">{detail.payoutBankAccountName}</span>
                   )}
-                  <PromptPayBadge accountType={detail.payoutAccountType} />
+                  <PromptPayBadge accountType={detail.payoutAccountType} color="purple" />
                 </div>
               ) : '—'}
             </InfoRow>
@@ -500,11 +503,22 @@ export default function TransferRequestDetailPage() {
                             {a.accountNumber && <span>{a.accountNumber}</span>}
                             {a.accountName && <span className="text-gray-400 text-xs">— {a.accountName}</span>}
                             {a.accountType && (
-                              <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full ring-1 ring-purple-200">
+                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
                                 {a.accountType}
                               </span>
                             )}
                           </div>
+                          {a.currentWalletBalance != null && (
+                            <div className="mt-0.5 flex items-center gap-1">
+                              <span className="text-[10px] text-gray-400">Balance:</span>
+                              <span className={clsx(
+                                'text-xs font-semibold tabular-nums',
+                                a.currentWalletBalance > 0 ? 'text-emerald-600' : 'text-red-500'
+                              )}>
+                                {a.currentWalletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
                         </button>
                       ))
                     )}

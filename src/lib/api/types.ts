@@ -847,3 +847,49 @@ export type ApproveTransferRequestPayload = Record<string, unknown>
 export interface RejectTransferRequestPayload {
   RejectReason: string
 }
+
+// ─── Agent ───────────────────────────────────────────────────────────────────
+
+export interface AgentItem {
+  agentId: string
+  code?: string | null
+  description?: string | null
+  tags?: string | null
+  agentStatus?: string | null
+  createdDate?: string | null
+  lastSeen?: string | null
+}
+
+export interface AgentEndpointItem {
+  agentHeartbeatUrl?: string | null
+  paymentTxNotiUrl?: string | null
+}
+
+export interface AgentApiKeyItem {
+  keyId: string
+  apiKey?: string | null
+  keyName?: string | null
+  keyDescription?: string | null
+  keyStatus?: string | null
+  rolesList?: string | null
+  keyCreatedDate?: string | null
+}
+
+export interface GetAgentsPayload {
+  FullTextSearch?: string
+  Status?: string
+  Page?: number
+  Limit?: number
+}
+
+export interface AddAgentPayload {
+  Code: string
+  Description?: string
+  Tags?: string
+}
+
+export interface UpdateAgentPayload {
+  Code?: string
+  Description?: string
+  Tags?: string
+}

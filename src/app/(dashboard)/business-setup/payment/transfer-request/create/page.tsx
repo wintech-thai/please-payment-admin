@@ -23,8 +23,8 @@ export default function CreateTransferRequestPage() {
   const m = t.transferRequest
   const router = useRouter()
 
-  const [payinBankAccountId, setPayinBankAccountId] = useState('')   // destination
-  const [payoutBankAccountId, setPayoutBankAccountId] = useState('') // source (transit)
+  const [payinBankAccountId, setPayinBankAccountId] = useState('')
+  const [payoutBankAccountId, setPayoutBankAccountId] = useState('')
   const [payinMerchantId, setPayinMerchantId] = useState('')
   const [refId, setRefId] = useState('')
   const [refId1, setRefId1] = useState('')
@@ -138,8 +138,8 @@ export default function CreateTransferRequestPage() {
         QrProvider: 'PP',
         RequestedAmount: parseFloat(amount),
         MerchantId: payinMerchantId || undefined,
-        PayinBankAccountId: payinBankAccountId,
-        PayoutBankAccountId: payoutBankAccountId,
+        PayinBankAccountId: payoutBankAccountId,
+        PayoutBankAccountId: payinBankAccountId,
       })
       const resData = res.data as any
       if (resData?.paymentRequest === null && resData?.status && resData.status !== 'SUCCESS' && resData.status !== 'Ok') {

@@ -291,7 +291,7 @@ export default function TransferRequestPage() {
                         <span className="text-sm text-gray-600 truncate block">{item.description || '—'}</span>
                       </td>
 
-                      {/* Destination bank */}
+                      {/* TO BANK ACCOUNT (destination/transit = payin* fields) */}
                       <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
                         {item.payinBankCode || item.payinBankAccountNo ? (
                           <p className="text-sm font-semibold text-gray-800">
@@ -305,7 +305,7 @@ export default function TransferRequestPage() {
                         )}
                         {item.payinAccountType && (
                           <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
+                            <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full ring-1 ring-purple-200">
                               {item.payinAccountType}
                             </span>
                             {item.payinAccountType?.toLowerCase() === 'promptpay' && item.payinPromptPayId && (
@@ -315,7 +315,7 @@ export default function TransferRequestPage() {
                         )}
                       </td>
 
-                      {/* Source bank (Transit) */}
+                      {/* FROM BANK ACCOUNT (source = payout* fields) */}
                       <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
                         {item.payoutBankCode || item.payoutBankAccountNo ? (
                           <p className="text-sm font-semibold text-gray-800">
@@ -329,7 +329,7 @@ export default function TransferRequestPage() {
                         )}
                         {item.payoutAccountType && (
                           <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                            <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full ring-1 ring-purple-200">
+                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
                               {item.payoutAccountType}
                             </span>
                             {item.payoutAccountType?.toLowerCase() === 'promptpay' && item.payoutPromptPayId && (

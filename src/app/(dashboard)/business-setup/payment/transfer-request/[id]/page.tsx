@@ -191,8 +191,8 @@ export default function TransferRequestDetailPage() {
           }))
           setSourceAccounts(mapped)
 
-          // Pre-fill source picker from payinBankAccountId (source = PayIn)
-          const savedAccountId = (req as any).payinBankAccountId ?? null
+          // Pre-fill source picker from payoutBankAccountId (source, same as Pay-Out pattern)
+          const savedAccountId = (req as any).payoutBankAccountId ?? null
           if (savedAccountId) {
             const saved = mapped.find(a => a.bankAccountId === savedAccountId)
             if (saved) {
@@ -204,9 +204,9 @@ export default function TransferRequestDetailPage() {
           toast.error(m.toastFailedToLoadBanks)
         }
 
-        // Fetch merchant for the saved source (PayIn) account
-        if ((req as any).payinBankAccountId) {
-          const merchantsRes = await bankAccountApi.getMerchantsForBankAccount((req as any).payinBankAccountId).catch(() => null)
+        // Fetch merchant for the saved source account
+        if ((req as any).payoutBankAccountId) {
+          const merchantsRes = await bankAccountApi.getMerchantsForBankAccount((req as any).payoutBankAccountId).catch(() => null)
           const raw = merchantsRes?.data as any
           const merchants: any[] = Array.isArray(raw) ? raw : (raw?.merchants ?? [])
           const picked = merchants.find((m: any) => m.isSelected) ?? merchants[0]
@@ -236,8 +236,8 @@ export default function TransferRequestDetailPage() {
     try {
       const d = detail as any
       const payload: Record<string, string | undefined> = {}
-      if (selectedAccountId) payload.PayinBankAccountId = selectedAccountId
-      if (d?.payoutBankAccountId) payload.PayoutBankAccountId = d.payoutBankAccountId
+      if (selectedAccountId) payload.PayoutBankAccountId = selectedAccountId
+      if (d?.payinBankAccountId) payload.PayinBankAccountId = d.payinBankAccountId
       await paymentRequestApi.updateTransferRequestById(id, payload)
       toast.success(m.toastSaveSuccess)
       router.push('/business-setup/payment/transfer-request')
@@ -257,13 +257,13 @@ export default function TransferRequestDetailPage() {
         ...d,
         MerchantId: payinMerchantId || d?.merchantId || undefined,
         merchantId: payinMerchantId || d?.merchantId || undefined,
-        // Source = PayIn (user can change via picker)
-        PayinBankAccountId: selectedAccountId || d?.payinBankAccountId || undefined,
-        payinBankAccountId: selectedAccountId || d?.payinBankAccountId || undefined,
-        SelectedPayInBankAccountId: selectedAccountId || d?.payinBankAccountId || d?.SelectedPayInBankAccountId || undefined,
-        // Destination = Transit (locked, from record)
-        PayoutBankAccountId: d?.payoutBankAccountId || undefined,
-        payoutBankAccountId: d?.payoutBankAccountId || undefined,
+        // Source (user picker) → PayoutBankAccountId
+        PayoutBankAccountId: selectedAccountId || d?.payoutBankAccountId || undefined,
+        payoutBankAccountId: selectedAccountId || d?.payoutBankAccountId || undefined,
+        // Destination = Transit (locked) → PayinBankAccountId
+        PayinBankAccountId: d?.payinBankAccountId || undefined,
+        payinBankAccountId: d?.payinBankAccountId || undefined,
+        SelectedPayInBankAccountId: d?.payinBankAccountId || d?.SelectedPayInBankAccountId || undefined,
         QrProvider: 'PP',
         qrProvider: 'PP',
       }
@@ -372,17 +372,17 @@ export default function TransferRequestDetailPage() {
               <span className="text-gray-600">{detail?.description ?? '—'}</span>
             </InfoRow>
 
-            {/* Destination bank (Transit) — stored in payout* fields */}
+            {/* Destination bank (Transit) — stored in payin* fields (same pattern as Pay-Out) */}
             <InfoRow label={m.fieldDestBank}>
-              {detail?.payoutBankCode || detail?.payoutBankAccountNo ? (
+              {detail?.payinBankCode || detail?.payinBankAccountNo ? (
                 <div className="flex flex-col gap-0.5">
                   <span className="font-semibold">
-                    {[detail.payoutBankCode, detail.payoutBankAccountNo].filter(Boolean).join(' · ')}
+                    {[detail.payinBankCode, detail.payinBankAccountNo].filter(Boolean).join(' · ')}
                   </span>
-                  {detail.payoutBankAccountName && (
-                    <span className="text-gray-500 text-xs">{detail.payoutBankAccountName}</span>
+                  {detail.payinBankAccountName && (
+                    <span className="text-gray-500 text-xs">{detail.payinBankAccountName}</span>
                   )}
-                  <PromptPayBadge accountType={detail.payoutAccountType} color="purple" />
+                  <PromptPayBadge accountType={detail.payinAccountType} promptPayId={(detail as any).payinPromptPayId} color="purple" />
                 </div>
               ) : '—'}
             </InfoRow>
@@ -425,15 +425,15 @@ export default function TransferRequestDetailPage() {
           {!isPending ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <InfoRow label={m.fieldSourceAccount}>
-                {detail?.payinBankCode || detail?.payinBankAccountNo ? (
+                {detail?.payoutBankCode || detail?.payoutBankAccountNo ? (
                   <div className="flex flex-col gap-0.5">
                     <span className="font-semibold">
-                      {[detail.payinBankCode, detail.payinBankAccountNo].filter(Boolean).join(' · ')}
+                      {[detail.payoutBankCode, detail.payoutBankAccountNo].filter(Boolean).join(' · ')}
                     </span>
-                    {detail.payinBankAccountName && (
-                      <span className="text-gray-500 text-xs">{detail.payinBankAccountName}</span>
+                    {detail.payoutBankAccountName && (
+                      <span className="text-gray-500 text-xs">{detail.payoutBankAccountName}</span>
                     )}
-                    <PromptPayBadge accountType={detail.payinAccountType} />
+                    <PromptPayBadge accountType={detail.payoutAccountType} promptPayId={detail.payoutPromptPayId} />
                   </div>
                 ) : '—'}
               </InfoRow>

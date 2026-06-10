@@ -770,3 +770,80 @@ export interface ApprovePayOutRequestPayload {
 export interface RejectPayOutRequestPayload {
   RejectReason: string
 }
+
+// ── Transfer Request ──────────────────────────────────────────────────────────
+export interface TransferRequestItem {
+  id: string
+  createdDate?: string | null
+  orgId?: string | null
+  merchantId?: string | null
+  merchantId2?: string | null
+  merchantName?: string | null
+  merchantCode?: string | null
+  description?: string | null
+  currency?: string | null
+  status?: string | null
+  generatedAmount?: number | null
+  requestedAmount?: number | null
+  tags?: string | null
+  refId?: string | null
+  refId1?: string | null
+  refId2?: string | null
+  rejectReason?: string | null
+  paymentTxId?: string | null
+  payinBankAccountId?: string | null
+  payinBankCode?: string | null
+  payinBankAccountNo?: string | null
+  payinBankAccountName?: string | null
+  payinAccountType?: string | null
+  payinPromptPayId?: string | null
+  payoutBankAccountId?: string | null
+  payoutBankCode?: string | null
+  payoutBankAccountNo?: string | null
+  payoutBankAccountName?: string | null
+  payoutAccountType?: string | null
+  payoutPromptPayId?: string | null
+  payoutFeeDecimal?: number | null
+  payoutFeePct?: number | null
+}
+
+export interface TransferRequestDetail extends TransferRequestItem {
+  processingMessages?: string | null
+  processingSteps?: string[] | null
+  responseData?: string | null
+}
+
+export interface GetTransferRequestsPayload {
+  FullTextSearch?: string
+  Status?: string
+  FromDate?: string
+  ToDate?: string
+  Page?: number
+  Limit?: number
+}
+
+export interface CreateTransferRequestPayload {
+  RefId?: string
+  RefId1?: string
+  RefId2?: string
+  Description?: string
+  Currency?: string
+  RequestedAmount: number
+  Tags?: string
+  QrProvider?: string
+  MerchantId?: string
+  PayinBankAccountId: string
+  PayoutBankAccountId: string
+}
+
+export interface UpdateTransferRequestPayload {
+  PayoutBankAccountId?: string
+  Description?: string
+  RefId?: string
+}
+
+export type ApproveTransferRequestPayload = Record<string, unknown>
+
+export interface RejectTransferRequestPayload {
+  RejectReason: string
+}

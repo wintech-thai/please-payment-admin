@@ -40,63 +40,30 @@ function TagsCell({ tags }: { tags?: string | null }) {
   return (
     <div className="flex flex-col gap-1">
       {parts.map((part, i) => {
-        // PayIn Transaction link
         const payInMatch = part.match(/PaymentTxId=\[?([0-9a-f-]{36})\]?/i)
         if (payInMatch) {
           const uuid = payInMatch[1]
           return (
-            <a
-              key={i}
-              href={`/business-setup/payment/pay-in-transactions/${uuid}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <a key={i} href={`/business-setup/payment/pay-in-transactions/${uuid}`} target="_blank" rel="noopener noreferrer"
               onClick={e => e.stopPropagation()}
-              className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
-            >
+              className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline">
               <span className="truncate max-w-[160px]">{uuid}</span>
               <ExternalLink className="w-3 h-3 flex-shrink-0" />
             </a>
           )
         }
-
-        // PayOut Request link
         const payOutMatch = part.match(/PayOutRequestId=\[?([0-9a-f-]{36})\]?/i)
         if (payOutMatch) {
           const uuid = payOutMatch[1]
           return (
-            <a
-              key={i}
-              href={`/business-setup/payment/withdraw-request/${uuid}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <a key={i} href={`/business-setup/payment/withdraw-request/${uuid}`} target="_blank" rel="noopener noreferrer"
               onClick={e => e.stopPropagation()}
-              className="inline-flex items-center gap-1 text-xs text-amber-600 hover:underline"
-            >
+              className="inline-flex items-center gap-1 text-xs text-amber-600 hover:underline">
               <span className="truncate max-w-[160px]">{uuid}</span>
               <ExternalLink className="w-3 h-3 flex-shrink-0" />
             </a>
           )
         }
-
-        // Transfer Request link
-        const transferMatch = part.match(/TransferRequestId=\[?([0-9a-f-]{36})\]?/i)
-        if (transferMatch) {
-          const uuid = transferMatch[1]
-          return (
-            <a
-              key={i}
-              href={`/business-setup/payment/transfer-request/${uuid}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="inline-flex items-center gap-1 text-xs text-purple-600 hover:underline"
-            >
-              <span className="truncate max-w-[160px]">{uuid}</span>
-              <ExternalLink className="w-3 h-3 flex-shrink-0" />
-            </a>
-          )
-        }
-
         return (
           <span key={i} className="inline-flex w-fit items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs ring-1 ring-blue-200">
             {part}
@@ -107,15 +74,9 @@ function TagsCell({ tags }: { tags?: string | null }) {
   )
 }
 
-function PointModal({
-  mode, wallet, orgId, walletId, onSuccess, onClose, wt,
-}: {
-  mode: 'add' | 'deduct'
-  wallet: WalletItem
-  orgId: string
-  walletId: string
-  onSuccess: () => void
-  onClose: () => void
+function PointModal({ mode, wallet, orgId, walletId, onSuccess, onClose, wt }: {
+  mode: 'add' | 'deduct'; wallet: WalletItem; orgId: string; walletId: string
+  onSuccess: () => void; onClose: () => void
   wt: ReturnType<typeof useLang>['t']['merchant']['wallet']
 }) {
   const [amount, setAmount] = useState('')
@@ -178,13 +139,10 @@ function PointModal({
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
               {wt.labelAmount} <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number" step="0.01" min="0.01"
-              value={amount} onChange={e => setAmount(e.target.value)}
+            <input type="number" step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)}
               placeholder={wt.amountPlaceholder}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              required
-            />
+              required />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{wt.labelNewBalance}</label>
@@ -216,7 +174,7 @@ function PointModal({
   )
 }
 
-export default function BankAccountWalletPage() {
+export default function TransitBankAccountWalletPage() {
   const { t } = useLang()
   const wt = t.merchant.wallet
   const params = useParams()
@@ -309,11 +267,11 @@ export default function BankAccountWalletPage() {
       <div className="flex-shrink-0 flex items-start justify-between pb-4">
         <div>
           <button
-            onClick={() => router.push(`/business-setup/pay-in-bank-account?highlight=${bankAccountId}`)}
+            onClick={() => router.push(`/business-setup/transit-bank-account?highlight=${bankAccountId}`)}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-3 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            {t.bankAccount.title}
+            {t.transitBankAccount.title}
           </button>
           <h1 className="text-2xl font-bold text-gray-900">{t.bankAccount.txSummaryAction}</h1>
           <p className="text-sm text-gray-500 mt-0.5">

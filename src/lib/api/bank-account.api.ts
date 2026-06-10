@@ -85,4 +85,19 @@ export const bankAccountApi = {
 
   getPayOutBankAccountsForMerchant: (merchantId: string) =>
     client.get<{ bankAccounts: BankAccountItem[] }>(`/admin-api/AdminMerchant/org/global/action/GetPayOutBankAccountsForMerchant/${merchantId}`),
+
+  getTransitBankAccounts: (payload: GetBankAccountsPayload = {}) =>
+    client.post<{ bankAccounts: BankAccountItem[] }>(`${BASE}/GetBankAccounts`, {
+      AccountCategory: 'Transit',
+      ...payload,
+    }),
+
+  getTransitBankAccountCount: (payload: GetBankAccountsPayload = {}) =>
+    client.post<{ count: number }>(`${BASE}/GetBankAccountCount`, {
+      AccountCategory: 'Transit',
+      ...payload,
+    }),
+
+  getTransitBankAccountsAll: () =>
+    client.get<{ bankAccounts: BankAccountItem[] }>(`${BASE}/GetTransitBankAccountsAll`),
 }

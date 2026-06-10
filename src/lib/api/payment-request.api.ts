@@ -10,6 +10,13 @@ import type {
   UpdatePayOutRequestPayload,
   ApprovePayOutRequestPayload,
   RejectPayOutRequestPayload,
+  TransferRequestItem,
+  TransferRequestDetail,
+  GetTransferRequestsPayload,
+  CreateTransferRequestPayload,
+  UpdateTransferRequestPayload,
+  ApproveTransferRequestPayload,
+  RejectTransferRequestPayload,
 } from './types'
 
 const BASE = '/admin-api/AdminPaymentRequest/org/global/action'
@@ -46,4 +53,26 @@ export const paymentRequestApi = {
 
   rejectPayOutRequestById: (id: string, payload: RejectPayOutRequestPayload) =>
     client.post(`${BASE}/RejectPayOutRequestById/${id}`, payload),
+
+  // ── Transfer ──────────────────────────────────────────────────────────────
+  createTransferRequest: (payload: CreateTransferRequestPayload) =>
+    client.post(`${BASE}/CreateTransferRequest`, payload),
+
+  getTransferRequests: (payload: GetTransferRequestsPayload = {}) =>
+    client.post<{ paymentRequests: TransferRequestItem[] }>(`${BASE}/GetTransferRequests`, payload),
+
+  getTransferRequestCount: (payload: GetTransferRequestsPayload = {}) =>
+    client.post<{ count: number }>(`${BASE}/GetTransferRequestCount`, payload),
+
+  getTransferRequestById: (id: string) =>
+    client.get<{ paymentRequest: TransferRequestDetail }>(`${BASE}/GetPaymentRequestById/${id}`),
+
+  updateTransferRequestById: (id: string, payload: UpdateTransferRequestPayload) =>
+    client.post(`${BASE}/UpdateTransferRequestById/${id}`, payload),
+
+  approveTransferRequestById: (id: string, payload: ApproveTransferRequestPayload) =>
+    client.post(`${BASE}/ApproveTransferRequestById/${id}`, payload),
+
+  rejectTransferRequestById: (id: string, payload: RejectTransferRequestPayload) =>
+    client.post(`${BASE}/RejectTransferRequestById/${id}`, payload),
 }

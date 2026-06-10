@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
-import type { PayOutRequestDetail } from '@/lib/api/types'
+import type { TransferRequestDetail } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X } from 'lucide-react'
@@ -18,10 +18,7 @@ interface AccountOption {
   accountName?: string | null
   accountType?: string | null
   currentWalletBalance?: number | null
-  category?: 'PayIn' | 'Transit'
 }
-
-// ── Formatters ────────────────────────────────────────────────────────────────
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
@@ -37,8 +34,6 @@ function formatDateTime(d?: string | null) {
     })
   } catch { return d }
 }
-
-// ── Status Badge ──────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = status?.toLowerCase()
@@ -59,8 +54,6 @@ function StatusBadge({ status }: { status?: string | null }) {
   )
 }
 
-// ── Shared UI ─────────────────────────────────────────────────────────────────
-
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="flex items-center gap-2.5 text-sm font-bold text-gray-900 mb-5">
@@ -79,13 +72,14 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
   )
 }
 
-function PromptPayBadge({ accountType, promptPayId }: { accountType?: string | null; promptPayId?: string | null }) {
+function PromptPayBadge({ accountType, promptPayId, color = 'blue' }: { accountType?: string | null; promptPayId?: string | null; color?: 'blue' | 'purple' }) {
+  const cls = color === 'purple'
+    ? 'px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full ring-1 ring-purple-200'
+    : 'px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200'
   return (
     <div className="flex gap-1.5 flex-wrap mt-1">
       {accountType && (
-        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
-          {accountType}
-        </span>
+        <span className={cls}>{accountType}</span>
       )}
       {accountType?.toLowerCase() === 'promptpay' && promptPayId && (
         <span className="text-[10px] text-gray-500">{promptPayId}</span>
@@ -94,11 +88,7 @@ function PromptPayBadge({ accountType, promptPayId }: { accountType?: string | n
   )
 }
 
-// ── Reject Modal ──────────────────────────────────────────────────────────────
-
-function RejectModal({
-  title, desc, labelReason, placeholder, btnCancel, btnConfirm, onCancel, onConfirm,
-}: {
+function RejectModal({ title, desc, labelReason, placeholder, btnCancel, btnConfirm, onCancel, onConfirm }: {
   title: string; desc: string; labelReason: string; placeholder: string
   btnCancel: string; btnConfirm: string
   onCancel: () => void; onConfirm: (reason: string) => void
@@ -135,28 +125,23 @@ function RejectModal({
   )
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
-
-export default function PayOutRequestDetailPage() {
-  const { t, lang } = useLang()
-  const m = t.payOutRequest
+export default function TransferRequestDetailPage() {
+  const { t } = useLang()
+  const m = t.transferRequest
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
-  // Data
-  const [detail, setDetail] = useState<PayOutRequestDetail | null>(null)
-  const [allAccounts, setAllAccounts] = useState<AccountOption[]>([])
+  const [detail, setDetail] = useState<TransferRequestDetail | null>(null)
+  const [sourceAccounts, setSourceAccounts] = useState<AccountOption[]>([])
+  const [payinMerchantId, setPayinMerchantId] = useState<string>('')
 
-  // Bank selection state
   const [selectedAccountId, setSelectedAccountId] = useState('')
   const [accountSearch, setAccountSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [bankErrors, setBankErrors] = useState<Record<string, string>>({})
-  const [sourceTab, setSourceTab] = useState<'PayIn' | 'Transit'>('PayIn')
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // UI state
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [approving, setApproving] = useState(false)
@@ -166,14 +151,11 @@ export default function PayOutRequestDetailPage() {
   const isPending = detail?.status?.toLowerCase() === 'pending'
   const isRejected = detail?.status?.toLowerCase() === 'rejected'
 
-  // ── Computed ────────────────────────────────────────────────────────────────
-
   const accountLabel = (a: AccountOption) =>
     [a.bankCode, a.accountNumber, a.accountName ? `— ${a.accountName}` : ''].filter(Boolean).join(' ')
 
-  const tabAccounts = allAccounts.filter(a => a.category === sourceTab)
   const filteredAccounts = accountSearch.trim()
-    ? tabAccounts.filter(a => {
+    ? sourceAccounts.filter(a => {
         const q = accountSearch.toLowerCase()
         return (
           a.bankCode?.toLowerCase().includes(q) ||
@@ -181,64 +163,64 @@ export default function PayOutRequestDetailPage() {
           a.accountName?.toLowerCase().includes(q)
         )
       })
-    : tabAccounts
-
-  // ── Load ────────────────────────────────────────────────────────────────────
+    : sourceAccounts
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       try {
-        const res = await paymentRequestApi.getPaymentRequestById(id)
+        const res = await paymentRequestApi.getTransferRequestById(id)
         const data = res.data as any
-        const req: PayOutRequestDetail = data?.paymentRequest ?? data?.paymentRequests ?? data
+        const req: TransferRequestDetail = data?.paymentRequest ?? data?.paymentRequests ?? data
         setDetail(req)
 
-        const [payinRes, transitRes] = await Promise.allSettled([
-          bankAccountApi.getPayInBankAccountsWithGlobalAll(),
-          bankAccountApi.getTransitBankAccountsAll(),
-        ])
-        const toOption = (a: any, category: 'PayIn' | 'Transit'): AccountOption => ({
-          bankAccountId: a.bankAccountId || a.BankAccountId || a.id || a.Id || a.accountId || a.AccountId || '',
-          bankCode: a.bankCode ?? a.BankCode ?? null,
-          accountNumber: a.accountNumber ?? a.AccountNumber ?? null,
-          accountName: a.accountName ?? a.AccountName ?? null,
-          accountType: a.accountType ?? a.AccountType ?? null,
-          currentWalletBalance: a.currentWalletBalance ?? a.CurrentWalletBalance ?? a.currentWalletBalanceDecimal ?? null,
-          category,
-        })
-        const payinList = payinRes.status === 'fulfilled'
-          ? (() => { const r = payinRes.value.data as any; return (Array.isArray(r) ? r : (r?.bankAccounts ?? r?.BankAccounts ?? [])) })()
-          : []
-        const transitList = transitRes.status === 'fulfilled'
-          ? (() => { const r = transitRes.value.data as any; return (Array.isArray(r) ? r : (r?.bankAccounts ?? r?.BankAccounts ?? [])) })()
-          : []
-        const mapped: AccountOption[] = [
-          ...payinList.map((a: any) => toOption(a, 'PayIn')),
-          ...transitList.map((a: any) => toOption(a, 'Transit')),
-        ]
-        setAllAccounts(mapped)
+        // Load source (PayIn) accounts for the picker
+        const accountsRes = await bankAccountApi.getPayInBankAccountsWithGlobalAll().catch(() => null)
+        if (accountsRes) {
+          const raw = accountsRes.data as any
+          const list: any[] = Array.isArray(raw)
+            ? raw
+            : (raw?.bankAccounts ?? raw?.BankAccounts ?? raw?.accounts ?? [])
+          const mapped: AccountOption[] = list.map(a => ({
+            bankAccountId: a.bankAccountId ?? a.BankAccountId ?? a.id ?? a.Id ?? '',
+            bankCode: a.bankCode ?? a.BankCode ?? null,
+            accountNumber: a.accountNumber ?? a.AccountNumber ?? null,
+            accountName: a.accountName ?? a.AccountName ?? null,
+            accountType: a.accountType ?? a.AccountType ?? null,
+            currentWalletBalance: a.currentWalletBalanceDecimal ?? a.currentWalletBalance ?? a.CurrentWalletBalance ?? null,
+          }))
+          setSourceAccounts(mapped)
 
-        // Pre-fill search box with previously saved account label
-        const savedAccountId = (req as any).payoutBankAccountId ?? null
-        if (savedAccountId) {
-          const saved = mapped.find(a => a.bankAccountId === savedAccountId)
-          if (saved) {
-            setSelectedAccountId(savedAccountId)
-            setAccountSearch([saved.bankCode, saved.accountNumber, saved.accountName ? `— ${saved.accountName}` : ''].filter(Boolean).join(' '))
+          // Pre-fill source picker from payoutBankAccountId (source, same as Pay-Out pattern)
+          const savedAccountId = (req as any).payoutBankAccountId ?? null
+          if (savedAccountId) {
+            const saved = mapped.find(a => a.bankAccountId === savedAccountId)
+            if (saved) {
+              setSelectedAccountId(savedAccountId)
+              setAccountSearch(accountLabel(saved))
+            }
           }
+        } else {
+          toast.error(m.toastFailedToLoadBanks)
+        }
+
+        // Fetch merchant for the saved source account
+        if ((req as any).payoutBankAccountId) {
+          const merchantsRes = await bankAccountApi.getMerchantsForBankAccount((req as any).payoutBankAccountId).catch(() => null)
+          const raw = merchantsRes?.data as any
+          const merchants: any[] = Array.isArray(raw) ? raw : (raw?.merchants ?? [])
+          const picked = merchants.find((m: any) => m.isSelected) ?? merchants[0]
+          if (picked?.merchantId) setPayinMerchantId(picked.merchantId)
         }
       } catch {
         toast.error(m.toastFailedToLoad)
-        router.push('/business-setup/payment/withdraw-request')
+        router.push('/business-setup/payment/transfer-request')
       } finally {
         setLoading(false)
       }
     }
     load()
   }, [id])
-
-  // ── Actions ──────────────────────────────────────────────────────────────────
 
   const validateBankSelection = () => {
     if (!selectedAccountId) {
@@ -252,17 +234,13 @@ export default function PayOutRequestDetailPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      // Try camelCase first, fall back to PascalCase (API may return either)
       const d = detail as any
-      const merchantId: string | undefined =
-        d?.merchantId || d?.MerchantId || undefined
-      const payload: { MerchantId?: string; PayoutBankAccountId?: string } = {
-        MerchantId: merchantId,
-      }
+      const payload: Record<string, string | undefined> = {}
       if (selectedAccountId) payload.PayoutBankAccountId = selectedAccountId
-      await paymentRequestApi.updatePayOutRequestById(id, payload)
+      if (d?.payinBankAccountId) payload.PayinBankAccountId = d.payinBankAccountId
+      await paymentRequestApi.updateTransferRequestById(id, payload)
       toast.success(m.toastSaveSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push('/business-setup/payment/transfer-request')
     } catch (err: any) {
       toast.error(err?.message ?? m.toastSaveFailed)
     } finally {
@@ -272,24 +250,30 @@ export default function PayOutRequestDetailPage() {
 
   const handleApprove = async () => {
     if (!validateBankSelection()) return
-    const amt = detail?.generatedAmount ?? 0
-    const min = (detail as any)?.merchantMinPayout
-    const max = (detail as any)?.merchantMaxPayout
-    if (min != null && amt < min) {
-      toast.error(`ยอด ${amt.toLocaleString()} ต่ำกว่าขั้นต่ำ ${min.toLocaleString()}`)
-      return
-    }
-    if (max != null && amt > max) {
-      toast.error(`ยอด ${amt.toLocaleString()} เกินขีดสูงสุด ${max.toLocaleString()}`)
-      return
-    }
     setApproving(true)
     try {
-      await paymentRequestApi.approvePayOutRequestById(id, {
-        PayoutBankAccountId: selectedAccountId || undefined,
-      })
+      const d = detail as any
+      const payload = {
+        ...d,
+        MerchantId: payinMerchantId || d?.merchantId || undefined,
+        merchantId: payinMerchantId || d?.merchantId || undefined,
+        // Source (user picker) → PayoutBankAccountId
+        PayoutBankAccountId: selectedAccountId || d?.payoutBankAccountId || undefined,
+        payoutBankAccountId: selectedAccountId || d?.payoutBankAccountId || undefined,
+        // Destination = Transit (locked) → PayinBankAccountId
+        PayinBankAccountId: d?.payinBankAccountId || undefined,
+        payinBankAccountId: d?.payinBankAccountId || undefined,
+        SelectedPayInBankAccountId: d?.payinBankAccountId || d?.SelectedPayInBankAccountId || undefined,
+        QrProvider: 'PP',
+        qrProvider: 'PP',
+      }
+      const resData = (await paymentRequestApi.approveTransferRequestById(id, payload))?.data as any
+      if (resData?.paymentRequest === null && resData?.status && resData.status !== 'SUCCESS' && resData.status !== 'Ok') {
+        toast.error(resData?.description ?? m.toastApproveFailed)
+        return
+      }
       toast.success(m.toastApproveSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push('/business-setup/payment/transfer-request')
     } catch (err: any) {
       toast.error(err?.message ?? m.toastApproveFailed)
     } finally {
@@ -301,17 +285,15 @@ export default function PayOutRequestDetailPage() {
     setShowRejectModal(false)
     setRejecting(true)
     try {
-      await paymentRequestApi.rejectPayOutRequestById(id, { RejectReason: reason })
+      await paymentRequestApi.rejectTransferRequestById(id, { RejectReason: reason })
       toast.success(m.toastRejectSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push('/business-setup/payment/transfer-request')
     } catch (err: any) {
       toast.error(err?.message ?? m.toastRejectFailed)
     } finally {
       setRejecting(false)
     }
   }
-
-  // ── Loading state ────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -324,8 +306,6 @@ export default function PayOutRequestDetailPage() {
       </div>
     )
   }
-
-  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -346,7 +326,7 @@ export default function PayOutRequestDetailPage() {
       {/* Header */}
       <div className="flex-none flex items-center gap-3 mb-6">
         <button
-          onClick={() => router.push('/business-setup/payment/withdraw-request')}
+          onClick={() => router.push('/business-setup/payment/transfer-request')}
           className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -359,7 +339,7 @@ export default function PayOutRequestDetailPage() {
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
 
-        {/* ── Section 1: Request Info (always read-only) ── */}
+        {/* Section 1: Request Info */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{m.sectionDestination}</SectionHeader>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 max-w-4xl">
@@ -371,53 +351,12 @@ export default function PayOutRequestDetailPage() {
               <StatusBadge status={detail?.status} />
             </InfoRow>
 
-            <InfoRow label={m.fieldMerchant}>
-              <span className="font-semibold">{detail?.merchantCode ?? '—'}</span>
-              {detail?.merchantName && (
-                <span className="text-gray-500 ml-2 text-xs">{detail.merchantName}</span>
-              )}
-            </InfoRow>
-
             <InfoRow label={m.fieldCurrency}>{detail?.currency ?? '—'}</InfoRow>
 
             <InfoRow label={m.fieldAmount}>
               {detail?.generatedAmount != null
-                ? <span className="font-semibold tabular-nums">{formatAmount(detail.generatedAmount)}</span>
+                ? <span className="font-semibold tabular-nums text-gray-900">{formatAmount(detail.generatedAmount)}</span>
                 : '—'}
-            </InfoRow>
-
-            {(detail?.merchantMinPayout != null || detail?.merchantMaxPayout != null) && (
-              <InfoRow label={m.payoutRange ?? 'Payout Range'}>
-                <div className="flex gap-3 mt-0.5">
-                  <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg">
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">{m.minAmount ?? 'Min'}</span>
-                    <span className="text-sm font-semibold text-gray-700 tabular-nums">{formatAmount(detail.merchantMinPayout)}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg">
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">{m.maxAmount ?? 'Max'}</span>
-                    <span className="text-sm font-semibold text-gray-700 tabular-nums">{formatAmount(detail.merchantMaxPayout)}</span>
-                  </div>
-                </div>
-              </InfoRow>
-            )}
-
-            <InfoRow label={m.fieldFee}>
-              {detail?.payoutFeeDecimal != null && detail.payoutFeeDecimal > 0 ? (
-                <span className="font-semibold tabular-nums text-red-600">
-                  -{formatAmount(detail.payoutFeeDecimal)}
-                  {detail.payoutFeePct ? <span className="text-xs font-normal text-gray-400 ml-1">({detail.payoutFeePct}%)</span> : null}
-                </span>
-              ) : (
-                <span className="font-semibold text-gray-400">0.00</span>
-              )}
-            </InfoRow>
-
-            <InfoRow label={m.fieldNetAmount}>
-              {detail?.payOutTotalAmountDecimal != null ? (
-                <span className="font-bold tabular-nums text-emerald-700 text-xl">
-                  {formatAmount(detail.payOutTotalAmountDecimal)}
-                </span>
-              ) : '—'}
             </InfoRow>
 
             <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
@@ -433,7 +372,7 @@ export default function PayOutRequestDetailPage() {
               <span className="text-gray-600">{detail?.description ?? '—'}</span>
             </InfoRow>
 
-            {/* Payout destination bank — stored in payinBank* fields (set via PayinBankAccountId at create) */}
+            {/* Destination bank (Transit) — stored in payin* fields (same pattern as Pay-Out) */}
             <InfoRow label={m.fieldDestBank}>
               {detail?.payinBankCode || detail?.payinBankAccountNo ? (
                 <div className="flex flex-col gap-0.5">
@@ -443,12 +382,11 @@ export default function PayOutRequestDetailPage() {
                   {detail.payinBankAccountName && (
                     <span className="text-gray-500 text-xs">{detail.payinBankAccountName}</span>
                   )}
-                  <PromptPayBadge accountType={detail.payinAccountType} promptPayId={detail.payinPromptPayId} />
+                  <PromptPayBadge accountType={detail.payinAccountType} promptPayId={(detail as any).payinPromptPayId} color="purple" />
                 </div>
               ) : '—'}
             </InfoRow>
 
-            {/* Reject reason */}
             {isRejected && detail?.rejectReason && (
               <div className="sm:col-span-2">
                 <InfoRow label={m.labelRejectReason}>
@@ -459,19 +397,19 @@ export default function PayOutRequestDetailPage() {
 
           </div>
 
-          {/* QR Code — shown on the right when qrCode or qrCodeImage field has data */}
-          {(detail?.qrCodeImage || detail?.qrCode) && (
+          {/* QR Code — shown when qrCode or qrCodeImage exists */}
+          {((detail as any)?.qrCodeImage || (detail as any)?.qrCode) && (
             <div className="flex-shrink-0 flex flex-col items-center gap-2 pt-1">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">QR Code</p>
-              {detail.qrCodeImage ? (
+              {(detail as any).qrCodeImage ? (
                 <img
-                  src={detail.qrCodeImage.startsWith('data:') ? detail.qrCodeImage : `data:image/png;base64,${detail.qrCodeImage}`}
+                  src={(detail as any).qrCodeImage.startsWith('data:') ? (detail as any).qrCodeImage : `data:image/png;base64,${(detail as any).qrCodeImage}`}
                   alt="QR Code"
                   className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
                 />
               ) : (
                 <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
-                  <QRCode value={detail.qrCode!} size={200} />
+                  <QRCode value={(detail as any).qrCode!} size={200} />
                 </div>
               )}
             </div>
@@ -480,12 +418,11 @@ export default function PayOutRequestDetailPage() {
           </div>
         </div>
 
-        {/* ── Section 2: Source Bank Account ── */}
+        {/* Section 2: Source Bank (Transit) */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{m.sectionSource}</SectionHeader>
 
           {!isPending ? (
-            /* Locked — source bank stored in payoutBank* fields (set via PayoutBankAccountId at save/approve) */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <InfoRow label={m.fieldSourceAccount}>
                 {detail?.payoutBankCode || detail?.payoutBankAccountNo ? (
@@ -502,36 +439,7 @@ export default function PayOutRequestDetailPage() {
               </InfoRow>
             </div>
           ) : (
-            /* Pending — tab switch + searchable single account picker */
             <div className="max-w-md">
-              {/* Source type tabs */}
-              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg mb-3 w-fit">
-                <button
-                  type="button"
-                  onClick={() => { setSourceTab('PayIn'); setAccountSearch(''); setSelectedAccountId(''); setBankErrors({}) }}
-                  className={clsx(
-                    'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
-                    sourceTab === 'PayIn'
-                      ? 'bg-white text-blue-700 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  )}
-                >
-                  PayIn
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSourceTab('Transit'); setAccountSearch(''); setSelectedAccountId(''); setBankErrors({}) }}
-                  className={clsx(
-                    'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
-                    sourceTab === 'Transit'
-                      ? 'bg-white text-purple-700 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  )}
-                >
-                  Transit
-                </button>
-              </div>
-
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 {m.fieldSourceAccount} <span className="text-red-500">*</span>
               </label>
@@ -594,24 +502,14 @@ export default function PayOutRequestDetailPage() {
                             <span className="font-medium">{a.bankCode}</span>
                             {a.accountNumber && <span>{a.accountNumber}</span>}
                             {a.accountName && <span className="text-gray-400 text-xs">— {a.accountName}</span>}
-                            {a.category && (
-                              <span className={clsx(
-                                'px-1.5 py-0.5 text-[10px] font-bold rounded-full ring-1',
-                                a.category === 'Transit'
-                                  ? 'bg-purple-50 text-purple-700 ring-purple-200'
-                                  : 'bg-blue-50 text-blue-700 ring-blue-200'
-                              )}>
-                                {a.category}
-                              </span>
-                            )}
                             {a.accountType && (
-                              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full ring-1 bg-gray-50 text-gray-600 ring-gray-200">
+                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
                                 {a.accountType}
                               </span>
                             )}
                           </div>
                           {a.currentWalletBalance != null && (
-                            <div className="mt-1 flex items-center gap-1">
+                            <div className="mt-0.5 flex items-center gap-1">
                               <span className="text-[10px] text-gray-400">Balance:</span>
                               <span className={clsx(
                                 'text-xs font-semibold tabular-nums',
@@ -628,59 +526,52 @@ export default function PayOutRequestDetailPage() {
                 )}
               </div>
               {bankErrors.account && <p className="text-red-500 text-xs mt-1">{bankErrors.account}</p>}
-              {selectedAccountId && (
-                <p className="text-xs text-emerald-600 mt-1">✓ Selected</p>
-              )}
+              {selectedAccountId && <p className="text-xs text-emerald-600 mt-1">✓ Selected</p>}
             </div>
           )}
         </div>
 
       </div>
 
-      {/* ── Footer Action Bar ── */}
-      <div className="flex-none -mx-3 sm:-mx-6 px-4 sm:px-8 py-4 flex items-center justify-end gap-3 bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-        <button
-          type="button"
-          onClick={() => router.push('/business-setup/payment/withdraw-request')}
-          className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          {t.admin.cancel}
-        </button>
-
-        {isPending && (
-          <>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || approving || rejecting}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-60 transition-colors"
-            >
-              {saving && <Spinner />}
-              {saving ? m.btnSaving : m.btnSave}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowRejectModal(true)}
-              disabled={saving || approving || rejecting}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-60 transition-colors"
-            >
-              {rejecting && <Spinner />}
-              {rejecting ? m.btnRejecting : m.btnReject}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleApprove}
-              disabled={saving || approving || rejecting}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-60 transition-colors"
-            >
-              {approving && <Spinner />}
-              {approving ? m.btnApproving : m.btnApprove}
-            </button>
-          </>
-        )}
-      </div>
+      {/* Footer actions */}
+      {isPending && (
+        <div className="flex-none -mx-3 sm:-mx-6 px-4 sm:px-8 py-4 flex items-center justify-end gap-3 bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+          <button
+            type="button"
+            onClick={() => router.push('/business-setup/payment/transfer-request')}
+            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            {t.admin.cancel}
+          </button>
+          <button
+            type="button"
+            disabled={saving || approving || rejecting}
+            onClick={handleSave}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors"
+          >
+            {saving && <Spinner />}
+            {saving ? m.btnSaving : m.btnSave}
+          </button>
+          <button
+            type="button"
+            disabled={saving || approving || rejecting}
+            onClick={() => setShowRejectModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-60 transition-colors"
+          >
+            {rejecting && <Spinner />}
+            {rejecting ? m.btnRejecting : m.btnReject}
+          </button>
+          <button
+            type="button"
+            disabled={saving || approving || rejecting}
+            onClick={handleApprove}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+          >
+            {approving && <Spinner />}
+            {approving ? m.btnApproving : m.btnApprove}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -93,6 +93,7 @@ function AgentListContent() {
         const normalized = list.map(item => ({
           ...item,
           agentId: item.agentId ?? item.AgentId ?? item.id ?? item.Id ?? '',
+          lastSeenDate: item.lastSeenDate ?? item.LastSeenDate ?? item.lastSeen ?? item.LastSeen ?? null,
         }))
         normalized.sort((a, b) => {
           const ta = a.createdDate ? new Date(a.createdDate).getTime() : 0
@@ -161,6 +162,18 @@ function AgentListContent() {
     try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }
     catch { return d }
   }
+
+  const formatAge = (d?: string | null): string => {
+    if (!d) return ''
+    const diffMs = Date.now() - new Date(d).getTime()
+    if (diffMs < 0) return ''
+    const totalMin = Math.floor(diffMs / 60_000)
+    const hours = Math.floor(totalMin / 60)
+    const mins = totalMin % 60
+    if (hours === 0) return `${mins}min`
+    return `${hours}h ${mins}min`
+  }
+
 
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
@@ -321,7 +334,14 @@ function AgentListContent() {
                         {formatDate(agent.createdDate)}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(agent.lastSeen)}
+                        {agent.lastSeenDate ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span>{formatDate(agent.lastSeenDate)}</span>
+                            {formatAge(agent.lastSeenDate) && (
+                              <span className="text-xs text-gray-400">{formatAge(agent.lastSeenDate)}</span>
+                            )}
+                          </div>
+                        ) : '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={agent.agentStatus} />

@@ -858,6 +858,7 @@ export interface AgentItem {
   agentStatus?: string | null
   createdDate?: string | null
   lastSeen?: string | null
+  lastSeenDate?: string | null
 }
 
 export interface AgentEndpointItem {

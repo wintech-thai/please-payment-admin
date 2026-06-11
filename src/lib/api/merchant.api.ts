@@ -36,6 +36,15 @@ export const merchantApi = {
   getPaymentEndpoint: (id: string) =>
     client.get(`${BASE}/GetMerchantPaymentRequestEndPoint/${id}`),
 
+  getPayOutEndpoint: (id: string) =>
+    client.get(`${BASE}/GetMerchantPayOutRequestEndpoint/${id}`),
+
+  getPayOutApiKeys: (orgCustomId: string) =>
+    client.get(`${ORG_BASE}/GetPayOutRequestApiKeys/${orgCustomId}`),
+
+  createPayOutApiKey: (orgCustomId: string) =>
+    client.post(`${ORG_BASE}/CreatePayOutRequestApiKey/${orgCustomId}`, {}),
+
   addMerchant: (payload: AddMerchantPayload) =>
     client.post(`${ORG_BASE}/AddOrganization`, payload),
 

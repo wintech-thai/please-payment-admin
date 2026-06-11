@@ -710,6 +710,13 @@ export interface PayOutRequestItem {
   payinPromptPayId?: string | null
   payInFeePct?: number | null
   selectedPayInBankAccountId?: string | null
+  // Override fields — used when isPayInBankAccountOverride = true
+  isPayInBankAccountOverride?: boolean | null
+  payinBankCodeOverride?: string | null
+  payinBankAccountNoOverride?: string | null
+  payinBankAccountNameOverride?: string | null
+  payinAccountTypeOverride?: string | null
+  payinPromptPayIdOverride?: string | null
   // Destination (PayOut) bank account — API uses camelCase "payout" (lowercase)
   payoutBankAccountId?: string | null
   payoutBankCode?: string | null

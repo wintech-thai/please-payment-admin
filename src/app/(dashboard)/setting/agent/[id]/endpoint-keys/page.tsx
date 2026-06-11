@@ -289,7 +289,6 @@ export default function AgentEndpointKeysPage() {
             {[
               { label: m.fieldCode, value: agent?.code },
               { label: m.fieldDescription, value: agent?.description },
-              { label: m.fieldTags, value: agent?.tags },
             ].map(({ label, value }) => (
               <div key={label}>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{label}</label>
@@ -301,6 +300,19 @@ export default function AgentEndpointKeysPage() {
                 />
               </div>
             ))}
+            {/* Tags as badges */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{m.fieldTags}</label>
+              <div className="w-full min-h-[42px] px-3 py-2 flex flex-wrap gap-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+                {agent?.tags
+                  ? agent.tags.split(',').map(tag => (
+                    <span key={tag} className="inline-flex items-center px-2.5 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-xs font-semibold">
+                      {tag.trim()}
+                    </span>
+                  ))
+                  : <span className="text-sm text-gray-400">—</span>}
+              </div>
+            </div>
           </div>
         </div>
 

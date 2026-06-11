@@ -6,6 +6,8 @@ import { agentApi } from '@/lib/api/agent.api'
 import { toast } from 'sonner'
 import { ChevronLeft, X } from 'lucide-react'
 import clsx from 'clsx'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import LeaveConfirmModal from '@/components/LeaveConfirmModal'
 import { useLang } from '@/context/LanguageContext'
 
 export default function RegisterAgentPage() {
@@ -19,17 +21,20 @@ export default function RegisterAgentPage() {
   const [tags, setTags] = useState<string[]>([])
   const [errors, setErrors] = useState<{ code?: string }>({})
   const [saving, setSaving] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
+  const markDirty = () => { if (!isDirty) setIsDirty(true) }
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault()
       const val = tagInput.trim()
-      if (val && !tags.includes(val)) setTags(prev => [...prev, val])
+      if (val && !tags.includes(val)) { setTags(prev => [...prev, val]); markDirty() }
       setTagInput('')
     }
   }
 
-  const removeTag = (tag: string) => setTags(prev => prev.filter(t => t !== tag))
+  const removeTag = (tag: string) => { setTags(prev => prev.filter(t => t !== tag)); markDirty() }
 
   const validate = () => {
     const errs: { code?: string } = {}
@@ -50,6 +55,7 @@ export default function RegisterAgentPage() {
       })
       const data = res.data as any
       const agentId = data?.agent?.agentId ?? data?.agentId
+      setIsDirty(false)
       toast.success(m.createSuccess)
       router.push(`/setting/agent${agentId ? `?highlight=${agentId}` : ''}`)
     } catch (err: unknown) {
@@ -61,11 +67,12 @@ export default function RegisterAgentPage() {
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
+      {showConfirm && <LeaveConfirmModal onConfirm={confirmLeave} onCancel={cancelLeave} />}
 
       {/* Header */}
       <div className="flex-none flex items-center gap-3 mb-6">
         <button
-          onClick={() => router.push('/setting/agent')}
+          onClick={() => guardNavigation(() => router.push('/setting/agent'))}
           className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -93,7 +100,7 @@ export default function RegisterAgentPage() {
                 </label>
                 <input
                   value={code}
-                  onChange={e => { setCode(e.target.value); setErrors(p => ({ ...p, code: '' })) }}
+                  onChange={e => { setCode(e.target.value); setErrors(p => ({ ...p, code: '' })); markDirty() }}
                   placeholder={m.fieldCodePlaceholder}
                   className={clsx(
                     'w-full px-3.5 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent',
@@ -110,7 +117,7 @@ export default function RegisterAgentPage() {
                 </label>
                 <input
                   value={description}
-                  onChange={e => setDescription(e.target.value)}
+                  onChange={e => { setDescription(e.target.value); markDirty() }}
                   placeholder={m.fieldDescriptionPlaceholder}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
@@ -150,7 +157,7 @@ export default function RegisterAgentPage() {
         <div className="flex-none flex justify-end gap-3 py-4 border-t border-gray-100">
             <button
               type="button"
-              onClick={() => router.push('/setting/agent')}
+              onClick={() => guardNavigation(() => router.push('/setting/agent'))}
               className="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               {t.admin.cancel}

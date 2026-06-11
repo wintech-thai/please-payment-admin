@@ -302,7 +302,7 @@ function AgentListContent() {
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <button
                           onClick={e => { e.stopPropagation(); router.push(`/setting/agent/${agent.agentId}/update`) }}
-                          className={clsx('text-sm font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-primary-600')}
+                          className={clsx('text-sm font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
                           {agent.code ?? '—'}
                         </button>

@@ -3,7 +3,9 @@ import type {
   AgentItem,
   AgentEndpointItem,
   AgentApiKeyItem,
+  AgentEventItem,
   GetAgentsPayload,
+  GetAgentEventsPayload,
   AddAgentPayload,
   UpdateAgentPayload,
 } from './types'
@@ -46,4 +48,13 @@ export const agentApi = {
 
   deleteAgentApiKey: (keyId: string) =>
     client.delete(`/admin-api/AdminApiKey/org/global/action/DeleteApiKeyById/${keyId}`),
+
+  getAgentEvents: (agentId: string, payload: GetAgentEventsPayload = {}) =>
+    client.post<{ events: AgentEventItem[] }>(`${BASE}/GetAgentEvents/${agentId}`, payload),
+
+  getAgentEventCount: (agentId: string, payload: GetAgentEventsPayload = {}) =>
+    client.post<number>(`${BASE}/GetAgentEventCount/${agentId}`, payload),
+
+  getAgentEventById: (eventId: string) =>
+    client.get(`${BASE}/GetAgentEventById/${eventId}`),
 }

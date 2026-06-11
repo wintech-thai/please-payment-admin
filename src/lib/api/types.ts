@@ -894,3 +894,24 @@ export interface UpdateAgentPayload {
   Description?: string
   Tags?: string
 }
+
+export interface AgentEventItem {
+  eventId?: string | null
+  id?: string | null
+  createdDate?: string | null
+  eventType?: string | null
+  channel?: string | null
+  tags?: string | null
+  agentEvent?: Record<string, unknown> | null
+  AgentEvent?: Record<string, unknown> | null
+}
+
+export interface GetAgentEventsPayload {
+  Channel?: string
+  EventType?: string
+  Page?: number
+  Limit?: number
+  FullTextSearch?: string
+  FromDate?: string
+  ToDate?: string
+}

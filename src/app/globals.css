@@ -206,4 +206,42 @@ body {
   .input-field {
     @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400 transition-shadow duration-200;
   }
+
+  /* API Docs markdown styles */
+  .prose-docs {
+    @apply text-zinc-300 leading-relaxed;
+  }
+  .prose-docs h1 { @apply text-2xl font-bold text-white mt-8 mb-4; }
+  .prose-docs h2 { @apply text-xl font-bold text-white mt-10 mb-3 pt-6 border-t border-zinc-800; }
+  .prose-docs h3 { @apply text-base font-semibold text-zinc-100 mt-6 mb-2; }
+  .prose-docs p { @apply mb-4 text-zinc-300; }
+  .prose-docs ul { @apply list-disc list-inside mb-4 space-y-1 text-zinc-300; }
+  .prose-docs ol { @apply list-decimal list-inside mb-4 space-y-1 text-zinc-300; }
+  .prose-docs li { @apply text-zinc-300; }
+  .prose-docs strong { @apply text-white font-semibold; }
+  .prose-docs a { @apply text-primary-400 hover:text-primary-300 underline; }
+  .prose-docs blockquote { @apply border-l-4 border-primary-500 pl-4 italic text-zinc-400 my-4; }
+  .prose-docs code:not(pre code) {
+    @apply bg-zinc-800 text-primary-300 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  .prose-docs pre {
+    @apply bg-zinc-900 border border-zinc-700 rounded-xl p-4 mb-4 overflow-x-auto;
+  }
+  .prose-docs pre code {
+    @apply text-zinc-200 text-sm font-mono bg-transparent p-0;
+  }
+  .prose-docs table {
+    @apply w-full border-collapse mb-6 text-sm;
+  }
+  .prose-docs thead tr { @apply bg-zinc-800; }
+  .prose-docs th {
+    @apply text-left text-xs font-bold text-zinc-400 uppercase tracking-wider px-4 py-3 border border-zinc-700;
+  }
+  .prose-docs td {
+    @apply px-4 py-3 border border-zinc-700 text-zinc-300;
+  }
+  .prose-docs tbody tr:nth-child(even) { @apply bg-zinc-900/50; }
+  .prose-docs hr { @apply border-zinc-700 my-8; }
+  .prose-docs img { @apply rounded-xl border border-zinc-700 my-6 max-w-full; }
+  .prose-docs figcaption { @apply text-xs text-zinc-500 text-center mt-2; }
 }

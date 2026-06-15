@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import * as signalR from '@microsoft/signalr'
 import QRCode from 'react-qr-code'
 import { X, QrCode, Loader2, RefreshCw } from 'lucide-react'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
@@ -62,6 +63,10 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<PaymentRequestResponse | null>(null)
 
+  // SignalR
+  const hubRef = useRef<signalR.HubConnection | null>(null)
+  const [wsStatus, setWsStatus] = useState<'idle' | 'connecting' | 'waiting' | 'success' | 'error'>('idle')
+
   // Load banks + accounts once
   useEffect(() => {
     Promise.allSettled([
@@ -85,6 +90,69 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
       }
     }).finally(() => setLoadingInit(false))
   }, [merchantId])
+
+  function stopHub() {
+    if (hubRef.current) {
+      hubRef.current.stop().catch(() => {})
+      hubRef.current = null
+    }
+  }
+
+  // Connect SignalR after QR is generated
+  useEffect(() => {
+    if (!result?.websocketPath || !result?.sessionId) return
+
+    const configuredUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
+    // If NEXT_PUBLIC_API_URL is a relative proxy path (e.g. /api/proxy), derive the real API domain
+    // from the current hostname: admin[-env].domain → api[-env].domain
+    const wsBase = configuredUrl.startsWith('http')
+      ? configuredUrl
+      : `https://${window.location.hostname.replace('admin', 'api')}`
+    const wsPath = result.websocketPath.startsWith('/') ? result.websocketPath : `/${result.websocketPath}`
+    const hubUrl = `${wsBase}${wsPath}`
+    console.log('[SignalR] connecting to:', hubUrl)
+
+    setWsStatus('connecting')
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(hubUrl, {
+        skipNegotiation: true,
+        transport: signalR.HttpTransportType.WebSockets,
+        accessTokenFactory: () => {
+          const token = localStorage.getItem('accessToken') || ''
+          return btoa(token)
+        },
+      })
+      .build()
+
+    const onPaymentDone = (data?: unknown) => {
+      console.log('[SignalR] payment.completed received:', data)
+      setWsStatus('success')
+      stopHub()
+    }
+
+    // Register multiple name variants — server event name TBD
+    connection.on('payment.completed', onPaymentDone)
+    connection.on('PaymentCompleted', onPaymentDone)
+    connection.on('paymentCompleted', onPaymentDone)
+    connection.on('payment_completed', onPaymentDone)
+
+    hubRef.current = connection
+
+    connection.start()
+      .then(() => {
+        console.log('[SignalR] connected, sessionId:', result.sessionId)
+        setWsStatus('waiting')
+        connection.invoke('JoinPayment', result.sessionId)
+          .catch(err => console.error('[SignalR] JoinPayment error:', err))
+      })
+      .catch(err => {
+        console.error('[SignalR] connect error:', err)
+        setWsStatus('error')
+      })
+
+    return () => stopHub()
+  }, [result?.websocketPath, result?.sessionId])
 
   const filteredAccounts = selectedBankCode
     ? allAccounts.filter(a =>
@@ -137,6 +205,8 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
   }
 
   const handleReset = () => {
+    stopHub()
+    setWsStatus('idle')
     setResult(null)
     setAmount('')
     setRef(generateRefId())
@@ -158,7 +228,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
               {merchantName && <p className="text-xs text-gray-500">{merchantName}</p>}
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+          <button onClick={() => { stopHub(); onClose() }} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -315,7 +385,34 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3">
+        <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
+          {/* SignalR payment status */}
+          {result && (
+            <div className="flex items-center gap-2">
+              {(wsStatus === 'connecting' || wsStatus === 'waiting') && (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                  <span className="text-sm text-amber-600">Waiting....</span>
+                </>
+              )}
+              {wsStatus === 'success' && (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-600">Payment Successful</span>
+                </>
+              )}
+              {wsStatus === 'error' && (
+                <span className="text-xs text-red-400">ไม่สามารถเชื่อมต่อ real-time ได้</span>
+              )}
+            </div>
+          )}
+          {!result && <div />}
+
+          <div className="flex items-center gap-3">
           {result ? (
             <>
               <button
@@ -325,7 +422,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
                 <RefreshCw className="w-4 h-4" />
                 {m.qrReset}
               </button>
-              <button onClick={onClose} className="px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
+              <button onClick={() => { stopHub(); onClose() }} className="px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
                 {m.qrClose}
               </button>
             </>
@@ -344,6 +441,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
               </button>
             </>
           )}
+          </div>
         </div>
 
       </div>

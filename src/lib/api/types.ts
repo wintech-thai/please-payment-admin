@@ -358,6 +358,8 @@ export interface PaymentRequestResponse {
   payInBankAccountNo?: string
   payInBankAccountName?: string
   payInBankCode?: string
+  websocketPath?: string
+  sessionId?: string
 }
 
 // ─── Pay-In Requests ─────────────────────────────────────────────────────────

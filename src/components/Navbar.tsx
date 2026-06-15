@@ -183,10 +183,24 @@ export default function Navbar() {
           >
             {t.nav.setting}
           </Link>
+
         </nav>
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2">
+          {/* Document */}
+          <a
+            href="/documents"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden md:flex items-center px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors text-white hover:bg-white/15"
+          >
+            {t.nav.document}
+          </a>
+
+          {/* Divider */}
+          <div className="hidden md:block w-px h-6 bg-white/20 flex-shrink-0" />
+
           {/* Version display */}
           <div className="hidden lg:flex items-center mr-1 pr-3 border-r border-white/10 h-8">
             <AppVersionDisplay />
@@ -410,6 +424,20 @@ export default function Navbar() {
             </svg>
             <span>{t.nav.setting}</span>
           </Link>
+
+          {/* Document */}
+          <a
+            href="/documents"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-white hover:bg-white/15"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>{t.nav.document}</span>
+          </a>
         </nav>
       )}
     </header>

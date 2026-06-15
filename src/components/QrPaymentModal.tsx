@@ -102,9 +102,15 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
   useEffect(() => {
     if (!result?.websocketPath || !result?.sessionId) return
 
-    const apiBase = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
+    const configuredUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
+    // If NEXT_PUBLIC_API_URL is a relative proxy path (e.g. /api/proxy), derive the real API domain
+    // from the current hostname: admin[-env].domain → api[-env].domain
+    const wsBase = configuredUrl.startsWith('http')
+      ? configuredUrl
+      : `https://${window.location.hostname.replace('admin', 'api')}`
     const wsPath = result.websocketPath.startsWith('/') ? result.websocketPath : `/${result.websocketPath}`
-    const hubUrl = `${apiBase}${wsPath}`
+    const hubUrl = `${wsBase}${wsPath}`
+    console.log('[SignalR] connecting to:', hubUrl)
 
     setWsStatus('connecting')
 

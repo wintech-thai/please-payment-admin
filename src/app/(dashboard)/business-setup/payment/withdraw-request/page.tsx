@@ -316,28 +316,39 @@ export default function WithdrawRequestPage() {
                         )}
                       </td>
 
-                      {/* Destination bank — stored in payinBank* fields */}
+                      {/* Destination bank — use Override fields when isPayInBankAccountOverride = true */}
                       <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
-                        {item.payinBankCode || item.payinBankAccountNo ? (
-                          <p className="text-sm font-semibold text-gray-800">
-                            {[item.payinBankCode, item.payinBankAccountNo].filter(Boolean).join(' · ')}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-400">—</p>
-                        )}
-                        {item.payinBankAccountName && (
-                          <p className="text-xs text-gray-500 mt-0.5">{item.payinBankAccountName}</p>
-                        )}
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {item.payinAccountType && (
-                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
-                              {item.payinAccountType}
-                            </span>
-                          )}
-                          {item.payinAccountType?.toLowerCase() === 'promptpay' && item.payinPromptPayId && (
-                            <span className="text-[10px] text-gray-500">{item.payinPromptPayId}</span>
-                          )}
-                        </div>
+                        {(() => {
+                          const bankCode = item.isPayInBankAccountOverride ? item.payinBankCodeOverride : item.payinBankCode
+                          const bankAccountNo = item.isPayInBankAccountOverride ? item.payinBankAccountNoOverride : item.payinBankAccountNo
+                          const bankAccountName = item.isPayInBankAccountOverride ? item.payinBankAccountNameOverride : item.payinBankAccountName
+                          const accountType = item.isPayInBankAccountOverride ? item.payinAccountTypeOverride : item.payinAccountType
+                          const promptPayId = item.isPayInBankAccountOverride ? item.payinPromptPayIdOverride : item.payinPromptPayId
+                          return (
+                            <>
+                              {bankCode || bankAccountNo ? (
+                                <p className="text-sm font-semibold text-gray-800">
+                                  {[bankCode, bankAccountNo].filter(Boolean).join(' · ')}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-gray-400">—</p>
+                              )}
+                              {bankAccountName && (
+                                <p className="text-xs text-gray-500 mt-0.5">{bankAccountName}</p>
+                              )}
+                              <div className="flex gap-1 mt-1 flex-wrap">
+                                {accountType && (
+                                  <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">
+                                    {accountType}
+                                  </span>
+                                )}
+                                {accountType?.toLowerCase() === 'promptpay' && promptPayId && (
+                                  <span className="text-[10px] text-gray-500">{promptPayId}</span>
+                                )}
+                              </div>
+                            </>
+                          )
+                        })()}
                       </td>
 
                       {/* Source bank — stored in payoutBank* fields */}

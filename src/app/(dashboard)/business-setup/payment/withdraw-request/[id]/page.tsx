@@ -433,19 +433,26 @@ export default function PayOutRequestDetailPage() {
               <span className="text-gray-600">{detail?.description ?? '—'}</span>
             </InfoRow>
 
-            {/* Payout destination bank — stored in payinBank* fields (set via PayinBankAccountId at create) */}
+            {/* Payout destination bank — use Override fields when isPayInBankAccountOverride = true */}
             <InfoRow label={m.fieldDestBank}>
-              {detail?.payinBankCode || detail?.payinBankAccountNo ? (
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-semibold">
-                    {[detail.payinBankCode, detail.payinBankAccountNo].filter(Boolean).join(' · ')}
-                  </span>
-                  {detail.payinBankAccountName && (
-                    <span className="text-gray-500 text-xs">{detail.payinBankAccountName}</span>
-                  )}
-                  <PromptPayBadge accountType={detail.payinAccountType} promptPayId={detail.payinPromptPayId} />
-                </div>
-              ) : '—'}
+              {(() => {
+                const bankCode = detail?.isPayInBankAccountOverride ? detail.payinBankCodeOverride : detail?.payinBankCode
+                const bankAccountNo = detail?.isPayInBankAccountOverride ? detail.payinBankAccountNoOverride : detail?.payinBankAccountNo
+                const bankAccountName = detail?.isPayInBankAccountOverride ? detail.payinBankAccountNameOverride : detail?.payinBankAccountName
+                const accountType = detail?.isPayInBankAccountOverride ? detail.payinAccountTypeOverride : detail?.payinAccountType
+                const promptPayId = detail?.isPayInBankAccountOverride ? detail.payinPromptPayIdOverride : detail?.payinPromptPayId
+                return bankCode || bankAccountNo ? (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold">
+                      {[bankCode, bankAccountNo].filter(Boolean).join(' · ')}
+                    </span>
+                    {bankAccountName && (
+                      <span className="text-gray-500 text-xs">{bankAccountName}</span>
+                    )}
+                    <PromptPayBadge accountType={accountType} promptPayId={promptPayId} />
+                  </div>
+                ) : '—'
+              })()}
             </InfoRow>
 
             {/* Reject reason */}

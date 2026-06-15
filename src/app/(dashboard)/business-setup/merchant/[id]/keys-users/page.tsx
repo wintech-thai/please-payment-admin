@@ -105,6 +105,88 @@ function ConfirmDialog({ title, onConfirm, onCancel, t }: {
   )
 }
 
+function ApiKeysTable({ keys, selectedKeyId, setSelectedKeyId, formatDate, m, onToggle, onDelete }: {
+  keys: OrgApiKeyItem[]
+  selectedKeyId: string | null
+  setSelectedKeyId: React.Dispatch<React.SetStateAction<string | null>>
+  formatDate: (d?: string | null) => string
+  m: any
+  onToggle: (key: OrgApiKeyItem) => void
+  onDelete: (key: OrgApiKeyItem) => void
+}) {
+  if (keys.length === 0) return <p className="text-sm text-gray-400 text-center py-8">{m.noApiKeysFound}</p>
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm border-separate border-spacing-0 min-w-[600px]">
+        <thead>
+          <tr className="bg-gray-50">
+            {[m.colKeyName, m.colDescription, m.colRoles, m.colCreated, m.colStatus, m.colAction].map((col: string, i: number) => (
+              <th key={i} className={clsx('px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap', i === 0 && 'rounded-tl-xl')}>
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {keys.map((key, idx) => {
+            const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
+            const isHighlighted = selectedKeyId === key.keyId
+            return (
+              <tr
+                key={key.keyId}
+                onClick={() => setSelectedKeyId(prev => prev === key.keyId ? null : key.keyId)}
+                className={clsx(
+                  'cursor-pointer transition-colors',
+                  isHighlighted ? 'bg-primary-100' : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
+                )}
+              >
+                <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                  <span className="flex items-center gap-2">
+                    <Key className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                    <span className="text-sm font-semibold text-gray-900">{key.keyName ?? '—'}</span>
+                  </span>
+                </td>
+                <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500">{key.keyDescription ?? '—'}</td>
+                <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
+                  {key.rolesList ? (
+                    <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{key.rolesList}</span>
+                  ) : '—'}
+                </td>
+                <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
+                  {formatDate(key.keyCreatedDate)}
+                </td>
+                <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                  <StatusBadge status={key.keyStatus ?? 'Active'} />
+                </td>
+                <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={e => { e.stopPropagation(); onToggle(key) }}
+                      className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
+                        isActive ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100' : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
+                      )}
+                    >
+                      {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                      {isActive ? m.disableApiKey : m.enableApiKey}
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); onDelete(key) }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors text-red-600 bg-red-50 ring-red-200 hover:bg-red-100"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {m.deleteApiKey}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function MerchantKeysUsersPage() {
@@ -116,8 +198,11 @@ export default function MerchantKeysUsersPage() {
 
   const [merchant, setMerchant] = useState<MerchantItem | null>(null)
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+  const [payOutUrl, setPayOutUrl] = useState<string | null>(null)
   const [users, setUsers] = useState<OrgUserItem[]>([])
   const [apiKeys, setApiKeys] = useState<OrgApiKeyItem[]>([])
+  const [payOutApiKeys, setPayOutApiKeys] = useState<OrgApiKeyItem[]>([])
+  const [endpointTab, setEndpointTab] = useState<'payin' | 'payout'>('payin')
   const [loading, setLoading] = useState(true)
 
   // Invite modal
@@ -152,16 +237,24 @@ export default function MerchantKeysUsersPage() {
 
       const customId: string = raw?.code ?? ''
 
-      const [endpointRes, usersRes, keysRes] = await Promise.allSettled([
+      const [endpointRes, payOutEndpointRes, usersRes, keysRes, payOutKeysRes] = await Promise.allSettled([
         merchantApi.getPaymentEndpoint(merchantId),
+        merchantApi.getPayOutEndpoint(merchantId),
         merchantApi.getOrgUsers(customId),
         merchantApi.getOrgApiKeys(customId),
+        merchantApi.getPayOutApiKeys(customId),
       ])
 
       if (endpointRes.status === 'fulfilled') {
         const data = endpointRes.value.data as any
         const rawUrl: string = data?.paymentRequestUrl ?? data?.PaymentRequestUrl ?? ''
         setPaymentUrl(rawUrl ? processPaymentUrl(rawUrl) : null)
+      }
+
+      if (payOutEndpointRes.status === 'fulfilled') {
+        const data = payOutEndpointRes.value.data as any
+        const rawUrl: string = data?.payoutRequestUrl ?? data?.PayoutRequestUrl ?? data?.paymentRequestUrl ?? data?.PaymentRequestUrl ?? ''
+        setPayOutUrl(rawUrl ? processPaymentUrl(rawUrl) : null)
       }
 
       if (usersRes.status === 'fulfilled') {
@@ -172,6 +265,11 @@ export default function MerchantKeysUsersPage() {
       if (keysRes.status === 'fulfilled') {
         const data = keysRes.value.data as any
         setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
+      }
+
+      if (payOutKeysRes.status === 'fulfilled') {
+        const data = payOutKeysRes.value.data as any
+        setPayOutApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
       }
     } catch {
       toast.error(m.failedToLoadMerchant)
@@ -266,6 +364,27 @@ export default function MerchantKeysUsersPage() {
     }
   }
 
+  const handleCreatePayOutApiKey = async () => {
+    try {
+      const createRes = await merchantApi.createPayOutApiKey(orgCustomId)
+      const cdata = createRes.data as any
+      const createdKey = cdata?.apiKey ?? cdata?.ApiKey
+      const keysRes = await merchantApi.getPayOutApiKeys(orgCustomId)
+      const kdata = keysRes.data as any
+      setPayOutApiKeys(Array.isArray(kdata) ? kdata : (kdata?.apiKeys ?? kdata?.ApiKeys ?? []))
+      if (createdKey?.apiKey) setNewApiKey(createdKey.apiKey)
+      else toast.success(m.apiKeyCreatedTitle)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToCreateApiKey)
+    }
+  }
+
+  const refreshPayOutApiKeys = async () => {
+    const res = await merchantApi.getPayOutApiKeys(orgCustomId)
+    const data = res.data as any
+    setPayOutApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
+  }
+
   const handleDeleteUser = (user: OrgUserItem) => {
     setConfirm({
       title: m.confirmDeleteUser,
@@ -279,48 +398,6 @@ export default function MerchantKeysUsersPage() {
           setUsers(Array.isArray(data) ? data : (data?.users ?? data?.Users ?? []))
         } catch (err: unknown) {
           toast.error(err instanceof Error ? err.message : m.failedToDeleteUser)
-        }
-      },
-    })
-  }
-
-  const handleDeleteApiKey = (key: OrgApiKeyItem) => {
-    setConfirm({
-      title: m.confirmDeleteApiKey,
-      onConfirm: async () => {
-        setConfirm(null)
-        try {
-          await merchantApi.deleteOrgApiKey(orgCustomId, key.keyId)
-          toast.success(m.deleteApiKeySuccess)
-          const res = await merchantApi.getOrgApiKeys(orgCustomId)
-          const data = res.data as any
-          setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
-        } catch (err: unknown) {
-          toast.error(err instanceof Error ? err.message : m.failedToDeleteApiKey)
-        }
-      },
-    })
-  }
-
-  const handleToggleApiKey = (key: OrgApiKeyItem) => {
-    const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
-    setConfirm({
-      title: isActive ? m.confirmDisableApiKey : m.confirmEnableApiKey,
-      onConfirm: async () => {
-        setConfirm(null)
-        try {
-          if (isActive) {
-            await merchantApi.disableOrgApiKey(orgCustomId, key.keyId)
-            toast.success(m.disableApiKeySuccess)
-          } else {
-            await merchantApi.enableOrgApiKey(orgCustomId, key.keyId)
-            toast.success(m.enableApiKeySuccess)
-          }
-          const res = await merchantApi.getOrgApiKeys(orgCustomId)
-          const data = res.data as any
-          setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
-        } catch (err: unknown) {
-          toast.error(err instanceof Error ? err.message : m.failedToToggleApiKey)
         }
       },
     })
@@ -500,24 +577,60 @@ export default function MerchantKeysUsersPage() {
           </div>
         </div>
 
-        {/* Payment Request Endpoint + API Keys */}
+        {/* Payment Request Endpoint + API Keys — tabs */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6 flex flex-col gap-6">
-          {/* Endpoint */}
+          {/* Section header + tab bar */}
           <div>
             <SectionHeader>{m.sectionEndpoint}</SectionHeader>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{m.endpointLabel}</p>
-            {paymentUrl ? (
-              <div className="flex items-start gap-3">
-                <textarea
-                  readOnly
-                  value={paymentUrl}
-                  rows={2}
-                  className="flex-1 px-3 py-2.5 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 resize-none focus:outline-none"
-                />
-                <CopyButton text={paymentUrl} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
-              </div>
+            <div className="flex gap-1 -mt-3 border-b border-gray-200">
+              <button
+                onClick={() => setEndpointTab('payin')}
+                className={clsx(
+                  'px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all',
+                  endpointTab === 'payin'
+                    ? 'text-primary-600 border-primary-600'
+                    : 'text-gray-400 border-transparent hover:text-gray-600'
+                )}
+              >
+                {m.tabPayIn}
+              </button>
+              <button
+                onClick={() => setEndpointTab('payout')}
+                className={clsx(
+                  'px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all',
+                  endpointTab === 'payout'
+                    ? 'text-primary-600 border-primary-600'
+                    : 'text-gray-400 border-transparent hover:text-gray-600'
+                )}
+              >
+                {m.tabPayOut}
+              </button>
+            </div>
+          </div>
+
+          {/* Endpoint URL */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              {endpointTab === 'payin' ? m.endpointLabel : m.endpointPayOutLabel}
+            </p>
+            {endpointTab === 'payin' ? (
+              paymentUrl ? (
+                <div className="flex items-start gap-3">
+                  <textarea readOnly value={paymentUrl} rows={2} className="flex-1 px-3 py-2.5 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 resize-none focus:outline-none" />
+                  <CopyButton text={paymentUrl} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
+              )
             ) : (
-              <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
+              payOutUrl ? (
+                <div className="flex items-start gap-3">
+                  <textarea readOnly value={payOutUrl} rows={2} className="flex-1 px-3 py-2.5 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 resize-none focus:outline-none" />
+                  <CopyButton text={payOutUrl} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
+              )
             )}
           </div>
 
@@ -525,96 +638,66 @@ export default function MerchantKeysUsersPage() {
 
           {/* API Keys */}
           <div>
-          <SectionHeader
-            action={
-              <button
-                onClick={handleCreateApiKey}
-                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {m.addApiKey}
-              </button>
-            }
-          >
-            {m.sectionApiKeys}
-          </SectionHeader>
+            <SectionHeader
+              action={
+                <button
+                  onClick={endpointTab === 'payin' ? handleCreateApiKey : handleCreatePayOutApiKey}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {m.addApiKey}
+                </button>
+              }
+            >
+              {m.sectionApiKeys}
+            </SectionHeader>
 
-          {apiKeys.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">{m.noApiKeysFound}</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-separate border-spacing-0 min-w-[600px]">
-                <thead>
-                  <tr className="bg-gray-50">
-                    {[m.colKeyName, m.colDescription, m.colRoles, m.colCreated, m.colStatus, m.colAction].map((col: string, i: number) => (
-                      <th key={col} className={clsx('px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap', i === 0 && 'rounded-tl-xl')}>
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {apiKeys.map((key, idx) => {
-                    const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
-                    const isHighlighted = selectedKeyId === key.keyId
-                    return (
-                      <tr
-                        key={key.keyId}
-                        onClick={() => setSelectedKeyId(prev => prev === key.keyId ? null : key.keyId)}
-                        className={clsx(
-                          'cursor-pointer transition-colors',
-                          isHighlighted
-                            ? 'bg-primary-100'
-                            : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
-                        )}
-                      >
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                          <span className="flex items-center gap-2">
-                            <Key className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm font-semibold text-gray-900">{key.keyName ?? '—'}</span>
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500">{key.keyDescription ?? '—'}</td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
-                          {key.rolesList ? (
-                            <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{key.rolesList}</span>
-                          ) : '—'}
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(key.keyCreatedDate)}
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                          <StatusBadge status={key.keyStatus ?? 'Active'} />
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={e => { e.stopPropagation(); handleToggleApiKey(key) }}
-                              className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
-                                isActive
-                                  ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
-                                  : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
-                              )}
-                            >
-                              {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                              {isActive ? m.disableApiKey : m.enableApiKey}
-                            </button>
-                            <button
-                              onClick={e => { e.stopPropagation(); handleDeleteApiKey(key) }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors text-red-600 bg-red-50 ring-red-200 hover:bg-red-100"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              {m.deleteApiKey}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+            <ApiKeysTable
+              keys={endpointTab === 'payin' ? apiKeys : payOutApiKeys}
+              selectedKeyId={selectedKeyId}
+              setSelectedKeyId={setSelectedKeyId}
+              formatDate={formatDate}
+              m={m}
+              onToggle={(key) => {
+                const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
+                setConfirm({
+                  title: isActive ? m.confirmDisableApiKey : m.confirmEnableApiKey,
+                  onConfirm: async () => {
+                    setConfirm(null)
+                    try {
+                      if (isActive) { await merchantApi.disableOrgApiKey(orgCustomId, key.keyId); toast.success(m.disableApiKeySuccess) }
+                      else { await merchantApi.enableOrgApiKey(orgCustomId, key.keyId); toast.success(m.enableApiKeySuccess) }
+                      if (endpointTab === 'payin') {
+                        const res = await merchantApi.getOrgApiKeys(orgCustomId)
+                        const data = res.data as any
+                        setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
+                      } else {
+                        await refreshPayOutApiKeys()
+                      }
+                    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : m.failedToToggleApiKey) }
+                  },
+                })
+              }}
+              onDelete={(key) => {
+                setConfirm({
+                  title: m.confirmDeleteApiKey,
+                  onConfirm: async () => {
+                    setConfirm(null)
+                    try {
+                      await merchantApi.deleteOrgApiKey(orgCustomId, key.keyId)
+                      toast.success(m.deleteApiKeySuccess)
+                      if (endpointTab === 'payin') {
+                        const res = await merchantApi.getOrgApiKeys(orgCustomId)
+                        const data = res.data as any
+                        setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
+                      } else {
+                        await refreshPayOutApiKeys()
+                      }
+                    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : m.failedToDeleteApiKey) }
+                  },
+                })
+              }}
+            />
           </div>
         </div>
 

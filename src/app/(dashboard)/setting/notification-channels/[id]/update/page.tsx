@@ -99,7 +99,7 @@ export default function UpdateNotiChannelPage() {
   }
 
   const DISCORD_WEBHOOK_RE = /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[\w-]+$/
-  const TELEGRAM_TOKEN_RE = /^\d+:[\w-]{35,}$/
+  const TELEGRAM_TOKEN_RE = /^\d+:[\w-]+$/
   const TELEGRAM_CHAT_ID_RE = /^-?\d+$/
 
   const validate = () => {
@@ -316,7 +316,10 @@ export default function UpdateNotiChannelPage() {
                         errors.telegramToken ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary-500'
                       )}
                     />
-                    {errors.telegramToken && <p className="text-red-500 text-xs mt-1">{errors.telegramToken}</p>}
+                    {errors.telegramToken
+                      ? <p className="text-red-500 text-xs mt-1">{errors.telegramToken}</p>
+                      : <p className="text-xs text-gray-400 mt-1">{m.fieldTelegramTokenHint}</p>
+                    }
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">

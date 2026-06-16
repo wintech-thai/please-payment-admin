@@ -199,7 +199,11 @@ function NotiEventListContent() {
         {/* Status */}
         <select
           value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
+          onChange={e => {
+            setStatusFilter(e.target.value)
+            setPage(1)
+            fetchData(1, searchTerm, e.target.value, timeRange)
+          }}
           className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         >
           <option value="">{m.allStatus}</option>

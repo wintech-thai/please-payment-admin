@@ -2,14 +2,32 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
-const menuItems = [
+type FlatItem = {
+  type: 'flat'
+  href: string
+  labelKey: keyof ReturnType<typeof useLang>['t']['brandTheme']
+  icon: React.ReactNode
+}
+
+type ParentItem = {
+  type: 'parent'
+  basePath: string
+  labelKey: keyof ReturnType<typeof useLang>['t']['brandTheme']
+  icon: React.ReactNode
+  children: { href: string; labelKey: keyof ReturnType<typeof useLang>['t']['brandTheme'] }[]
+}
+
+type MenuItem = FlatItem | ParentItem
+
+const menuItems: MenuItem[] = [
   {
+    type: 'flat',
     href: '/setting/brand-theme',
-    labelKey: 'sidebarBrandTheme' as const,
+    labelKey: 'sidebarBrandTheme',
     icon: (
       <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
@@ -17,8 +35,9 @@ const menuItems = [
     ),
   },
   {
+    type: 'flat',
     href: '/setting/agent',
-    labelKey: 'sidebarAgents' as const,
+    labelKey: 'sidebarAgents',
     icon: (
       <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v2.5M9.5 4.5a2.5 2.5 0 105 0" />
@@ -28,12 +47,50 @@ const menuItems = [
       </svg>
     ),
   },
+  {
+    type: 'parent',
+    basePath: '/setting/notification',
+    labelKey: 'sidebarNotifications',
+    icon: (
+      <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+    children: [
+      { href: '/setting/notification-channels', labelKey: 'sidebarNotiChannels' },
+      { href: '/setting/notification-events', labelKey: 'sidebarNotiEvents' },
+    ],
+  },
 ]
 
 export default function SettingSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const { t } = useLang()
+
+  // Track which parent menus are open
+  const [openParents, setOpenParents] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    menuItems.forEach(item => {
+      if (item.type === 'parent' && pathname.startsWith(item.basePath)) {
+        initial[item.basePath] = true
+      }
+    })
+    return initial
+  })
+
+  // Auto-expand parent when navigating to a child route
+  useEffect(() => {
+    menuItems.forEach(item => {
+      if (item.type === 'parent' && pathname.startsWith(item.basePath)) {
+        setOpenParents(prev => ({ ...prev, [item.basePath]: true }))
+      }
+    })
+  }, [pathname])
+
+  const toggleParent = (basePath: string) => {
+    setOpenParents(prev => ({ ...prev, [basePath]: !prev[basePath] }))
+  }
 
   return (
     <aside
@@ -67,24 +124,82 @@ export default function SettingSidebar() {
 
       {/* Nav items */}
       <nav className="flex flex-col gap-1 px-2">
-        {menuItems.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+        {menuItems.map(item => {
+          if (item.type === 'flat') {
+            const isActive = pathname.startsWith(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={collapsed ? t.brandTheme[item.labelKey] : undefined}
+                className={clsx(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  collapsed && 'justify-center px-2',
+                  isActive
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/75 hover:bg-white/15 hover:text-white'
+                )}
+              >
+                {item.icon}
+                {!collapsed && <span className="truncate">{t.brandTheme[item.labelKey]}</span>}
+              </Link>
+            )
+          }
+
+          // Parent item
+          const isAnyChildActive = item.children.some(c => pathname.startsWith(c.href))
+          const isOpen = !collapsed && (openParents[item.basePath] ?? false)
+
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={collapsed ? t.brandTheme[item.labelKey] : undefined}
-              className={clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                collapsed && 'justify-center px-2',
-                isActive
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/75 hover:bg-white/15 hover:text-white'
+            <div key={item.basePath}>
+              <button
+                onClick={() => collapsed ? undefined : toggleParent(item.basePath)}
+                title={collapsed ? t.brandTheme[item.labelKey] : undefined}
+                className={clsx(
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  collapsed && 'justify-center px-2',
+                  isAnyChildActive
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/75 hover:bg-white/15 hover:text-white'
+                )}
+              >
+                {item.icon}
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 text-left truncate">{t.brandTheme[item.labelKey]}</span>
+                    <svg
+                      className={clsx('w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200', isOpen && 'rotate-180')}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </>
+                )}
+              </button>
+
+              {/* Sub-menu */}
+              {isOpen && (
+                <div className="mt-0.5 ml-3 pl-3 border-l border-white/20 flex flex-col gap-0.5">
+                  {item.children.map(child => {
+                    const isChildActive = pathname.startsWith(child.href)
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className={clsx(
+                          'flex items-center px-3 py-2 rounded-lg text-sm transition-colors',
+                          isChildActive
+                            ? 'bg-white/15 text-white font-semibold'
+                            : 'text-white/65 hover:bg-white/10 hover:text-white font-medium'
+                        )}
+                      >
+                        <span className="truncate">{t.brandTheme[child.labelKey]}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
               )}
-            >
-              {item.icon}
-              {!collapsed && <span className="truncate">{t.brandTheme[item.labelKey]}</span>}
-            </Link>
+            </div>
           )
         })}
       </nav>

@@ -31,6 +31,8 @@ export default function RegisterAgentPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [modalBankCode, setModalBankCode] = useState('')
   const [modalAccountId, setModalAccountId] = useState('')
+  const [modalAccountSearch, setModalAccountSearch] = useState('')
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false)
 
   const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
   const markDirty = () => { if (!isDirty) setIsDirty(true) }
@@ -58,9 +60,21 @@ export default function RegisterAgentPage() {
     [allBankAccounts, modalBankCode]
   )
 
+  const searchedAccounts = useMemo(() => {
+    const q = modalAccountSearch.toLowerCase()
+    if (!q) return filteredModalAccounts
+    return filteredModalAccounts.filter(a =>
+      (a.accountName ?? '').toLowerCase().includes(q) ||
+      (a.accountNumber ?? '').toLowerCase().includes(q) ||
+      (a.promptPayId ?? '').toLowerCase().includes(q)
+    )
+  }, [filteredModalAccounts, modalAccountSearch])
+
   const openAddModal = () => {
     setModalBankCode('')
     setModalAccountId('')
+    setModalAccountSearch('')
+    setShowAccountDropdown(false)
     setShowAddModal(true)
   }
 
@@ -145,12 +159,12 @@ export default function RegisterAgentPage() {
             <div className="flex flex-col gap-4">
               {/* Bank Code */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                   {m.fieldBankCode} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={modalBankCode}
-                  onChange={e => { setModalBankCode(e.target.value); setModalAccountId('') }}
+                  onChange={e => { setModalBankCode(e.target.value); setModalAccountId(''); setModalAccountSearch(''); setShowAccountDropdown(false) }}
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="">{m.selectBankCodePlaceholder}</option>
@@ -160,24 +174,69 @@ export default function RegisterAgentPage() {
                 </select>
               </div>
 
-              {/* Bank Account */}
+              {/* Bank Account - Searchable */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                   {m.sectionBankAccounts} <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={modalAccountId}
-                  onChange={e => setModalAccountId(e.target.value)}
-                  disabled={!modalBankCode}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
-                >
-                  <option value="">{m.selectBankAccountPlaceholder}</option>
-                  {filteredModalAccounts.map(acc => (
-                    <option key={acc.accountId} value={acc.accountId}>
-                      {acc.accountName} — {acc.accountNumber}{acc.accountLevel === 'Global' ? ' (Global)' : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    value={modalAccountSearch}
+                    onChange={e => { setModalAccountSearch(e.target.value); setModalAccountId(''); setShowAccountDropdown(true) }}
+                    onFocus={() => { if (modalBankCode) setShowAccountDropdown(true) }}
+                    onBlur={() => setTimeout(() => setShowAccountDropdown(false), 150)}
+                    disabled={!modalBankCode}
+                    placeholder={!modalBankCode ? 'Select bank code first...' : m.selectBankAccountPlaceholder}
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 pr-8 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+                  />
+                  {modalAccountSearch && (
+                    <button
+                      type="button"
+                      onClick={() => { setModalAccountSearch(''); setModalAccountId('') }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                  {showAccountDropdown && searchedAccounts.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                      {searchedAccounts.map(acc => (
+                        <button
+                          key={acc.accountId}
+                          type="button"
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => {
+                            setModalAccountId(acc.accountId)
+                            setModalAccountSearch(`${acc.accountName} — ${acc.accountNumber}`)
+                            setShowAccountDropdown(false)
+                          }}
+                          className="w-full text-left px-3 py-2.5 hover:bg-gray-50 flex flex-col gap-0.5 border-b border-gray-100 last:border-0"
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {acc.accountType && (
+                              <span className={clsx(
+                                'inline-flex px-1.5 py-0.5 rounded text-xs font-bold',
+                                acc.accountType.toLowerCase().includes('prompt')
+                                  ? 'bg-violet-100 text-violet-700'
+                                  : 'bg-blue-100 text-blue-700'
+                              )}>
+                                {acc.accountType}
+                              </span>
+                            )}
+                            {acc.accountLevel === 'Global' && (
+                              <span className="inline-flex px-1.5 py-0.5 bg-blue-50 text-blue-600 ring-1 ring-blue-200 rounded text-xs font-semibold">Global</span>
+                            )}
+                            <span className="text-sm font-semibold text-gray-800">{acc.accountName}</span>
+                          </div>
+                          <span className="text-xs text-gray-500">{acc.accountNumber}</span>
+                          {acc.promptPayId && (
+                            <span className="text-xs text-violet-500">PromptPay: {acc.promptPayId}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -217,17 +276,17 @@ export default function RegisterAgentPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
-          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
-            <div className="flex items-center gap-2.5 mb-5">
+        <div className="flex-1 min-h-0 flex flex-col gap-2 pb-2">
+          <div className="flex-none bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-2">
+            <div className="flex items-center gap-2.5 mb-2">
               <span className="w-1 h-5 bg-primary-500 rounded-full flex-shrink-0" />
               <h2 className="text-sm font-bold text-gray-900">{m.sectionInfo}</h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-3xl">
               {/* Code */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                   {m.fieldCode} <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -244,7 +303,7 @@ export default function RegisterAgentPage() {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                   {m.fieldDescription}
                 </label>
                 <input
@@ -257,10 +316,10 @@ export default function RegisterAgentPage() {
 
               {/* Tags */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                   {m.fieldTags}
                 </label>
-                <div className="w-full min-h-[44px] px-3 py-2 flex flex-wrap gap-1.5 border border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent cursor-text"
+                <div className="w-full min-h-[36px] px-3 py-1.5 flex flex-wrap gap-1.5 border border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent cursor-text"
                   onClick={() => document.getElementById('tag-input')?.focus()}>
                   {tags.map(tag => (
                     <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-xs font-semibold">
@@ -279,14 +338,13 @@ export default function RegisterAgentPage() {
                     className="flex-1 min-w-[120px] text-sm bg-transparent outline-none placeholder-gray-400"
                   />
                 </div>
-                <p className="text-xs text-gray-400 mt-1">{m.fieldTagsHint}</p>
               </div>
             </div>
           </div>
 
           {/* Bank Accounts */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
-            <div className="flex items-center justify-between mb-1">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <div className="flex-none flex items-center justify-between mb-1">
               <div className="flex items-center gap-2.5">
                 <span className="w-1 h-5 bg-primary-500 rounded-full flex-shrink-0" />
                 <h2 className="text-sm font-bold text-gray-900">{m.sectionBankAccounts}</h2>
@@ -300,51 +358,53 @@ export default function RegisterAgentPage() {
                 {m.addBankAccount}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mb-4 ml-3.5">{m.bankAccountsHint}</p>
+            <p className="flex-none text-xs text-gray-400 mb-4 ml-3.5">{m.bankAccountsHint}</p>
 
-            {selectedBankAccounts.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">{m.noBankAccountsSelected}</p>
-            ) : (
-              <div className="rounded-lg border border-gray-200 overflow-hidden">
-                <table className="w-full text-sm">
-                  <tbody>
-                    {selectedBankAccounts.map((acc, i) => (
-                      <tr key={acc.accountId} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                        <td className="px-4 py-3 w-28">
-                          <span className="inline-flex px-2.5 py-0.5 bg-gray-800 text-white rounded text-xs font-bold">{acc.bankCode}</span>
-                          {acc.bankName && <p className="text-xs text-gray-400 mt-0.5 leading-tight">{acc.bankName}</p>}
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-gray-800 font-semibold">{acc.accountName}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{acc.accountNumber}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {acc.accountType && (
-                              <span className="inline-flex px-2 py-0.5 bg-violet-50 text-violet-700 ring-1 ring-violet-200 rounded-full text-xs font-semibold">{acc.accountType}</span>
-                            )}
-                            {acc.accountLevel === 'Global' && (
-                              <span className="inline-flex px-2 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-xs font-semibold">Global</span>
-                            )}
-                          </div>
-                          {acc.promptPayId && <p className="text-xs text-gray-400 mt-1">PromptPay: {acc.promptPayId}</p>}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveBankAccount(acc.accountId)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            {m.removeBankAccount}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+              {selectedBankAccounts.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6">{m.noBankAccountsSelected}</p>
+              ) : (
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {selectedBankAccounts.map((acc, i) => (
+                        <tr key={acc.accountId} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                          <td className="px-4 py-3 w-28">
+                            <span className="inline-flex px-2.5 py-0.5 bg-gray-800 text-white rounded text-xs font-bold">{acc.bankCode}</span>
+                            {acc.bankName && <p className="text-xs text-gray-400 mt-0.5 leading-tight">{acc.bankName}</p>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-gray-800 font-semibold">{acc.accountName}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{acc.accountNumber}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {acc.accountType && (
+                                <span className="inline-flex px-2 py-0.5 bg-violet-50 text-violet-700 ring-1 ring-violet-200 rounded-full text-xs font-semibold">{acc.accountType}</span>
+                              )}
+                              {acc.accountLevel === 'Global' && (
+                                <span className="inline-flex px-2 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-xs font-semibold">Global</span>
+                              )}
+                            </div>
+                            {acc.promptPayId && <p className="text-xs text-gray-400 mt-1">PromptPay: {acc.promptPayId}</p>}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveBankAccount(acc.accountId)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              {m.removeBankAccount}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

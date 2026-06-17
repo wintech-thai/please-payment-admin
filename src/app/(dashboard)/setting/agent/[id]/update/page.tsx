@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
+import { bankAccountApi } from '@/lib/api/bank-account.api'
+import type { BankAccountItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, X } from 'lucide-react'
+import { ChevronLeft, X, Plus, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
@@ -25,6 +27,14 @@ export default function UpdateAgentPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  const [allBankAccounts, setAllBankAccounts] = useState<BankAccountItem[]>([])
+  const [selectedBankAccounts, setSelectedBankAccounts] = useState<BankAccountItem[]>([])
+
+  // modal state
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [modalBankCode, setModalBankCode] = useState('')
+  const [modalAccountId, setModalAccountId] = useState('')
+
   const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
   const markDirty = () => { if (!isDirty) setIsDirty(true) }
 
@@ -32,13 +42,26 @@ export default function UpdateAgentPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const res = await agentApi.getAgentById(agentId)
-        const data = res.data as any
+        const [agentRes, bankRes] = await Promise.all([
+          agentApi.getAgentById(agentId),
+          bankAccountApi.getPayInBankAccountsWithGlobalAll(),
+        ])
+        const data = agentRes.data as any
         const agent = data?.agent ?? data
         setCode(agent?.code ?? '')
         setDescription(agent?.description ?? '')
         const rawTags: string = agent?.tags ?? ''
         setTags(rawTags ? rawTags.split(',').map((t: string) => t.trim()).filter(Boolean) : [])
+
+        const bankData = bankRes.data as any
+        const rawAccounts: any[] = bankData?.bankAccounts ?? bankData ?? []
+        setAllBankAccounts(rawAccounts.map(item => ({
+          ...item,
+          accountId: item.id || item.bankAccountId || item.BankAccountId || item.accountId || item.AccountId || item.Id || '',
+        })))
+
+        const existing: BankAccountItem[] = agent?.bankAccountsSelectedObj ?? []
+        setSelectedBankAccounts(existing)
       } catch {
         toast.error(m.loadAgentFailed)
         router.push('/setting/agent')
@@ -48,6 +71,44 @@ export default function UpdateAgentPage() {
     }
     load()
   }, [agentId])
+
+  const uniqueBankCodes = useMemo(
+    () => Array.from(new Set(allBankAccounts.map(a => a.bankCode).filter(Boolean))) as string[],
+    [allBankAccounts]
+  )
+
+  const filteredModalAccounts = useMemo(
+    () => modalBankCode ? allBankAccounts.filter(a => a.bankCode === modalBankCode) : [],
+    [allBankAccounts, modalBankCode]
+  )
+
+  const openAddModal = () => {
+    setModalBankCode('')
+    setModalAccountId('')
+    setShowAddModal(true)
+  }
+
+  const handleConfirmAdd = () => {
+    if (!modalAccountId) return
+    const account = allBankAccounts.find(a => a.accountId === modalAccountId)
+    if (!account) return
+    if (selectedBankAccounts.some(a => a.accountId === account.accountId)) {
+      toast.error(m.bankAccountDuplicate)
+      return
+    }
+    if (selectedBankAccounts.some(a => a.bankCode === account.bankCode)) {
+      toast.error(m.bankCodeDuplicate)
+      return
+    }
+    setSelectedBankAccounts(prev => [...prev, account])
+    setShowAddModal(false)
+    markDirty()
+  }
+
+  const handleRemoveBankAccount = (accountId: string) => {
+    setSelectedBankAccounts(prev => prev.filter(a => a.accountId !== accountId))
+    markDirty()
+  }
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -76,6 +137,7 @@ export default function UpdateAgentPage() {
         Code: code.trim(),
         Description: description.trim() || undefined,
         Tags: tags.length > 0 ? tags.join(',') : undefined,
+        BankAccountsSelectedObj: selectedBankAccounts.length > 0 ? selectedBankAccounts : undefined,
       })
       setIsDirty(false)
       toast.success(m.saveSuccess)
@@ -102,6 +164,77 @@ export default function UpdateAgentPage() {
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
       {showConfirm && <LeaveConfirmModal onConfirm={confirmLeave} onCancel={cancelLeave} />}
+
+      {/* Add Bank Account Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-gray-900">{m.modalAddBankAccountTitle}</h3>
+              <button type="button" onClick={() => setShowAddModal(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {/* Bank Code */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                  {m.fieldBankCode} <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={modalBankCode}
+                  onChange={e => { setModalBankCode(e.target.value); setModalAccountId('') }}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">{m.selectBankCodePlaceholder}</option>
+                  {uniqueBankCodes.map(bc => (
+                    <option key={bc} value={bc}>{bc}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Bank Account */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                  {m.sectionBankAccounts} <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={modalAccountId}
+                  onChange={e => setModalAccountId(e.target.value)}
+                  disabled={!modalBankCode}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">{m.selectBankAccountPlaceholder}</option>
+                  {filteredModalAccounts.map(acc => (
+                    <option key={acc.accountId} value={acc.accountId}>
+                      {acc.accountName} — {acc.accountNumber}{acc.accountLevel === 'Global' ? ' (Global)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {t.admin.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAdd}
+                disabled={!modalAccountId}
+                className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-40 rounded-lg transition-colors"
+              >
+                {m.addBankAccount}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex-none flex items-center gap-3 mb-6">
@@ -192,6 +325,68 @@ export default function UpdateAgentPage() {
             </div>
           </div>
 
+          {/* Bank Accounts */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2.5">
+                <span className="w-1 h-5 bg-primary-500 rounded-full flex-shrink-0" />
+                <h2 className="text-sm font-bold text-gray-900">{m.sectionBankAccounts}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={openAddModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {m.addBankAccount}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mb-4 ml-3.5">{m.bankAccountsHint}</p>
+
+            {selectedBankAccounts.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">{m.noBankAccountsSelected}</p>
+            ) : (
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <table className="w-full text-sm">
+                  <tbody>
+                    {selectedBankAccounts.map((acc, i) => (
+                      <tr key={acc.accountId} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                        <td className="px-4 py-3 w-28">
+                          <span className="inline-flex px-2.5 py-0.5 bg-gray-800 text-white rounded text-xs font-bold">{acc.bankCode}</span>
+                          {acc.bankName && <p className="text-xs text-gray-400 mt-0.5 leading-tight">{acc.bankName}</p>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-gray-800 font-semibold">{acc.accountName}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{acc.accountNumber}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {acc.accountType && (
+                              <span className="inline-flex px-2 py-0.5 bg-violet-50 text-violet-700 ring-1 ring-violet-200 rounded-full text-xs font-semibold">{acc.accountType}</span>
+                            )}
+                            {acc.accountLevel === 'Global' && (
+                              <span className="inline-flex px-2 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-xs font-semibold">Global</span>
+                            )}
+                          </div>
+                          {acc.promptPayId && <p className="text-xs text-gray-400 mt-1">PromptPay: {acc.promptPayId}</p>}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBankAccount(acc.accountId)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            {m.removeBankAccount}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Actions */}

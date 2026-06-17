@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
+import type { AgentEventTimeSeriesItem } from '@/lib/api/agent.api'
+
 import type { AgentItem, AgentEventItem, GetAgentEventsPayload } from '@/lib/api/types'
 import { toast } from 'sonner'
 import {
@@ -12,6 +14,7 @@ import {
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import { AgentEventHistogram } from '@/components/AgentEventHistogram'
 
 const CHANNELS = ['APP', 'LINE', 'SMS']
 const EVENT_TYPES = ['Heartbeat', 'PaymentTx']
@@ -362,6 +365,9 @@ export default function AgentMessagesPage() {
   const [flyoutIdx, setFlyoutIdx] = useState<number | null>(null)
   const [flyoutDetailData, setFlyoutDetailData] = useState<Record<string, unknown> | null>(null)
   const [flyoutLoading, setFlyoutLoading] = useState(false)
+  const [timeSeriesData, setTimeSeriesData] = useState<any[]>([])
+  const [timeSeriesEventTypes, setTimeSeriesEventTypes] = useState<string[]>([])
+  const [timeSeriesInterval, setTimeSeriesInterval] = useState<'minute' | 'hour' | 'day'>('hour')
 
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
@@ -383,6 +389,38 @@ export default function AgentMessagesPage() {
       } catch { /* silently ignore */ }
     }
     loadAgent()
+  }, [agentId])
+
+  const loadTimeSeries = useCallback(async (tr: TimeRangeValue, q: string, ch: string, et: string) => {
+    try {
+      const { fromDate, toDate } = getTimeFilter(tr)
+      const rangeHours = (new Date(toDate).getTime() - new Date(fromDate).getTime()) / 3_600_000
+      const interval: 'minute' | 'hour' | 'day' = rangeHours <= 2 ? 'minute' : rangeHours <= 48 ? 'hour' : 'day'
+      setTimeSeriesInterval(interval)
+
+      const res = await agentApi.getAgentEventTimeSeries(agentId, {
+        FromDate: fromDate,
+        ToDate: toDate,
+        ...(q.trim() ? { FullTextSearch: q.trim() } : {}),
+        ...(ch ? { Channel: ch } : {}),
+        ...(et ? { EventType: et } : {}),
+      })
+      const raw: AgentEventTimeSeriesItem[] = (res.data as any) ?? []
+      if (!Array.isArray(raw) || raw.length === 0) { setTimeSeriesData([]); return }
+
+      const types = Array.from(new Set(raw.map(r => r.eventType))).filter(Boolean)
+      setTimeSeriesEventTypes(types)
+
+      const grouped: Record<string, Record<string, number>> = {}
+      raw.forEach(r => {
+        if (!grouped[r.time]) grouped[r.time] = {}
+        grouped[r.time][r.eventType] = (grouped[r.time][r.eventType] ?? 0) + r.count
+      })
+      const chartData = Object.entries(grouped)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([time, counts]) => ({ time, ...counts }))
+      setTimeSeriesData(chartData)
+    } catch { /* silently ignore — chart is optional */ }
   }, [agentId])
 
   const loadEvents = useCallback(async (pg: number, limit: number, tr: TimeRangeValue, q: string, ch: string, et: string) => {
@@ -410,12 +448,14 @@ export default function AgentMessagesPage() {
       setEvents(eventsData?.events ?? eventsData ?? [])
       setTotal(typeof countData === 'number' ? countData : (countData?.count ?? 0))
       setPage(pg)
+
+      if (pg === 1) loadTimeSeries(tr, q, ch, et)
     } catch {
       toast.error(m.loadEventsFailed)
     } finally {
       setLoading(false)
     }
-  }, [agentId, m.loadEventsFailed])
+  }, [agentId, m.loadEventsFailed, loadTimeSeries])
 
   useEffect(() => {
     loadEvents(1, itemsPerPage, timeRange, search, channel, eventType)
@@ -474,7 +514,7 @@ export default function AgentMessagesPage() {
     }
   }, [events, agentId])
 
-  const cols = [m.colEventDate, m.colEventType, m.colChannel, m.colTags, m.colAction]
+  const cols = [m.colEventDate, m.colEventType, m.colChannel, m.colTags, m.colStatus, m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -508,6 +548,18 @@ export default function AgentMessagesPage() {
           <p className="text-sm text-gray-500 mt-0.5">{m.messagesSubtitle}</p>
         </div>
       </div>
+
+      {/* Time Series Histogram */}
+      {timeSeriesData.length > 0 && (
+        <div className="flex-none mb-4">
+          <AgentEventHistogram
+            data={timeSeriesData}
+            eventTypes={timeSeriesEventTypes}
+            total={total}
+            interval={timeSeriesInterval}
+          />
+        </div>
+      )}
 
       {/* Filters bar */}
       <div className="flex-none bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3 flex flex-wrap gap-2 items-center mb-4">
@@ -661,6 +713,26 @@ export default function AgentMessagesPage() {
                               {tag}
                             </span>
                           ))
+                        ) : <span className="text-gray-400">—</span>}
+                      </td>
+
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        {event.status ? (
+                          <div className="flex flex-col gap-1">
+                            <span className={clsx(
+                              'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ring-1 w-fit',
+                              event.status === 'OK'
+                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                                : event.status.startsWith('WARN') || event.status === 'PENDING'
+                                ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                                : 'bg-red-50 text-red-700 ring-red-200'
+                            )}>
+                              {event.status}
+                            </span>
+                            {event.statusDesc && (
+                              <span className="text-xs text-gray-400 max-w-[180px] truncate" title={event.statusDesc}>{event.statusDesc}</span>
+                            )}
+                          </div>
                         ) : <span className="text-gray-400">—</span>}
                       </td>
 

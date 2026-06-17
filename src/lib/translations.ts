@@ -761,7 +761,7 @@ export const translations = {
       fieldPasswordHint: 'กรอกเพื่อสร้าง user Password account ให้ merchant login ได้เลย',
       fieldPayInFee: 'ค่าธรรมเนียมรับเงิน (%)',
       fieldPayOutFee: 'ค่าธรรมเนียมจ่ายเงิน (%)',
-      fieldDiscardCent: 'หักเศษสตางค์ (Discard Cent)',
+      fieldDiscardCent: 'หักเศษสตางค์',
       fieldDiscardCentHint: 'ตัดเศษสตางค์ออกจากยอดธุรกรรม',
       sectionTransactionLimits: 'ขีดจำกัดจำนวนเงิน (บาท)',
       fieldPayIn: 'รับเงิน (Pay-in)',

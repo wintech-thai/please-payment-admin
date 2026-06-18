@@ -7,6 +7,7 @@ interface AgentEventHistogramProps {
   eventTypes: string[]
   total: number
   interval: 'minute' | 'hour' | 'day'
+  height?: number
 }
 
 const EVENT_COLORS: Record<string, string> = {
@@ -42,7 +43,7 @@ function fmtTooltipTime(iso: string): string {
   } catch { return iso }
 }
 
-export function AgentEventHistogram({ data, eventTypes, total, interval }: AgentEventHistogramProps) {
+export function AgentEventHistogram({ data, eventTypes, total, interval, height = 160 }: AgentEventHistogramProps) {
   const axisLabelStep = Math.max(Math.floor(data.length / 10), 1)
 
   const maxCount = Math.max(...data.map(d => {
@@ -54,7 +55,7 @@ export function AgentEventHistogram({ data, eventTypes, total, interval }: Agent
   return (
     <div
       className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 pt-3 pb-7 flex flex-col relative select-none overflow-visible"
-      style={{ height: '160px' }}
+      style={{ height: `${height}px`, minHeight: `${height}px` }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3 flex-none">

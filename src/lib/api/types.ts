@@ -288,6 +288,7 @@ export interface BankAccountItem {
   merchantLinkCount?: number | null
   currentWalletBalance?: number | null
   currentWalletBalanceDecimal?: number | null
+  selectedChannel?: string | null    // "LINE" | "SMS"
 }
 
 export interface GetBankAccountsPayload {

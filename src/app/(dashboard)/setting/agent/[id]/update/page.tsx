@@ -36,6 +36,7 @@ export default function UpdateAgentPage() {
   const [modalAccountId, setModalAccountId] = useState('')
   const [modalAccountSearch, setModalAccountSearch] = useState('')
   const [showAccountDropdown, setShowAccountDropdown] = useState(false)
+  const [modalChannel, setModalChannel] = useState<'LINE' | 'SMS'>('LINE')
 
   const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
   const markDirty = () => { if (!isDirty) setIsDirty(true) }
@@ -66,6 +67,7 @@ export default function UpdateAgentPage() {
         setSelectedBankAccounts(existing.map((item: any) => ({
           ...item,
           accountId: item.id || item.bankAccountId || item.BankAccountId || item.accountId || item.AccountId || item.Id || '',
+          selectedChannel: item.selectedChannel || item.SelectedChannel || 'LINE',
         })))
       } catch {
         toast.error(m.loadAgentFailed)
@@ -102,6 +104,7 @@ export default function UpdateAgentPage() {
     setModalAccountId('')
     setModalAccountSearch('')
     setShowAccountDropdown(false)
+    setModalChannel('LINE')
     setShowAddModal(true)
   }
 
@@ -117,8 +120,13 @@ export default function UpdateAgentPage() {
       toast.error(m.bankCodeDuplicate)
       return
     }
-    setSelectedBankAccounts(prev => [...prev, account])
+    setSelectedBankAccounts(prev => [...prev, { ...account, selectedChannel: modalChannel }])
     setShowAddModal(false)
+    markDirty()
+  }
+
+  const handleChannelChange = (accountId: string, channel: 'LINE' | 'SMS') => {
+    setSelectedBankAccounts(prev => prev.map(a => a.accountId === accountId ? { ...a, selectedChannel: channel } : a))
     markDirty()
   }
 
@@ -274,6 +282,30 @@ export default function UpdateAgentPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Channel selector */}
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                Channel <span className="text-red-500">*</span>
+              </label>
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                {(['LINE', 'SMS'] as const).map(ch => (
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => setModalChannel(ch)}
+                    className={clsx(
+                      'flex-1 py-2.5 text-sm font-semibold transition-colors',
+                      modalChannel === ch
+                        ? ch === 'LINE' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
+                        : 'bg-white text-gray-500 hover:bg-gray-50'
+                    )}
+                  >
+                    {ch}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -433,14 +465,33 @@ export default function UpdateAgentPage() {
                             {acc.promptPayId && <p className="text-xs text-gray-400 mt-1">PromptPay: {acc.promptPayId}</p>}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveBankAccount(acc.accountId)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              {m.removeBankAccount}
-                            </button>
+                            <div className="inline-flex items-center gap-2">
+                              <div className="flex rounded-lg border border-gray-200 overflow-hidden w-[100px]">
+                                {(['LINE', 'SMS'] as const).map(ch => (
+                                  <button
+                                    key={ch}
+                                    type="button"
+                                    onClick={() => handleChannelChange(acc.accountId, ch)}
+                                    className={clsx(
+                                      'flex-1 py-1 text-xs font-bold transition-colors',
+                                      (acc.selectedChannel ?? 'LINE') === ch
+                                        ? ch === 'LINE' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
+                                        : 'bg-white text-gray-400 hover:bg-gray-50'
+                                    )}
+                                  >
+                                    {ch}
+                                  </button>
+                                ))}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveBankAccount(acc.accountId)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                {m.removeBankAccount}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

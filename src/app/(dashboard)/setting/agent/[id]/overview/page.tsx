@@ -3,12 +3,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
+import type { AgentEventTimeSeriesItem } from '@/lib/api/agent.api'
 import type { AgentItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { ChevronLeft, RefreshCw, Wifi, WifiOff } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import { AgentEventHistogram } from '@/components/AgentEventHistogram'
 
 interface HeartbeatData {
   CPU?: string | null
@@ -82,6 +85,25 @@ function formatChartTime(d: string) {
   } catch { return d }
 }
 
+function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string } {
+  if (tr.type === 'absolute' && tr.start && tr.end) {
+    return {
+      fromDate: new Date(tr.start * 1000).toISOString(),
+      toDate: new Date(tr.end * 1000).toISOString(),
+    }
+  }
+  const num = parseInt(tr.value)
+  const unit = tr.value.replace(/\d/g, '')
+  const now = Date.now()
+  let startMs = now
+  if (unit === 'm') startMs = now - num * 60_000
+  else if (unit === 'h') startMs = now - num * 3_600_000
+  else startMs = now - num * 86_400_000
+  return { fromDate: new Date(startMs).toISOString(), toDate: new Date(now).toISOString() }
+}
+
+const DEFAULT_TIME_RANGE: TimeRangeValue = { type: 'relative', value: '24h', label: 'Last 24 hours' }
+
 export default function AgentOverviewPage() {
   const { t } = useLang()
   const m = t.agent
@@ -96,55 +118,105 @@ export default function AgentOverviewPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
-  const loadData = useCallback(async (isRefresh = false) => {
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>(DEFAULT_TIME_RANGE)
+  const [timeSeriesData, setTimeSeriesData] = useState<any[]>([])
+  const [timeSeriesEventTypes, setTimeSeriesEventTypes] = useState<string[]>([])
+  const [timeSeriesInterval, setTimeSeriesInterval] = useState<'minute' | 'hour' | 'day'>('hour')
+  const [timeSeriesTotal, setTimeSeriesTotal] = useState(0)
+
+  const loadTimeSeries = useCallback(async (tr: TimeRangeValue) => {
+    try {
+      const { fromDate, toDate } = getTimeFilter(tr)
+      const rangeHours = (new Date(toDate).getTime() - new Date(fromDate).getTime()) / 3_600_000
+      const interval: 'minute' | 'hour' | 'day' = rangeHours <= 2 ? 'minute' : rangeHours <= 48 ? 'hour' : 'day'
+      setTimeSeriesInterval(interval)
+
+      const res = await agentApi.getAgentEventTimeSeries(agentId, { FromDate: fromDate, ToDate: toDate })
+      const raw: AgentEventTimeSeriesItem[] = (res.data as any) ?? []
+      if (!Array.isArray(raw) || raw.length === 0) {
+        setTimeSeriesData([])
+        setTimeSeriesEventTypes([])
+        setTimeSeriesTotal(0)
+        return
+      }
+
+      const types = Array.from(new Set(raw.map(r => r.eventType))).filter(Boolean)
+      setTimeSeriesEventTypes(types)
+      setTimeSeriesTotal(raw.reduce((s, r) => s + r.count, 0))
+
+      const grouped: Record<string, Record<string, number>> = {}
+      raw.forEach(r => {
+        if (!grouped[r.time]) grouped[r.time] = {}
+        grouped[r.time][r.eventType] = (grouped[r.time][r.eventType] ?? 0) + r.count
+      })
+      const chartData = Object.entries(grouped)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([time, counts]) => ({ time, ...counts }))
+      setTimeSeriesData(chartData)
+    } catch { /* chart is optional */ }
+  }, [agentId])
+
+  const loadBatteryHistory = useCallback(async (tr: TimeRangeValue) => {
+    try {
+      const { fromDate, toDate } = getTimeFilter(tr)
+      const res = await agentApi.getAgentEvents(agentId, {
+        EventType: 'Heartbeat',
+        Limit: 200,
+        Page: 1,
+        FromDate: fromDate,
+        ToDate: toDate,
+      })
+      const eventsData = res.data as any
+      const events: any[] = eventsData?.events ?? eventsData ?? []
+      const history: BatteryPoint[] = events
+        .filter(e => {
+          const rd = e?.agentEvent?.rawDataObj ?? e?.AgentEvent?.rawDataObj ?? e?.rawDataObj ?? {}
+          return rd?.Battery != null
+        })
+        .map(e => {
+          const rd = e?.agentEvent?.rawDataObj ?? e?.AgentEvent?.rawDataObj ?? e?.rawDataObj ?? {}
+          return { time: e.createdDate ?? '', battery: parseInt(rd.Battery ?? '0') || 0 }
+        })
+        .reverse()
+      setBatteryHistory(history)
+    } catch { /* optional */ }
+  }, [agentId])
+
+  const loadData = useCallback(async (isRefresh = false, tr = timeRange) => {
     if (isRefresh) setRefreshing(true)
     else setLoading(true)
     try {
-      const [agentRes, eventsRes] = await Promise.all([
-        agentApi.getAgentById(agentId),
-        agentApi.getAgentEvents(agentId, {
-          EventType: 'Heartbeat',
-          Limit: 100,
-          Page: 1,
-        }),
-      ])
-
+      const agentRes = await agentApi.getAgentById(agentId)
       const agentData = agentRes.data as any
       setAgent(agentData?.agent ?? agentData)
 
-      const eventsData = eventsRes.data as any
-      const events: any[] = eventsData?.events ?? eventsData ?? []
-
-      if (events.length > 0) {
-        const latest = events[0]
+      // Latest heartbeat — always fetch the most recent regardless of time range
+      const latestRes = await agentApi.getAgentEvents(agentId, { EventType: 'Heartbeat', Limit: 1, Page: 1 })
+      const latestData = latestRes.data as any
+      const latestEvents: any[] = latestData?.events ?? latestData ?? []
+      if (latestEvents.length > 0) {
+        const latest = latestEvents[0]
         const rawData: HeartbeatData = latest?.agentEvent?.rawDataObj ?? latest?.AgentEvent?.rawDataObj ?? latest?.rawDataObj ?? {}
         setLatestHeartbeat(rawData)
         setHeartbeatDate(latest?.createdDate ?? null)
-
-        const history: BatteryPoint[] = events
-          .filter(e => {
-            const rd = e?.agentEvent?.rawDataObj ?? e?.AgentEvent?.rawDataObj ?? e?.rawDataObj ?? {}
-            return rd?.Battery != null
-          })
-          .map(e => {
-            const rd = e?.agentEvent?.rawDataObj ?? e?.AgentEvent?.rawDataObj ?? e?.rawDataObj ?? {}
-            return {
-              time: e.createdDate ?? '',
-              battery: parseInt(rd.Battery ?? '0') || 0,
-            }
-          })
-          .reverse()
-        setBatteryHistory(history)
       }
+
+      await Promise.all([loadTimeSeries(tr), loadBatteryHistory(tr)])
     } catch {
       toast.error(m.overviewLoadFailed)
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [agentId, m.overviewLoadFailed])
+  }, [agentId, m.overviewLoadFailed, loadTimeSeries, loadBatteryHistory, timeRange])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => { loadData() }, [])
+
+  const handleTimeRangeChange = (tr: TimeRangeValue) => {
+    setTimeRange(tr)
+    loadTimeSeries(tr)
+    loadBatteryHistory(tr)
+  }
 
   if (loading) {
     return (
@@ -187,16 +259,28 @@ export default function AgentOverviewPage() {
             <p className="text-sm text-gray-500 mt-0.5">{m.overviewSubtitle}</p>
           </div>
         </div>
-        <button
-          onClick={() => loadData(true)}
-          disabled={refreshing}
-          className="p-2 text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"
-        >
-          <RefreshCw className={clsx('w-4 h-4', refreshing && 'animate-spin')} />
-        </button>
+        <div className="flex items-center gap-2">
+          <AdvancedTimeRangeSelector value={timeRange} onChange={handleTimeRangeChange} />
+          <button
+            onClick={() => loadData(true, timeRange)}
+            disabled={refreshing}
+            className="p-2 text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"
+          >
+            <RefreshCw className={clsx('w-4 h-4', refreshing && 'animate-spin')} />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-4 custom-scrollbar">
+
+        {/* Event histogram */}
+        <AgentEventHistogram
+          data={timeSeriesData}
+          eventTypes={timeSeriesEventTypes}
+          total={timeSeriesTotal}
+          interval={timeSeriesInterval}
+          height={160}
+        />
 
         {!latestHeartbeat ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-12 text-center">
@@ -243,7 +327,7 @@ export default function AgentOverviewPage() {
               </div>
             </div>
 
-            {/* Battery chart */}
+            {/* Battery trend */}
             {batteryHistory.length > 1 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
                 <SectionHeader>{m.overviewBatteryChart}</SectionHeader>

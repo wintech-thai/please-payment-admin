@@ -10,6 +10,20 @@ import type {
   UpdateAgentPayload,
 } from './types'
 
+export interface AgentEventTimeSeriesPayload {
+  FromDate?: string
+  ToDate?: string
+  Channel?: string
+  EventType?: string
+  FullTextSearch?: string
+}
+
+export interface AgentEventTimeSeriesItem {
+  time: string
+  eventType: string
+  count: number
+}
+
 const BASE = '/admin-api/AdminAgent/org/global/action'
 
 export const agentApi = {
@@ -57,4 +71,7 @@ export const agentApi = {
 
   getAgentEventById: (eventId: string) =>
     client.get(`${BASE}/GetAgentEventById/${eventId}`),
+
+  getAgentEventTimeSeries: (agentId: string, payload: AgentEventTimeSeriesPayload = {}) =>
+    client.post<AgentEventTimeSeriesItem[]>(`${BASE}/GetAgentEventTimeSeries/${agentId}`, payload),
 }

@@ -25,6 +25,7 @@ export default function CreateMerchantPage() {
   const [payInMax, setPayInMax] = useState<string>('50000')
   const [payOutMin, setPayOutMin] = useState<string>('1')
   const [payOutMax, setPayOutMax] = useState<string>('50000')
+  const [discardCent, setDiscardCent] = useState(false)
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -72,6 +73,7 @@ export default function CreateMerchantPage() {
           PayinMaxAmount: toNum(payInMax),
           PayoutMinAmount: toNum(payOutMin),
           PayoutMaxAmount: toNum(payOutMax),
+          DiscardCent: discardCent,
         },
       })
       setIsDirty(false)
@@ -190,6 +192,22 @@ export default function CreateMerchantPage() {
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
               </FormField>
+            </div>
+
+            {/* Discard Cent */}
+            <div className="mt-4">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={discardCent}
+                  onChange={e => { setDiscardCent(e.target.checked); mark() }}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-700">{m.fieldDiscardCent}</span>
+                  <p className="text-xs text-gray-400 mt-0.5">{m.fieldDiscardCentHint}</p>
+                </div>
+              </label>
             </div>
 
             <div className="border-t border-gray-100 mt-5 pt-5">

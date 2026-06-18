@@ -365,14 +365,13 @@ function AgentListContent() {
                                 {m.actionEndpointKeys}
                               </button>
                               <button
-                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed"
-                                disabled
+                                onClick={() => { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/overview`) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
                                 <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
                                 {m.actionOverview}
-                                <span className="ml-auto text-[10px]">{m.comingSoon}</span>
                               </button>
                               <button
                                 onClick={() => { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/messages`) }}

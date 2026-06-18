@@ -173,6 +173,7 @@ export interface MerchantItem {
   payOutBankAccountCount?: number | null
   currentBalance?: number | null
   currentBalanceDecimal?: number | null
+  discardCent?: boolean | null
 }
 
 export interface GetMerchantsPayload {
@@ -200,6 +201,7 @@ export interface AddMerchantPayload {
     PayinMaxAmount?: number | string
     PayoutMinAmount?: number | string
     PayoutMaxAmount?: number | string
+    DiscardCent?: boolean
   }
 }
 
@@ -214,6 +216,7 @@ export interface UpdateMerchantPayload {
   PayinMaxAmount?: number | string
   PayoutMinAmount?: number | string
   PayoutMaxAmount?: number | string
+  DiscardCent?: boolean
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────
@@ -285,6 +288,7 @@ export interface BankAccountItem {
   merchantLinkCount?: number | null
   currentWalletBalance?: number | null
   currentWalletBalanceDecimal?: number | null
+  selectedChannel?: string | null    // "LINE" | "SMS"
 }
 
 export interface GetBankAccountsPayload {
@@ -868,6 +872,7 @@ export interface AgentItem {
   createdDate?: string | null
   lastSeen?: string | null
   lastSeenDate?: string | null
+  bankAccountsSelectedObj?: BankAccountItem[] | null
 }
 
 export interface AgentEndpointItem {
@@ -896,12 +901,14 @@ export interface AddAgentPayload {
   Code: string
   Description?: string
   Tags?: string
+  BankAccountsSelectedObj?: BankAccountItem[]
 }
 
 export interface UpdateAgentPayload {
   Code?: string
   Description?: string
   Tags?: string
+  BankAccountsSelectedObj?: BankAccountItem[]
 }
 
 export interface AgentEventItem {
@@ -911,6 +918,8 @@ export interface AgentEventItem {
   eventType?: string | null
   channel?: string | null
   tags?: string | null
+  status?: string | null
+  statusDesc?: string | null
   agentEvent?: Record<string, unknown> | null
   AgentEvent?: Record<string, unknown> | null
 }

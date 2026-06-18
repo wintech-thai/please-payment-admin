@@ -27,6 +27,7 @@ export default function UpdateMerchantPage() {
   const [payInMax, setPayInMax] = useState<string>('0')
   const [payOutMin, setPayOutMin] = useState<string>('0')
   const [payOutMax, setPayOutMax] = useState<string>('0')
+  const [discardCent, setDiscardCent] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
@@ -62,6 +63,7 @@ export default function UpdateMerchantPage() {
         setPayInMax(merch.payinMaxAmount != null ? String(merch.payinMaxAmount) : '0')
         setPayOutMin(merch.payoutMinAmount != null ? String(merch.payoutMinAmount) : '0')
         setPayOutMax(merch.payoutMaxAmount != null ? String(merch.payoutMaxAmount) : '0')
+        setDiscardCent(merch.discardCent ?? false)
       })
       .catch(() => {
         toast.error(m.failedToLoadMerchant)
@@ -90,6 +92,7 @@ export default function UpdateMerchantPage() {
         PayinMaxAmount: payInMax,
         PayoutMinAmount: payOutMin,
         PayoutMaxAmount: payOutMax,
+        DiscardCent: discardCent,
       })
       setIsDirty(false)
       toast.success(m.updatedSuccess)
@@ -215,6 +218,22 @@ export default function UpdateMerchantPage() {
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
               </FormField>
+            </div>
+
+            {/* Discard Cent */}
+            <div className="mt-4">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={discardCent}
+                  onChange={e => { setDiscardCent(e.target.checked); markDirty() }}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-700">{m.fieldDiscardCent}</span>
+                  <p className="text-xs text-gray-400 mt-0.5">{m.fieldDiscardCentHint}</p>
+                </div>
+              </label>
             </div>
 
             <div className="border-t border-gray-100 mt-5 pt-5">

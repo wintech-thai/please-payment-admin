@@ -142,8 +142,8 @@ function PointModal({
       }
       onSuccess()
       onClose()
-    } catch {
-      toast.error(mode === 'add' ? wt.toastTopUpFailed : wt.toastDeductFailed)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : (mode === 'add' ? wt.toastTopUpFailed : wt.toastDeductFailed))
     } finally {
       setLoading(false)
     }
@@ -275,8 +275,8 @@ export default function MerchantWalletPage() {
         const d = merchantRes.value.data as any
         setMerchant(d?.merchant ?? d?.Merchant ?? d)
       }
-    } catch {
-      toast.error(wt.toastFailedToLoadWallet)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : wt.toastFailedToLoadWallet)
     } finally {
       setLoading(false)
     }
@@ -302,8 +302,8 @@ export default function MerchantWalletPage() {
         const d = countRes.value.data as any
         setTotal(typeof d === 'number' ? d : (d?.count ?? d?.Count ?? d?.total ?? 0))
       }
-    } catch {
-      toast.error(wt.toastFailedToLoadTxs)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : wt.toastFailedToLoadTxs)
     } finally {
       setTxLoading(false)
     }

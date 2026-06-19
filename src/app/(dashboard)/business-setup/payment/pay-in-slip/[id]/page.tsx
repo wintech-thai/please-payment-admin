@@ -188,8 +188,8 @@ export default function PayInSlipDetailPage() {
           } catch {}
           finally { setLoadingBanks(false) }
         }
-      } catch {
-        toast.error(m.toastFailedToLoadDetail)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.toastFailedToLoadDetail)
       } finally {
         setLoading(false)
       }

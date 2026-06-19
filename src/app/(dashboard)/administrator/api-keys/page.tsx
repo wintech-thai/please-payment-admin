@@ -50,8 +50,8 @@ function ApiKeysContent() {
       setKeys(Array.isArray(raw) ? raw : (raw?.apiKeys ?? []))
       const rawCount = countRes.data
       setTotal(typeof rawCount === 'number' ? rawCount : (rawCount?.count ?? 0))
-    } catch {
-      toast.error(t.apiKeys.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t.apiKeys.failedToLoad)
     } finally {
       setLoading(false)
     }

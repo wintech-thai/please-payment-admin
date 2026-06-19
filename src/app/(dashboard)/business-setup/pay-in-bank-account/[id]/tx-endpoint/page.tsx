@@ -147,8 +147,8 @@ export default function PayInTxEndpointPage() {
           const data = keysRes.value.data as any
           setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
         }
-      } catch {
-        toast.error(m.failedToLoad)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.failedToLoad)
       } finally {
         setLoading(false)
       }

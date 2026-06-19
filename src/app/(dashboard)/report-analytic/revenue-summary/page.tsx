@@ -136,8 +136,8 @@ export default function RevenueSummaryPage() {
         const d = payOutCountRes.value.data as any
         setPayOutCount(typeof d === 'number' ? d : (d?.count ?? null))
       }
-    } catch {
-      toast.error(m.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToLoad)
     } finally {
       setLoading(false)
     }

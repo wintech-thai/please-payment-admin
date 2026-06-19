@@ -139,8 +139,8 @@ function CreatePayInTxModal({
           ? data
           : (data?.bankAccounts ?? data?.BankAccounts ?? [])
         setBankAccounts(list)
-      } catch {
-        toast.error(m.toastFailedToLoadBanks)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.toastFailedToLoadBanks)
       } finally {
         setLoadingBanks(false)
       }
@@ -188,8 +188,8 @@ function CreatePayInTxModal({
       toast.success(m.toastCreateSuccess)
       onSuccess()
       onClose()
-    } catch {
-      toast.error(m.toastCreateFailed)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.toastCreateFailed)
     } finally {
       setLoading(false)
     }
@@ -364,8 +364,8 @@ export default function PayInTransactionsPage() {
       } else {
         setTotal(list.length)
       }
-    } catch {
-      toast.error('Failed to load transactions')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load transactions')
     } finally {
       setLoading(false)
     }

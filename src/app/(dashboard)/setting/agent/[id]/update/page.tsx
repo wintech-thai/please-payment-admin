@@ -69,8 +69,8 @@ export default function UpdateAgentPage() {
           accountId: item.id || item.bankAccountId || item.BankAccountId || item.accountId || item.AccountId || item.Id || '',
           selectedChannel: item.selectedChannel || item.SelectedChannel || 'LINE',
         })))
-      } catch {
-        toast.error(m.loadAgentFailed)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.loadAgentFailed)
         router.push('/setting/agent')
       } finally {
         setLoading(false)

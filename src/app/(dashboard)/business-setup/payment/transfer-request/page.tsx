@@ -108,8 +108,8 @@ export default function TransferRequestPage() {
       } else {
         setTotal(list.length)
       }
-    } catch {
-      toast.error(m.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToLoad)
     } finally {
       setLoading(false)
     }

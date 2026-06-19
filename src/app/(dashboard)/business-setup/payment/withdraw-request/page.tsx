@@ -114,8 +114,8 @@ export default function WithdrawRequestPage() {
       } else {
         setTotal(list.length)
       }
-    } catch {
-      toast.error(m.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToLoad)
     } finally {
       setLoading(false)
     }

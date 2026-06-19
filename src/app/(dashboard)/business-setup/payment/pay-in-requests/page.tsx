@@ -132,8 +132,8 @@ export default function PayInRequestsPage() {
       } else {
         setTotal(list.length)
       }
-    } catch {
-      toast.error('Failed to load payment requests')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load payment requests')
     } finally {
       setLoading(false)
     }

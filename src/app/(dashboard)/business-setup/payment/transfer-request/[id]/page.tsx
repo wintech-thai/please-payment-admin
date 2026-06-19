@@ -212,8 +212,8 @@ export default function TransferRequestDetailPage() {
           const picked = merchants.find((m: any) => m.isSelected) ?? merchants[0]
           if (picked?.merchantId) setPayinMerchantId(picked.merchantId)
         }
-      } catch {
-        toast.error(m.toastFailedToLoad)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.toastFailedToLoad)
         router.push('/business-setup/payment/transfer-request')
       } finally {
         setLoading(false)

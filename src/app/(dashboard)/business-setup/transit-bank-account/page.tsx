@@ -167,8 +167,8 @@ function TransitBankAccountContent() {
         const raw = countRes.value.data as any
         setTotal(typeof raw === 'number' ? raw : (raw?.count ?? raw?.Count ?? 0))
       }
-    } catch {
-      toast.error(m.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToLoad)
     } finally {
       setLoading(false)
     }

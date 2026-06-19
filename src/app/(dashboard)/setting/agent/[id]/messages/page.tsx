@@ -450,8 +450,8 @@ export default function AgentMessagesPage() {
       setPage(pg)
 
       if (pg === 1) loadTimeSeries(tr, q, ch, et)
-    } catch {
-      toast.error(m.loadEventsFailed)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.loadEventsFailed)
     } finally {
       setLoading(false)
     }

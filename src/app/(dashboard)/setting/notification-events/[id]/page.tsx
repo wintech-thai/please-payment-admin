@@ -72,8 +72,8 @@ export default function NotiEventDetailPage() {
         const res = await notificationApi.getEventById(eventId)
         const raw = res.data as any
         setData(raw?.event ?? raw?.notiEvent ?? raw?.job ?? raw)
-      } catch {
-        toast.error(m.loadDetailFailed)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.loadDetailFailed)
         router.push('/setting/notification-events')
       } finally {
         setLoading(false)

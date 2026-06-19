@@ -86,8 +86,8 @@ export default function PayInSlipListPage() {
       setItems(list)
       setTotal(count)
       setPage(1)
-    } catch {
-      toast.error(m.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToLoad)
     } finally {
       setLoading(false)
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Search, RefreshCcw, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
+import { toast } from 'sonner'
 import type { AuditLogDocument } from '@/lib/api/audit-log.api'
 import { useLang } from '@/context/LanguageContext'
 import AuditLogFlyout from '@/components/AuditLogFlyout'
@@ -207,7 +208,8 @@ function AuditLogContent() {
       } else {
         throw new Error(result.message)
       }
-    } catch {
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : tAL.failedToLoad)
       setLogs([])
       setTotalCount(0)
       setChartData([])

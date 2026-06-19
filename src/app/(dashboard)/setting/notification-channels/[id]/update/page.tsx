@@ -69,8 +69,8 @@ export default function UpdateNotiChannelPage() {
           const types: any[] = Array.isArray(data) ? data : (data?.eventTypes ?? data?.types ?? [])
           setAvailableEventTypes(types.map((t: any) => (typeof t === 'string' ? t : t?.name ?? t?.type ?? String(t))))
         }
-      } catch {
-        toast.error(m.loadFailed)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.loadFailed)
         router.push('/setting/notification-channels')
       } finally {
         setLoading(false)

@@ -141,6 +141,20 @@ export default function Navbar() {
                 >
                   <span>{t.nav.payment}</span>
                 </Link>
+
+                {/* Financial Settlement link */}
+                <Link
+                  href="/business-setup/financial-settlement"
+                  onClick={() => setBusinessSetupOpen(false)}
+                  className={clsx(
+                    'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
+                    pathname.startsWith('/business-setup/financial-settlement')
+                      ? 'text-primary-700 font-semibold bg-primary-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  )}
+                >
+                  <span>{t.nav.financialSettlement}</span>
+                </Link>
               </div>
             )}
           </div>
@@ -375,6 +389,20 @@ export default function Navbar() {
               )}
             >
               <span>{t.nav.payment}</span>
+            </Link>
+
+            {/* Financial Settlement link */}
+            <Link
+              href="/business-setup/financial-settlement"
+              onClick={() => setMobileMenuOpen(false)}
+              className={clsx(
+                'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
+                pathname.startsWith('/business-setup/financial-settlement')
+                  ? 'bg-white/20 text-white'
+                  : 'text-white hover:bg-white/15'
+              )}
+            >
+              <span>{t.nav.financialSettlement}</span>
             </Link>
           </div>
 

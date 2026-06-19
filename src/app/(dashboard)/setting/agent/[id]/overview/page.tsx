@@ -202,8 +202,8 @@ export default function AgentOverviewPage() {
       }
 
       await Promise.all([loadTimeSeries(tr), loadBatteryHistory(tr)])
-    } catch {
-      toast.error(m.overviewLoadFailed)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.overviewLoadFailed)
     } finally {
       setLoading(false)
       setRefreshing(false)

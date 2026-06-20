@@ -6,7 +6,7 @@ import { paymentTxApi } from '@/lib/api/payment-tx.api'
 import type { PayInTxDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, Scissors } from 'lucide-react'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
@@ -237,7 +237,15 @@ export default function PayInTxDetailPage() {
                 {detail?.payInFeePct != null ? `${detail.payInFeePct}%` : '—'}
               </InfoRow>
               <InfoRow label={m.fieldPayInFee}>
-                <span className="tabular-nums">{formatAmount(detail?.payInFeeDecimal ?? detail?.payInFee)}</span>
+                <span className="flex flex-col gap-1">
+                  <span className="tabular-nums">{formatAmount(detail?.payInFeeDecimal ?? detail?.payInFee)}</span>
+                  {detail?.discardCent && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+                      <Scissors className="w-3.5 h-3.5 flex-shrink-0" />
+                      {m.discardCentHint}
+                    </span>
+                  )}
+                </span>
               </InfoRow>
               <InfoRow label={m.fieldPayInTotalAmount}>
                 <span className="font-bold text-primary-700 tabular-nums text-base">{formatAmount(detail?.payInTotalAmountDecimal ?? detail?.payInTotalAmount)}</span>

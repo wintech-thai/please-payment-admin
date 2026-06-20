@@ -7,7 +7,7 @@ import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { PayInTxItem, BankAccountItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, Plus, X } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, Plus, X, Scissors } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
@@ -561,7 +561,12 @@ export default function PayInTransactionsPage() {
 
                       {/* Fee */}
                       <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
-                        <p className="text-sm text-gray-700 tabular-nums">
+                        <p className="text-sm text-gray-700 tabular-nums flex items-center justify-end gap-1">
+                          {item.discardCent && (
+                            <span title={m.discardCentHint} className="inline-flex flex-shrink-0">
+                              <Scissors className="w-3.5 h-3.5 text-amber-500" />
+                            </span>
+                          )}
                           {formatAmount(item.payInFeeDecimal ?? item.payInFee)}
                         </p>
                       </td>

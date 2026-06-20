@@ -456,6 +456,7 @@ export interface PayInTxItem {
   payInFeeDecimal?: number | null
   payInTotalAmount?: number | null
   payInTotalAmountDecimal?: number | null
+  discardCent?: boolean | null
   payInBankAccountId?: string | null
   payInBankCode?: string | null
   payInBankAccountNo?: string | null

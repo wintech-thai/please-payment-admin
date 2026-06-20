@@ -121,8 +121,8 @@ export default function ProfileModal({ onClose }: Props) {
       })
       toast.success(t.profile.saveSuccess)
       onClose()
-    } catch {
-      toast.error(t.profile.saveError)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t.profile.saveError)
     } finally {
       setSaving(false)
     }

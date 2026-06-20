@@ -125,8 +125,8 @@ export default function MerchantBankAccountsPage() {
             createdDate: a.createdDate ?? a.CreatedDate,
           })))
         }
-      } catch {
-        toast.error(m.failedToLoadBankAccounts)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.failedToLoadBankAccounts)
       } finally {
         setLoading(false)
       }

@@ -106,8 +106,8 @@ function AgentListContent() {
         const raw = countRes.value.data as any
         setTotal(typeof raw === 'number' ? raw : (raw?.count ?? raw?.Count ?? raw?.totalCount ?? raw?.TotalCount ?? 0))
       }
-    } catch {
-      toast.error(m.loadFailed)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.loadFailed)
     } finally {
       setLoading(false)
     }

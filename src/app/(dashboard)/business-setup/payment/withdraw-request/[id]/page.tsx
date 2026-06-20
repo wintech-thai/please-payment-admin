@@ -228,8 +228,8 @@ export default function PayOutRequestDetailPage() {
             setAccountSearch([saved.bankCode, saved.accountNumber, saved.accountName ? `— ${saved.accountName}` : ''].filter(Boolean).join(' '))
           }
         }
-      } catch {
-        toast.error(m.toastFailedToLoad)
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : m.toastFailedToLoad)
         router.push('/business-setup/payment/withdraw-request')
       } finally {
         setLoading(false)

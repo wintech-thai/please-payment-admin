@@ -271,8 +271,8 @@ export default function MerchantKeysUsersPage() {
         const data = payOutKeysRes.value.data as any
         setPayOutApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
       }
-    } catch {
-      toast.error(m.failedToLoadMerchant)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToLoadMerchant)
       router.push(`/business-setup/merchant?highlight=${merchantId}`)
     } finally {
       setLoading(false)

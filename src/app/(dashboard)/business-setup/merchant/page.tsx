@@ -140,8 +140,8 @@ function MerchantContent() {
       setMerchants(Array.isArray(raw) ? raw : ((raw as any)?.merchants ?? []))
       const rawCount = countRes.data
       setTotal(typeof rawCount === 'number' ? rawCount : ((rawCount as any)?.count ?? 0))
-    } catch {
-      toast.error(m.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToLoad)
     } finally {
       setLoading(false)
     }

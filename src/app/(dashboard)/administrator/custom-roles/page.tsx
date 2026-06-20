@@ -50,8 +50,8 @@ function CustomRolesContent() {
       setRoles(Array.isArray(raw) ? raw : (raw?.customRoles ?? []))
       const rawCount = countRes.data
       setTotal(typeof rawCount === 'number' ? rawCount : (rawCount?.count ?? 0))
-    } catch {
-      toast.error(t.customRoles.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t.customRoles.failedToLoad)
     } finally {
       setLoading(false)
     }

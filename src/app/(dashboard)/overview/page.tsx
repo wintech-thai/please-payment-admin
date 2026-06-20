@@ -134,8 +134,8 @@ export default function OverviewPage() {
       const res = await summaryApi.getMerchantSummary({ FromDate, ToDate })
       const d = res.data as any
       setData(d?.summary ?? d?.Summary ?? d)
-    } catch {
-      toast.error(m.failedToLoad)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToLoad)
     } finally {
       setLoading(false)
     }

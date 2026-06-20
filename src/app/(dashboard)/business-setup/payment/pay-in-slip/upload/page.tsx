@@ -400,7 +400,7 @@ export default function UploadPayInSlipPage() {
         const res = await merchantApi.getMerchants({ Status: 'Active' })
         const d = res.data as any
         setMerchants(Array.isArray(d) ? d : (d?.merchants ?? d?.Merchants ?? []))
-      } catch { toast.error(m.toastFailedToLoadMerchants) }
+      } catch (err: unknown) { toast.error(err instanceof Error ? err.message : m.toastFailedToLoadMerchants) }
       finally { setLoadingMerchants(false) }
     }
     load()
@@ -416,7 +416,7 @@ export default function UploadPayInSlipPage() {
         const d = res.data as any
         setBankAccounts(Array.isArray(d) ? d : (d?.bankAccounts ?? d?.BankAccounts ?? []))
         setBankAccountId('')
-      } catch { toast.error(m.toastFailedToLoadBanks) }
+      } catch (err: unknown) { toast.error(err instanceof Error ? err.message : m.toastFailedToLoadBanks) }
       finally { setLoadingBanks(false) }
     }
     load()

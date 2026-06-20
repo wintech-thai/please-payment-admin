@@ -62,7 +62,7 @@ export default function BrandThemePage() {
       resetForm(data)
     } catch (err: any) {
       if (err?.code !== 'NOT_FOUND' && err?.response?.status !== 404) {
-        toast.error(bt.toastLoadFailed)
+        toast.error(err instanceof Error ? err.message : bt.toastLoadFailed)
       }
       setConfig(null)
       resetForm(null)

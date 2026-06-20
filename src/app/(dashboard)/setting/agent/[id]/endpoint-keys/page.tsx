@@ -133,8 +133,8 @@ export default function AgentEndpointKeysPage() {
         const data = keysRes.value.data as any
         setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
       }
-    } catch {
-      toast.error(m.loadFailed)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.loadFailed)
       router.push('/setting/agent')
     } finally {
       setLoading(false)

@@ -89,9 +89,9 @@ export default function NotiEventDetailPage() {
     } catch { return d }
   }
 
-  const getJobMessages = (): string[] => {
+  const getJobMessages2 = (): string[] => {
     if (!data) return []
-    const raw = data.jobMessage ?? data.JobMessage ?? data.messages ?? data.Messages ?? data.logs ?? []
+    const raw = data.jobMessage2 ?? data.JobMessage2 ?? []
     if (Array.isArray(raw)) return raw.map(String)
     if (typeof raw === 'string') return raw.split('\n').filter(Boolean)
     return []
@@ -131,7 +131,7 @@ export default function NotiEventDetailPage() {
 
   if (!data) return null
 
-  const jobMessages = getJobMessages()
+  const jobMessages2 = getJobMessages2()
   const parameters = getParameters()
 
   return (
@@ -215,12 +215,12 @@ export default function NotiEventDetailPage() {
               )}
             </div>
 
-            {/* Job Messages */}
-            {jobMessages.length > 0 && (
+            {/* Notify Messages (job_message2) — หน้านี้เป็น Notification Event โดยเฉพาะ จึงดึง message2 มาแสดงแทน jobMessage เดิม */}
+            {jobMessages2.length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{m.jobMessage}</p>
                 <ol className="flex flex-col gap-2">
-                  {jobMessages.map((msg, i) => (
+                  {jobMessages2.map((msg, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center mt-0.5">
                         {i + 1}

@@ -231,7 +231,7 @@ export default function CreateShareholderRatioPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex-none flex justify-end gap-3 py-4 border-t border-gray-100">
+        <div className="flex-none bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-4 mt-4 flex justify-end gap-3">
           <button
             type="button"
             onClick={() => guardNavigation(() => router.push('/business-setup/financial-settlement/shareholder-ratio'))}

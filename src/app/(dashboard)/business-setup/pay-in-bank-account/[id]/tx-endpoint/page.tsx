@@ -108,6 +108,7 @@ export default function PayInTxEndpointPage() {
   const [account, setAccount] = useState<BankAccountItem | null>(null)
   const orgId = account?.orgId ?? 'global'
   const [txUrl, setTxUrl] = useState<string | null>(null)
+  const [scbEndpoint, setScbEndpoint] = useState<string | null>(null)
   const [apiKeys, setApiKeys] = useState<OrgApiKeyItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null)
@@ -155,6 +156,15 @@ export default function PayInTxEndpointPage() {
     }
     load()
   }, [bankAccountId])
+
+  useEffect(() => {
+    if (!account?.isNativeQrSupport) return
+    bankAccountApi.getPayInTxScbEndpoint(bankAccountId).then(res => {
+      const data = res.data as any
+      const raw: string = data?.paymentTxNotiUrl ?? data?.PaymentTxNotiUrl ?? ''
+      setScbEndpoint(raw ? processTxUrl(raw) : null)
+    }).catch(() => {})
+  }, [account?.isNativeQrSupport, bankAccountId])
 
   const handleCreateApiKey = async () => {
     try {
@@ -405,6 +415,27 @@ export default function PayInTxEndpointPage() {
             )}
           </div>
         </div>
+
+        {/* Pay-In Payment Confirmation Endpoint — เห็นเฉพาะบัญชีที่รองรับ Native QR เท่านั้น */}
+        {account?.isNativeQrSupport && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>{m.paymentConfirmationEndpointSection}</SectionHeader>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{m.paymentConfirmationEndpointLabel}</p>
+            {scbEndpoint ? (
+              <div className="flex items-start gap-3">
+                <textarea
+                  readOnly
+                  value={scbEndpoint}
+                  rows={2}
+                  className="flex-1 px-3 py-2.5 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 resize-none focus:outline-none"
+                />
+                <CopyButton text={scbEndpoint} label={t.merchant.endpointCopy} copiedLabel={t.merchant.endpointCopied} />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">{t.merchant.endpointNotFound}</p>
+            )}
+          </div>
+        )}
 
       </div>
     </div>

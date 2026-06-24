@@ -158,7 +158,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
     ? allAccounts.filter(a =>
         selectedBankCode === 'PP'
           ? a.accountType?.toLowerCase() === 'promptpay'
-          : a.bankCode === selectedBankCode
+          : a.bankCode === selectedBankCode && a.accountType?.toLowerCase() === 'native'
       )
     : []
 
@@ -188,7 +188,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
         Description: ref.trim(),
         Currency: 'THB',
         RequestedAmount: Number(amount),
-        QrProvider: 'PP',
+        QrProvider: mode === 'manual' && selectedBankCode ? selectedBankCode : 'PP',
       }
       if (mode === 'manual' && selectedAccountId) {
         payload.SelectedPayInBankAccountId = selectedAccountId

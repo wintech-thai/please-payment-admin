@@ -6,6 +6,7 @@ import type {
   AddBankAccountPayload,
   UpdateBankAccountPayload,
   BankAccountMerchantItem,
+  UpdateBankAccountConfigPayload,
 } from './types'
 
 const BASE = '/admin-api/AdminBankAccount/org/global/action'
@@ -37,6 +38,9 @@ export const bankAccountApi = {
 
   getBankAccountById: (id: string) =>
     client.get<{ bankAccount: BankAccountItem }>(`${BASE}/GetBankAccountById/${id}`),
+
+  updateBankAccountConfigById: (id: string, payload: UpdateBankAccountConfigPayload) =>
+    client.post(`${BASE}/UpdateBankAccountConfigById/${id}`, payload),
 
   addBankAccount: (payload: AddBankAccountPayload) =>
     client.post(`${BASE}/AddBankAccount`, payload),
@@ -70,6 +74,9 @@ export const bankAccountApi = {
 
   getPayInTxLineEndpoint: (id: string) =>
     client.get(`${BASE}/GetBankAccountPayInTxLineEndPoint/${id}`),
+
+  getPayInTxScbEndpoint: (id: string) =>
+    client.get(`${BASE}/GetBankAccountPayInTxSCBEndPoint/${id}`),
 
   getLinePaymentTxNotiApiKeys: (id: string) =>
     client.get(`${BASE}/GetLinePaymentTxNotiApiKeys/${id}`),

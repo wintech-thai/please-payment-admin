@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { BankAccountItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Trash2, ChevronLeft, ChevronRight, Landmark, Webhook, Wallet } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Trash2, ChevronLeft, ChevronRight, Landmark, Webhook, Wallet, Settings2, ShieldCheck } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
@@ -445,7 +445,14 @@ function BankAccountContent() {
                         ) : '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
-                        {account.accountType || '—'}
+                        <span className="inline-flex items-center gap-1.5">
+                          {account.accountType || '—'}
+                          {account.isNativeQrSupport && (
+                            <span title={m.nativeQrBadge}>
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                            </span>
+                          )}
+                        </span>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
                         {account.accountLevel || '—'}
@@ -532,6 +539,15 @@ function BankAccountContent() {
                                 <Wallet className="w-4 h-4 flex-shrink-0" />
                                 {m.txSummaryAction}
                               </button>
+                              {account.isNativeQrSupport && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('bankaccount_highlight', account.accountId); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/bank-api-config`) }}
+                                  className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap"
+                                >
+                                  <Settings2 className="w-4 h-4 flex-shrink-0" />
+                                  {m.bankApiConfigAction}
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>

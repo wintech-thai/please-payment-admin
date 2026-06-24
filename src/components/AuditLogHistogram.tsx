@@ -8,6 +8,10 @@ interface AuditLogHistogramProps {
   interval: string
   maxDocCount: number
   dict?: { totalLogs: string }
+  height?: number
+  flatColor?: boolean
+  scale?: 'linear' | 'sqrt'
+  minBarHeightPct?: number
 }
 
 const API_COLORS: Record<string, string> = {
@@ -48,14 +52,14 @@ function addInterval(ts: number, val: number, unit: string): number {
   return ts + ms
 }
 
-export function AuditLogHistogram({ data, totalHits, interval, maxDocCount, dict }: AuditLogHistogramProps) {
+export function AuditLogHistogram({ data, totalHits, interval, maxDocCount, dict, height = 220, flatColor = false, scale = 'linear', minBarHeightPct = 8 }: AuditLogHistogramProps) {
   const axisLabelStep = Math.max(Math.floor(data.length / 10), 1)
   const match = interval.match(/(\d+)([smhd])/)
   const intervalVal = match ? parseInt(match[1]) : 1
   const intervalUnit = match ? match[2] : 'm'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 pt-4 pb-8 flex flex-col relative select-none overflow-visible" style={{ height: '220px' }}>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 pt-4 pb-8 flex flex-col relative select-none overflow-visible" style={{ height: `${height}px` }}>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3 flex-none">
@@ -93,7 +97,9 @@ export function AuditLogHistogram({ data, totalHits, interval, maxDocCount, dict
             const sortedBuckets = [...allBuckets].sort((a, b) => b.doc_count - a.doc_count)
             const showLabel = i % axisLabelStep === 0
             const isRightHalf = i > data.length / 2
-            const heightPct = (bucket.doc_count / (maxDocCount || 1)) * 100
+            const heightPct = scale === 'sqrt'
+              ? (Math.sqrt(bucket.doc_count) / Math.sqrt(maxDocCount || 1)) * 100
+              : (bucket.doc_count / (maxDocCount || 1)) * 100
             const hasData = bucket.doc_count > 0
 
             return (
@@ -105,9 +111,16 @@ export function AuditLogHistogram({ data, totalHits, interval, maxDocCount, dict
                 {/* Bar stack */}
                 <div
                   className="w-full flex flex-col justify-end z-10 relative transition-opacity opacity-75 group-hover:opacity-100"
-                  style={{ height: hasData ? `max(4px, ${heightPct}%)` : '0%' }}
+                  style={{ height: hasData ? `max(${minBarHeightPct}%, ${heightPct}%)` : '0%' }}
                 >
-                  {allBuckets.length === 0 && hasData ? (
+                  {flatColor ? (
+                    hasData && (
+                      <div
+                        style={{ backgroundColor: '#f06b1e' }}
+                        className="w-full h-full rounded-t-sm"
+                      />
+                    )
+                  ) : allBuckets.length === 0 && hasData ? (
                     <div
                       style={{ backgroundColor: '#f06b1e' }}
                       className="w-full h-full rounded-t-sm"

@@ -444,15 +444,20 @@ function BankAccountContent() {
                           </button>
                         ) : '—'}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5">
-                          {account.accountType || '—'}
-                          {account.isNativeQrSupport && (
-                            <span title={m.nativeQrBadge}>
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                            </span>
-                          )}
-                        </span>
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm whitespace-nowrap">
+                        {account.isNativeQrSupport ? (
+                          <Link
+                            href={`/business-setup/pay-in-bank-account/${account.accountId}/bank-api-config`}
+                            onClick={e => { e.stopPropagation(); sessionStorage.setItem('bankaccount_highlight', account.accountId) }}
+                            title={m.bankApiConfigAction}
+                            className="inline-flex items-center gap-1.5 text-gray-600 hover:text-primary-600 hover:underline"
+                          >
+                            {account.accountType || '—'}
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                          </Link>
+                        ) : (
+                          <span className="text-gray-600">{account.accountType || '—'}</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
                         {account.accountLevel || '—'}

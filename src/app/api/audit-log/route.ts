@@ -15,11 +15,19 @@ export async function POST(req: Request) {
     const orgId = req.headers.get('x-org-id')
     if (!orgId) return NextResponse.json({ status: 'ERROR', message: 'Missing Org ID' }, { status: 400 })
 
-    const { esPayload } = await req.json()
+    const { esPayload, orgIds } = await req.json()
     const index = process.env.ES_INDEX_PATTERN || 'onix-v2*'
 
     if (esPayload.query?.bool?.must) {
-      esPayload.query.bool.must.push({ term: { 'data.api.OrgId.keyword': 'global' } })
+      if (Array.isArray(orgIds)) {
+        // orgIds ส่งมาเป็น array ชัดเจน: ถ้ามีค่า filter เฉพาะ org เหล่านั้น, ถ้าเป็น array ว่าง = ไม่กรอง org (เอาหมด)
+        if (orgIds.length > 0) {
+          esPayload.query.bool.must.push({ terms: { 'data.api.OrgId.keyword': orgIds } })
+        }
+      } else {
+        // caller เดิมที่ไม่ได้ส่ง orgIds มา (เช่นหน้า Audit Log) ยังคง filter เป็น 'global' เหมือนเดิม
+        esPayload.query.bool.must.push({ term: { 'data.api.OrgId.keyword': 'global' } })
+      }
       const envRun = process.env.ENV_RUN || process.env.NEXT_PUBLIC_ENV_RUN
       if (envRun) {
         esPayload.query.bool.must.push({ match_phrase: { 'data.Environment': envRun } })

@@ -88,6 +88,7 @@ export default function BankApiConfigPage() {
         ApiSecret: apiSecret.trim() || undefined,
       })
       toast.success(m.savedConfigSuccess)
+      router.push(`/business-setup/pay-in-bank-account?highlight=${bankAccountId}`)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToSaveConfig)
     } finally {

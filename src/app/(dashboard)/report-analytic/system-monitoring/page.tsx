@@ -8,6 +8,15 @@ import { useLang } from '@/context/LanguageContext'
 import { AuditLogHistogram } from '@/components/AuditLogHistogram'
 import { TopNPanel, type TopNBucket } from '@/components/TopNPanel'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import { MultiSelectDropdown, type MultiSelectOption } from '@/components/MultiSelectDropdown'
+import { merchantApi } from '@/lib/api/merchant.api'
+
+const GROUP_BY_FIELD: Record<string, string> = {
+  api: 'data.api.ApiName.keyword',
+  user: 'data.userInfo.UserName.keyword',
+  ip: 'data.ClientIp.keyword',
+  status: 'data.StatusCode',
+}
 
 function getTimeFilter(tr: TimeRangeValue): { gte: string; lte?: string } {
   if (tr.type === 'absolute' && tr.start && tr.end) {
@@ -52,6 +61,9 @@ export default function SystemMonitoringPage() {
 
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
   const [refreshMs, setRefreshMs] = useState('0')
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([])
+  const [orgOptions, setOrgOptions] = useState<MultiSelectOption[]>([])
+  const [groupBy, setGroupBy] = useState<'api' | 'user' | 'ip' | 'status'>('api')
   const [isLoading, setIsLoading] = useState(true)
   const [totalCount, setTotalCount] = useState(0)
   const [chartData, setChartData] = useState<any[]>([])
@@ -95,7 +107,7 @@ export default function SystemMonitoringPage() {
         aggs: {
           timeline: {
             date_histogram: { field: '@timestamp', fixed_interval: currentInterval, min_doc_count: 0 },
-            aggs: { group_by_api: { terms: { field: 'data.api.ApiName.keyword', size: 4 } } },
+            aggs: { group_by_api: { terms: { field: GROUP_BY_FIELD[groupBy], size: 4 } } },
           },
           by_api: { terms: { field: 'data.api.ApiName.keyword', size: 10 } },
           by_user: { terms: { field: 'data.userInfo.UserName.keyword', size: 10 } },
@@ -111,7 +123,7 @@ export default function SystemMonitoringPage() {
       const res = await fetch('/api/audit-log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
-        body: JSON.stringify({ esPayload }),
+        body: JSON.stringify({ esPayload, orgIds: selectedOrgs }),
       })
       const result = await res.json()
 
@@ -140,9 +152,21 @@ export default function SystemMonitoringPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [timeRange, filterApi, filterUser, filterIp, filterStatus])
+  }, [timeRange, filterApi, filterUser, filterIp, filterStatus, selectedOrgs, groupBy])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // โหลดรายชื่อ organization สำหรับ dropdown filter (อิงจากรายชื่อ merchant ที่มีอยู่ + 'global')
+  useEffect(() => {
+    merchantApi.getMerchants({ limit: 200 }).then(res => {
+      const raw = res.data as any
+      const merchants: any[] = Array.isArray(raw) ? raw : (raw?.merchants ?? [])
+      const merchantOptions: MultiSelectOption[] = merchants
+        .map(m => ({ value: String(m.orgId ?? m.code ?? ''), label: `${m.name ?? m.code ?? ''} (${m.code ?? m.orgId ?? ''})` }))
+        .filter(o => o.value)
+      setOrgOptions([{ value: 'global', label: sm.orgFilterGlobalLabel }, ...merchantOptions])
+    }).catch(() => {})
+  }, [sm.orgFilterGlobalLabel])
 
   // Auto-refresh polling
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -188,6 +212,17 @@ export default function SystemMonitoringPage() {
 
         {/* Filter bar */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 flex flex-wrap items-center gap-3">
+          <MultiSelectDropdown
+            options={orgOptions}
+            selected={selectedOrgs}
+            onChange={setSelectedOrgs}
+            label={sm.orgFilterLabel}
+            allLabel={sm.orgFilterAll}
+            searchPlaceholder={sm.orgFilterSearchPlaceholder}
+            clearAllLabel={sm.clearAllLabel}
+            disabled={isLoading}
+          />
+
           {activeFilters.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-gray-400 font-medium">{sm.filteredBy}:</span>
@@ -218,17 +253,40 @@ export default function SystemMonitoringPage() {
           </div>
         </div>
 
-        {/* Timeline histogram (by API) */}
+        {/* Timeline histogram */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="h-1.5 bg-gradient-to-r from-primary-400 to-primary-600" />
-          <AuditLogHistogram
-            data={chartData}
-            totalHits={totalCount}
-            interval={chartInterval}
-            maxDocCount={chartMax}
-            dict={{ totalLogs: tAL.totalLogs }}
-            height={160}
-          />
+          <div className="flex items-center justify-end gap-2 px-5 pt-3">
+            <label className="text-xs text-gray-400 font-medium">{sm.aggregateByLabel}:</label>
+            <select
+              value={groupBy}
+              onChange={e => setGroupBy(e.target.value as typeof groupBy)}
+              className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-300 cursor-pointer"
+            >
+              <option value="api">{sm.panelByApi}</option>
+              <option value="user">{sm.panelByUser}</option>
+              <option value="ip">{sm.panelByIp}</option>
+              <option value="status">{sm.panelByStatus}</option>
+            </select>
+          </div>
+          <div className="relative">
+            {isLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+                <svg className="w-6 h-6 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              </div>
+            )}
+            <AuditLogHistogram
+              data={chartData}
+              totalHits={totalCount}
+              interval={chartInterval}
+              maxDocCount={chartMax}
+              dict={{ totalLogs: tAL.totalLogs }}
+              height={160}
+            />
+          </div>
         </div>
 
         {/* Top N grids */}

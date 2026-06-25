@@ -8,6 +8,8 @@ import { toast } from 'sonner'
 import { ChevronLeft } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import LeaveConfirmModal from '@/components/LeaveConfirmModal'
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -53,6 +55,9 @@ export default function BankApiConfigPage() {
   const [apiSecret, setApiSecret] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
+  const mark = () => { if (!isDirty) setIsDirty(true) }
 
   useEffect(() => {
     const load = async () => {
@@ -88,6 +93,7 @@ export default function BankApiConfigPage() {
         ApiSecret: apiSecret.trim() || undefined,
       })
       toast.success(m.savedConfigSuccess)
+      setIsDirty(false)
       router.push(`/business-setup/pay-in-bank-account?highlight=${bankAccountId}`)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToSaveConfig)
@@ -110,9 +116,11 @@ export default function BankApiConfigPage() {
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
+      {showConfirm && <LeaveConfirmModal onConfirm={confirmLeave} onCancel={cancelLeave} />}
+
       {/* Header */}
       <div className="flex-none flex items-center gap-3 mb-6">
-        <button onClick={() => router.push(`/business-setup/pay-in-bank-account?highlight=${bankAccountId}`)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
+        <button onClick={() => guardNavigation(() => router.push(`/business-setup/pay-in-bank-account?highlight=${bankAccountId}`))} className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>
@@ -143,7 +151,7 @@ export default function BankApiConfigPage() {
               <input
                 type="checkbox"
                 checked={isSandbox}
-                onChange={e => setIsSandbox(e.target.checked)}
+                onChange={e => { setIsSandbox(e.target.checked); mark() }}
                 className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
               />
               <div>
@@ -155,16 +163,16 @@ export default function BankApiConfigPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label={m.fieldBillerId}>
-              <input value={billerId} onChange={e => setBillerId(e.target.value)} placeholder={m.fieldBillerIdPlaceholder} className={inputCls} />
+              <input value={billerId} onChange={e => { setBillerId(e.target.value); mark() }} placeholder={m.fieldBillerIdPlaceholder} className={inputCls} />
             </FormField>
             <FormField label={m.fieldRef3Prefix}>
-              <input value={ref3Prefix} onChange={e => setRef3Prefix(e.target.value)} placeholder={m.fieldRef3PrefixPlaceholder} className={inputCls} />
+              <input value={ref3Prefix} onChange={e => { setRef3Prefix(e.target.value); mark() }} placeholder={m.fieldRef3PrefixPlaceholder} className={inputCls} />
             </FormField>
             <FormField label={m.fieldApiKey}>
-              <input value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder={m.fieldApiKeyPlaceholder} className={inputCls} />
+              <input value={apiKey} onChange={e => { setApiKey(e.target.value); mark() }} placeholder={m.fieldApiKeyPlaceholder} className={inputCls} />
             </FormField>
             <FormField label={m.fieldApiSecret}>
-              <input value={apiSecret} onChange={e => setApiSecret(e.target.value)} placeholder={m.fieldApiSecretPlaceholder} className={inputCls} />
+              <input value={apiSecret} onChange={e => { setApiSecret(e.target.value); mark() }} placeholder={m.fieldApiSecretPlaceholder} className={inputCls} />
             </FormField>
           </div>
         </div>
@@ -175,7 +183,7 @@ export default function BankApiConfigPage() {
       <div className="flex-none -mx-3 sm:-mx-6 px-4 sm:px-8 py-4 flex items-center justify-end gap-3 bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
         <button
           type="button"
-          onClick={() => router.push(`/business-setup/pay-in-bank-account?highlight=${bankAccountId}`)}
+          onClick={() => guardNavigation(() => router.push(`/business-setup/pay-in-bank-account?highlight=${bankAccountId}`))}
           className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
           {t.admin.cancel}

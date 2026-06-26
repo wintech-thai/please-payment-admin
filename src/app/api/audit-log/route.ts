@@ -32,6 +32,10 @@ export async function POST(req: Request) {
       if (envRun) {
         esPayload.query.bool.must.push({ match_phrase: { 'data.Environment': envRun } })
       }
+      // ES instance ตัวนี้ใช้ร่วมกับแอปอื่น (เช่น please-protect) ด้วย ต้องกรองเอาเฉพาะ log ของ please-payment เท่านั้น
+      esPayload.query.bool.must.push({
+        terms: { 'data.ApplicationType.keyword': ['PLEASE-PAYMENT-ADMIN', 'PLEASE-PAYMENT-MERCHANT'] },
+      })
     }
 
     const esClient = getEsClient()

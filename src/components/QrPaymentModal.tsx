@@ -176,6 +176,13 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
     return Object.keys(e).length === 0
   }
 
+  // Auto-select: ถ้า merchant ผูกบัญชี Native (เช่น SCB) ไว้ ให้ใช้ bank code นั้นเป็น QrProvider เลย
+  // ไม่งั้น fallback เป็น 'PP' เหมือนเดิม (ต้องตรงกับ logic การ filter ฝั่ง server ใน GetPayInBankAccount())
+  const getAutoProvider = () => {
+    const nativeAccount = allAccounts.find(a => a.accountType?.toLowerCase() !== 'promptpay')
+    return nativeAccount?.bankCode || 'PP'
+  }
+
   const handleSubmit = async () => {
     if (!validate()) return
     setSubmitting(true)
@@ -188,7 +195,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
         Description: ref.trim(),
         Currency: 'THB',
         RequestedAmount: Number(amount),
-        QrProvider: mode === 'manual' && selectedBankCode ? selectedBankCode : 'PP',
+        QrProvider: mode === 'manual' && selectedBankCode ? selectedBankCode : getAutoProvider(),
       }
       if (mode === 'manual' && selectedAccountId) {
         payload.SelectedPayInBankAccountId = selectedAccountId

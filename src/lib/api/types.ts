@@ -897,6 +897,7 @@ export interface AgentItem {
   createdDate?: string | null
   lastSeen?: string | null
   lastSeenDate?: string | null
+  lastSeenErrorDate?: string | null
   bankAccountsSelectedObj?: BankAccountItem[] | null
 }
 
@@ -945,6 +946,7 @@ export interface AgentEventItem {
   tags?: string | null
   status?: string | null
   statusDesc?: string | null
+  errorCount?: number | null
   agentEvent?: Record<string, unknown> | null
   AgentEvent?: Record<string, unknown> | null
 }

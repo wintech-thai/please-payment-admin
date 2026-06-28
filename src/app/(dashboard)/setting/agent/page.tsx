@@ -94,6 +94,7 @@ function AgentListContent() {
           ...item,
           agentId: item.agentId ?? item.AgentId ?? item.id ?? item.Id ?? '',
           lastSeenDate: item.lastSeenDate ?? item.LastSeenDate ?? item.lastSeen ?? item.LastSeen ?? null,
+          lastSeenErrorDate: item.lastSeenErrorDate ?? item.LastSeenErrorDate ?? null,
         }))
         normalized.sort((a, b) => {
           const ta = a.createdDate ? new Date(a.createdDate).getTime() : 0
@@ -178,7 +179,7 @@ function AgentListContent() {
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
-  const cols = ['', m.colCode, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colStatus, m.colAction]
+  const cols = ['', m.colCode, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -339,6 +340,16 @@ function AgentListContent() {
                             <span>{formatDate(agent.lastSeenDate)}</span>
                             {formatAge(agent.lastSeenDate) && (
                               <span className="text-xs text-gray-400">{formatAge(agent.lastSeenDate)}</span>
+                            )}
+                          </div>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
+                        {agent.lastSeenErrorDate ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span>{formatDate(agent.lastSeenErrorDate)}</span>
+                            {formatAge(agent.lastSeenErrorDate) && (
+                              <span className="text-xs text-gray-400">{formatAge(agent.lastSeenErrorDate)}</span>
                             )}
                           </div>
                         ) : '—'}

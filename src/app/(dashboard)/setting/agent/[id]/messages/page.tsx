@@ -514,7 +514,7 @@ export default function AgentMessagesPage() {
     }
   }, [events, agentId])
 
-  const cols = [m.colEventDate, m.colEventType, m.colChannel, m.colTags, m.colStatus, m.colAction]
+  const cols = [m.colEventDate, m.colEventType, m.colChannel, m.colTags, m.colErrorCount, m.colStatus, m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -714,6 +714,14 @@ export default function AgentMessagesPage() {
                             </span>
                           ))
                         ) : <span className="text-gray-400">—</span>}
+                      </td>
+
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-center">
+                        {event.errorCount ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 ring-1 ring-red-200">
+                            {event.errorCount}
+                          </span>
+                        ) : <span className="text-gray-400">0</span>}
                       </td>
 
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">

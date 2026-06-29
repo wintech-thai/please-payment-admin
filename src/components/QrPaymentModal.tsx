@@ -158,7 +158,7 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
     ? allAccounts.filter(a =>
         selectedBankCode === 'PP'
           ? a.accountType?.toLowerCase() === 'promptpay'
-          : a.bankCode === selectedBankCode
+          : a.bankCode === selectedBankCode && a.accountType?.toLowerCase() === 'native'
       )
     : []
 
@@ -176,19 +176,25 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
     return Object.keys(e).length === 0
   }
 
+  // Auto-select: ถ้า merchant ผูกบัญชี Native (เช่น SCB) ไว้ ให้ใช้ bank code นั้นเป็น QrProvider เลย
+  // ไม่งั้น fallback เป็น 'PP' เหมือนเดิม (ต้องตรงกับ logic การ filter ฝั่ง server ใน GetPayInBankAccount())
+  const getAutoProvider = () => {
+    const nativeAccount = allAccounts.find(a => a.accountType?.toLowerCase() !== 'promptpay')
+    return nativeAccount?.bankCode || 'PP'
+  }
+
   const handleSubmit = async () => {
     if (!validate()) return
     setSubmitting(true)
     setResult(null)
     try {
       const payload: any = {
-        RefId: generateRefId(),
-        RefId1: ref1.trim() || undefined,
-        RefId2: ref2.trim() || undefined,
-        Description: ref.trim(),
+        RefId1: ref.trim(),
+        RefId2: ref1.trim() || undefined,
+        RefId3: ref2.trim() || undefined,
         Currency: 'THB',
         RequestedAmount: Number(amount),
-        QrProvider: 'PP',
+        QrProvider: mode === 'manual' && selectedBankCode ? selectedBankCode : getAutoProvider(),
       }
       if (mode === 'manual' && selectedAccountId) {
         payload.SelectedPayInBankAccountId = selectedAccountId
@@ -350,12 +356,12 @@ export default function QrPaymentModal({ merchantId, merchantName, onClose }: Pr
                     {errors.ref && <p className="text-red-500 text-xs mt-1">{errors.ref}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">REF1 <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
-                    <input type="text" value={ref1} onChange={e => setRef1(e.target.value)} placeholder="REF1" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">REF2 <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
+                    <input type="text" value={ref1} onChange={e => setRef1(e.target.value)} placeholder="REF2" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">REF2 <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
-                    <input type="text" value={ref2} onChange={e => setRef2(e.target.value)} placeholder="REF2" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">REF3 <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
+                    <input type="text" value={ref2} onChange={e => setRef2(e.target.value)} placeholder="REF3" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
                   </div>
                 </div>
               </div>

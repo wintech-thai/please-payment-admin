@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Mail, Phone } from 'lucide-react'
+import { ChevronLeft, Mail, Phone, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
@@ -28,6 +28,9 @@ export default function UpdateMerchantPage() {
   const [payOutMin, setPayOutMin] = useState<string>('0')
   const [payOutMax, setPayOutMax] = useState<string>('0')
   const [discardCent, setDiscardCent] = useState(false)
+  const [includeGlobalBankAccount, setIncludeGlobalBankAccount] = useState(true)
+  const [whitelistNames, setWhitelistNames] = useState<string[]>([])
+  const [whitelistInput, setWhitelistInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
@@ -49,6 +52,23 @@ export default function UpdateMerchantPage() {
     return Object.keys(errs).length === 0
   }
 
+  const addWhitelistName = () => {
+    const v = whitelistInput.trim()
+    if (!v) return
+    if (whitelistNames.includes(v)) {
+      setErrors(p => ({ ...p, whitelist: m.whitelistBankNameDuplicate }))
+      return
+    }
+    setWhitelistNames(p => [...p, v])
+    setWhitelistInput('')
+    clearErr('whitelist')
+    markDirty()
+  }
+  const removeWhitelistName = (name: string) => {
+    setWhitelistNames(p => p.filter(n => n !== name))
+    markDirty()
+  }
+
   useEffect(() => {
     merchantApi.getMerchantById(id)
       .then(res => {
@@ -64,6 +84,8 @@ export default function UpdateMerchantPage() {
         setPayOutMin(merch.payoutMinAmount != null ? String(merch.payoutMinAmount) : '0')
         setPayOutMax(merch.payoutMaxAmount != null ? String(merch.payoutMaxAmount) : '0')
         setDiscardCent(merch.discardCent ?? false)
+        setIncludeGlobalBankAccount(merch.includeGlobalBankAccount ?? true)
+        setWhitelistNames(merch.whitelistBankAccountNamesArr ?? [])
       })
       .catch(() => {
         toast.error(m.failedToLoadMerchant)
@@ -93,6 +115,8 @@ export default function UpdateMerchantPage() {
         PayoutMinAmount: payOutMin,
         PayoutMaxAmount: payOutMax,
         DiscardCent: discardCent,
+        IncludeGlobalBankAccount: includeGlobalBankAccount,
+        WhitelistBankAccountNamesArr: whitelistNames,
       })
       setIsDirty(false)
       toast.success(m.updatedSuccess)
@@ -220,8 +244,8 @@ export default function UpdateMerchantPage() {
               </FormField>
             </div>
 
-            {/* Discard Cent */}
-            <div className="mt-4">
+            {/* Discard Cent / Include Global Bank Account */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="flex items-start gap-3 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -232,6 +256,19 @@ export default function UpdateMerchantPage() {
                 <div>
                   <span className="text-sm font-semibold text-gray-700">{m.fieldDiscardCent}</span>
                   <p className="text-xs text-gray-400 mt-0.5">{m.fieldDiscardCentHint}</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeGlobalBankAccount}
+                  onChange={e => { setIncludeGlobalBankAccount(e.target.checked); markDirty() }}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-700">{m.fieldIncludeGlobalBankAccount}</span>
+                  <p className="text-xs text-gray-400 mt-0.5">{m.fieldIncludeGlobalBankAccountHint}</p>
                 </div>
               </label>
             </div>
@@ -286,6 +323,49 @@ export default function UpdateMerchantPage() {
                   </FormField>
                 </div>
               </div>
+            </div>
+
+            {/* Whitelist Bank Account Names */}
+            <div className="border-t border-gray-100 mt-5 pt-5">
+              <div className="flex items-baseline justify-between mb-3">
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">{m.sectionWhitelistBankNames}</p>
+                <span className="text-[11px] text-gray-400 normal-case tracking-normal">{m.sectionWhitelistBankNamesHint}</span>
+              </div>
+
+              {whitelistNames.length > 0 && (
+                <div className="flex flex-col gap-2 mb-3">
+                  {whitelistNames.map(n => (
+                    <div key={n} className="flex items-center justify-between gap-2 px-3.5 py-2.5 border border-gray-200 rounded-lg bg-white">
+                      <span className="text-sm text-gray-700">{n}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeWhitelistName(n)}
+                        className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <input
+                  value={whitelistInput}
+                  onChange={e => { setWhitelistInput(e.target.value); clearErr('whitelist') }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addWhitelistName() } }}
+                  placeholder={m.whitelistBankNamePlaceholder}
+                  className={inputCls(!!errors.whitelist)}
+                />
+                <button
+                  type="button"
+                  onClick={addWhitelistName}
+                  className="px-4 py-2.5 text-sm font-semibold text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors flex-shrink-0"
+                >
+                  {m.whitelistBankNameAdd}
+                </button>
+              </div>
+              {errors.whitelist && <p className="text-red-500 text-xs mt-1">{errors.whitelist}</p>}
             </div>
           </div>
 

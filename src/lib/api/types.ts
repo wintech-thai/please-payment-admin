@@ -174,6 +174,8 @@ export interface MerchantItem {
   currentBalance?: number | null
   currentBalanceDecimal?: number | null
   discardCent?: boolean | null
+  includeGlobalBankAccount?: boolean | null
+  whitelistBankAccountNamesArr?: string[] | null
 }
 
 export interface GetMerchantsPayload {
@@ -202,6 +204,8 @@ export interface AddMerchantPayload {
     PayoutMinAmount?: number | string
     PayoutMaxAmount?: number | string
     DiscardCent?: boolean
+    IncludeGlobalBankAccount?: boolean
+    WhitelistBankAccountNamesArr?: string[]
   }
 }
 
@@ -217,6 +221,8 @@ export interface UpdateMerchantPayload {
   PayoutMinAmount?: number | string
   PayoutMaxAmount?: number | string
   DiscardCent?: boolean
+  IncludeGlobalBankAccount?: boolean
+  WhitelistBankAccountNamesArr?: string[]
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────
@@ -289,6 +295,24 @@ export interface BankAccountItem {
   currentWalletBalance?: number | null
   currentWalletBalanceDecimal?: number | null
   selectedChannel?: string | null    // "LINE" | "SMS"
+  isNativeQrSupport?: boolean | null
+  bankConfigObj?: BankAccountConfigItem | null
+}
+
+export interface BankAccountConfigItem {
+  isSandbox?: boolean | null
+  billerId?: string | null
+  ref3Prefix?: string | null
+  apiKey?: string | null
+  apiSecret?: string | null
+}
+
+export interface UpdateBankAccountConfigPayload {
+  IsSandbox?: boolean
+  BillerId?: string
+  Ref3Prefix?: string
+  ApiKey?: string
+  ApiSecret?: string
 }
 
 export interface GetBankAccountsPayload {
@@ -873,6 +897,7 @@ export interface AgentItem {
   createdDate?: string | null
   lastSeen?: string | null
   lastSeenDate?: string | null
+  lastSeenErrorDate?: string | null
   bankAccountsSelectedObj?: BankAccountItem[] | null
 }
 
@@ -921,6 +946,7 @@ export interface AgentEventItem {
   tags?: string | null
   status?: string | null
   statusDesc?: string | null
+  errorCount?: number | null
   agentEvent?: Record<string, unknown> | null
   AgentEvent?: Record<string, unknown> | null
 }

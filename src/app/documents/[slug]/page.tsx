@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getDoc } from '@/lib/docs/markdown'
 import DocContent from './DocContent'
 
+// force server-side render to derive API URL from request hostname
 export const dynamic = 'force-dynamic'
 
 export default function DocPage({ params }: { params: { slug: string } }) {

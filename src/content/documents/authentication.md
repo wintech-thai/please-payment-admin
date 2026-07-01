@@ -8,14 +8,12 @@ Please Payment ใช้ **HTTP Basic Authentication** ในการยืน�
 
 ## วิธีส่ง API Key
 
-ทุก request ต้องส่ง `Authorization` header ในรูปแบบ Basic Auth โดย:
+ทุก request ต้องใช้ **HTTP Basic Authentication** โดย:
 
 - **Username:** `api` (ตายตัว)
 - **Password:** API Key ที่ได้รับจากผู้ให้บริการ
 
-```
-Authorization: Basic base64("api:YOUR_API_KEY")
-```
+HTTP library ทุกตัว (curl, Python requests, Ruby Net::HTTP) จัดการ encoding ให้อัตโนมัติ — ไม่ต้อง base64 เอง
 
 > API Key สร้างและจัดการได้ใน Admin Panel → Business Setup → Pay-In Request Endpoint
 
@@ -27,7 +25,7 @@ Authorization: Basic base64("api:YOUR_API_KEY")
 curl -X POST "{{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}" \
   -u "api:YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"RefId": "ORDER-001", "RequestedAmount": 325}'
+  -d '{"RefId1": "ORDER-001", "RequestedAmount": 325, "Currency": "THB", "QrProvider": "PP"}'
 ```
 
 หรือใช้ header โดยตรง:
@@ -36,7 +34,7 @@ curl -X POST "{{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{
 curl -X POST "{{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}" \
   -H "Authorization: Basic $(echo -n 'api:YOUR_API_KEY' | base64)" \
   -H "Content-Type: application/json" \
-  -d '{"RefId": "ORDER-001", "RequestedAmount": 325}'
+  -d '{"RefId1": "ORDER-001", "RequestedAmount": 325, "Currency": "THB", "QrProvider": "PP"}'
 ```
 
 ### Python
@@ -50,8 +48,10 @@ MERCHANT_ID = "your-merchant-id"
 BASE_URL = "{{API_URL}}"
 
 payload = {
-    "RefId": "ORDER-001",
-    "RequestedAmount": 325
+    "RefId1": "ORDER-001",
+    "RequestedAmount": 325,
+    "Currency": "THB",
+    "QrProvider": "PP"
 }
 
 response = requests.post(

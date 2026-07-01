@@ -22,26 +22,27 @@ POST {{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantI
 
 | Field | Type | Required | คำอธิบาย |
 |---|---|---|---|
-| `RefId` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
-| `RequestedAmount` | number | ✅ | จำนวนเงิน (THB, ต้องมากกว่า 0) |
-| `RefId1` | string | ❌ | Reference เพิ่มเติม 1 |
+| `RefId1` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
+| `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0 และอยู่ใน range ที่ Merchant กำหนด) |
+| `Currency` | string | ✅ | สกุลเงิน — ปัจจุบันรองรับเฉพาะ `THB` |
+| `QrProvider` | string | ✅ | ธนาคารที่ออก QR — `PP` (PromptPay) หรือ `SCB` |
 | `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
 | `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `Description` | string | ❌ | คำอธิบายรายการ |
 | `CustomerEmail` | string | ❌ | อีเมลของลูกค้า |
 | `CustomerPhone` | string | ❌ | เบอร์โทรของลูกค้า |
-| `Currency` | string | ❌ | สกุลเงิน (default: `THB`) |
-| `QrProvider` | string | ❌ | ธนาคารที่ออก QR: `PP` (PromptPay) หรือ `SCB` |
 | `Tags` | string | ❌ | Tag สำหรับจัดกลุ่มรายการ |
 
 ### ตัวอย่าง Request
 
 ```json
 {
-  "RefId": "ORDER-20260701-001",
+  "RefId1": "ORDER-20260701-001",
   "RequestedAmount": 325,
+  "Currency": "THB",
+  "QrProvider": "PP",
   "Description": "ชำระค่าสินค้า",
-  "RefId1": "CUST-12345"
+  "RefId2": "CUST-12345"
 }
 ```
 
@@ -103,12 +104,15 @@ POST {{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merchant
 | Field | Type | Required | คำอธิบาย |
 |---|---|---|---|
 | `RefId` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
-| `RequestedAmount` | number | ✅ | จำนวนเงิน (THB, ต้องมากกว่า 0) |
+| `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0) |
+| `QrProvider` | string | ✅ | ต้องเป็น `PP` (PromptPay เท่านั้น สำหรับ Pay-Out) |
 | `BankCode` | string | ❌ | รหัสธนาคารปลายทาง เช่น `SCB`, `KBANK`, `BAY` |
 | `BankAccountNo` | string | ❌ | เลขบัญชีปลายทาง |
 | `BankAccountName` | string | ❌ | ชื่อบัญชีปลายทาง |
 | `PromptPayId` | string | ❌ | หมายเลข PromptPay ปลายทาง |
 | `AccountType` | string | ❌ | ประเภทบัญชี: `Native` หรือ `PromptPay` |
+
+> ข้อมูลบัญชีปลายทาง: ส่ง `PayinBankAccountId` (ID จากระบบ) หรือ ส่ง `BankCode`+`BankAccountNo`+`BankAccountName` หรือ `PromptPayId`+`AccountType` อย่างใดอย่างหนึ่ง
 
 ### ตัวอย่าง Request (โอนผ่านบัญชีธนาคาร)
 
@@ -116,6 +120,7 @@ POST {{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merchant
 {
   "RefId": "PAYOUT-20260701-001",
   "RequestedAmount": 500,
+  "QrProvider": "PP",
   "BankCode": "KBANK",
   "BankAccountNo": "0123456789",
   "BankAccountName": "สมชาย ใจดี",
@@ -129,6 +134,7 @@ POST {{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merchant
 {
   "RefId": "PAYOUT-20260701-002",
   "RequestedAmount": 200,
+  "QrProvider": "PP",
   "PromptPayId": "0812345678",
   "AccountType": "PromptPay"
 }

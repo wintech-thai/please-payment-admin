@@ -38,7 +38,7 @@ export function getDoc(slug: string): DocContent | null {
 
   let raw = fs.readFileSync(filePath, 'utf-8')
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.please-payment.com'
+  const apiUrl = process.env.NEXT_PUBLIC_DOCS_API_URL || 'https://api.please-payment.com'
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'
   const buildDate = process.env.NEXT_PUBLIC_BUILD_DATE || new Date().toISOString().slice(0, 10)
   raw = raw

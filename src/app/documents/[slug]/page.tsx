@@ -7,7 +7,7 @@ import DocContent from './DocContent'
 export const dynamic = 'force-dynamic'
 
 export default function DocPage({ params }: { params: { slug: string } }) {
-  const host = headers().get('host') || ''
+  const host = headers().get('x-forwarded-host') || headers().get('host') || ''
   const isLocalhost = host.startsWith('localhost') || host.startsWith('127.')
   // admin-dev.example.com → api-dev.example.com, admin.example.com → api.example.com
   const apiUrl = isLocalhost ? undefined : `https://${host.replace(/^admin/, 'api')}`

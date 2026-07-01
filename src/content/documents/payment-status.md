@@ -1,7 +1,5 @@
 ---
 title: สถานะการชำระเงิน
-version: "1.0.0"
-updatedAt: "2026-06-15"
 ---
 
 # สถานะการชำระเงิน
@@ -11,74 +9,63 @@ updatedAt: "2026-06-15"
 | สถานะ | ค่า | คำอธิบาย |
 |---|---|---|
 | รอชำระ | `Pending` | สร้าง Payment Request แล้ว รอลูกค้าโอนเงิน |
-| สำเร็จ | `Completed` | ได้รับเงินเรียบร้อย |
-| หมดอายุ | `Expired` | QR Code หมดอายุ ไม่มีการชำระเงิน |
-| ยกเลิก | `Cancelled` | ยกเลิกโดย merchant |
+| ชำระสำเร็จ | `Paid` | ธนาคารยืนยันว่าได้รับเงินแล้ว |
+| ถูกปฏิเสธ | `Rejected` | รายการถูก reject (เช่น ยอดเงินไม่ตรง) |
 
 ## สถานะ Pay-Out
 
 | สถานะ | ค่า | คำอธิบาย |
 |---|---|---|
-| รอดำเนินการ | `Pending` | รอระบบประมวลผลการโอน |
-| กำลังโอน | `Processing` | อยู่ระหว่างโอนเงินไปยังบัญชีปลายทาง |
-| สำเร็จ | `Completed` | โอนเงินสำเร็จ |
-| ล้มเหลว | `Failed` | โอนเงินไม่สำเร็จ (เลขบัญชีผิด, ยอดไม่พอ) |
+| รอดำเนินการ | `Pending` | รับคำขอแล้ว รอระบบประมวลผล |
+| โอนสำเร็จ | `Paid` | โอนเงินไปยังบัญชีปลายทางสำเร็จ |
+| ถูกปฏิเสธ | `Rejected` | โอนไม่สำเร็จ (เช่น บัญชีปลายทางไม่ถูกต้อง) |
 
-## การตรวจสอบสถานะ
+## สำคัญ: ตรวจสอบ status ใน response body เสมอ
 
-### Pay-In
-
-`GET /PaymentRequest/org/{orgId}/GetPaymentRequest/{paymentRequestId}`
+HTTP status code `200` บอกแค่ว่า server รับ request ได้ — ต้องตรวจ `status` ใน JSON response body ด้วยเสมอ
 
 ```json
 {
-  "status": "OK",
+  "status": "OK",       ← ตรวจตรงนี้
+  "description": "Success",
   "data": {
-    "paymentRequestId": "pr_abc123",
-    "status": "Completed",
-    "amount": 1000.00,
-    "paidAt": "2026-06-15T10:30:00Z"
+    "Status": "Pending"  ← และตรวจสถานะ payment ตรงนี้
   }
 }
 ```
 
-### Pay-Out
+ตัวอย่างการตรวจสอบใน Python:
 
-`GET /PayOutRequest/org/{orgId}/GetPayOutRequest/{payOutRequestId}`
+```python
+response = requests.post(url, auth=("api", API_KEY), json=payload)
+result = response.json()
 
-```json
-{
-  "status": "OK",
-  "data": {
-    "payOutRequestId": "po_xyz789",
-    "status": "Completed",
-    "amount": 500.00,
-    "transferredAt": "2026-06-15T11:00:00Z"
-  }
-}
+if result.get("status") != "OK":
+    # API error — ดู description สำหรับรายละเอียด
+    print(f"Error: {result.get('description')}")
+else:
+    payment_status = result["data"]["Status"]
+    payment_id = result["data"]["Id"]
+    print(f"Payment {payment_id} status: {payment_status}")
 ```
 
-## Real-Time Status (SignalR)
+## Real-Time Status
 
-นอกจากการ polling API แล้ว ระบบรองรับการรับสถานะแบบ real-time ผ่าน SignalR
-
-### เชื่อมต่อ Hub
+นอกจากการตรวจสถานะแบบ polling แล้ว ระบบรองรับการรับสถานะแบบ real-time ผ่าน WebSocket โดยใช้ `SessionId` และ `WebsocketPath` ที่ได้รับจาก Pay-In response
 
 ```javascript
 const connection = new signalR.HubConnectionBuilder()
-  .withUrl('https://api.please-payment.com/realtime/payment-tx', {
+  .withUrl(`{{API_URL}}/realtime/payment-tx`, {
     skipNegotiation: true,
     transport: signalR.HttpTransportType.WebSockets,
-    accessTokenFactory: () => apiKey,
+    accessTokenFactory: () => API_KEY,
   })
   .build()
 
 await connection.start()
 await connection.invoke('JoinPayment', sessionId)
+
+connection.on('payment.completed', (data) => {
+  console.log('Payment completed:', data)
+})
 ```
-
-### Events
-
-| Event | คำอธิบาย |
-|---|---|
-| `payment.completed` | ชำระเงินสำเร็จ |

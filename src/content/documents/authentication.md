@@ -4,56 +4,67 @@ title: การยืนยันตัวตน
 
 # การยืนยันตัวตน
 
-API ทุก endpoint ต้องส่ง Header ต่อไปนี้:
+Please Payment ใช้ **HTTP Basic Authentication** ในการยืนยันตัวตน
 
-| Header | ค่า | คำอธิบาย |
-|---|---|---|
-| `X-API-Key` | `your-api-key` | API Key ที่ได้รับจากระบบ |
-| `X-Signature` | HMAC-SHA256 | Signature ที่สร้างจาก request body |
-| `X-Timestamp` | Unix timestamp | เวลาปัจจุบัน (วินาที) |
+## วิธีส่ง API Key
 
-## การสร้างลายเซ็น
+ทุก request ต้องส่ง `Authorization` header ในรูปแบบ Basic Auth โดย:
 
-Signature คำนวณจาก HMAC-SHA256 ของ `timestamp + "." + body` โดยใช้ API Secret เป็น key
+- **Username:** `api` (ตายตัว)
+- **Password:** API Key ที่ได้รับจากผู้ให้บริการ
 
-### ตัวอย่างโค้ด
-
-```javascript
-const crypto = require('crypto')
-
-function createSignature(apiSecret, timestamp, body) {
-  const message = `${timestamp}.${body}`
-  return crypto
-    .createHmac('sha256', apiSecret)
-    .update(message)
-    .digest('hex')
-}
-
-// ตัวอย่างการใช้งาน
-const timestamp = Math.floor(Date.now() / 1000).toString()
-const body = JSON.stringify({ amount: 100, currency: 'THB' })
-const signature = createSignature(process.env.API_SECRET, timestamp, body)
+```
+Authorization: Basic base64("api:YOUR_API_KEY")
 ```
 
-```python
-import hmac
-import hashlib
-import time
-import json
+> API Key สร้างและจัดการได้ใน Admin Panel → Business Setup → Pay-In Request Endpoint
 
-def create_signature(api_secret, body):
-    timestamp = str(int(time.time()))
-    message = f"{timestamp}.{body}"
-    signature = hmac.new(
-        api_secret.encode(),
-        message.encode(),
-        hashlib.sha256
-    ).hexdigest()
-    return timestamp, signature
+## ตัวอย่างโค้ด
+
+### cURL
+
+```bash
+curl -X POST "{{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}" \
+  -u "api:YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"RefId": "ORDER-001", "RequestedAmount": 325}'
+```
+
+หรือใช้ header โดยตรง:
+
+```bash
+curl -X POST "{{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}" \
+  -H "Authorization: Basic $(echo -n 'api:YOUR_API_KEY' | base64)" \
+  -H "Content-Type: application/json" \
+  -d '{"RefId": "ORDER-001", "RequestedAmount": 325}'
+```
+
+### Python
+
+```python
+import requests
+
+API_KEY = "YOUR_API_KEY"
+ORG_ID = "your-org-id"
+MERCHANT_ID = "your-merchant-id"
+BASE_URL = "{{API_URL}}"
+
+payload = {
+    "RefId": "ORDER-001",
+    "RequestedAmount": 325
+}
+
+response = requests.post(
+    f"{BASE_URL}/PaymentRequest/org/{ORG_ID}/action/SubmitPayInRequest/{MERCHANT_ID}",
+    auth=("api", API_KEY),
+    json=payload
+)
+
+print(response.json())
 ```
 
 ## ข้อควรระวัง
 
-- Timestamp ต้องอยู่ภายใน **5 นาที** จากเวลาปัจจุบันของ server
-- ห้ามเปิดเผย API Secret ใน frontend code
-- หมุนเวียน API Key เป็นประจำเพื่อความปลอดภัย
+- ไม่เปิดเผย API Key ใน frontend code หรือ public repository
+- หากสงสัยว่า API Key รั่วไหล ให้ลบและสร้างใหม่ใน Admin Panel ทันที
+- API Key ผูกกับ Merchant — ใช้ Key ของ Merchant ที่ถูกต้องสำหรับแต่ละ request

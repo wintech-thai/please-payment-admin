@@ -9,6 +9,7 @@ RUN npm install
 
 FROM node:20-alpine AS builder
 ARG version="dev-local"
+ARG build_date=""
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -18,6 +19,7 @@ ARG NEXT_PUBLIC_API_URL=/api/proxy
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 ENV NEXT_PUBLIC_APP_VERSION=$version
+ENV NEXT_PUBLIC_BUILD_DATE=$build_date
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 

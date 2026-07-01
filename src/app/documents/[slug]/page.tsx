@@ -1,13 +1,17 @@
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { getDoc, getAllSlugs } from '@/lib/docs/markdown'
+import { getDoc } from '@/lib/docs/markdown'
 import DocContent from './DocContent'
 
-export async function generateStaticParams() {
-  return getAllSlugs().map(slug => ({ slug }))
-}
+export const dynamic = 'force-dynamic'
 
 export default function DocPage({ params }: { params: { slug: string } }) {
-  const doc = getDoc(params.slug)
+  const host = headers().get('host') || ''
+  const isLocalhost = host.startsWith('localhost') || host.startsWith('127.')
+  // admin-dev.example.com → api-dev.example.com, admin.example.com → api.example.com
+  const apiUrl = isLocalhost ? undefined : `https://${host.replace(/^admin/, 'api')}`
+
+  const doc = getDoc(params.slug, apiUrl)
   if (!doc) notFound()
   return <DocContent doc={doc} />
 }

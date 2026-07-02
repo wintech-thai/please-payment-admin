@@ -488,12 +488,15 @@ export default function PayInSlipDetailPage() {
                     {verifyResult.item?.status && (
                       <p className="text-xs text-gray-600">Status: <span className="font-medium">{verifyResult.item.status}</span></p>
                     )}
-                    {(verifyResult.item?.requestedAmount ?? verifyResult.item?.generatedAmount) != null && (
-                      <p className="text-xs text-gray-600">
-                        Amount: <span className="font-medium tabular-nums">
-                          {(verifyResult.item.requestedAmount ?? verifyResult.item.generatedAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </p>
+                    {verifyResult.item?.requestedAmount != null && (
+                      <p className="text-xs text-gray-600">Requested: <span className="font-medium tabular-nums">
+                        {Number(verifyResult.item.requestedAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span></p>
+                    )}
+                    {verifyResult.item?.generatedAmount != null && (
+                      <p className="text-xs text-gray-600">QR Amount: <span className="font-medium tabular-nums text-emerald-700">
+                        {Number(verifyResult.item.generatedAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span> <span className="text-gray-400">(เทียบกับ slip)</span></p>
                     )}
                   </div>
                 ) : (

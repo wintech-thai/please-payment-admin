@@ -13,8 +13,10 @@ export default function DocPage({ params }: { params: { slug: string } }) {
   // map internal cluster TLD (.local) → external public TLD (.com)
   const host = rawHost.replace(/\.local$/, '.com')
 
-  // admin[-env].domain → api[-env].domain, but admin-prod → api (no -prod suffix)
-  const apiUrl = isLocalhost ? undefined : `https://${host.replace(/^admin(-prod)?(?=\.)/, 'api')}`
+  // admin-prod.x → api.x (strip -prod), admin-dev.x → api-dev.x, admin.x → api.x
+  const apiUrl = isLocalhost ? undefined : `https://${host
+    .replace(/^admin-prod\./, 'api.')
+    .replace(/^admin/, 'api')}`
 
   const doc = getDoc(params.slug, apiUrl)
   if (!doc) notFound()

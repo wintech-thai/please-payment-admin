@@ -37,4 +37,4 @@ Please Payment แจ้ง Merchant ผ่าน Webhook (Payment.Success)
 1. ติดต่อผู้ให้บริการเพื่อรับ **API Key**, **Org ID**, และ **Merchant ID**
 2. ใช้ Basic Authentication ในทุก request (ดู [การยืนยันตัวตน](/documents/authentication))
 3. เรียก endpoint สร้าง Payment Request เพื่อรับ QR Code (ดู [Endpoints](/documents/endpoints))
-4. ตั้งค่า Webhook URL ใน Admin Panel เพื่อรับการแจ้งเตือนเมื่อชำระเงินสำเร็จ (ดู [Webhooks](/documents/webhooks))
+4. แจ้งผู้ให้บริการเพื่อตั้งค่า Webhook URL สำหรับรับการแจ้งเตือนเมื่อชำระเงินสำเร็จ (ดู [Webhooks](/documents/webhooks))

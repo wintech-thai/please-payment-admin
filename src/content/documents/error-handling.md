@@ -1,89 +1,116 @@
 ---
 title: การจัดการ Error
-version: "1.0.0"
-updatedAt: "2026-06-15"
 ---
 
 # การจัดการ Error
 
-## รูปแบบ Error Response
+## รูปแบบ Response
 
-เมื่อเกิดข้อผิดพลาด API จะตอบกลับในรูปแบบนี้เสมอ
+API ตอบกลับในรูปแบบเดียวกันเสมอ ทั้งกรณีสำเร็จและล้มเหลว:
 
 ```json
 {
-  "status": "ERROR",
-  "description": "คำอธิบายข้อผิดพลาด",
-  "code": "ERROR_CODE"
+  "status": "OK",
+  "description": "Success",
+  "data": { ... }
 }
 ```
 
+```json
+{
+  "status": "INVALID_PAYMENT_AMOUNT",
+  "description": "Request amount [0] must be greater than 0.00"
+}
+```
+
+> **สำคัญ:** HTTP status code `200` ไม่ได้แปลว่าสำเร็จเสมอไป — ต้องตรวจ `status` ใน JSON body ด้วยเสมอ
+
 ## HTTP Status Codes
 
-| Status Code | ความหมาย |
+| Code | ความหมาย |
 |---|---|
-| `200` | สำเร็จ |
-| `400` | ข้อมูลที่ส่งมาไม่ถูกต้อง (Bad Request) |
-| `401` | ไม่ได้รับอนุญาต — API Key หรือ Signature ผิด |
+| `200` | Server รับ request แล้ว — ดู `status` ใน body อีกครั้ง |
+| `400` | ข้อมูลที่ส่งมาไม่ถูกต้อง |
+| `401` | API Key ไม่ถูกต้องหรือไม่ได้ส่งมา |
 | `403` | ไม่มีสิทธิ์เข้าถึง resource นี้ |
 | `404` | ไม่พบ resource ที่ร้องขอ |
-| `429` | ส่ง request เกิน Rate Limit |
 | `500` | ข้อผิดพลาดภายใน server |
 
-## Error Codes
+## Status Codes ใน Response Body
 
-| Code | คำอธิบาย |
+| Status | คำอธิบาย |
 |---|---|
-| `INVALID_SIGNATURE` | Signature ไม่ถูกต้อง |
-| `EXPIRED_TIMESTAMP` | Timestamp เกิน 5 นาที |
+| `OK` | สำเร็จ |
+| `REF_ID_MISSING` | ไม่ได้ส่ง `RefId` มา |
+| `INVALID_PAYMENT_AMOUNT` | `RequestedAmount` ต้องมากกว่า 0 |
+| `ERROR_NO_PAYIN_ACCOUNT` | ไม่มีบัญชีรับเงินที่ตั้งค่าไว้สำหรับ Merchant นี้ |
 | `INVALID_API_KEY` | API Key ไม่ถูกต้องหรือถูกปิดใช้งาน |
-| `MERCHANT_NOT_FOUND` | ไม่พบ Merchant |
-| `INSUFFICIENT_BALANCE` | ยอดเงินไม่เพียงพอ (Pay-Out) |
-| `INVALID_BANK_ACCOUNT` | ข้อมูลบัญชีธนาคารไม่ถูกต้อง |
-| `PAYMENT_EXPIRED` | Payment Request หมดอายุแล้ว |
-| `RATE_LIMIT_EXCEEDED` | เกิน Rate Limit |
+| `MERCHANT_NOT_FOUND` | ไม่พบ Merchant ID ที่ระบุ |
+| `UUID_INVALID` | รูปแบบ UUID ไม่ถูกต้อง |
+| `NOTFOUND` | ไม่พบ Payment Request ที่ระบุ |
 
 ## ตัวอย่างการจัดการ Error
 
+### Python
+
+```python
+import requests
+
+def create_payment(org_id, merchant_id, api_key, ref_id, amount):
+    url = f"{{API_URL}}/api/PaymentRequest/org/{org_id}/action/SubmitPayInRequest/{merchant_id}"
+
+    try:
+        response = requests.post(
+            url,
+            auth=("api", api_key),
+            json={"RefId": ref_id, "RequestedAmount": amount},
+            timeout=10
+        )
+        response.raise_for_status()
+        result = response.json()
+
+        if result.get("status") != "OK":
+            print(f"API Error [{result['status']}]: {result.get('description')}")
+            return None
+
+        return result["data"]
+
+    except requests.exceptions.Timeout:
+        print("Request timed out — กรุณาลองใหม่")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"Network error: {e}")
+        return None
+```
+
+### JavaScript (fetch)
+
 ```javascript
-async function submitPayment(payload) {
+async function createPayment(orgId, merchantId, apiKey, refId, amount) {
+  const credentials = btoa(`api:${apiKey}`)
+  const url = `{{API_URL}}/api/PaymentRequest/org/${orgId}/action/SubmitPayInRequest/${merchantId}`
+
   try {
-    const res = await fetch('/api/payment', {
+    const res = await fetch(url, {
       method: 'POST',
-      headers: buildHeaders(),
-      body: JSON.stringify(payload),
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ RefId: refId, RequestedAmount: amount }),
     })
+
     const data = await res.json()
 
     if (data.status !== 'OK') {
-      switch (data.code) {
-        case 'INSUFFICIENT_BALANCE':
-          alert('ยอดเงินไม่เพียงพอ กรุณาเติมเงินก่อน')
-          break
-        case 'INVALID_BANK_ACCOUNT':
-          alert('ข้อมูลบัญชีปลายทางไม่ถูกต้อง')
-          break
-        default:
-          alert(`เกิดข้อผิดพลาด: ${data.description}`)
-      }
+      console.error(`API Error [${data.status}]: ${data.description}`)
       return null
     }
+
     return data.data
   } catch (err) {
     console.error('Network error:', err)
-    alert('ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่อีกครั้ง')
     return null
   }
 }
 ```
-
-## Idempotency
-
-สำหรับ Pay-Out request แนะนำให้ส่ง `X-Idempotency-Key` header เพื่อป้องกันการโอนซ้ำกรณี network timeout
-
-```http
-POST /PayOutRequest/...
-X-Idempotency-Key: unique-request-id-here
-```
-
-หากส่ง request ซ้ำด้วย key เดิม ระบบจะคืนผลลัพธ์ของ request เดิมโดยไม่ทำรายการซ้ำ

@@ -1,83 +1,113 @@
 ---
 title: Webhooks
-version: "1.0.0"
-updatedAt: "2026-06-15"
 ---
 
 # Webhooks
 
-Please Payment จะส่ง HTTP POST ไปยัง URL ที่กำหนดไว้เมื่อมีเหตุการณ์สำคัญเกิดขึ้น
+เมื่อการชำระเงินสำเร็จ Please Payment จะส่ง HTTP POST ไปยัง Webhook URL ที่ Merchant กำหนดไว้ เพื่อให้ Merchant อัปเดตข้อมูลในระบบของตนเอง
 
 ## การตั้งค่า Webhook URL
 
-ตั้งค่า Webhook URL ได้ที่ Admin Panel → Business Setup → Merchant → Keys & Users
+ตั้งค่าได้ใน **Admin Panel → Business Setup → Webhook Config** → กด "Add Webhook"
+
+ตัวอย่าง Webhook URL ของ Merchant: `https://your-domain.com/webhooks/payment`
 
 ## Events
 
+ขณะนี้มี event เดียวคือ:
+
 | Event | คำอธิบาย |
 |---|---|
-| `payment.completed` | ลูกค้าชำระเงิน Pay-In สำเร็จ |
-| `payment.expired` | QR Code หมดอายุโดยไม่มีการชำระ |
-| `payout.completed` | โอนเงิน Pay-Out สำเร็จ |
-| `payout.failed` | โอนเงิน Pay-Out ล้มเหลว |
+| `Payment.Success` | ลูกค้าชำระเงิน Pay-In สำเร็จ เงินเข้าบัญชี Merchant แล้ว |
 
 ## รูปแบบ Payload
 
+Please Payment จะ POST JSON body ต่อไปนี้มาให้:
+
 ```json
 {
-  "event": "payment.completed",
-  "timestamp": "2026-06-15T10:30:00Z",
-  "data": {
-    "paymentRequestId": "pr_abc123",
-    "merchantId": "m_xyz",
-    "amount": 1000.00,
-    "currency": "THB",
-    "ref1": "ORDER-001",
-    "ref2": "CUSTOMER-123",
-    "paidAt": "2026-06-15T10:30:00Z"
-  }
+  "Id": "job-uuid",
+  "Type": "Payment.Success",
+  "Parameters": [
+    { "Name": "ORG_ID",                  "Value": "org-id" },
+    { "Name": "PMR_ID",                  "Value": "payment-request-uuid" },
+    { "Name": "PMR_REF_ID",              "Value": "ORDER-20260701-001" },
+    { "Name": "PMR_REF_ID1",             "Value": "CUST-12345" },
+    { "Name": "PMR_REF_ID2",             "Value": null },
+    { "Name": "MERCHANT_ID",             "Value": "merchant-uuid" },
+    { "Name": "MERCHANT_CODE",           "Value": "merchant-code" },
+    { "Name": "MERCHANT_NAME",           "Value": "ชื่อร้านค้า" },
+    { "Name": "PAYIN_REQUEST_AMOUNT",    "Value": "325" },
+    { "Name": "PAYIN_GENERATED_AMOUNT",  "Value": "325.52" },
+    { "Name": "PAYIN_FEE_PCT",           "Value": "0" },
+    { "Name": "PAYIN_BANK_CODE",         "Value": "SCB" },
+    { "Name": "PAYIN_BANK_ACCOUNT_NO",   "Value": "xxx-xxxxx-x" },
+    { "Name": "PAYIN_BANK_ACCOUNT_NAME", "Value": "ชื่อบัญชี" }
+  ]
 }
 ```
 
-## การตรวจสอบ Signature
+### Field ที่สำคัญ
 
-ทุก request จาก Please Payment จะมี header `X-Webhook-Signature` สำหรับยืนยันว่ามาจากระบบจริง
+| Parameter | คำอธิบาย |
+|---|---|
+| `PMR_REF_ID` | Reference ID ที่ Merchant ส่งมาตั้งแต่ตอนสร้าง Payment Request — ใช้สำหรับ mapping กับ order ในระบบของ Merchant |
+| `PMR_ID` | UUID ของ Payment Request ในระบบ Please Payment |
+| `PAYIN_REQUEST_AMOUNT` | จำนวนเงินที่ขอตั้งต้น |
+| `PAYIN_GENERATED_AMOUNT` | จำนวนเงินที่รับจริง (อาจมีเศษสตางค์ต่างกัน) |
+
+## ตัวอย่างการรับ Webhook
+
+### Python (Flask)
+
+```python
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/webhooks/payment', methods=['POST'])
+def handle_webhook():
+    data = request.get_json()
+
+    if data.get('Type') != 'Payment.Success':
+        return jsonify({'ok': True})
+
+    # แปลง Parameters array เป็น dict
+    params = {p['Name']: p['Value'] for p in data.get('Parameters', [])}
+
+    ref_id = params.get('PMR_REF_ID')
+    amount = params.get('PAYIN_REQUEST_AMOUNT')
+
+    # อัปเดต order ในระบบของเรา
+    update_order_status(ref_id, 'paid', amount)
+
+    return jsonify({'ok': True}), 200
+```
+
+### Node.js (Express)
 
 ```javascript
-const crypto = require('crypto')
+app.post('/webhooks/payment', express.json(), (req, res) => {
+  const { Type, Parameters } = req.body
 
-function verifyWebhook(secret, rawBody, signature) {
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(rawBody)
-    .digest('hex')
-  return crypto.timingSafeEqual(
-    Buffer.from(expected),
-    Buffer.from(signature)
+  if (Type !== 'Payment.Success') return res.json({ ok: true })
+
+  const params = Object.fromEntries(
+    Parameters.map(p => [p.Name, p.Value])
   )
-}
 
-// ใน Express handler
-app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  const sig = req.headers['x-webhook-signature']
-  if (!verifyWebhook(process.env.WEBHOOK_SECRET, req.body, sig)) {
-    return res.status(401).send('Invalid signature')
-  }
-  const event = JSON.parse(req.body)
-  // จัดการ event ต่อ
-  res.sendStatus(200)
+  const refId = params.PMR_REF_ID
+  const amount = params.PAYIN_REQUEST_AMOUNT
+
+  // อัปเดต order ในระบบของเรา
+  updateOrderStatus(refId, 'paid', amount)
+
+  res.json({ ok: true })
 })
 ```
 
-## ข้อกำหนด Response
+## ข้อควรทราบ
 
-- ต้องตอบกลับด้วย HTTP **200** ภายใน **10 วินาที**
-- หากไม่ได้รับ 200 ระบบจะ retry สูงสุด **3 ครั้ง** ห่างกัน 1, 5, 30 นาที
-
-## Retry Policy
-
-| ครั้งที่ | หน่วงเวลา |
-|---|---|
-| 1 | 1 นาที |
-| 2 | 5 นาที |
-| 3 | 30 นาที |
+- ตอบกลับด้วย HTTP `200` เพื่อยืนยันว่าได้รับ webhook แล้ว
+- ระบบยังไม่มี retry policy — หาก webhook ล้มเหลว ข้อมูลจะไม่ถูกส่งซ้ำ
+- ระบบยังไม่มี signature verification — แนะนำให้ตรวจสอบ `PMR_REF_ID` ว่าตรงกับ order ในระบบก่อนทำรายการ

@@ -66,5 +66,5 @@ print(response.json())
 ## ข้อควรระวัง
 
 - ไม่เปิดเผย API Key ใน frontend code หรือ public repository
-- หากสงสัยว่า API Key รั่วไหล ให้ลบและสร้างใหม่ใน Admin Panel ทันที
+- หากสงสัยว่า API Key รั่วไหล ให้แจ้งผู้ให้บริการ เพื่อขอ API Key ใหม่ทันที
 - API Key ผูกกับ Merchant — ใช้ Key ของ Merchant ที่ถูกต้องสำหรับแต่ละ request

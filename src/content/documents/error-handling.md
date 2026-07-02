@@ -57,7 +57,7 @@ API ตอบกลับในรูปแบบเดียวกันเส�
 import requests
 
 def create_payment(org_id, merchant_id, api_key, ref_id, amount):
-    url = f"{{API_URL}}/PaymentRequest/org/{org_id}/action/SubmitPayInRequest/{merchant_id}"
+    url = f"{{API_URL}}/api/PaymentRequest/org/{org_id}/action/SubmitPayInRequest/{merchant_id}"
 
     try:
         response = requests.post(
@@ -88,7 +88,7 @@ def create_payment(org_id, merchant_id, api_key, ref_id, amount):
 ```javascript
 async function createPayment(orgId, merchantId, apiKey, refId, amount) {
   const credentials = btoa(`api:${apiKey}`)
-  const url = `{{API_URL}}/PaymentRequest/org/${orgId}/action/SubmitPayInRequest/${merchantId}`
+  const url = `{{API_URL}}/api/PaymentRequest/org/${orgId}/action/SubmitPayInRequest/${merchantId}`
 
   try {
     const res = await fetch(url, {

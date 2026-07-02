@@ -13,7 +13,7 @@ Please Payment มี 2 endpoint สำหรับ Merchant
 ## สร้างคำขอรับเงิน (Pay-In)
 
 ```
-POST {{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}
+POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}
 ```
 
 สร้าง Payment Request แล้วได้รับ QR Code สำหรับให้ลูกค้า scan และโอนเงินเข้าบัญชีของ Merchant โดยตรง
@@ -94,7 +94,7 @@ POST {{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantI
 ## สร้างคำขอโอนเงินออก (Pay-Out)
 
 ```
-POST {{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merchantId}
+POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merchantId}
 ```
 
 สร้างคำขอโอนเงินออกไปยังบัญชีปลายทาง

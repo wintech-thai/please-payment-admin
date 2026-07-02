@@ -14,7 +14,7 @@ Please Payment Public API ช่วยให้ร้านค้า (Merchant) 
 {{API_URL}}
 ```
 
-URL นี้จะถูกนำหน้า endpoint ทุกตัว เช่น `{{API_URL}}/PaymentRequest/org/...`
+URL นี้จะถูกนำหน้า endpoint ทุกตัว เช่น `{{API_URL}}/api/PaymentRequest/org/...`
 
 ## ภาพรวม Payment Flow
 

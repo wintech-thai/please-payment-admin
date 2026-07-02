@@ -22,7 +22,7 @@ HTTP library ทุกตัว (curl, Python requests, Ruby Net::HTTP) จั�
 ### cURL
 
 ```bash
-curl -X POST "{{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}" \
+curl -X POST "{{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}" \
   -u "api:YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"RefId1": "ORDER-001", "RequestedAmount": 325, "Currency": "THB", "QrProvider": "PP"}'
@@ -31,7 +31,7 @@ curl -X POST "{{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{
 หรือใช้ header โดยตรง:
 
 ```bash
-curl -X POST "{{API_URL}}/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}" \
+curl -X POST "{{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merchantId}" \
   -H "Authorization: Basic $(echo -n 'api:YOUR_API_KEY' | base64)" \
   -H "Content-Type: application/json" \
   -d '{"RefId1": "ORDER-001", "RequestedAmount": 325, "Currency": "THB", "QrProvider": "PP"}'

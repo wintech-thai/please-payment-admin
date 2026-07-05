@@ -49,7 +49,7 @@ export const translations = {
       withdrawTransactions: 'รายการ Pay-Out',
       webhook: 'Webhook',
       reportAndAnalytic: 'รายงาน & วิเคราะห์',
-      setting: 'การตั้งค่า',
+      setting: 'Support & การตั้งค่า',
       document: 'เอกสาร',
       comingSoon: 'เร็วๆ นี้',
       profile: 'โปรไฟล์',
@@ -1424,6 +1424,7 @@ export const translations = {
       sidebarNotifications: 'การแจ้งเตือน',
       sidebarNotiChannels: 'ช่องทางการแจ้งเตือน',
       sidebarNotiEvents: 'เหตุการแจ้งเตือน',
+      sidebarSupportCase: 'Support Case',
     },
     agent: {
       title: 'การจัดการ Agent',
@@ -1854,7 +1855,7 @@ export const translations = {
       withdrawTransactions: 'Pay-Out Transactions',
       webhook: 'Webhook',
       reportAndAnalytic: 'Report & Analytic',
-      setting: 'Setting',
+      setting: 'Support & Setting',
       document: 'Document',
       comingSoon: 'Coming Soon',
       profile: 'Profile',
@@ -3229,6 +3230,7 @@ export const translations = {
       sidebarNotifications: 'Notifications',
       sidebarNotiChannels: 'Notification Channels',
       sidebarNotiEvents: 'Notification Events',
+      sidebarSupportCase: 'Support Case',
     },
     agent: {
       title: 'Agent Management',

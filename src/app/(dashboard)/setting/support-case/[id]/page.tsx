@@ -99,6 +99,7 @@ export default function SupportCaseDetailPage() {
   const [newStatus, setNewStatus] = useState('')
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [submittingComment, setSubmittingComment] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null)
   const commentsEndRef = useRef<HTMLDivElement>(null)
@@ -170,6 +171,23 @@ export default function SupportCaseDetailPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to add comment')
     } finally {
       setSubmittingComment(false)
+    }
+  }
+
+  const refreshComments = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    try {
+      const res = await supportCaseApi.getComments(id)
+      const data = res.data as any
+      const list: any[] = Array.isArray(data?.comments) ? data.comments
+        : Array.isArray(data?.Comments) ? data.Comments
+        : Array.isArray(data) ? data : []
+      setComments(list.map(normalizeComment))
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to refresh comments')
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -306,20 +324,44 @@ export default function SupportCaseDetailPage() {
                 <span className="text-gray-400 font-normal text-xs ml-1">({comments.length})</span>
               )}
             </SectionHeader>
-            {leftCollapsed && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setLeftCollapsed(false)}
-                className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:bg-gray-50 transition-colors"
-                title={lang === 'th' ? 'แสดง Case Info' : 'Show case info'}
+                onClick={refreshComments}
+                disabled={refreshing}
+                title={lang === 'th' ? 'รีเฟรช' : 'Refresh'}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40"
               >
-                <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
-                <span>Case Info</span>
+                <svg className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
               </button>
-            )}
+              {leftCollapsed && (
+                <button
+                  onClick={() => setLeftCollapsed(false)}
+                  className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:bg-gray-50 transition-colors"
+                  title={lang === 'th' ? 'แสดง Case Info' : 'Show case info'}
+                >
+                  <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
+                  <span>Case Info</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+          <div className="flex-1 relative overflow-hidden">
+            {refreshing && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <svg className="w-4 h-4 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  {lang === 'th' ? 'กำลังโหลด...' : 'Loading...'}
+                </div>
+              </div>
+            )}
+          <div className="h-full overflow-y-auto px-5 py-4 flex flex-col gap-4">
             {comments.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-8">{lang === 'th' ? 'ยังไม่มีข้อความ' : 'No messages yet'}</p>
             ) : (
@@ -359,6 +401,7 @@ export default function SupportCaseDetailPage() {
               })
             )}
             <div ref={commentsEndRef} />
+          </div>
           </div>
 
           {/* Input */}

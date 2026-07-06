@@ -8,7 +8,7 @@ import type { SupportCaseItem, SupportCaseCommentItem } from '@/lib/api/support-
 import { toast } from 'sonner'
 import { ChevronLeft } from 'lucide-react'
 import clsx from 'clsx'
-import RichTextEditor from '@/components/RichTextEditor'
+import RichTextEditor, { type ReplyTarget } from '@/components/RichTextEditor'
 import RichContent from '@/components/RichContent'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -99,6 +99,8 @@ export default function SupportCaseDetailPage() {
   const [newStatus, setNewStatus] = useState('')
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [submittingComment, setSubmittingComment] = useState(false)
+  const [leftCollapsed, setLeftCollapsed] = useState(false)
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null)
   const commentsEndRef = useRef<HTMLDivElement>(null)
 
   const isClosed = caseData?.status === 'Closed' || caseData?.status === 'Resolved'
@@ -236,14 +238,23 @@ export default function SupportCaseDetailPage() {
       </div>
 
       {/* Body — 2-column grid */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden">
+      <div className={clsx('flex-1 min-h-0 grid grid-cols-1 gap-4 overflow-hidden', leftCollapsed ? 'lg:grid-cols-1' : 'lg:grid-cols-2')}>
 
         {/* Left — Case Info + Description */}
-        <div className="min-h-0 overflow-y-auto flex flex-col gap-4 pb-1">
+        <div className={clsx('min-h-0 overflow-y-auto flex flex-col gap-4 pb-1', leftCollapsed && 'lg:hidden')}>
 
           {/* Details card */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
-            <SectionHeader>{lang === 'th' ? 'ข้อมูล Case' : 'Case Info'}</SectionHeader>
+            <div className="flex items-center justify-between">
+              <SectionHeader>{lang === 'th' ? 'ข้อมูล Case' : 'Case Info'}</SectionHeader>
+              <button
+                onClick={() => setLeftCollapsed(true)}
+                className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                title={lang === 'th' ? 'ซ่อนแผงซ้าย' : 'Collapse panel'}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
               <InfoRow label="Ref">{caseData.ref ?? '—'}</InfoRow>
               <InfoRow label="Org">
@@ -265,7 +276,7 @@ export default function SupportCaseDetailPage() {
               <InfoRow label={lang === 'th' ? 'อัปเดตล่าสุด' : 'Last Updated'}>
                 {formatDateTime(caseData.updatedDate)}
               </InfoRow>
-              {caseData.closedDate && (
+              {isClosed && caseData.closedDate && (
                 <>
                   <InfoRow label={lang === 'th' ? 'ปิดโดย' : 'Closed By'}>{caseData.closedBy ?? '—'}</InfoRow>
                   <InfoRow label={lang === 'th' ? 'วันที่ปิด' : 'Closed Date'}>{formatDateTime(caseData.closedDate)}</InfoRow>
@@ -278,7 +289,7 @@ export default function SupportCaseDetailPage() {
           {caseData.description && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3">
               <SectionHeader>{lang === 'th' ? 'รายละเอียดปัญหา' : 'Description'}</SectionHeader>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{caseData.description}</p>
+              <RichContent content={caseData.description} />
             </div>
           )}
 
@@ -288,13 +299,23 @@ export default function SupportCaseDetailPage() {
         <div className="min-h-[300px] lg:min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
 
           {/* Thread header */}
-          <div className="flex-none px-5 pt-5 pb-4 border-b border-gray-100">
+          <div className="flex-none flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
             <SectionHeader>
               {lang === 'th' ? 'การสนทนา' : 'Thread'}
               {comments.length > 0 && (
                 <span className="text-gray-400 font-normal text-xs ml-1">({comments.length})</span>
               )}
             </SectionHeader>
+            {leftCollapsed && (
+              <button
+                onClick={() => setLeftCollapsed(false)}
+                className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:bg-gray-50 transition-colors"
+                title={lang === 'th' ? 'แสดง Case Info' : 'Show case info'}
+              >
+                <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
+                <span>Case Info</span>
+              </button>
+            )}
           </div>
 
           {/* Messages */}
@@ -304,18 +325,30 @@ export default function SupportCaseDetailPage() {
             ) : (
               comments.map(c => {
                 const isAdmin = c.authorType === 'Admin'
+                const authorLabel = c.createdBy ?? (isAdmin ? 'Admin' : 'Merchant')
                 return (
-                  <div key={c.id} className={clsx('flex gap-3', isAdmin ? 'flex-row-reverse' : 'flex-row')}>
+                  <div key={c.id} className={clsx('group flex gap-3', isAdmin ? 'flex-row-reverse' : 'flex-row')}>
                     <div className={clsx('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1', isAdmin ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600')}>
                       {isAdmin ? 'A' : 'M'}
                     </div>
                     <div className={clsx('max-w-[75%] flex flex-col gap-1', isAdmin ? 'items-end' : 'items-start')}>
                       <div className={clsx('flex items-center gap-2 text-xs text-gray-400', isAdmin && 'flex-row-reverse')}>
-                        <span className="font-semibold text-gray-600">{c.createdBy ?? (isAdmin ? 'Admin' : 'Merchant')}</span>
+                        <span className="font-semibold text-gray-600">{authorLabel}</span>
                         <span className={clsx('px-1.5 py-0.5 rounded text-[10px] font-bold uppercase', isAdmin ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-500')}>
                           {c.authorType}
                         </span>
                         <span>{formatDateTime(c.createdDate)}</span>
+                        {!isClosed && (
+                          <button
+                            onClick={() => setReplyTo({ id: c.id, author: authorLabel, content: c.content })}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-300 hover:text-primary-500 transition-all"
+                            title={lang === 'th' ? 'ตอบกลับ' : 'Reply'}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                       <div className={clsx('px-4 py-2.5 rounded-2xl', isAdmin ? 'bg-primary-50 text-gray-800 rounded-tr-sm' : 'bg-gray-100 text-gray-800 rounded-tl-sm')}>
                         <RichContent content={c.content} />
@@ -335,7 +368,12 @@ export default function SupportCaseDetailPage() {
             </div>
           ) : (
             <div className="flex-none px-5 py-4 border-t border-gray-100">
-              <RichTextEditor onSubmit={handleAddComment} sending={submittingComment} />
+              <RichTextEditor
+                onSubmit={handleAddComment}
+                sending={submittingComment}
+                replyTo={replyTo}
+                onClearReply={() => setReplyTo(null)}
+              />
             </div>
           )}
 

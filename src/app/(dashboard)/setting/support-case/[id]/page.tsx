@@ -275,9 +275,7 @@ export default function SupportCaseDetailPage() {
             </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
               <InfoRow label="Ref">{caseData.ref ?? '—'}</InfoRow>
-              <InfoRow label="Org">
-                <span className="text-xs text-gray-600 break-all">{caseData.orgId ?? '—'}</span>
-              </InfoRow>
+              <InfoRow label="Org">{caseData.orgId ?? '—'}</InfoRow>
               <InfoRow label={lang === 'th' ? 'ความสำคัญ' : 'Priority'}>
                 {caseData.priority ? (
                   <span className={clsx('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', PRIORITY_COLORS[caseData.priority] ?? 'bg-gray-100 text-gray-600')}>

@@ -317,8 +317,8 @@ function SupportCaseListContent() {
                           {c.ref || '—'}
                         </button>
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-xs text-gray-500 whitespace-nowrap max-w-[120px] truncate">{c.orgId || '—'}</td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 max-w-xs truncate">{c.subject || '—'}</td>
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-700 whitespace-nowrap max-w-[120px] truncate">{c.orgId || '—'}</td>
+                      <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-800 max-w-xs truncate">{c.subject || '—'}</td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         {c.status ? (
                           <span className={clsx('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ring-1', STATUS_COLORS[c.status] ?? 'bg-gray-100 text-gray-500 ring-gray-200')}>

@@ -340,7 +340,7 @@ export default function SupportCaseDetailPage() {
                         <span>{formatDateTime(c.createdDate)}</span>
                         {!isClosed && (
                           <button
-                            onClick={() => setReplyTo({ id: c.id, author: authorLabel, content: c.content })}
+                            onClick={() => setReplyTo({ id: c.id ?? '', author: authorLabel, content: c.content ?? '' })}
                             className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-300 hover:text-primary-500 transition-all"
                             title={lang === 'th' ? 'ตอบกลับ' : 'Reply'}
                           >

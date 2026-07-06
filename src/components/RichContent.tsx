@@ -3,20 +3,22 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 
-function extractPreviewText(content?: string | null): string {
-  if (!content) return ''
+function extractReplyPreview(content?: string | null): { text: string; imageSrc?: string } {
+  if (!content) return { text: '' }
   try {
     const doc = JSON.parse(content)
-    if (typeof doc !== 'object' || doc === null || Array.isArray(doc)) return content
+    if (typeof doc !== 'object' || doc === null || Array.isArray(doc)) return { text: content }
     const texts: string[] = []
+    let imageSrc: string | undefined
     const walk = (node: any) => {
       if (node.type === 'text') texts.push(node.text ?? '')
+      else if (node.type === 'image' && !imageSrc) imageSrc = node.attrs?.src
       else if (node.content) node.content.forEach(walk)
     }
     if (doc.content) doc.content.forEach(walk)
-    return texts.join('').trim() || content
+    return { text: texts.join('').trim(), imageSrc }
   } catch {
-    return content
+    return { text: content }
   }
 }
 
@@ -37,7 +39,7 @@ function renderInline(node: any, i: number): React.ReactNode {
   return null
 }
 
-function renderBlock(node: any, i: number, onImageClick?: (src: string) => void): React.ReactNode {
+function renderBlock(node: any, i: number, onImageClick: (src: string) => void): React.ReactNode {
   if (node.type === 'paragraph') {
     return <p key={i} className="mb-1 last:mb-0 empty:h-4">{node.content?.map(renderInline)}</p>
   }
@@ -57,15 +59,15 @@ function renderBlock(node: any, i: number, onImageClick?: (src: string) => void)
     return <React.Fragment key={i}>{node.content?.map((b: any, j: number) => renderBlock(b, j, onImageClick))}</React.Fragment>
   }
   if (node.type === 'image') {
-    const src = node.attrs?.src
+    const src: string | undefined = node.attrs?.src
     return (
       <img
         key={i}
         src={src}
         alt={node.attrs?.alt ?? ''}
-        className="max-w-full rounded-lg my-1 cursor-zoom-in"
+        className="max-w-full rounded-lg my-1 cursor-zoom-in block"
         style={{ maxHeight: '400px', objectFit: 'contain' }}
-        onClick={() => src && onImageClick?.(src)}
+        onClick={() => { if (src) onImageClick(src) }}
       />
     )
   }
@@ -102,37 +104,52 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
   )
 }
 
+function parseDoc(content: string): any | null {
+  try {
+    const doc = JSON.parse(content)
+    if (typeof doc !== 'object' || doc === null || Array.isArray(doc) || !doc.content) return null
+    return doc
+  } catch {
+    return null
+  }
+}
+
 export default function RichContent({ content }: { content?: string | null }) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
 
   if (!content) return null
 
-  try {
-    const doc = JSON.parse(content)
-    if (typeof doc !== 'object' || doc === null || Array.isArray(doc) || !doc.content) {
-      return <span className="whitespace-pre-wrap break-words">{content}</span>
-    }
+  const doc = parseDoc(content)
+  if (!doc) return <span className="whitespace-pre-wrap break-words text-sm">{content}</span>
 
-    const replyTo = doc.replyTo as { id?: string; author?: string; content?: string } | undefined
+  const replyTo = doc.replyTo as { id?: string; author?: string; content?: string } | undefined
 
-    return (
-      <>
-        <div className="text-sm leading-relaxed">
-          {replyTo && (
+  return (
+    <>
+      <div className="text-sm leading-relaxed">
+        {replyTo && (() => {
+          const { text, imageSrc } = extractReplyPreview(replyTo.content)
+          return (
             <div className="flex gap-1.5 mb-2 rounded-lg overflow-hidden">
               <div className="w-0.5 bg-current opacity-40 rounded-full flex-shrink-0" />
-              <div className="min-w-0 flex-1 opacity-70">
-                <p className="text-[11px] font-semibold mb-0.5">{replyTo.author}</p>
-                <p className="text-xs truncate">{extractPreviewText(replyTo.content)}</p>
+              <div className="min-w-0 flex-1 opacity-70 flex gap-2 items-center">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold mb-0.5">{replyTo.author}</p>
+                  {text
+                    ? <p className="text-xs truncate">{text}</p>
+                    : imageSrc && <p className="text-xs text-current/50 italic">Image</p>
+                  }
+                </div>
+                {imageSrc && (
+                  <img src={imageSrc} alt="" className="h-9 w-9 rounded object-cover flex-shrink-0 opacity-80" />
+                )}
               </div>
             </div>
-          )}
-          {doc.content.map((node: any, i: number) => renderBlock(node, i, setLightboxSrc))}
-        </div>
-        {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
-      </>
-    )
-  } catch {
-    return <span className="whitespace-pre-wrap break-words">{content}</span>
-  }
+          )
+        })()}
+        {(doc.content as any[]).map((node, i) => renderBlock(node, i, setLightboxSrc))}
+      </div>
+      {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+    </>
+  )
 }

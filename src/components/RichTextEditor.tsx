@@ -28,20 +28,22 @@ interface Props {
   expandable?: boolean
 }
 
-function extractPreviewText(content?: string | null): string {
-  if (!content) return ''
+function extractReplyPreview(content?: string | null): { text: string; imageSrc?: string } {
+  if (!content) return { text: '' }
   try {
     const doc = JSON.parse(content)
-    if (typeof doc !== 'object' || doc === null || Array.isArray(doc)) return content
+    if (typeof doc !== 'object' || doc === null || Array.isArray(doc)) return { text: content }
     const texts: string[] = []
+    let imageSrc: string | undefined
     const walk = (node: any) => {
       if (node.type === 'text') texts.push(node.text ?? '')
+      else if (node.type === 'image' && !imageSrc) imageSrc = node.attrs?.src
       else if (node.content) node.content.forEach(walk)
     }
     if (doc.content) doc.content.forEach(walk)
-    return texts.join('').trim() || content
+    return { text: texts.join('').trim(), imageSrc }
   } catch {
-    return content
+    return { text: content }
   }
 }
 
@@ -190,22 +192,33 @@ const RichTextEditor = forwardRef<RichTextEditorRef, Props>(function RichTextEdi
         : 'border-gray-200 focus-within:ring-2 focus-within:ring-primary-300 focus-within:border-transparent bg-white'
     )}>
       {/* Quote reply preview */}
-      {replyTo && (
-        <div className="flex items-start gap-2 px-3 py-2 bg-primary-50/70 border-b border-primary-100">
-          <div className="w-0.5 self-stretch bg-primary-400 rounded-full flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold text-primary-600 mb-0.5">{replyTo.author}</p>
-            <p className="text-xs text-gray-500 truncate">{extractPreviewText(replyTo.content)}</p>
+      {replyTo && (() => {
+        const { text, imageSrc } = extractReplyPreview(replyTo.content)
+        return (
+          <div className="flex items-start gap-2 px-3 py-2 bg-primary-50/70 border-b border-primary-100">
+            <div className="w-0.5 self-stretch bg-primary-400 rounded-full flex-shrink-0" />
+            <div className="flex-1 min-w-0 flex gap-2 items-center">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold text-primary-600 mb-0.5">{replyTo.author}</p>
+                {text
+                  ? <p className="text-xs text-gray-500 truncate">{text}</p>
+                  : imageSrc && <p className="text-xs text-gray-400 italic">Image</p>
+                }
+              </div>
+              {imageSrc && (
+                <img src={imageSrc} alt="" className="h-9 w-9 rounded object-cover flex-shrink-0 opacity-80" />
+              )}
+            </div>
+            <button
+              type="button"
+              onMouseDown={e => { e.preventDefault(); onClearReply?.() }}
+              className="p-0.5 text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <button
-            type="button"
-            onMouseDown={e => { e.preventDefault(); onClearReply?.() }}
-            className="p-0.5 text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+        )
+      })()}
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-1 px-2 py-1 border-b border-gray-100 bg-gray-50">
         <div className="flex items-center gap-0.5">

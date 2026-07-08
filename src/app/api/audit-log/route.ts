@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@elastic/elasticsearch'
 
 // ── ElasticSearch backend (existing) ─────────────────────────────────────────
@@ -12,7 +12,7 @@ const getEsClient = () => {
   })
 }
 
-async function handleElasticsearch(req: Request): Promise<Response> {
+async function handleElasticsearch(req: NextRequest): Promise<Response> {
   const orgId = req.headers.get('x-org-id')
   if (!orgId) return NextResponse.json({ status: 'ERROR', message: 'Missing Org ID' }, { status: 400 })
 
@@ -71,7 +71,7 @@ function extractOrgIds(orgIds: any): string[] | undefined {
   return undefined
 }
 
-async function handlePostgres(req: Request): Promise<Response> {
+async function handlePostgres(req: NextRequest): Promise<Response> {
   const orgId = req.headers.get('x-org-id')
   if (!orgId) return NextResponse.json({ status: 'ERROR', message: 'Missing Org ID' }, { status: 400 })
 
@@ -84,8 +84,14 @@ async function handlePostgres(req: Request): Promise<Response> {
   const size: number = esPayload?.size ?? 25
   const returnDocs = size > 0
 
-  const apiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || ''
-  const token = req.headers.get('authorization') || ''
+  const apiBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || ''
+  const accessToken = req.cookies.get('accessToken')?.value
+  const incomingAuth = req.headers.get('Authorization')
+  const authHeader = incomingAuth
+    ? incomingAuth
+    : accessToken
+      ? `Bearer ${Buffer.from(accessToken).toString('base64')}`
+      : ''
 
   const payload: Record<string, unknown> = {
     fromDate,
@@ -101,7 +107,8 @@ async function handlePostgres(req: Request): Promise<Response> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: token } : {}),
+      'Onix-Application-Type': 'PLEASE-PAYMENT-ADMIN',
+      ...(authHeader ? { Authorization: authHeader } : {}),
     },
     body: JSON.stringify(payload),
   })
@@ -117,9 +124,9 @@ async function handlePostgres(req: Request): Promise<Response> {
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const source = process.env.AUDIT_LOG_SOURCE || 'elasticsearch'
+    const source = process.env.AUDIT_LOG_SOURCE ?? 'postgres'
     if (source === 'postgres') {
       return await handlePostgres(req)
     }

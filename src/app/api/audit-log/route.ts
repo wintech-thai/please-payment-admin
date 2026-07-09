@@ -52,6 +52,10 @@ async function handleElasticsearch(req: NextRequest): Promise<Response> {
 
 // ── PostgreSQL backend (via C# API) ──────────────────────────────────────────
 
+function extractInterval(esPayload: any): string | undefined {
+  return esPayload?.aggs?.timeline?.date_histogram?.fixed_interval
+}
+
 function extractTimeRange(esPayload: any): { fromDate?: string; toDate?: string } {
   const must: any[] = esPayload?.query?.bool?.must || []
   const rangeClause = must.find((m: any) => m.range?.['@timestamp'])
@@ -79,6 +83,7 @@ async function handlePostgres(req: NextRequest): Promise<Response> {
   const { esPayload, orgIds } = body
 
   const { fromDate, toDate } = extractTimeRange(esPayload)
+  const interval = extractInterval(esPayload)
   const search = extractSearch(esPayload)
   const from: number = esPayload?.from ?? 0
   const size: number = esPayload?.size ?? 25
@@ -94,13 +99,14 @@ async function handlePostgres(req: NextRequest): Promise<Response> {
       : ''
 
   const payload: Record<string, unknown> = {
-    fromDate,
-    toDate,
+    FromDate: fromDate,
+    ToDate: toDate,
     FullTextSearch: search ?? '',
     Limit: returnDocs ? size : 0,
     Offset: returnDocs ? Math.floor(from / (size || 1)) + 1 : 1,
     ReturnDocs: returnDocs,
     OrgIds: extractOrgIds(orgIds),
+    Interval: interval,
   }
 
   const apiRes = await fetch(`${apiBase}/admin-api/AdminAuditLog/org/global/action/QueryAuditLogs`, {
@@ -115,7 +121,8 @@ async function handlePostgres(req: NextRequest): Promise<Response> {
 
   if (!apiRes.ok) {
     const text = await apiRes.text()
-    return NextResponse.json({ status: 'ERROR', message: text }, { status: apiRes.status })
+    console.error('[audit-log] C# API error:', apiRes.status, text)
+    return NextResponse.json({ status: 'ERROR', message: text, httpStatus: apiRes.status }, { status: apiRes.status })
   }
 
   const result = await apiRes.json()

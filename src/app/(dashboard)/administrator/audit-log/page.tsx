@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import { toast } from 'sonner'
 import type { AuditLogDocument } from '@/lib/api/audit-log.api'
 import { useLang } from '@/context/LanguageContext'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import AuditLogFlyout from '@/components/AuditLogFlyout'
 import { AuditLogHistogram } from '@/components/AuditLogHistogram'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
@@ -188,7 +189,7 @@ function AuditLogContent() {
         },
       }
 
-      const res = await fetch('/api/audit-log', {
+      const res = await fetchWithAuth('/api/audit-log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
         body: JSON.stringify({ esPayload }),

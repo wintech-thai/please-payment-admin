@@ -56,6 +56,28 @@ function extractInterval(esPayload: any): string | undefined {
   return esPayload?.aggs?.timeline?.date_histogram?.fixed_interval
 }
 
+function extractTermFilters(esPayload: any): { filterApi?: string; filterUser?: string; filterIp?: string; filterStatus?: number } {
+  const must: any[] = esPayload?.query?.bool?.must || []
+  const result: { filterApi?: string; filterUser?: string; filterIp?: string; filterStatus?: number } = {}
+  for (const clause of must) {
+    const term = clause?.term
+    if (!term) continue
+    if (term['data.api.ApiName.keyword']) result.filterApi = term['data.api.ApiName.keyword']
+    if (term['data.userInfo.UserName.keyword']) result.filterUser = term['data.userInfo.UserName.keyword']
+    if (term['data.ClientIp.keyword']) result.filterIp = term['data.ClientIp.keyword']
+    if (term['data.StatusCode'] !== undefined) result.filterStatus = Number(term['data.StatusCode'])
+  }
+  return result
+}
+
+function extractGroupBy(esPayload: any): string {
+  const field: string = esPayload?.aggs?.timeline?.aggs?.group_by_api?.terms?.field ?? ''
+  if (field.includes('UserName')) return 'user'
+  if (field.includes('ClientIp')) return 'ip'
+  if (field.includes('StatusCode')) return 'status'
+  return 'api'
+}
+
 function extractTimeRange(esPayload: any): { fromDate?: string; toDate?: string } {
   const must: any[] = esPayload?.query?.bool?.must || []
   const rangeClause = must.find((m: any) => m.range?.['@timestamp'])
@@ -84,6 +106,8 @@ async function handlePostgres(req: NextRequest): Promise<Response> {
 
   const { fromDate, toDate } = extractTimeRange(esPayload)
   const interval = extractInterval(esPayload)
+  const groupBy = extractGroupBy(esPayload)
+  const { filterApi, filterUser, filterIp, filterStatus } = extractTermFilters(esPayload)
   const search = extractSearch(esPayload)
   const from: number = esPayload?.from ?? 0
   const size: number = esPayload?.size ?? 25
@@ -107,6 +131,11 @@ async function handlePostgres(req: NextRequest): Promise<Response> {
     ReturnDocs: returnDocs,
     OrgIds: extractOrgIds(orgIds),
     Interval: interval,
+    GroupBy: groupBy,
+    FilterApi: filterApi,
+    FilterUser: filterUser,
+    FilterIp: filterIp,
+    FilterStatus: filterStatus,
   }
 
   const apiRes = await fetch(`${apiBase}/admin-api/AdminAuditLog/org/global/action/QueryAuditLogs`, {

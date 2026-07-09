@@ -10,6 +10,7 @@ import { TopNPanel, type TopNBucket } from '@/components/TopNPanel'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import { MultiSelectDropdown, type MultiSelectOption } from '@/components/MultiSelectDropdown'
 import { merchantApi } from '@/lib/api/merchant.api'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 const GROUP_BY_FIELD: Record<string, string> = {
   api: 'data.api.ApiName.keyword',
@@ -120,7 +121,7 @@ export default function SystemMonitoringPage() {
         },
       }
 
-      const res = await fetch('/api/audit-log', {
+      const res = await fetchWithAuth('/api/audit-log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
         body: JSON.stringify({ esPayload, orgIds: selectedOrgs }),

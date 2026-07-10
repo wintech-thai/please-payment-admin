@@ -22,6 +22,15 @@ export default function ReportAnalyticSidebar() {
       ),
     },
     {
+      href: '/report-analytic/expense-summary',
+      label: t.expenseSummary.navLabel,
+      icon: (
+        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l2 2 4-4m-4-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-4m-4-3H9m1 3V4m0 0a2 2 0 10-4 0m4 0a2 2 0 114 0m-4 0H9" />
+        </svg>
+      ),
+    },
+    {
       href: '/report-analytic/system-monitoring',
       label: t.systemMonitoring.navLabel,
       icon: (

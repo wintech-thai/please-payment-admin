@@ -90,7 +90,13 @@ export default function UpdateFinancialDocPage() {
         setPayInFee(revenueItems.find(r => r.code === 'PayInFee')?.amount ?? 0)
         setPayOutFee(revenueItems.find(r => r.code === 'PayOutFee')?.amount ?? 0)
 
-        setExpenseItems(item.expenseItemsArr?.length ? item.expenseItemsArr.map((e: FinancialDocLineItem) => ({ ...e })) : [{ code: '', label: '', amount: 0 }])
+        const docFromDate = item.fromDate ? item.fromDate.split('T')[0] : ''
+        setExpenseItems(item.expenseItemsArr?.length
+          ? item.expenseItemsArr.map((e: FinancialDocLineItem) => ({
+              ...e,
+              expenseDate: e.expenseDate ? e.expenseDate.split('T')[0] : docFromDate,
+            }))
+          : [{ code: '', label: '', amount: 0, expenseDate: docFromDate }])
         setSavedSharingItems(item.sharingItemsArr ?? [])
 
         setLoading(false)
@@ -161,16 +167,17 @@ export default function UpdateFinancialDocPage() {
     }
   }
 
-  const updateExpenseRow = (idx: number, field: 'code' | 'amount', value: string) => {
+  const updateExpenseRow = (idx: number, field: 'code' | 'amount' | 'expenseDate', value: string) => {
     setExpenseItems(prev => prev.map((e, i) => {
       if (i !== idx) return e
       if (field === 'amount') return { ...e, amount: Number(value) || 0 }
+      if (field === 'expenseDate') return { ...e, expenseDate: value }
       const opt = expenseTypeOptions.find(o => o.code === value)
       return { ...e, code: value, label: opt?.description || opt?.code || '' }
     }))
     markDirty()
   }
-  const addExpenseRow = () => { setExpenseItems(prev => [...prev, { code: '', label: '', amount: 0 }]); markDirty() }
+  const addExpenseRow = () => { setExpenseItems(prev => [...prev, { code: '', label: '', amount: 0, expenseDate: fromDate.split('T')[0] }]); markDirty() }
   const removeExpenseRow = (idx: number) => { setExpenseItems(prev => prev.filter((_, i) => i !== idx)); markDirty() }
 
   const validate = () => {
@@ -404,6 +411,14 @@ export default function UpdateFinancialDocPage() {
                       <option key={o.id} value={o.code ?? ''}>{o.code} — {o.description}</option>
                     ))}
                   </select>
+                  <input
+                    type="date"
+                    value={e.expenseDate ?? fromDate.split('T')[0]}
+                    min={fromDate.split('T')[0]}
+                    max={toDate.split('T')[0]}
+                    onChange={ev => updateExpenseRow(idx, 'expenseDate', ev.target.value)}
+                    className="w-36 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
                   <input
                     type="number"
                     value={e.amount ?? 0}

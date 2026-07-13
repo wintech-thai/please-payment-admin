@@ -7,6 +7,7 @@ export interface FinancialDocLineItem {
   label?: string | null
   amount?: number | null
   percent?: number | null
+  expenseDate?: string | null
 }
 
 export interface FinancialDocItem {

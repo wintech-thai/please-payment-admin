@@ -162,7 +162,7 @@ export default function PayInRequestsPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colRef1, m.colRef2]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colRef1, m.colRef2, m.colRef3]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -351,6 +351,10 @@ export default function PayInRequestsPage() {
 
                     <td className="px-4 py-3 border-b border-gray-100">
                       <span className="text-sm text-gray-600">{item.refId2 ?? '—'}</span>
+                    </td>
+
+                    <td className="px-4 py-3 border-b border-gray-100">
+                      <span className="text-sm text-gray-600">{item.refId3 ?? '—'}</span>
                     </td>
                   </tr>
                   )

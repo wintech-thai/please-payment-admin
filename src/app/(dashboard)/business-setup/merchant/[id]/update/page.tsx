@@ -27,6 +27,8 @@ export default function UpdateMerchantPage() {
   const [payInMax, setPayInMax] = useState<string>('0')
   const [payOutMin, setPayOutMin] = useState<string>('0')
   const [payOutMax, setPayOutMax] = useState<string>('0')
+  const [payinDailyAmountLimit, setPayinDailyAmountLimit] = useState<string>('0')
+  const [payinDailyCountLimit, setPayinDailyCountLimit] = useState<string>('0')
   const [discardCent, setDiscardCent] = useState(false)
   const [includeGlobalBankAccount, setIncludeGlobalBankAccount] = useState(true)
   const [whitelistNames, setWhitelistNames] = useState<string[]>([])
@@ -83,6 +85,8 @@ export default function UpdateMerchantPage() {
         setPayInMax(merch.payinMaxAmount != null ? String(merch.payinMaxAmount) : '0')
         setPayOutMin(merch.payoutMinAmount != null ? String(merch.payoutMinAmount) : '0')
         setPayOutMax(merch.payoutMaxAmount != null ? String(merch.payoutMaxAmount) : '0')
+        setPayinDailyAmountLimit(merch.payinDailyTxAmountLimit != null ? String(merch.payinDailyTxAmountLimit) : '0')
+        setPayinDailyCountLimit(merch.payinDailyTxCountLimit != null ? String(merch.payinDailyTxCountLimit) : '0')
         setDiscardCent(merch.discardCent ?? false)
         setIncludeGlobalBankAccount(merch.includeGlobalBankAccount ?? true)
         setWhitelistNames(merch.whitelistBankAccountNamesArr ?? [])
@@ -114,6 +118,8 @@ export default function UpdateMerchantPage() {
         PayinMaxAmount: payInMax,
         PayoutMinAmount: payOutMin,
         PayoutMaxAmount: payOutMax,
+        PayinDailyTxAmountLimit: payinDailyAmountLimit,
+        PayinDailyTxCountLimit: payinDailyCountLimit,
         DiscardCent: discardCent,
         IncludeGlobalBankAccount: includeGlobalBankAccount,
         WhitelistBankAccountNamesArr: whitelistNames,
@@ -296,6 +302,28 @@ export default function UpdateMerchantPage() {
                       onChange={e => { setPayInMax(e.target.value); markDirty(); clearErr('payInMax') }}
                       className={inputCls(!!errors.payInMax)}
                     />
+                  </FormField>
+                  <FormField label={m.fieldPayinDailyTxAmountLimit}>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={payinDailyAmountLimit}
+                      onChange={e => { setPayinDailyAmountLimit(e.target.value); markDirty() }}
+                      className={inputCls(false)}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">{m.hintZeroNoLimit}</p>
+                  </FormField>
+                  <FormField label={m.fieldPayinDailyTxCountLimit}>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={payinDailyCountLimit}
+                      onChange={e => { setPayinDailyCountLimit(e.target.value); markDirty() }}
+                      className={inputCls(false)}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">{m.hintZeroNoLimit}</p>
                   </FormField>
                 </div>
               </div>

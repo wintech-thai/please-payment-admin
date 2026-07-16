@@ -280,10 +280,20 @@ export default function UpdateBankAccountPage() {
                     className={inputCls(!!errors.payInMax)}
                   />
                 </FormField>
+                <FormField label={m.fieldDailyTxAmountLimit}>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={dailyQuota}
+                    onChange={e => { setDailyQuota(e.target.value); mark() }}
+                    className={inputCls(false)}
+                  />
+                </FormField>
               </div>
             </div>
 
-            <div className="mb-4 border-t border-gray-100 pt-4">
+            <div className="border-t border-gray-100 pt-4">
               <p className="text-xs font-semibold text-gray-500 mb-3">{t.merchant.fieldPayOut}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField label={m.fieldPayOutMin} required error={errors.payOutMin}>
@@ -304,21 +314,6 @@ export default function UpdateBankAccountPage() {
                     value={payOutMax}
                     onChange={e => { setPayOutMax(e.target.value); mark(); clearErr('payOutMax') }}
                     className={inputCls(!!errors.payOutMax)}
-                  />
-                </FormField>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-100 pt-4">
-              <div className="max-w-xs">
-                <FormField label={m.fieldDailyQuota}>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={dailyQuota}
-                    onChange={e => { setDailyQuota(e.target.value); mark() }}
-                    className={inputCls(false)}
                   />
                 </FormField>
               </div>

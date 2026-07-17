@@ -147,20 +147,23 @@ interface BrandProviderProps {
 export function BrandProvider({ children, initialConfig = null }: BrandProviderProps) {
   const initActive = isConfigActive(initialConfig)
   const initName = initActive && initialConfig?.brandConfig?.brandName ? initialConfig.brandConfig.brandName : ''
-  const initLogoUrl = initActive && initialConfig?.brandConfig?.logoImageUrl
-    ? resolveStorageUrl(initialConfig.brandConfig.logoImageUrl) : ''
+  const rawInitLogoUrl = initActive && initialConfig?.brandConfig?.logoImageUrl
+    ? initialConfig.brandConfig.logoImageUrl : ''
 
   const [config, setConfig] = useState<AdminConfig | null>(initialConfig)
   const [loading, setLoading] = useState(false)
-  // Initialize from server-fetched config — same value on server and client, no hydration mismatch
+  const [mounted, setMounted] = useState(false)
   const [cachedName, setCachedName] = useState(initName)
-  const [cachedLogo, setCachedLogo] = useState(initLogoUrl)
+  const [cachedLogo, setCachedLogo] = useState('')
 
   useLayoutEffect(() => {
+    setMounted(true)
     if (initialConfig !== null) {
       // Update localStorage cache from server-fetched config
       if (initActive && initialConfig.brandConfig) {
-        try { localStorage.setItem(BRAND_DISPLAY_CACHE_KEY, JSON.stringify({ n: initName, l: initLogoUrl })) } catch {}
+        const l = rawInitLogoUrl ? resolveStorageUrl(rawInitLogoUrl) : ''
+        setCachedLogo(l)
+        try { localStorage.setItem(BRAND_DISPLAY_CACHE_KEY, JSON.stringify({ n: initName, l })) } catch {}
       } else {
         try { localStorage.removeItem(BRAND_DISPLAY_CACHE_KEY) } catch {}
       }
@@ -204,7 +207,7 @@ export function BrandProvider({ children, initialConfig = null }: BrandProviderP
   useEffect(() => { if (!initialConfig) load() }, [])
 
   const active = isConfigActive(config)
-  const resolvedLogoUrl = active && config?.brandConfig?.logoImageUrl
+  const resolvedLogoUrl = mounted && active && config?.brandConfig?.logoImageUrl
     ? resolveStorageUrl(config.brandConfig.logoImageUrl)
     : ''
   const resolvedBrandName = active && config?.brandConfig?.brandName
@@ -212,7 +215,7 @@ export function BrandProvider({ children, initialConfig = null }: BrandProviderP
     : ''
 
   // Show cached values when loading or when config is null (failed fetch e.g. after logout)
-  const logoUrl = (loading || config === null) ? cachedLogo : resolvedLogoUrl
+  const logoUrl = (!mounted || loading || config === null) ? cachedLogo : resolvedLogoUrl
   const brandName = (loading || config === null) ? cachedName : resolvedBrandName
 
   return (

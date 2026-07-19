@@ -357,7 +357,7 @@ export default function RevenueSummaryPage() {
               ))}
             </div>
 
-            {/* Pie + Fee */}
+            {/* Pie */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
               <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="h-1.5 bg-gradient-to-r from-primary-400 to-primary-600" />

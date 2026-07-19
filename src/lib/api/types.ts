@@ -176,6 +176,10 @@ export interface MerchantItem {
   discardCent?: boolean | null
   includeGlobalBankAccount?: boolean | null
   whitelistBankAccountNamesArr?: string[] | null
+  payinDailyTxAmountLimit?: number | null
+  payinDailyTxCountLimit?: number | null
+  currentPayinDailyTxAmount?: number | null
+  currentPayinDailyTxCount?: number | null
 }
 
 export interface GetMerchantsPayload {
@@ -183,6 +187,7 @@ export interface GetMerchantsPayload {
   page?: number
   limit?: number
   Status?: string
+  IncludeGlobalBankAccount?: boolean
 }
 
 export interface AddMerchantPayload {
@@ -206,6 +211,8 @@ export interface AddMerchantPayload {
     DiscardCent?: boolean
     IncludeGlobalBankAccount?: boolean
     WhitelistBankAccountNamesArr?: string[]
+    PayinDailyTxAmountLimit?: number | string
+    PayinDailyTxCountLimit?: number | string
   }
 }
 
@@ -223,6 +230,8 @@ export interface UpdateMerchantPayload {
   DiscardCent?: boolean
   IncludeGlobalBankAccount?: boolean
   WhitelistBankAccountNamesArr?: string[]
+  PayinDailyTxAmountLimit?: number | string
+  PayinDailyTxCountLimit?: number | string
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────
@@ -289,6 +298,7 @@ export interface BankAccountItem {
   payoutMinAmount?: number | null
   payoutMaxAmount?: number | null
   dailyQuota?: number | null
+  currentPayinDailyTxAmount?: number | null
   status?: string | null
   createdDate?: string | null
   merchantLinkCount?: number | null
@@ -473,6 +483,7 @@ export interface PayInTxItem {
   currency?: string | null
   tags?: string | null
   status?: string | null
+  statusReason?: string | null
   direction?: string | null
   txAmount?: number | null
   txAmountDecimal?: number | null

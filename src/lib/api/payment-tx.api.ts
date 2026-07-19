@@ -20,4 +20,10 @@ export const paymentTxApi = {
     client.post(`${BASE}/SubmitLinePaymentTxNotification/${bankAccountId}`, payload, {
       headers: apiKey ? { Authorization: `ApiKey ${apiKey}` } : undefined,
     }),
+
+  approveUnidentifiedPaymentTx: (pmtId: string, merchantId: string) =>
+    client.post(`${BASE}/ApproveUnidentifiedPaymentTx/${pmtId}/${merchantId}`, null),
+
+  rejectUnidentifiedPaymentTx: (pmtId: string, statusReason: string) =>
+    client.post(`${BASE}/RejectUnidentifiedPaymentTx/${pmtId}`, { StatusReason: statusReason }),
 }

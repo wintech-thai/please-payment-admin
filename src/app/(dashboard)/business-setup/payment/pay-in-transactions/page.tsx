@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { paymentTxApi } from '@/lib/api/payment-tx.api'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
+import { merchantApi } from '@/lib/api/merchant.api'
 import type { PayInTxItem, BankAccountItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, Plus, X, Scissors } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, Plus, X, Scissors, MoreVertical } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
@@ -56,13 +57,14 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
-function StatusBadge({ status, createdDate, paymentRequestId }: {
+function StatusBadge({ status, createdDate, paymentRequestId, statusReason }: {
   status?: string | null
   createdDate?: string | null
   paymentRequestId?: string | null
+  statusReason?: string | null
 }) {
   const s = status?.toLowerCase()
-  if (s === 'identified') return (
+  if (s === 'identified' || s === 'approved') return (
     <div className="flex flex-col gap-0.5 items-start">
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
@@ -82,15 +84,24 @@ function StatusBadge({ status, createdDate, paymentRequestId }: {
       )}
     </div>
   )
-  if (s === 'unidentified') {
-    const age = formatAge(createdDate)
+  if (s === 'unidentified' || s === 'rejected') {
+    const isRejected = s === 'rejected'
+    const age = !isRejected ? formatAge(createdDate) : null
     return (
       <div className="flex flex-col gap-0.5 items-start">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+        <span className={clsx(
+          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1',
+          isRejected
+            ? 'bg-red-50 text-red-700 ring-red-200'
+            : 'bg-amber-50 text-amber-700 ring-amber-200'
+        )}>
+          <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', isRejected ? 'bg-red-500' : 'bg-amber-400')} />
           {status}
         </span>
         {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
+        {isRejected && statusReason && (
+          <span className="text-[10px] text-red-500 ml-1 max-w-[160px] truncate" title={statusReason}>{statusReason}</span>
+        )}
       </div>
     )
   }
@@ -311,6 +322,320 @@ function CreatePayInTxModal({
   )
 }
 
+// ── Approve Modal ─────────────────────────────────────────────────────────────
+
+interface MerchantOption { id: string; code?: string | null; name?: string | null; status?: string | null }
+
+function normalizeMerchant(m: any): MerchantOption {
+  return {
+    id: m.merchantId ?? m.id ?? '',
+    code: m.merchantCode ?? m.code ?? null,
+    name: m.merchantName ?? m.name ?? null,
+    status: m.merchantStatus ?? m.status ?? null,
+  }
+}
+
+function ApproveModal({
+  tx,
+  onSuccess,
+  onClose,
+}: {
+  tx: PayInTxItem
+  onSuccess: () => void
+  onClose: () => void
+}) {
+  const { t } = useLang()
+  const m = t.payInTx
+  const [merchants, setMerchants] = useState<MerchantOption[]>([])
+  const [merchantSearch, setMerchantSearch] = useState('')
+  const [selectedMerchant, setSelectedMerchant] = useState<MerchantOption | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [loadingMerchants, setLoadingMerchants] = useState(false)
+
+  useEffect(() => {
+    const fetchMerchants = async () => {
+      setLoadingMerchants(true)
+      try {
+        let list: any[] = []
+        const bankAccountId = tx.payInBankAccountId ?? ''
+        if (bankAccountId) {
+          // Try to get merchants linked to this specific bank account
+          const res = await bankAccountApi.getMerchantsForBankAccount(bankAccountId)
+          const d = res.data as any
+          const linked: any[] = Array.isArray(d) ? d : (d?.merchants ?? d?.Merchants ?? [])
+          if (linked.length > 0) {
+            list = linked
+          } else {
+            // Bank account might be Global — fall back to merchants with includeGlobalBankAccount
+            const res2 = await merchantApi.getMerchants({ IncludeGlobalBankAccount: true, limit: 500 })
+            const d2 = res2.data as any
+            list = Array.isArray(d2) ? d2 : (d2?.merchants ?? d2?.Merchants ?? [])
+          }
+        } else {
+          // No bank account ID — load all merchants
+          const res = await merchantApi.getMerchants({ limit: 500 })
+          const d = res.data as any
+          list = Array.isArray(d) ? d : (d?.merchants ?? d?.Merchants ?? [])
+        }
+        setMerchants(list.map(normalizeMerchant))
+      } catch {
+        // silent
+      } finally {
+        setLoadingMerchants(false)
+      }
+    }
+    fetchMerchants()
+  }, [])
+
+  const filteredMerchants = merchants.filter(merch => {
+    const q = merchantSearch.toLowerCase()
+    return (
+      merch.code?.toLowerCase().includes(q) ||
+      merch.name?.toLowerCase().includes(q)
+    )
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedMerchant) { toast.error(m.toastMerchantRequired); return }
+    setLoading(true)
+    try {
+      await paymentTxApi.approveUnidentifiedPaymentTx(tx.id, selectedMerchant.id)
+      toast.success(m.toastApproveSuccess)
+      onSuccess()
+      onClose()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.toastApproveFailed)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+          <h3 className="text-base font-bold text-gray-900">{m.modalApproveTitle}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Bank account info (readonly) */}
+          <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{m.labelBankAccount}</p>
+            <p className="text-sm font-semibold text-gray-800">
+              {[tx.payInBankCode, tx.payInBankAccountNo].filter(Boolean).join(' · ') || '—'}
+            </p>
+            {tx.payInBankAccountName && <p className="text-xs text-gray-500">{tx.payInBankAccountName}</p>}
+            <p className="text-sm text-gray-700 mt-1">
+              <span className="font-semibold">{formatAmount(tx.txAmountDecimal ?? tx.txAmount)}</span>
+              {tx.currency ? ` ${tx.currency}` : ''}
+            </p>
+          </div>
+
+          {/* Merchant picker */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+              {m.labelMerchant} <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={selectedMerchant ? `${selectedMerchant.code ?? selectedMerchant.id} · ${selectedMerchant.name ?? ''}`.replace(/ · $/, '') : merchantSearch}
+                onChange={e => {
+                  setMerchantSearch(e.target.value)
+                  setSelectedMerchant(null)
+                  setShowDropdown(true)
+                }}
+                onFocus={() => setShowDropdown(true)}
+                placeholder={loadingMerchants ? 'Loading...' : 'Search merchant...'}
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              {showDropdown && filteredMerchants.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredMerchants.map(merch => (
+                    <button
+                      key={merch.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMerchant(merch)
+                        setMerchantSearch('')
+                        setShowDropdown(false)
+                      }}
+                      className="w-full px-3 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-gray-800">{merch.code ?? merch.id}</p>
+                        {merch.status && (
+                          <span className={clsx(
+                            'text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0',
+                            merch.status.toLowerCase() === 'active'
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-gray-100 text-gray-500'
+                          )}>
+                            {merch.status}
+                          </span>
+                        )}
+                      </div>
+                      {merch.name && <p className="text-xs text-gray-500">{merch.name}</p>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+              {m.btnCancel}
+            </button>
+            <button type="submit" disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-60">
+              {loading ? '...' : m.btnApprove}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Reject Modal ──────────────────────────────────────────────────────────────
+
+function RejectModal({
+  tx,
+  onSuccess,
+  onClose,
+}: {
+  tx: PayInTxItem
+  onSuccess: () => void
+  onClose: () => void
+}) {
+  const { t } = useLang()
+  const m = t.payInTx
+  const [reason, setReason] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      await paymentTxApi.rejectUnidentifiedPaymentTx(tx.id, reason)
+      toast.success(m.toastRejectSuccess)
+      onSuccess()
+      onClose()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.toastRejectFailed)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+          <h3 className="text-base font-bold text-gray-900">{m.modalRejectTitle}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{m.labelRejectReason}</label>
+            <textarea
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              placeholder={m.rejectReasonPlaceholder}
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+              {m.btnCancel}
+            </button>
+            <button type="submit" disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-60">
+              {loading ? '...' : m.btnReject}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Action Menu ───────────────────────────────────────────────────────────────
+
+function ActionMenu({
+  tx,
+  onApprove,
+  onReject,
+}: {
+  tx: PayInTxItem
+  onApprove: () => void
+  onReject: () => void
+}) {
+  const { t } = useLang()
+  const m = t.payInTx
+  const [open, setOpen] = useState(false)
+  const [dropUp, setDropUp] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const isUnidentified = tx.status?.toLowerCase() === 'unidentified'
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const handleToggle = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setDropUp(window.innerHeight - rect.bottom < 100)
+    }
+    setOpen(o => !o)
+  }
+
+  return (
+    <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={handleToggle}
+        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className={clsx('absolute right-0 z-20 w-36 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden', dropUp ? 'bottom-8' : 'top-8')}>
+          <button
+            type="button"
+            disabled={!isUnidentified}
+            onClick={() => { setOpen(false); onApprove() }}
+            className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {m.menuApprove}
+          </button>
+          <button
+            type="button"
+            disabled={!isUnidentified}
+            onClick={() => { setOpen(false); onReject() }}
+            className="w-full px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {m.menuReject}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PayInTransactionsPage() {
@@ -327,6 +652,8 @@ export default function PayInTransactionsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [loading, setLoading] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [approveTarget, setApproveTarget] = useState<PayInTxItem | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<PayInTxItem | null>(null)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
@@ -394,7 +721,7 @@ export default function PayInTransactionsPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, m.colSender]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, m.colSender, m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -453,6 +780,8 @@ export default function PayInTransactionsPage() {
           <option value="">{m.statusAll}</option>
           <option value="Identified">Identified</option>
           <option value="UnIdentified">UnIdentified</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
           <option value="Error">Error</option>
         </select>
 
@@ -484,7 +813,7 @@ export default function PayInTransactionsPage() {
                     className={clsx(
                       'px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
                       i === 0 && 'rounded-tl-xl text-left',
-                      i === cols.length - 1 && 'rounded-tr-xl text-left',
+                      i === cols.length - 1 && 'rounded-tr-xl text-center',
                       (i === 2 || i === 3) ? 'text-right' : 'text-left'
                     )}
                   >
@@ -591,6 +920,7 @@ export default function PayInTransactionsPage() {
                           status={item.status}
                           createdDate={item.createdDate}
                           paymentRequestId={item.paymentRequestId}
+                          statusReason={item.statusReason}
                         />
                       </td>
 
@@ -608,6 +938,15 @@ export default function PayInTransactionsPage() {
                         ) : (
                           <span className="text-sm text-gray-400">—</span>
                         )}
+                      </td>
+
+                      {/* Action */}
+                      <td className="px-4 py-3 border-b border-gray-100 text-center">
+                        <ActionMenu
+                          tx={item}
+                          onApprove={() => setApproveTarget(item)}
+                          onReject={() => setRejectTarget(item)}
+                        />
                       </td>
                     </tr>
                   )
@@ -665,6 +1004,22 @@ export default function PayInTransactionsPage() {
         <CreatePayInTxModal
           onSuccess={handleRefresh}
           onClose={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {approveTarget && (
+        <ApproveModal
+          tx={approveTarget}
+          onSuccess={handleRefresh}
+          onClose={() => setApproveTarget(null)}
+        />
+      )}
+
+      {rejectTarget && (
+        <RejectModal
+          tx={rejectTarget}
+          onSuccess={handleRefresh}
+          onClose={() => setRejectTarget(null)}
         />
       )}
     </div>

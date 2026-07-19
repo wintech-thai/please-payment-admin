@@ -23,6 +23,8 @@ export default function CreateMerchantPage() {
   const [payOutFee, setPayOutFee] = useState<string>('0')
   const [payInMin, setPayInMin] = useState<string>('1')
   const [payInMax, setPayInMax] = useState<string>('50000')
+  const [payinDailyAmountLimit, setPayinDailyAmountLimit] = useState<string>('0')
+  const [payinDailyCountLimit, setPayinDailyCountLimit] = useState<string>('0')
   const [payOutMin, setPayOutMin] = useState<string>('1')
   const [payOutMax, setPayOutMax] = useState<string>('50000')
   const [discardCent, setDiscardCent] = useState(false)
@@ -91,6 +93,8 @@ export default function CreateMerchantPage() {
           PayoutFeePct: toNum(payOutFee),
           PayinMinAmount: toNum(payInMin),
           PayinMaxAmount: toNum(payInMax),
+          PayinDailyTxAmountLimit: toNum(payinDailyAmountLimit),
+          PayinDailyTxCountLimit: toNum(payinDailyCountLimit),
           PayoutMinAmount: toNum(payOutMin),
           PayoutMaxAmount: toNum(payOutMax),
           DiscardCent: discardCent,
@@ -269,6 +273,28 @@ export default function CreateMerchantPage() {
                       onChange={e => { setPayInMax(e.target.value); mark(); clearErr('payInMax') }}
                       className={inputCls(!!errors.payInMax)}
                     />
+                  </FormField>
+                  <FormField label={m.fieldPayinDailyTxAmountLimit}>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={payinDailyAmountLimit}
+                      onChange={e => { setPayinDailyAmountLimit(e.target.value); mark() }}
+                      className={inputCls(false)}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">{m.hintZeroNoLimit}</p>
+                  </FormField>
+                  <FormField label={m.fieldPayinDailyTxCountLimit}>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={payinDailyCountLimit}
+                      onChange={e => { setPayinDailyCountLimit(e.target.value); mark() }}
+                      className={inputCls(false)}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">{m.hintZeroNoLimit}</p>
                   </FormField>
                 </div>
               </div>

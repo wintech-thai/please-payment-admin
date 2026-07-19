@@ -25,6 +25,16 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
+function DailyUsageBar({ current, limit }: { current: number; limit: number }) {
+  const pct = limit > 0 ? Math.min((current / limit) * 100, 100) : 0
+  const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'
+  return (
+    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className={clsx('h-full rounded-full transition-all', color)} style={{ width: `${pct}%` }} />
+    </div>
+  )
+}
+
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="flex items-center gap-2.5 text-sm font-bold text-gray-900 mb-4">
@@ -425,6 +435,22 @@ export default function MerchantWalletPage() {
                 {formatAmount(wallet?.pointBalanceDecimal ?? wallet?.pointBalance)}
               </dd>
             </div>
+            {(merchant?.payinDailyTxAmountLimit != null && merchant.payinDailyTxAmountLimit > 0) && (
+              <div className="col-span-2">
+                <dt className="text-xs text-gray-400 uppercase font-semibold tracking-wide mb-1">
+                  Pay-In Daily Amount ({formatAmount(merchant.currentPayinDailyTxAmount ?? 0)} / {formatAmount(merchant.payinDailyTxAmountLimit)})
+                </dt>
+                <DailyUsageBar current={merchant.currentPayinDailyTxAmount ?? 0} limit={merchant.payinDailyTxAmountLimit} />
+              </div>
+            )}
+            {(merchant?.payinDailyTxCountLimit != null && merchant.payinDailyTxCountLimit > 0) && (
+              <div className="col-span-2">
+                <dt className="text-xs text-gray-400 uppercase font-semibold tracking-wide mb-1">
+                  Pay-In Daily Count ({merchant.currentPayinDailyTxCount ?? 0} / {merchant.payinDailyTxCountLimit})
+                </dt>
+                <DailyUsageBar current={merchant.currentPayinDailyTxCount ?? 0} limit={merchant.payinDailyTxCountLimit} />
+              </div>
+            )}
           </dl>
         </div>
       </div>

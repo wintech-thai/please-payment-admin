@@ -25,6 +25,16 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
+function DailyUsageBar({ current, limit }: { current: number; limit: number }) {
+  const pct = limit > 0 ? Math.min((current / limit) * 100, 100) : 0
+  const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'
+  return (
+    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className={clsx('h-full rounded-full transition-all', color)} style={{ width: `${pct}%` }} />
+    </div>
+  )
+}
+
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="flex items-center gap-2.5 text-sm font-bold text-gray-900 mb-4">
@@ -381,6 +391,14 @@ export default function BankAccountWalletPage() {
                 {formatAmount(wallet?.pointBalanceDecimal ?? wallet?.pointBalance)}
               </dd>
             </div>
+            {(account?.dailyQuota != null && account.dailyQuota > 0) && (
+              <div className="col-span-2">
+                <dt className="text-xs text-gray-400 uppercase font-semibold tracking-wide mb-1">
+                  Pay-In Daily Amount ({formatAmount(account.currentPayinDailyTxAmount ?? 0)} / {formatAmount(account.dailyQuota)})
+                </dt>
+                <DailyUsageBar current={account.currentPayinDailyTxAmount ?? 0} limit={account.dailyQuota} />
+              </div>
+            )}
           </dl>
         </div>
       </div>

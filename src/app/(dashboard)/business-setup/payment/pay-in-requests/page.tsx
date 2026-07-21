@@ -159,27 +159,27 @@ function ApproveConfirmModal({
           <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
             {(item.merchantCode || item.merchantName) && (
               <div className="flex justify-between gap-2">
-                <span className="text-gray-500 font-medium">Merchant</span>
+                <span className="text-gray-500 font-medium">{m.fieldMerchant}</span>
                 <span className="font-semibold text-gray-800 text-right">{item.merchantCode ?? item.merchantName}</span>
               </div>
             )}
             {(item.payinBankCode || item.payinBankAccountNo) && (
               <div className="flex justify-between gap-2">
-                <span className="text-gray-500 font-medium">Bank Account</span>
+                <span className="text-gray-500 font-medium">{m.fieldAccountNo}</span>
                 <span className="font-semibold text-gray-800 text-right">
                   {[item.payinBankCode, item.payinBankAccountNo].filter(Boolean).join(' · ')}
                 </span>
               </div>
             )}
             <div className="flex justify-between gap-2">
-              <span className="text-gray-500 font-medium">Amount</span>
+              <span className="text-gray-500 font-medium">{m.fieldAmount}</span>
               <span className="font-bold text-gray-900 tabular-nums">
                 {formatAmount(item.generatedAmount)} {item.currency ?? ''}
               </span>
             </div>
             {item.refId1 && (
               <div className="flex justify-between gap-2">
-                <span className="text-gray-500 font-medium">REF 1</span>
+                <span className="text-gray-500 font-medium">{m.fieldRefId}</span>
                 <span className="text-gray-700 text-right truncate max-w-[180px]">{item.refId1}</span>
               </div>
             )}

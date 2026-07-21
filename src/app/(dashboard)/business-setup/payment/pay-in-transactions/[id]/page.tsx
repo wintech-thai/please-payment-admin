@@ -222,6 +222,11 @@ export default function PayInTxDetailPage() {
             {detail?.description && (
               <InfoRow label={m.fieldDescription}>{detail.description}</InfoRow>
             )}
+            {detail?.statusReason && (
+              <InfoRow label={m.fieldStatusReason}>
+                <span className="text-red-600">{detail.statusReason}</span>
+              </InfoRow>
+            )}
           </div>
         </div>
 

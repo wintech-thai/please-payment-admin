@@ -6,7 +6,7 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayInRequestDetail } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink } from 'lucide-react'
 import clsx from 'clsx'
 
 function formatAmount(n?: number | null): string {
@@ -27,14 +27,14 @@ function formatAge(createdDate?: string | null): string {
 
 function StatusBadge({ status, createdDate }: { status?: string | null; createdDate?: string | null }) {
   const s = status?.toLowerCase()
-  const isPending = s !== 'match' && s !== 'paid' && s !== 'error'
+  const isPending = s !== 'match' && s !== 'paid' && s !== 'approved' && s !== 'rejected' && s !== 'error'
   const age = isPending ? formatAge(createdDate) : ''
-  if (s === 'match' || s === 'paid') return (
+  if (s === 'match' || s === 'paid' || s === 'approved') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
       <CheckCircle className="w-3.5 h-3.5" />{status}
     </span>
   )
-  if (s === 'error') return (
+  if (s === 'rejected' || s === 'error') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
       <AlertCircle className="w-3.5 h-3.5" />{status}
     </span>
@@ -153,9 +153,9 @@ export default function PayInRequestDetailPage() {
     )
   }
 
-  const isPending = detail?.status?.toLowerCase() !== 'match'
-    && detail?.status?.toLowerCase() !== 'paid'
-    && detail?.status?.toLowerCase() !== 'error'
+  const statusLower = detail?.status?.toLowerCase()
+  const isApproved = statusLower === 'approved'
+  const isRejected = statusLower === 'rejected'
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -212,6 +212,26 @@ export default function PayInRequestDetailPage() {
             <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
             <InfoRow label={m.fieldRefId1}>{detail?.refId1 ?? '—'}</InfoRow>
             <InfoRow label={m.fieldRefId2}>{detail?.refId2 ?? '—'}</InfoRow>
+            {isApproved && (
+              <InfoRow label={m.fieldPaymentTxId}>
+                {detail?.paymentTxId ? (
+                  <a
+                    href={`/business-setup/payment/pay-in-transactions/${detail.paymentTxId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary-600 hover:underline text-sm"
+                  >
+                    {detail.paymentTxId}
+                    <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                  </a>
+                ) : '—'}
+              </InfoRow>
+            )}
+            {isRejected && detail?.statusReason && (
+              <InfoRow label={m.fieldStatusReason}>
+                <span className="text-red-600">{detail.statusReason}</span>
+              </InfoRow>
+            )}
           </div>
         </div>
 

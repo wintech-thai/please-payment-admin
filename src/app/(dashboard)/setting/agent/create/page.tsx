@@ -127,6 +127,7 @@ function RegisterAgentContent() {
   const validate = () => {
     const errs: { code?: string; userName?: string; apiKey?: string } = {}
     if (!code.trim()) errs.code = m.validationCodeRequired
+    else if (!/^[a-zA-Z0-9-_]+$/.test(code.trim())) errs.code = m.validationCodeEnglishOnly
     if (isLineApi && !lineUserName.trim()) errs.userName = m.validationLineUserNameRequired
     if (isLineApi && !lineApiKey.trim()) errs.apiKey = m.validationLineApiKeyRequired
     setErrors(errs)

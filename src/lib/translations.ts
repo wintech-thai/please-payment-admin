@@ -1537,6 +1537,7 @@ export const translations = {
       createFailed: 'สร้าง Agent ไม่สำเร็จ',
       loadAgentFailed: 'โหลดข้อมูล Agent ไม่สำเร็จ',
       validationCodeRequired: 'กรุณากรอก Agent Code',
+      validationCodeEnglishOnly: 'Agent Code ต้องเป็นภาษาอังกฤษเท่านั้น (a-z, 0-9, -)',
       // Endpoint & API Keys
       endpointKeysTitle: 'Endpoint & API Keys',
       endpointKeysSubtitle: 'จัดการ Endpoint และ API Key ของ Agent',
@@ -3445,6 +3446,7 @@ export const translations = {
       createFailed: 'Failed to create Agent',
       loadAgentFailed: 'Failed to load Agent',
       validationCodeRequired: 'Agent Code is required',
+      validationCodeEnglishOnly: 'Agent Code must be English only (a-z, 0-9, -)',
       // Endpoint & API Keys
       endpointKeysTitle: 'Endpoint & API Keys',
       endpointKeysSubtitle: 'Manage endpoints and API keys for this agent',

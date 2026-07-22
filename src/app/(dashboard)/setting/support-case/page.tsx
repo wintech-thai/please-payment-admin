@@ -337,15 +337,15 @@ function SupportCaseListContent() {
                       {/* Created */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-xs text-gray-500">{formatDate(c.createdDate)}</span>
-                          {createdAge && <span className="text-[11px] text-gray-400">{createdAge}</span>}
+                          <span className="text-sm text-gray-500">{formatDate(c.createdDate)}</span>
+                          {createdAge && <span className="text-xs text-gray-400">{createdAge}</span>}
                         </div>
                       </td>
                       {/* Updated */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-xs text-gray-500">{formatDate(c.updatedDate)}</span>
-                          {updatedAge && <span className="text-[11px] text-gray-400">{updatedAge}</span>}
+                          <span className="text-sm text-gray-500">{formatDate(c.updatedDate)}</span>
+                          {updatedAge && <span className="text-xs text-gray-400">{updatedAge}</span>}
                         </div>
                       </td>
                     </tr>

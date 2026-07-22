@@ -10,6 +10,7 @@ import type {
   UpdateAgentPayload,
 } from './types'
 
+
 export interface AgentEventTimeSeriesPayload {
   FromDate?: string
   ToDate?: string
@@ -74,4 +75,16 @@ export const agentApi = {
 
   getAgentEventTimeSeries: (agentId: string, payload: AgentEventTimeSeriesPayload = {}) =>
     client.post<AgentEventTimeSeriesItem[]>(`${BASE}/GetAgentEventTimeSeries/${agentId}`, payload),
+
+  addLineApiAgent: (payload: AddAgentPayload) =>
+    client.post<{ agent: AgentItem }>(`${BASE}/AddLineApiAgent`, payload),
+
+  restartLineApiAgentById: (agentId: string) =>
+    client.post(`${BASE}/RestartLineApiAgentById/${agentId}`, {}),
+
+  reloadLineApiAgentById: (agentId: string) =>
+    client.post(`${BASE}/ReloadLineApiAgentById/${agentId}`, {}),
+
+  getLineApiAgentStatus: (agentId: string) =>
+    client.get<{ status?: string; podStatus?: string; ready?: string; restarts?: number; age?: string }>(`${BASE}/GetLineApiAgentStatus/${agentId}`),
 }

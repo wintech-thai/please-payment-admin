@@ -5,9 +5,11 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
 import type { AgentItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { Search, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight, Key } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight, Key, ChevronDown, RotateCcw, RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+
+type LineApiStatus = { podStatus?: string; ready?: string; restarts?: number; age?: string }
 
 function StatusBadge({ status }: { status?: string | null }) {
   const { t } = useLang()
@@ -20,6 +22,48 @@ function StatusBadge({ status }: { status?: string | null }) {
     <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', cfg.bg)}>
       <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', cfg.dot)} />
       {isActive ? t.agent.statusActive : t.agent.statusInactive}
+    </span>
+  )
+}
+
+function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null; labels: { running: string; pending: string; unknown: string } }) {
+  if (!status) return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-400 ring-1 ring-gray-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse flex-shrink-0" />
+      —
+    </span>
+  )
+  const pod = status.podStatus
+  const isRunning = pod === 'Running'
+  const isPending = pod === 'Pending'
+  const cfg = isRunning
+    ? { bg: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500' }
+    : isPending
+    ? { bg: 'bg-amber-50 text-amber-700 ring-amber-200', dot: 'bg-amber-400' }
+    : { bg: 'bg-red-50 text-red-700 ring-red-200', dot: 'bg-red-500' }
+  const label = isRunning ? labels.running : isPending ? labels.pending : labels.unknown
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', cfg.bg)}>
+        <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', cfg.dot)} />
+        {label}
+      </span>
+      {status.ready && <span className="text-[10px] text-gray-400 ml-1">{status.ready}{status.restarts != null && status.restarts > 0 ? ` · ${status.restarts}x` : ''}</span>}
+    </div>
+  )
+}
+
+function AgentTypeBadge({ agentType }: { agentType?: string | null }) {
+  if (!agentType) return <span className="text-gray-400">—</span>
+  const isLine = agentType.toLowerCase() === 'line api'
+  return (
+    <span className={clsx(
+      'inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ring-1',
+      isLine
+        ? 'bg-green-50 text-green-700 ring-green-200'
+        : 'bg-blue-50 text-blue-700 ring-blue-200'
+    )}>
+      {agentType}
     </span>
   )
 }
@@ -55,6 +99,28 @@ function DeleteModal({ agentCode, onConfirm, onCancel, deleting }: {
   )
 }
 
+function ConfirmActionModal({ title, desc, onConfirm, onCancel, loading, t }: {
+  title: string; desc: string; onConfirm: () => void; onCancel: () => void; loading: boolean
+  t: { cancel: string; confirm: string }
+}) {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onCancel}>
+      <div className="w-full max-w-sm rounded-2xl shadow-2xl bg-white text-center px-8 py-8" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+        <p className="text-sm text-gray-500 mb-7">{desc}</p>
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors uppercase">
+            {t.cancel}
+          </button>
+          <button onClick={onConfirm} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-xl hover:bg-primary-700 disabled:opacity-60 transition-colors uppercase">
+            {loading ? '...' : t.confirm}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AgentListContent() {
   const { t } = useLang()
   const m = t.agent
@@ -68,6 +134,7 @@ function AgentListContent() {
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [searchTerm, setSearchTerm] = useState('')
+  const [agentTypeFilter, setAgentTypeFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
@@ -78,14 +145,21 @@ function AgentListContent() {
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; agentId?: string; agentCode?: string }>({ open: false })
   const [deleting, setDeleting] = useState(false)
   const [openActionId, setOpenActionId] = useState<string | null>(null)
-  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [showRegisterMenu, setShowRegisterMenu] = useState(false)
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'restart' | 'reload'; agentId?: string; agentCode?: string }>({ open: false })
+  const [actionLoading, setActionLoading] = useState(false)
+  const [lineApiStatuses, setLineApiStatuses] = useState<Record<string, LineApiStatus>>({})
 
-  const fetchAgents = async (p = page, search = searchTerm) => {
+  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const registerMenuRef = useRef<HTMLDivElement | null>(null)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const fetchAgents = async (p = page, search = searchTerm, typeFilter = agentTypeFilter) => {
     setLoading(true)
     try {
       const [listRes, countRes] = await Promise.allSettled([
-        agentApi.getAgents({ FullTextSearch: search, Page: p, Limit: itemsPerPage }),
-        agentApi.getAgentCount({ FullTextSearch: search }),
+        agentApi.getAgents({ FullTextSearch: search, AgentType: typeFilter || undefined, Page: p, Limit: itemsPerPage }),
+        agentApi.getAgentCount({ FullTextSearch: search, AgentType: typeFilter || undefined }),
       ])
       if (listRes.status === 'fulfilled') {
         const data = listRes.value.data as any
@@ -93,6 +167,8 @@ function AgentListContent() {
         const normalized = list.map(item => ({
           ...item,
           agentId: item.agentId ?? item.AgentId ?? item.id ?? item.Id ?? '',
+          agentType: item.agentType ?? item.AgentType ?? null,
+          agentConfigObj: item.agentConfigObj ?? item.AgentConfigObj ?? null,
           lastSeenDate: item.lastSeenDate ?? item.LastSeenDate ?? item.lastSeen ?? item.LastSeen ?? null,
           lastSeenErrorDate: item.lastSeenErrorDate ?? item.LastSeenErrorDate ?? null,
         }))
@@ -116,12 +192,49 @@ function AgentListContent() {
 
   useEffect(() => { fetchAgents() }, [page, itemsPerPage])
 
-  const handleSearch = () => { setPage(1); fetchAgents(1, searchTerm) }
+  // Background polling for Line Api agents every 10 seconds
+  useEffect(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+
+    const lineApiIds = agents
+      .filter(a => a.agentType?.toLowerCase() === 'line api')
+      .map(a => a.agentId)
+
+    if (lineApiIds.length === 0) return
+
+    const poll = async () => {
+      await Promise.allSettled(
+        lineApiIds.map(id =>
+          agentApi.getLineApiAgentStatus(id)
+            .then(res => {
+              const data = res.data as any
+              setLineApiStatuses(prev => ({ ...prev, [id]: data }))
+            })
+            .catch(() => {})
+        )
+      )
+    }
+
+    poll()
+    pollingRef.current = setInterval(poll, 10_000)
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [agents]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSearch = () => { setPage(1); fetchAgents(1, searchTerm, agentTypeFilter) }
+  const handleTypeFilterChange = (val: string) => { setAgentTypeFilter(val); setPage(1); fetchAgents(1, searchTerm, val) }
 
   useEffect(() => {
     if (!highlightIdParam) return
     setSelectedRowId(highlightIdParam)
-    // remove ?highlight= from URL without re-render
     const params = new URLSearchParams(searchParams.toString())
     params.delete('highlight')
     window.history.replaceState(null, '', `${pathname}?${params.toString()}`)
@@ -137,10 +250,13 @@ function AgentListContent() {
         const ref = menuRefs.current[openActionId]
         if (ref && !ref.contains(e.target as Node)) setOpenActionId(null)
       }
+      if (showRegisterMenu && registerMenuRef.current && !registerMenuRef.current.contains(e.target as Node)) {
+        setShowRegisterMenu(false)
+      }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [openActionId])
+  }, [openActionId, showRegisterMenu])
 
   const handleDelete = async () => {
     if (!deleteModal.agentId) return
@@ -155,6 +271,25 @@ function AgentListContent() {
       toast.error(err instanceof Error ? err.message : m.deleteFailed)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleConfirmAction = async () => {
+    if (!confirmModal.agentId || !confirmModal.type) return
+    setActionLoading(true)
+    try {
+      if (confirmModal.type === 'restart') {
+        await agentApi.restartLineApiAgentById(confirmModal.agentId)
+        toast.success(m.restartSuccess)
+      } else {
+        await agentApi.reloadLineApiAgentById(confirmModal.agentId)
+        toast.success(m.reloadSuccess)
+      }
+      setConfirmModal({ open: false })
+    } catch {
+      toast.error(confirmModal.type === 'restart' ? m.restartFailed : m.reloadFailed)
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -175,11 +310,10 @@ function AgentListContent() {
     return `${hours}h ${mins}min`
   }
 
-
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
-  const cols = ['', m.colCode, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colAction]
+  const cols = ['', m.colCode, m.colAgentType, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -193,22 +327,55 @@ function AgentListContent() {
         />
       )}
 
+      {confirmModal.open && (
+        <ConfirmActionModal
+          title={confirmModal.type === 'restart' ? m.confirmRestartTitle : m.confirmReloadTitle}
+          desc={confirmModal.type === 'restart' ? m.confirmRestartDesc : m.confirmReloadDesc}
+          onConfirm={handleConfirmAction}
+          onCancel={() => setConfirmModal({ open: false })}
+          loading={actionLoading}
+          t={{ cancel: t.admin.cancel, confirm: m.btnConfirm }}
+        />
+      )}
+
       {/* Header */}
       <div className="flex-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{m.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
         </div>
-        <button
-          onClick={() => router.push('/setting/agent/create')}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {m.registerAgent}
-        </button>
+        {/* Register Agent dropdown button */}
+        <div className="relative" ref={registerMenuRef}>
+          <button
+            onClick={() => setShowRegisterMenu(prev => !prev)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {m.registerAgent}
+            <ChevronDown className="w-4 h-4" />
+          </button>
+          {showRegisterMenu && (
+            <div className="absolute right-0 top-10 z-50 w-52 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden">
+              <button
+                onClick={() => { setShowRegisterMenu(false); router.push('/setting/agent/create?type=line-api') }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <span className="w-5 h-5 rounded bg-green-100 flex items-center justify-center text-green-700 font-bold text-[10px] flex-shrink-0">L</span>
+                {m.menuRegisterLineApi}
+              </button>
+              <button
+                onClick={() => { setShowRegisterMenu(false); router.push('/setting/agent/create') }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <span className="w-5 h-5 rounded bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-[10px] flex-shrink-0">A</span>
+                {m.menuRegisterAndroidApp}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Toolbar: search + delete */}
+      {/* Toolbar */}
       <div className="flex-none flex flex-wrap items-center gap-3 mb-4">
         <div className="flex items-center gap-2 flex-1 min-w-56 max-w-xs bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
           <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -220,9 +387,19 @@ function AgentListContent() {
             className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder-gray-400"
           />
           {searchTerm && (
-            <button onClick={() => { setSearchTerm(''); fetchAgents(1, '') }} className="text-gray-400 hover:text-gray-600">✕</button>
+            <button onClick={() => { setSearchTerm(''); fetchAgents(1, '', agentTypeFilter) }} className="text-gray-400 hover:text-gray-600">✕</button>
           )}
         </div>
+        {/* Agent Type filter */}
+        <select
+          value={agentTypeFilter}
+          onChange={e => handleTypeFilterChange(e.target.value)}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-300"
+        >
+          <option value="">{m.filterAllAgentTypes}</option>
+          <option value="Line Api">{m.menuRegisterLineApi}</option>
+          <option value="Android App">{m.menuRegisterAndroidApp}</option>
+        </select>
         <button
           onClick={handleSearch}
           className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
@@ -287,6 +464,7 @@ function AgentListContent() {
                 agents.map((agent, idx) => {
                   const highlighted = !!agent.agentId && selectedRowId === agent.agentId
                   const isChecked = selectedId === agent.agentId
+                  const isLineApi = agent.agentType?.toLowerCase() === 'line api'
                   return (
                     <tr
                       id={`agent-row-${agent.agentId}`}
@@ -304,7 +482,6 @@ function AgentListContent() {
                           : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                       )}
                     >
-                      {/* Checkbox — stopPropagation on td so row click doesn't fire */}
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
@@ -313,13 +490,19 @@ function AgentListContent() {
                           className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4 cursor-pointer"
                         />
                       </td>
+                      {/* Code + ID */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <button
                           onClick={e => { e.stopPropagation(); router.push(`/setting/agent/${agent.agentId}/update`) }}
-                          className={clsx('text-sm font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
+                          className={clsx('text-sm font-semibold hover:underline block', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
                           {agent.code ?? '—'}
                         </button>
+                        <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{agent.agentId}</p>
+                      </td>
+                      {/* Agent Type */}
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <AgentTypeBadge agentType={agent.agentType} />
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 max-w-[200px] truncate">
                         {agent.description ?? '—'}
@@ -354,10 +537,14 @@ function AgentListContent() {
                           </div>
                         ) : '—'}
                       </td>
+                      {/* Status */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <StatusBadge status={agent.agentStatus} />
+                        {isLineApi
+                          ? <LineApiStatusBadge status={lineApiStatuses[agent.agentId] ?? null} labels={{ running: m.podRunning, pending: m.podPending, unknown: m.podUnknown }} />
+                          : <StatusBadge status={agent.agentStatus} />
+                        }
                       </td>
-                      {/* Action menu — stopPropagation on td */}
+                      {/* Action menu */}
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
                         <div className="relative" ref={el => { menuRefs.current[agent.agentId] = el }}>
                           <button
@@ -367,7 +554,8 @@ function AgentListContent() {
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                           {openActionId === agent.agentId && (
-                            <div className="absolute right-0 top-8 z-50 w-52 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden">
+                            <div className="absolute right-0 top-8 z-50 w-56 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden">
+                              {/* Endpoint & API Keys — always enabled */}
                               <button
                                 onClick={() => { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/endpoint-keys`) }}
                                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -375,24 +563,54 @@ function AgentListContent() {
                                 <Key className="w-4 h-4 text-primary-500 flex-shrink-0" />
                                 {m.actionEndpointKeys}
                               </button>
+                              {/* Overview — disabled for Line Api */}
                               <button
-                                onClick={() => { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/overview`) }}
-                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                onClick={() => { if (!isLineApi) { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/overview`) } }}
+                                disabled={isLineApi}
+                                className={clsx(
+                                  'flex items-center gap-2.5 w-full px-4 py-2.5 text-sm transition-colors',
+                                  isLineApi ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'
+                                )}
                               >
                                 <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
                                 {m.actionOverview}
                               </button>
+                              {/* Event — disabled for Line Api */}
                               <button
-                                onClick={() => { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/messages`) }}
-                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                onClick={() => { if (!isLineApi) { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/messages`) } }}
+                                disabled={isLineApi}
+                                className={clsx(
+                                  'flex items-center gap-2.5 w-full px-4 py-2.5 text-sm transition-colors',
+                                  isLineApi ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'
+                                )}
                               >
                                 <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                                 </svg>
                                 {m.actionMessages}
                               </button>
+                              {/* Restart — only for Line Api */}
+                              {isLineApi && (
+                                <>
+                                  <div className="my-1 border-t border-gray-100" />
+                                  <button
+                                    onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'restart', agentId: agent.agentId, agentCode: agent.code ?? undefined }) }}
+                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                                  >
+                                    <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                                    {m.actionRestart}
+                                  </button>
+                                  <button
+                                    onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'reload', agentId: agent.agentId, agentCode: agent.code ?? undefined }) }}
+                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                                  >
+                                    <RefreshCw className="w-4 h-4 flex-shrink-0" />
+                                    {m.actionReload}
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )}
                         </div>

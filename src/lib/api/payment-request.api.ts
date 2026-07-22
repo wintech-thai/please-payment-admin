@@ -32,6 +32,12 @@ export const paymentRequestApi = {
   getPaymentRequestById: (id: string) =>
     client.get<{ paymentRequest: PayInRequestDetail }>(`${BASE}/GetPaymentRequestById/${id}`),
 
+  createPaymentTxByPayInRequestId: (id: string) =>
+    client.post(`/admin-api/AdminPaymentTx/org/global/action/CreatePaymentTxByPayInRequestId/${id}`, {}),
+
+  rejectPendingPayInRequestById: (id: string, reason?: string) =>
+    client.post(`${BASE}/RejectPendingPayInRequestById/${id}`, { StatusReason: reason ?? '' }),
+
   // ── Pay-Out ───────────────────────────────────────────────────────────────
   createPayOutRequest: (payload: CreatePayOutRequestPayload) =>
     client.post(`${BASE}/CreatePayOutRequest`, payload),

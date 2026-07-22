@@ -249,6 +249,7 @@ function RegisterAgentContent() {
                 </div>
               </div>
             </div>
+            {!isLineApi && (
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                 Channel <span className="text-red-500">*</span>
@@ -265,6 +266,7 @@ function RegisterAgentContent() {
                 ))}
               </div>
             </div>
+            )}
             <div className="flex justify-end gap-3 mt-6">
               <button type="button" onClick={() => setShowAddModal(false)}
                 className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
@@ -415,6 +417,7 @@ function RegisterAgentContent() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex items-center gap-2">
+                            {!isLineApi && (
                             <div className="flex rounded-lg border border-gray-200 overflow-hidden w-[100px]">
                               {(['LINE', 'SMS'] as const).map(ch => (
                                 <button key={ch} type="button" onClick={() => handleChannelChange(acc.accountId, ch)}
@@ -426,6 +429,7 @@ function RegisterAgentContent() {
                                 </button>
                               ))}
                             </div>
+                            )}
                             <button type="button" onClick={() => handleRemoveBankAccount(acc.accountId)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
                               <Trash2 className="w-3 h-3" />

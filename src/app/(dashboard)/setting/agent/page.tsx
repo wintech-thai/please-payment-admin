@@ -58,7 +58,7 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
         </button>
       )}
       {showRaw && status.raw && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-72 bg-gray-900 text-green-400 text-[10px] font-mono rounded-lg p-3 shadow-xl overflow-auto max-h-48"
+        <div className="absolute top-full right-0 z-50 mt-1 w-72 bg-gray-900 text-green-400 text-[10px] font-mono rounded-lg p-3 shadow-xl overflow-auto max-h-48"
           onClick={e => e.stopPropagation()}>
           <pre>{JSON.stringify(JSON.parse(status.raw), null, 2)}</pre>
         </div>
@@ -278,7 +278,7 @@ function AgentListContent() {
         qrElapsedRef.current = 0
         qrPollingRef.current = setInterval(async () => {
           qrElapsedRef.current += 2
-          if (qrElapsedRef.current >= 20) {
+          if (qrElapsedRef.current >= 60) {
             stopQrPolling()
             setQrLoginState('timeout')
             return
@@ -451,7 +451,11 @@ function AgentListContent() {
                   {qrModal.agent.tags && (
                     <div className="flex gap-2">
                       <span className="text-gray-400 shrink-0 whitespace-nowrap">{m.qrLabelTags}</span>
-                      <span className="text-gray-700">{qrModal.agent.tags}</span>
+                      <div className="flex flex-wrap gap-1">
+                        {qrModal.agent.tags.split(',').map(tag => (
+                          <span key={tag} className="inline-flex px-2.5 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-[10px] font-semibold">{tag.trim()}</span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

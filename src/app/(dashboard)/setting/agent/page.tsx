@@ -5,11 +5,12 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
 import type { AgentItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { Search, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight, Key, ChevronDown, RotateCcw, RefreshCw, QrCode } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight, Key, ChevronDown, RotateCcw, RefreshCw, QrCode, X, CheckCircle2, AlertCircle } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import QRCode from 'react-qr-code'
 
-type LineApiStatus = { podStatus?: string; ready?: string; restarts?: number; age?: string }
+type LineApiStatus = { ok?: boolean; podStatus?: string; login?: string; raw?: string }
 
 function StatusBadge({ status }: { status?: string | null }) {
   const { t } = useLang()
@@ -26,29 +27,42 @@ function StatusBadge({ status }: { status?: string | null }) {
   )
 }
 
-function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null; labels: { running: string; pending: string; unknown: string } }) {
+function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null; labels: { running: string; offline: string; unknown: string } }) {
+  const [showRaw, setShowRaw] = useState(false)
   if (!status) return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-400 ring-1 ring-gray-200">
       <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse flex-shrink-0" />
       —
     </span>
   )
-  const pod = status.podStatus
-  const isRunning = pod === 'Running'
-  const isPending = pod === 'Pending'
+  const isRunning = status.ok === true
+  const isOffline = status.podStatus === 'Offline'
   const cfg = isRunning
     ? { bg: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500' }
-    : isPending
-    ? { bg: 'bg-amber-50 text-amber-700 ring-amber-200', dot: 'bg-amber-400' }
-    : { bg: 'bg-red-50 text-red-700 ring-red-200', dot: 'bg-red-500' }
-  const label = isRunning ? labels.running : isPending ? labels.pending : labels.unknown
+    : isOffline
+    ? { bg: 'bg-red-50 text-red-700 ring-red-200', dot: 'bg-red-500' }
+    : { bg: 'bg-gray-100 text-gray-500 ring-gray-200', dot: 'bg-gray-400' }
+  const label = isRunning ? labels.running : isOffline ? labels.offline : labels.unknown
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5 relative">
       <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', cfg.bg)}>
         <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', cfg.dot)} />
         {label}
       </span>
-      {status.ready && <span className="text-[10px] text-gray-400 ml-1">{status.ready}{status.restarts != null && status.restarts > 0 ? ` · ${status.restarts}x` : ''}</span>}
+      {status.login != null && (
+        <button
+          onClick={e => { e.stopPropagation(); setShowRaw(v => !v) }}
+          className="text-[10px] text-gray-400 hover:text-gray-600 ml-1 text-left"
+        >
+          {status.login}
+        </button>
+      )}
+      {showRaw && status.raw && (
+        <div className="absolute top-full left-0 z-50 mt-1 w-72 bg-gray-900 text-green-400 text-[10px] font-mono rounded-lg p-3 shadow-xl overflow-auto max-h-48"
+          onClick={e => e.stopPropagation()}>
+          <pre>{JSON.stringify(JSON.parse(status.raw), null, 2)}</pre>
+        </div>
+      )}
     </div>
   )
 }
@@ -149,6 +163,14 @@ function AgentListContent() {
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'restart' | 'reload'; agentId?: string; agentCode?: string }>({ open: false })
   const [actionLoading, setActionLoading] = useState(false)
   const [lineApiStatuses, setLineApiStatuses] = useState<Record<string, LineApiStatus>>({})
+  const [qrModal, setQrModal] = useState<{ open: boolean; agent?: AgentItem }>({ open: false })
+  const [qrUrl, setQrUrl] = useState<string | null>(null)
+  const [qrLoading, setQrLoading] = useState(false)
+  const [qrFetchError, setQrFetchError] = useState<string | null>(null)
+  const [qrLoginState, setQrLoginState] = useState<'waiting' | 'pin_pending' | 'success' | 'timeout'>('waiting')
+  const [qrPinCode, setQrPinCode] = useState<string | null>(null)
+  const qrPollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const qrElapsedRef = useRef(0)
 
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const registerMenuRef = useRef<HTMLDivElement | null>(null)
@@ -231,6 +253,63 @@ function AgentListContent() {
 
   const handleSearch = () => { setPage(1); fetchAgents(1, searchTerm, agentTypeFilter) }
   const handleTypeFilterChange = (val: string) => { setAgentTypeFilter(val); setPage(1); fetchAgents(1, searchTerm, val) }
+
+  const stopQrPolling = () => {
+    if (qrPollingRef.current) { clearInterval(qrPollingRef.current); qrPollingRef.current = null }
+    qrElapsedRef.current = 0
+  }
+
+  const handleOpenQrModal = async (agent: AgentItem) => {
+    setQrModal({ open: true, agent })
+    setQrUrl(null)
+    setQrFetchError(null)
+    setQrLoginState('waiting')
+    setQrPinCode(null)
+    stopQrPolling()
+
+    // Fetch QR
+    setQrLoading(true)
+    try {
+      const res = await agentApi.getLineApiAgentLoginQr(agent.agentId)
+      const data = res.data as any
+      if (data?.qrUrl) {
+        setQrUrl(data.qrUrl)
+        // Start polling login status every 2s, timeout 20s
+        qrElapsedRef.current = 0
+        qrPollingRef.current = setInterval(async () => {
+          qrElapsedRef.current += 2
+          if (qrElapsedRef.current >= 20) {
+            stopQrPolling()
+            setQrLoginState('timeout')
+            return
+          }
+          try {
+            const sRes = await agentApi.getLineApiAgentLoginStatus(agent.agentId)
+            const sData = sRes.data as any
+            if (sData?.state === 'ready') {
+              stopQrPolling()
+              setQrPinCode(null)
+              setQrLoginState('success')
+            } else if (sData?.state === 'pin_pending' && sData?.pincode) {
+              setQrPinCode(sData.pincode)
+              setQrLoginState('pin_pending')
+            }
+          } catch {}
+        }, 2000)
+      } else {
+        setQrFetchError(data?.error ?? m.qrFetchFailed)
+      }
+    } catch (err: any) {
+      setQrFetchError(err?.message ?? m.qrFetchFailed)
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
+  const handleCloseQrModal = () => {
+    stopQrPolling()
+    setQrModal({ open: false })
+  }
 
   useEffect(() => {
     if (!highlightIdParam) return
@@ -336,6 +415,106 @@ function AgentListContent() {
           loading={actionLoading}
           t={{ cancel: t.admin.cancel, confirm: m.btnConfirm }}
         />
+      )}
+
+      {/* QR Login Modal */}
+      {qrModal.open && qrModal.agent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">{m.qrModalTitle}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{m.qrModalDesc}</p>
+              </div>
+              <button onClick={handleCloseQrModal} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Agent info */}
+              <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-sm">
+                <div className="flex gap-2">
+                  <span className="text-gray-400 w-20 shrink-0">{m.qrLabelCode}</span>
+                  <span className="font-semibold text-gray-900">{qrModal.agent.code}</span>
+                </div>
+                {qrModal.agent.description && (
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 w-20 shrink-0">{m.qrLabelDesc}</span>
+                    <span className="text-gray-700">{qrModal.agent.description}</span>
+                  </div>
+                )}
+                {qrModal.agent.tags && (
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 w-20 shrink-0">{m.qrLabelTags}</span>
+                    <span className="text-gray-700">{qrModal.agent.tags}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* QR section */}
+              <div className="flex flex-col items-center gap-3">
+                {qrLoading && (
+                  <div className="flex flex-col items-center gap-2 py-8">
+                    <svg className="w-8 h-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <p className="text-sm text-gray-500">{m.qrLoadingQr}</p>
+                  </div>
+                )}
+                {qrFetchError && (
+                  <div className="flex flex-col items-center gap-2 py-6">
+                    <AlertCircle className="w-8 h-8 text-red-400" />
+                    <p className="text-sm text-red-600 text-center">{qrFetchError}</p>
+                  </div>
+                )}
+                {qrUrl && !qrLoading && (
+                  <div className="p-3 bg-white rounded-xl border border-gray-200">
+                    <QRCode value={qrUrl} size={180} />
+                  </div>
+                )}
+
+                {/* PIN code display */}
+                {qrLoginState === 'pin_pending' && qrPinCode && (
+                  <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                    <p className="text-xs text-amber-600 font-medium mb-1">{m.qrPinLabel}</p>
+                    <p className="text-3xl font-bold tracking-[0.3em] text-amber-700">{qrPinCode}</p>
+                    <p className="text-xs text-amber-600 mt-1">{m.qrPinPending}</p>
+                  </div>
+                )}
+
+                {/* Login status */}
+                {qrUrl && !qrLoading && (
+                  <div className={clsx('flex items-center gap-2 text-sm font-medium',
+                    qrLoginState === 'success' ? 'text-emerald-600' :
+                    qrLoginState === 'timeout' ? 'text-red-500' :
+                    qrLoginState === 'pin_pending' ? 'text-amber-600' : 'text-gray-500')}>
+                    {(qrLoginState === 'waiting' || qrLoginState === 'pin_pending') && (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    )}
+                    {qrLoginState === 'success' && <CheckCircle2 className="w-4 h-4" />}
+                    {qrLoginState === 'timeout' && <AlertCircle className="w-4 h-4" />}
+                    {qrLoginState === 'waiting' ? m.qrWaiting :
+                     qrLoginState === 'pin_pending' ? m.qrPinPending :
+                     qrLoginState === 'success' ? m.qrSuccess : m.qrTimeout}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-5 pb-5 flex justify-end">
+              <button onClick={handleCloseQrModal}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                {m.btnCloseQr}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Header */}
@@ -540,7 +719,7 @@ function AgentListContent() {
                       {/* Status */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         {isLineApi
-                          ? <LineApiStatusBadge status={lineApiStatuses[agent.agentId] ?? null} labels={{ running: m.podRunning, pending: m.podPending, unknown: m.podUnknown }} />
+                          ? <LineApiStatusBadge status={lineApiStatuses[agent.agentId] ?? null} labels={{ running: m.podRunning, offline: m.podOffline, unknown: m.podUnknown }} />
                           : <StatusBadge status={agent.agentStatus} />
                         }
                       </td>
@@ -610,7 +789,7 @@ function AgentListContent() {
                                     {m.actionReload}
                                   </button>
                                   <button
-                                    onClick={() => { setOpenActionId(null) }}
+                                    onClick={() => { setOpenActionId(null); handleOpenQrModal(agent) }}
                                     className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                   >
                                     <QrCode className="w-4 h-4 flex-shrink-0" />

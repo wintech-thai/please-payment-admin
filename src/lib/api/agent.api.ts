@@ -86,5 +86,11 @@ export const agentApi = {
     client.post(`${BASE}/ReloadLineApiAgentById/${agentId}`, {}),
 
   getLineApiAgentStatus: (agentId: string) =>
-    client.get<{ status?: string; podStatus?: string; ready?: string; restarts?: number; age?: string }>(`${BASE}/GetLineApiAgentStatus/${agentId}`),
+    client.get<{ ok?: boolean; podStatus?: string; login?: string; raw?: string }>(`${BASE}/GetLineApiAgentStatus/${agentId}`),
+
+  getLineApiAgentLoginQr: (agentId: string) =>
+    client.get<{ ok?: boolean; state?: string; qrUrl?: string; error?: string }>(`${BASE}/GetLineApiAgentLoginQR/${agentId}`),
+
+  getLineApiAgentLoginStatus: (agentId: string) =>
+    client.get<{ ok?: boolean; state?: string; pincode?: string; error?: string }>(`${BASE}/GetLineApiAgentLoginStatus/${agentId}`),
 }

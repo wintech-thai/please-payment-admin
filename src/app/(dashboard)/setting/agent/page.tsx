@@ -419,10 +419,10 @@ function AgentListContent() {
 
       {/* QR Login Modal */}
       {qrModal.open && qrModal.agent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h3 className="text-base font-bold text-gray-900">{m.qrModalTitle}</h3>
                 <p className="text-xs text-gray-500 mt-0.5">{m.qrModalDesc}</p>
@@ -432,53 +432,33 @@ function AgentListContent() {
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
-              {/* Agent info */}
-              <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-sm">
-                <div className="flex gap-2">
-                  <span className="text-gray-400 w-20 shrink-0">{m.qrLabelCode}</span>
-                  <span className="font-semibold text-gray-900">{qrModal.agent.code}</span>
+            {/* Body: two columns */}
+            <div className="flex">
+              {/* Left: agent info + status + PIN */}
+              <div className="flex-1 p-6 flex flex-col gap-4 border-r border-gray-100">
+                {/* Agent info */}
+                <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 shrink-0 whitespace-nowrap">{m.qrLabelCode}</span>
+                    <span className="font-semibold text-gray-900">{qrModal.agent.code}</span>
+                  </div>
+                  {qrModal.agent.description && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-400 shrink-0 whitespace-nowrap">{m.qrLabelDesc}</span>
+                      <span className="text-gray-700">{qrModal.agent.description}</span>
+                    </div>
+                  )}
+                  {qrModal.agent.tags && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-400 shrink-0 whitespace-nowrap">{m.qrLabelTags}</span>
+                      <span className="text-gray-700">{qrModal.agent.tags}</span>
+                    </div>
+                  )}
                 </div>
-                {qrModal.agent.description && (
-                  <div className="flex gap-2">
-                    <span className="text-gray-400 w-20 shrink-0">{m.qrLabelDesc}</span>
-                    <span className="text-gray-700">{qrModal.agent.description}</span>
-                  </div>
-                )}
-                {qrModal.agent.tags && (
-                  <div className="flex gap-2">
-                    <span className="text-gray-400 w-20 shrink-0">{m.qrLabelTags}</span>
-                    <span className="text-gray-700">{qrModal.agent.tags}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* QR section */}
-              <div className="flex flex-col items-center gap-3">
-                {qrLoading && (
-                  <div className="flex flex-col items-center gap-2 py-8">
-                    <svg className="w-8 h-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    <p className="text-sm text-gray-500">{m.qrLoadingQr}</p>
-                  </div>
-                )}
-                {qrFetchError && (
-                  <div className="flex flex-col items-center gap-2 py-6">
-                    <AlertCircle className="w-8 h-8 text-red-400" />
-                    <p className="text-sm text-red-600 text-center">{qrFetchError}</p>
-                  </div>
-                )}
-                {qrUrl && !qrLoading && (
-                  <div className="p-3 bg-white rounded-xl border border-gray-200">
-                    <QRCode value={qrUrl} size={180} />
-                  </div>
-                )}
 
                 {/* PIN code display */}
                 {qrLoginState === 'pin_pending' && qrPinCode && (
-                  <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
                     <p className="text-xs text-amber-600 font-medium mb-1">{m.qrPinLabel}</p>
                     <p className="text-3xl font-bold tracking-[0.3em] text-amber-700">{qrPinCode}</p>
                     <p className="text-xs text-amber-600 mt-1">{m.qrPinPending}</p>
@@ -486,7 +466,7 @@ function AgentListContent() {
                 )}
 
                 {/* Login status */}
-                {qrUrl && !qrLoading && (
+                {!qrLoading && (qrUrl || qrFetchError) && (
                   <div className={clsx('flex items-center gap-2 text-sm font-medium',
                     qrLoginState === 'success' ? 'text-emerald-600' :
                     qrLoginState === 'timeout' ? 'text-red-500' :
@@ -499,19 +479,41 @@ function AgentListContent() {
                     )}
                     {qrLoginState === 'success' && <CheckCircle2 className="w-4 h-4" />}
                     {qrLoginState === 'timeout' && <AlertCircle className="w-4 h-4" />}
-                    {qrLoginState === 'waiting' ? m.qrWaiting :
+                    {qrFetchError ? qrFetchError :
+                     qrLoginState === 'waiting' ? m.qrWaiting :
                      qrLoginState === 'pin_pending' ? m.qrPinPending :
                      qrLoginState === 'success' ? m.qrSuccess : m.qrTimeout}
                   </div>
                 )}
-              </div>
-            </div>
 
-            <div className="px-5 pb-5 flex justify-end">
-              <button onClick={handleCloseQrModal}
-                className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                {m.btnCloseQr}
-              </button>
+                <div className="mt-auto flex justify-end">
+                  <button onClick={handleCloseQrModal}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    {m.btnCloseQr}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: QR code */}
+              <div className="flex items-center justify-center p-6 w-56">
+                {qrLoading && (
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="w-8 h-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <p className="text-xs text-gray-500">{m.qrLoadingQr}</p>
+                  </div>
+                )}
+                {qrFetchError && !qrLoading && (
+                  <AlertCircle className="w-10 h-10 text-red-300" />
+                )}
+                {qrUrl && !qrLoading && (
+                  <div className="p-3 bg-white rounded-xl border border-gray-200">
+                    <QRCode value={qrUrl} size={168} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -10,7 +10,7 @@ import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import QRCode from 'react-qr-code'
 
-type LineApiStatus = { ok?: boolean; podStatus?: string; login?: string; raw?: string }
+type LineApiStatus = { ok?: boolean; podStatus?: string; login?: string; agentId?: string; raw?: string }
 
 function StatusBadge({ status }: { status?: string | null }) {
   const { t } = useLang()
@@ -27,8 +27,25 @@ function StatusBadge({ status }: { status?: string | null }) {
   )
 }
 
+function syntaxHighlight(json: string): string {
+  const escaped = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return escaped.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+    (match) => {
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) return `<span style="color:#7dd3fc">${match}</span>` // key → sky
+        return `<span style="color:#86efac">${match}</span>` // string → green
+      }
+      if (/true|false/.test(match)) return `<span style="color:#c084fc">${match}</span>` // boolean → purple
+      if (/null/.test(match)) return `<span style="color:#f87171">${match}</span>` // null → red
+      return `<span style="color:#fbbf24">${match}</span>` // number → amber
+    }
+  )
+}
+
 function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null; labels: { running: string; offline: string; unknown: string } }) {
   const [showRaw, setShowRaw] = useState(false)
+  const [copied, setCopied] = useState(false)
   if (!status) return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-400 ring-1 ring-gray-200">
       <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse flex-shrink-0" />
@@ -43,8 +60,14 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
     ? { bg: 'bg-red-50 text-red-700 ring-red-200', dot: 'bg-red-500' }
     : { bg: 'bg-gray-100 text-gray-500 ring-gray-200', dot: 'bg-gray-400' }
   const label = isRunning ? labels.running : isOffline ? labels.offline : labels.unknown
+  const handleCopy = () => {
+    if (!status.raw) return
+    navigator.clipboard.writeText(JSON.stringify(JSON.parse(status.raw), null, 2))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
   return (
-    <div className="flex flex-col gap-0.5 relative">
+    <div className="flex flex-col gap-0.5">
       <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', cfg.bg)}>
         <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', cfg.dot)} />
         {label}
@@ -58,9 +81,44 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
         </button>
       )}
       {showRaw && status.raw && (
-        <div className="absolute top-full right-0 z-50 mt-1 w-72 bg-gray-900 text-green-400 text-[10px] font-mono rounded-lg p-3 shadow-xl overflow-auto max-h-48"
-          onClick={e => e.stopPropagation()}>
-          <pre>{JSON.stringify(JSON.parse(status.raw), null, 2)}</pre>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowRaw(false)}>
+          <div className="w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)' }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4" style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-red-500/80" />
+                  <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                  <span className="w-3 h-3 rounded-full bg-green-500/80" />
+                </div>
+                <span className="text-sm font-semibold text-slate-200">Agent Status</span>
+                <span className="text-xs text-slate-500 font-mono">{status.agentId}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{ background: copied ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)', color: copied ? '#86efac' : '#94a3b8' }}
+                >
+                  {copied ? (
+                    <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Copied</>
+                  ) : (
+                    <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowRaw(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-slate-400 hover:text-slate-200 hover:bg-white/10"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="overflow-auto p-5" style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
+              <pre className="text-xs font-mono leading-relaxed" style={{ color: '#cbd5e1' }} dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify(JSON.parse(status.raw), null, 2)) }} />
+            </div>
+          </div>
         </div>
       )}
     </div>

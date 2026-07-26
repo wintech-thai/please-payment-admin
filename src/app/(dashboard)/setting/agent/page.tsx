@@ -81,24 +81,26 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
         </button>
       )}
       {showRaw && status.raw && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowRaw(false)}>
-          <div className="w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)' }} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowRaw(false)}>
+          <div className="w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-primary-950 border border-primary-800" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4" style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center justify-between px-5 py-4 bg-primary-900 border-b border-primary-800">
               <div className="flex items-center gap-3">
                 <div className="flex gap-1.5">
                   <span className="w-3 h-3 rounded-full bg-red-500/80" />
                   <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
                   <span className="w-3 h-3 rounded-full bg-green-500/80" />
                 </div>
-                <span className="text-sm font-semibold text-slate-200">Agent Status</span>
-                <span className="text-xs text-slate-500 font-mono">{status.agentId}</span>
+                <span className="text-sm font-semibold text-primary-100">Agent Status</span>
+                <span className="text-xs text-primary-400 font-mono">{status.agentId}</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  style={{ background: copied ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)', color: copied ? '#86efac' : '#94a3b8' }}
+                  className={clsx(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                    copied ? 'bg-emerald-900/30 text-emerald-400' : 'bg-primary-800 text-primary-300 hover:bg-primary-700 hover:text-primary-100'
+                  )}
                 >
                   {copied ? (
                     <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Copied</>
@@ -108,15 +110,15 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
                 </button>
                 <button
                   onClick={() => setShowRaw(false)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-slate-400 hover:text-slate-200 hover:bg-white/10"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-primary-400 hover:text-primary-100 hover:bg-primary-800"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             </div>
             {/* Body */}
-            <div className="overflow-auto p-5" style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
-              <pre className="text-xs font-mono leading-relaxed" style={{ color: '#cbd5e1' }} dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify(JSON.parse(status.raw), null, 2)) }} />
+            <div className="overflow-auto p-5 custom-scrollbar">
+              <pre className="text-xs font-mono leading-relaxed text-primary-200" dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify(JSON.parse(status.raw), null, 2)) }} />
             </div>
           </div>
         </div>
@@ -760,14 +762,17 @@ function AgentListContent() {
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(agent.createdDate)}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500" onClick={e => e.stopPropagation()}>
                         {agent.lastSeenDate ? (
-                          <div className="flex flex-col gap-0.5">
-                            <span>{formatDate(agent.lastSeenDate)}</span>
+                          <button
+                            onClick={() => router.push(`/setting/agent/${agent.agentId}/messages`)}
+                            className="flex flex-col gap-0.5 text-left hover:text-primary-600 group"
+                          >
+                            <span className="group-hover:underline">{formatDate(agent.lastSeenDate)}</span>
                             {formatAge(agent.lastSeenDate) && (
                               <span className="text-xs text-gray-400">{formatAge(agent.lastSeenDate)}</span>
                             )}
-                          </div>
+                          </button>
                         ) : '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">

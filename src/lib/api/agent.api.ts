@@ -10,6 +10,7 @@ import type {
   UpdateAgentPayload,
 } from './types'
 
+
 export interface AgentEventTimeSeriesPayload {
   FromDate?: string
   ToDate?: string
@@ -74,4 +75,22 @@ export const agentApi = {
 
   getAgentEventTimeSeries: (agentId: string, payload: AgentEventTimeSeriesPayload = {}) =>
     client.post<AgentEventTimeSeriesItem[]>(`${BASE}/GetAgentEventTimeSeries/${agentId}`, payload),
+
+  addLineApiAgent: (payload: AddAgentPayload) =>
+    client.post<{ agent: AgentItem }>(`${BASE}/AddLineApiAgent`, payload),
+
+  restartLineApiAgentById: (agentId: string) =>
+    client.post(`${BASE}/RestartLineApiAgentById/${agentId}`, {}),
+
+  reloadLineApiAgentById: (agentId: string) =>
+    client.post(`${BASE}/ReloadLineApiAgentById/${agentId}`, {}),
+
+  getLineApiAgentStatus: (agentId: string) =>
+    client.get<{ ok?: boolean; podStatus?: string; login?: string; raw?: string }>(`${BASE}/GetLineApiAgentStatus/${agentId}`),
+
+  getLineApiAgentLoginQr: (agentId: string) =>
+    client.get<{ ok?: boolean; state?: string; qrUrl?: string; error?: string }>(`${BASE}/GetLineApiAgentLoginQR/${agentId}`),
+
+  getLineApiAgentLoginStatus: (agentId: string) =>
+    client.get<{ ok?: boolean; state?: string; pincode?: string; error?: string }>(`${BASE}/GetLineApiAgentLoginStatus/${agentId}`),
 }

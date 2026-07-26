@@ -5,9 +5,12 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
 import type { AgentItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { Search, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight, Key } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight, Key, ChevronDown, RotateCcw, RefreshCw, QrCode, X, CheckCircle2, AlertCircle } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import QRCode from 'react-qr-code'
+
+type LineApiStatus = { ok?: boolean; podStatus?: string; login?: string; agentId?: string; raw?: string }
 
 function StatusBadge({ status }: { status?: string | null }) {
   const { t } = useLang()
@@ -20,6 +23,119 @@ function StatusBadge({ status }: { status?: string | null }) {
     <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', cfg.bg)}>
       <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', cfg.dot)} />
       {isActive ? t.agent.statusActive : t.agent.statusInactive}
+    </span>
+  )
+}
+
+function syntaxHighlight(json: string): string {
+  const escaped = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return escaped.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+    (match) => {
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) return `<span style="color:#7dd3fc">${match}</span>` // key → sky
+        return `<span style="color:#86efac">${match}</span>` // string → green
+      }
+      if (/true|false/.test(match)) return `<span style="color:#c084fc">${match}</span>` // boolean → purple
+      if (/null/.test(match)) return `<span style="color:#f87171">${match}</span>` // null → red
+      return `<span style="color:#fbbf24">${match}</span>` // number → amber
+    }
+  )
+}
+
+function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null; labels: { running: string; offline: string; unknown: string } }) {
+  const [showRaw, setShowRaw] = useState(false)
+  const [copied, setCopied] = useState(false)
+  if (!status) return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-400 ring-1 ring-gray-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse flex-shrink-0" />
+      —
+    </span>
+  )
+  const isRunning = status.ok === true
+  const isOffline = status.podStatus === 'Offline'
+  const cfg = isRunning
+    ? { bg: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500' }
+    : isOffline
+    ? { bg: 'bg-red-50 text-red-700 ring-red-200', dot: 'bg-red-500' }
+    : { bg: 'bg-gray-100 text-gray-500 ring-gray-200', dot: 'bg-gray-400' }
+  const label = isRunning ? labels.running : isOffline ? labels.offline : labels.unknown
+  const handleCopy = () => {
+    if (!status.raw) return
+    navigator.clipboard.writeText(JSON.stringify(JSON.parse(status.raw), null, 2))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', cfg.bg)}>
+        <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', cfg.dot)} />
+        {label}
+      </span>
+      {status.login != null && (
+        <button
+          onClick={e => { e.stopPropagation(); setShowRaw(v => !v) }}
+          className="text-[10px] text-gray-400 hover:text-gray-600 ml-1 text-left"
+        >
+          {status.login}
+        </button>
+      )}
+      {showRaw && status.raw && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowRaw(false)}>
+          <div className="w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)' }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4" style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-red-500/80" />
+                  <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                  <span className="w-3 h-3 rounded-full bg-green-500/80" />
+                </div>
+                <span className="text-sm font-semibold text-slate-200">Agent Status</span>
+                <span className="text-xs text-slate-500 font-mono">{status.agentId}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{ background: copied ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)', color: copied ? '#86efac' : '#94a3b8' }}
+                >
+                  {copied ? (
+                    <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Copied</>
+                  ) : (
+                    <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowRaw(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-slate-400 hover:text-slate-200 hover:bg-white/10"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="overflow-auto p-5" style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
+              <pre className="text-xs font-mono leading-relaxed" style={{ color: '#cbd5e1' }} dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify(JSON.parse(status.raw), null, 2)) }} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AgentTypeBadge({ agentType }: { agentType?: string | null }) {
+  if (!agentType) return <span className="text-gray-400">—</span>
+  const isLine = agentType.toLowerCase() === 'line api'
+  return (
+    <span className={clsx(
+      'inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ring-1',
+      isLine
+        ? 'bg-green-50 text-green-700 ring-green-200'
+        : 'bg-blue-50 text-blue-700 ring-blue-200'
+    )}>
+      {agentType}
     </span>
   )
 }
@@ -55,6 +171,28 @@ function DeleteModal({ agentCode, onConfirm, onCancel, deleting }: {
   )
 }
 
+function ConfirmActionModal({ title, desc, onConfirm, onCancel, loading, t }: {
+  title: string; desc: string; onConfirm: () => void; onCancel: () => void; loading: boolean
+  t: { cancel: string; confirm: string }
+}) {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onCancel}>
+      <div className="w-full max-w-sm rounded-2xl shadow-2xl bg-white text-center px-8 py-8" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+        <p className="text-sm text-gray-500 mb-7">{desc}</p>
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors uppercase">
+            {t.cancel}
+          </button>
+          <button onClick={onConfirm} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-xl hover:bg-primary-700 disabled:opacity-60 transition-colors uppercase">
+            {loading ? '...' : t.confirm}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AgentListContent() {
   const { t } = useLang()
   const m = t.agent
@@ -68,6 +206,7 @@ function AgentListContent() {
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [searchTerm, setSearchTerm] = useState('')
+  const [agentTypeFilter, setAgentTypeFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
@@ -78,14 +217,29 @@ function AgentListContent() {
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; agentId?: string; agentCode?: string }>({ open: false })
   const [deleting, setDeleting] = useState(false)
   const [openActionId, setOpenActionId] = useState<string | null>(null)
-  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [showRegisterMenu, setShowRegisterMenu] = useState(false)
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'restart' | 'reload'; agentId?: string; agentCode?: string }>({ open: false })
+  const [actionLoading, setActionLoading] = useState(false)
+  const [lineApiStatuses, setLineApiStatuses] = useState<Record<string, LineApiStatus>>({})
+  const [qrModal, setQrModal] = useState<{ open: boolean; agent?: AgentItem }>({ open: false })
+  const [qrUrl, setQrUrl] = useState<string | null>(null)
+  const [qrLoading, setQrLoading] = useState(false)
+  const [qrFetchError, setQrFetchError] = useState<string | null>(null)
+  const [qrLoginState, setQrLoginState] = useState<'waiting' | 'pin_pending' | 'success' | 'timeout'>('waiting')
+  const [qrPinCode, setQrPinCode] = useState<string | null>(null)
+  const qrPollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const qrElapsedRef = useRef(0)
 
-  const fetchAgents = async (p = page, search = searchTerm) => {
+  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const registerMenuRef = useRef<HTMLDivElement | null>(null)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const fetchAgents = async (p = page, search = searchTerm, typeFilter = agentTypeFilter) => {
     setLoading(true)
     try {
       const [listRes, countRes] = await Promise.allSettled([
-        agentApi.getAgents({ FullTextSearch: search, Page: p, Limit: itemsPerPage }),
-        agentApi.getAgentCount({ FullTextSearch: search }),
+        agentApi.getAgents({ FullTextSearch: search, AgentType: typeFilter || undefined, Page: p, Limit: itemsPerPage }),
+        agentApi.getAgentCount({ FullTextSearch: search, AgentType: typeFilter || undefined }),
       ])
       if (listRes.status === 'fulfilled') {
         const data = listRes.value.data as any
@@ -93,6 +247,8 @@ function AgentListContent() {
         const normalized = list.map(item => ({
           ...item,
           agentId: item.agentId ?? item.AgentId ?? item.id ?? item.Id ?? '',
+          agentType: item.agentType ?? item.AgentType ?? null,
+          agentConfigObj: item.agentConfigObj ?? item.AgentConfigObj ?? null,
           lastSeenDate: item.lastSeenDate ?? item.LastSeenDate ?? item.lastSeen ?? item.LastSeen ?? null,
           lastSeenErrorDate: item.lastSeenErrorDate ?? item.LastSeenErrorDate ?? null,
         }))
@@ -116,12 +272,106 @@ function AgentListContent() {
 
   useEffect(() => { fetchAgents() }, [page, itemsPerPage])
 
-  const handleSearch = () => { setPage(1); fetchAgents(1, searchTerm) }
+  // Background polling for Line Api agents every 10 seconds
+  useEffect(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+
+    const lineApiIds = agents
+      .filter(a => a.agentType?.toLowerCase() === 'line api')
+      .map(a => a.agentId)
+
+    if (lineApiIds.length === 0) return
+
+    const poll = async () => {
+      await Promise.allSettled(
+        lineApiIds.map(id =>
+          agentApi.getLineApiAgentStatus(id)
+            .then(res => {
+              const data = res.data as any
+              setLineApiStatuses(prev => ({ ...prev, [id]: data }))
+            })
+            .catch(() => {})
+        )
+      )
+    }
+
+    poll()
+    pollingRef.current = setInterval(poll, 10_000)
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [agents]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSearch = () => { setPage(1); fetchAgents(1, searchTerm, agentTypeFilter) }
+  const handleTypeFilterChange = (val: string) => { setAgentTypeFilter(val); setPage(1); fetchAgents(1, searchTerm, val) }
+
+  const stopQrPolling = () => {
+    if (qrPollingRef.current) { clearInterval(qrPollingRef.current); qrPollingRef.current = null }
+    qrElapsedRef.current = 0
+  }
+
+  const handleOpenQrModal = async (agent: AgentItem) => {
+    setQrModal({ open: true, agent })
+    setQrUrl(null)
+    setQrFetchError(null)
+    setQrLoginState('waiting')
+    setQrPinCode(null)
+    stopQrPolling()
+
+    // Fetch QR
+    setQrLoading(true)
+    try {
+      const res = await agentApi.getLineApiAgentLoginQr(agent.agentId)
+      const data = res.data as any
+      if (data?.qrUrl) {
+        setQrUrl(data.qrUrl)
+        // Start polling login status every 2s, timeout 20s
+        qrElapsedRef.current = 0
+        qrPollingRef.current = setInterval(async () => {
+          qrElapsedRef.current += 2
+          if (qrElapsedRef.current >= 60) {
+            stopQrPolling()
+            setQrLoginState('timeout')
+            return
+          }
+          try {
+            const sRes = await agentApi.getLineApiAgentLoginStatus(agent.agentId)
+            const sData = sRes.data as any
+            if (sData?.state === 'ready') {
+              stopQrPolling()
+              setQrPinCode(null)
+              setQrLoginState('success')
+            } else if (sData?.state === 'pin_pending' && sData?.pincode) {
+              setQrPinCode(sData.pincode)
+              setQrLoginState('pin_pending')
+            }
+          } catch {}
+        }, 2000)
+      } else {
+        setQrFetchError(data?.error ?? m.qrFetchFailed)
+      }
+    } catch (err: any) {
+      setQrFetchError(err?.message ?? m.qrFetchFailed)
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
+  const handleCloseQrModal = () => {
+    stopQrPolling()
+    setQrModal({ open: false })
+  }
 
   useEffect(() => {
     if (!highlightIdParam) return
     setSelectedRowId(highlightIdParam)
-    // remove ?highlight= from URL without re-render
     const params = new URLSearchParams(searchParams.toString())
     params.delete('highlight')
     window.history.replaceState(null, '', `${pathname}?${params.toString()}`)
@@ -137,10 +387,13 @@ function AgentListContent() {
         const ref = menuRefs.current[openActionId]
         if (ref && !ref.contains(e.target as Node)) setOpenActionId(null)
       }
+      if (showRegisterMenu && registerMenuRef.current && !registerMenuRef.current.contains(e.target as Node)) {
+        setShowRegisterMenu(false)
+      }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [openActionId])
+  }, [openActionId, showRegisterMenu])
 
   const handleDelete = async () => {
     if (!deleteModal.agentId) return
@@ -155,6 +408,25 @@ function AgentListContent() {
       toast.error(err instanceof Error ? err.message : m.deleteFailed)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleConfirmAction = async () => {
+    if (!confirmModal.agentId || !confirmModal.type) return
+    setActionLoading(true)
+    try {
+      if (confirmModal.type === 'restart') {
+        await agentApi.restartLineApiAgentById(confirmModal.agentId)
+        toast.success(m.restartSuccess)
+      } else {
+        await agentApi.reloadLineApiAgentById(confirmModal.agentId)
+        toast.success(m.reloadSuccess)
+      }
+      setConfirmModal({ open: false })
+    } catch {
+      toast.error(confirmModal.type === 'restart' ? m.restartFailed : m.reloadFailed)
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -175,11 +447,10 @@ function AgentListContent() {
     return `${hours}h ${mins}min`
   }
 
-
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
-  const cols = ['', m.colCode, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colAction]
+  const cols = ['', m.colCode, m.colAgentType, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -193,22 +464,161 @@ function AgentListContent() {
         />
       )}
 
+      {confirmModal.open && (
+        <ConfirmActionModal
+          title={confirmModal.type === 'restart' ? m.confirmRestartTitle : m.confirmReloadTitle}
+          desc={confirmModal.type === 'restart' ? m.confirmRestartDesc : m.confirmReloadDesc}
+          onConfirm={handleConfirmAction}
+          onCancel={() => setConfirmModal({ open: false })}
+          loading={actionLoading}
+          t={{ cancel: t.admin.cancel, confirm: m.btnConfirm }}
+        />
+      )}
+
+      {/* QR Login Modal */}
+      {qrModal.open && qrModal.agent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">{m.qrModalTitle}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{m.qrModalDesc}</p>
+              </div>
+              <button onClick={handleCloseQrModal} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body: two columns */}
+            <div className="flex">
+              {/* Left: agent info + status + PIN */}
+              <div className="flex-1 p-6 flex flex-col gap-4 border-r border-gray-100">
+                {/* Agent info */}
+                <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 shrink-0 whitespace-nowrap">{m.qrLabelCode}</span>
+                    <span className="font-semibold text-gray-900">{qrModal.agent.code}</span>
+                  </div>
+                  {qrModal.agent.description && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-400 shrink-0 whitespace-nowrap">{m.qrLabelDesc}</span>
+                      <span className="text-gray-700">{qrModal.agent.description}</span>
+                    </div>
+                  )}
+                  {qrModal.agent.tags && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-400 shrink-0 whitespace-nowrap">{m.qrLabelTags}</span>
+                      <div className="flex flex-wrap gap-1">
+                        {qrModal.agent.tags.split(',').map(tag => (
+                          <span key={tag} className="inline-flex px-2.5 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-[10px] font-semibold">{tag.trim()}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* PIN code display */}
+                {qrLoginState === 'pin_pending' && qrPinCode && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                    <p className="text-xs text-amber-600 font-medium mb-1">{m.qrPinLabel}</p>
+                    <p className="text-3xl font-bold tracking-[0.3em] text-amber-700">{qrPinCode}</p>
+                    <p className="text-xs text-amber-600 mt-1">{m.qrPinPending}</p>
+                  </div>
+                )}
+
+                {/* Login status */}
+                {!qrLoading && (qrUrl || qrFetchError) && (
+                  <div className={clsx('flex items-center gap-2 text-sm font-medium',
+                    qrLoginState === 'success' ? 'text-emerald-600' :
+                    qrLoginState === 'timeout' ? 'text-red-500' :
+                    qrLoginState === 'pin_pending' ? 'text-amber-600' : 'text-gray-500')}>
+                    {(qrLoginState === 'waiting' || qrLoginState === 'pin_pending') && (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    )}
+                    {qrLoginState === 'success' && <CheckCircle2 className="w-4 h-4" />}
+                    {qrLoginState === 'timeout' && <AlertCircle className="w-4 h-4" />}
+                    {qrFetchError ? qrFetchError :
+                     qrLoginState === 'waiting' ? m.qrWaiting :
+                     qrLoginState === 'pin_pending' ? m.qrPinPending :
+                     qrLoginState === 'success' ? m.qrSuccess : m.qrTimeout}
+                  </div>
+                )}
+
+                <div className="mt-auto flex justify-end">
+                  <button onClick={handleCloseQrModal}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    {m.btnCloseQr}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: QR code */}
+              <div className="flex items-center justify-center p-6 w-56">
+                {qrLoading && (
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="w-8 h-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <p className="text-xs text-gray-500">{m.qrLoadingQr}</p>
+                  </div>
+                )}
+                {qrFetchError && !qrLoading && (
+                  <AlertCircle className="w-10 h-10 text-red-300" />
+                )}
+                {qrUrl && !qrLoading && (
+                  <div className="p-3 bg-white rounded-xl border border-gray-200">
+                    <QRCode value={qrUrl} size={168} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{m.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
         </div>
-        <button
-          onClick={() => router.push('/setting/agent/create')}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {m.registerAgent}
-        </button>
+        {/* Register Agent dropdown button */}
+        <div className="relative" ref={registerMenuRef}>
+          <button
+            onClick={() => setShowRegisterMenu(prev => !prev)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {m.registerAgent}
+            <ChevronDown className="w-4 h-4" />
+          </button>
+          {showRegisterMenu && (
+            <div className="absolute right-0 top-10 z-50 w-52 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden">
+              <button
+                onClick={() => { setShowRegisterMenu(false); router.push('/setting/agent/create?type=line-api') }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <span className="w-5 h-5 rounded bg-green-100 flex items-center justify-center text-green-700 font-bold text-[10px] flex-shrink-0">L</span>
+                {m.menuRegisterLineApi}
+              </button>
+              <button
+                onClick={() => { setShowRegisterMenu(false); router.push('/setting/agent/create') }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <span className="w-5 h-5 rounded bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-[10px] flex-shrink-0">A</span>
+                {m.menuRegisterAndroidApp}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Toolbar: search + delete */}
+      {/* Toolbar */}
       <div className="flex-none flex flex-wrap items-center gap-3 mb-4">
         <div className="flex items-center gap-2 flex-1 min-w-56 max-w-xs bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
           <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -220,9 +630,19 @@ function AgentListContent() {
             className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder-gray-400"
           />
           {searchTerm && (
-            <button onClick={() => { setSearchTerm(''); fetchAgents(1, '') }} className="text-gray-400 hover:text-gray-600">✕</button>
+            <button onClick={() => { setSearchTerm(''); fetchAgents(1, '', agentTypeFilter) }} className="text-gray-400 hover:text-gray-600">✕</button>
           )}
         </div>
+        {/* Agent Type filter */}
+        <select
+          value={agentTypeFilter}
+          onChange={e => handleTypeFilterChange(e.target.value)}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-300"
+        >
+          <option value="">{m.filterAllAgentTypes}</option>
+          <option value="Line Api">{m.menuRegisterLineApi}</option>
+          <option value="Android App">{m.menuRegisterAndroidApp}</option>
+        </select>
         <button
           onClick={handleSearch}
           className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
@@ -287,6 +707,7 @@ function AgentListContent() {
                 agents.map((agent, idx) => {
                   const highlighted = !!agent.agentId && selectedRowId === agent.agentId
                   const isChecked = selectedId === agent.agentId
+                  const isLineApi = agent.agentType?.toLowerCase() === 'line api'
                   return (
                     <tr
                       id={`agent-row-${agent.agentId}`}
@@ -304,7 +725,6 @@ function AgentListContent() {
                           : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                       )}
                     >
-                      {/* Checkbox — stopPropagation on td so row click doesn't fire */}
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
@@ -313,13 +733,19 @@ function AgentListContent() {
                           className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4 cursor-pointer"
                         />
                       </td>
+                      {/* Code + ID */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <button
                           onClick={e => { e.stopPropagation(); router.push(`/setting/agent/${agent.agentId}/update`) }}
-                          className={clsx('text-sm font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
+                          className={clsx('text-sm font-semibold hover:underline block', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
                           {agent.code ?? '—'}
                         </button>
+                        <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{agent.agentId}</p>
+                      </td>
+                      {/* Agent Type */}
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <AgentTypeBadge agentType={agent.agentType} />
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 max-w-[200px] truncate">
                         {agent.description ?? '—'}
@@ -354,10 +780,14 @@ function AgentListContent() {
                           </div>
                         ) : '—'}
                       </td>
+                      {/* Status */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <StatusBadge status={agent.agentStatus} />
+                        {isLineApi
+                          ? <LineApiStatusBadge status={lineApiStatuses[agent.agentId] ?? null} labels={{ running: m.podRunning, offline: m.podOffline, unknown: m.podUnknown }} />
+                          : <StatusBadge status={agent.agentStatus} />
+                        }
                       </td>
-                      {/* Action menu — stopPropagation on td */}
+                      {/* Action menu */}
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
                         <div className="relative" ref={el => { menuRefs.current[agent.agentId] = el }}>
                           <button
@@ -367,7 +797,8 @@ function AgentListContent() {
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                           {openActionId === agent.agentId && (
-                            <div className="absolute right-0 top-8 z-50 w-52 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden">
+                            <div className="absolute right-0 top-8 z-50 w-56 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden">
+                              {/* Endpoint & API Keys — always enabled */}
                               <button
                                 onClick={() => { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/endpoint-keys`) }}
                                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -375,9 +806,14 @@ function AgentListContent() {
                                 <Key className="w-4 h-4 text-primary-500 flex-shrink-0" />
                                 {m.actionEndpointKeys}
                               </button>
+                              {/* Overview — disabled for Line Api */}
                               <button
-                                onClick={() => { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/overview`) }}
-                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                onClick={() => { if (!isLineApi) { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/overview`) } }}
+                                disabled={isLineApi}
+                                className={clsx(
+                                  'flex items-center gap-2.5 w-full px-4 py-2.5 text-sm transition-colors',
+                                  isLineApi ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'
+                                )}
                               >
                                 <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -386,13 +822,40 @@ function AgentListContent() {
                               </button>
                               <button
                                 onClick={() => { setOpenActionId(null); router.push(`/setting/agent/${agent.agentId}/messages`) }}
-                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-gray-50"
                               >
                                 <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                                 </svg>
                                 {m.actionMessages}
                               </button>
+                              {/* Restart — only for Line Api */}
+                              {isLineApi && (
+                                <>
+                                  <div className="my-1 border-t border-gray-100" />
+                                  <button
+                                    onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'restart', agentId: agent.agentId, agentCode: agent.code ?? undefined }) }}
+                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                                  >
+                                    <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                                    {m.actionRestart}
+                                  </button>
+                                  <button
+                                    onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'reload', agentId: agent.agentId, agentCode: agent.code ?? undefined }) }}
+                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                                  >
+                                    <RefreshCw className="w-4 h-4 flex-shrink-0" />
+                                    {m.actionReload}
+                                  </button>
+                                  <button
+                                    onClick={() => { setOpenActionId(null); handleOpenQrModal(agent) }}
+                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <QrCode className="w-4 h-4 flex-shrink-0" />
+                                    {m.actionLoginWithQr}
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )}
                         </div>

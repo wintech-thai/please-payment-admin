@@ -909,11 +909,13 @@ export interface AgentItem {
   description?: string | null
   tags?: string | null
   agentStatus?: string | null
+  agentType?: string | null
   createdDate?: string | null
   lastSeen?: string | null
   lastSeenDate?: string | null
   lastSeenErrorDate?: string | null
   bankAccountsSelectedObj?: BankAccountItem[] | null
+  agentConfigObj?: { userName?: string | null; apiKey?: string | null; agentImageTag?: string | null } | null
 }
 
 export interface AgentEndpointItem {
@@ -934,6 +936,7 @@ export interface AgentApiKeyItem {
 export interface GetAgentsPayload {
   FullTextSearch?: string
   Status?: string
+  AgentType?: string
   Page?: number
   Limit?: number
 }
@@ -942,7 +945,9 @@ export interface AddAgentPayload {
   Code: string
   Description?: string
   Tags?: string
+  AgentType?: string
   BankAccountsSelectedObj?: BankAccountItem[]
+  AgentConfigObj?: { UserName?: string; ApiKey?: string; AgentImageTag?: string }
 }
 
 export interface UpdateAgentPayload {
@@ -950,6 +955,7 @@ export interface UpdateAgentPayload {
   Description?: string
   Tags?: string
   BankAccountsSelectedObj?: BankAccountItem[]
+  AgentConfigObj?: { UserName?: string; ApiKey?: string; AgentImageTag?: string }
 }
 
 export interface AgentEventItem {

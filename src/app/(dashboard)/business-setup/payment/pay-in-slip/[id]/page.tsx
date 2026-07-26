@@ -156,6 +156,7 @@ export default function PayInSlipDetailPage() {
   const [saving, setSaving] = useState(false)
   const [approving, setApproving] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const [showApproveModal, setShowApproveModal] = useState(false)
   const [rejecting, setRejecting] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [verifyResult, setVerifyResult] = useState<{ found: boolean; item: any } | null>(null)
@@ -252,30 +253,15 @@ export default function PayInSlipDetailPage() {
     }
   }
 
-  const handleApprove = async () => {
+  const handleApproveClick = () => {
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) { toast.error(m.validAmountRequired); return }
     if (!bankAccountId) { toast.error(m.validBankRequired); return }
     if (!refId.trim()) { toast.error(m.validRefIdRequired); return }
+    setShowApproveModal(true)
+  }
 
-    // Pre-validate: check for matching pending request
-    try {
-      const res = await paymentDocumentApi.getPendingPayInRequestsForPaymentTx({
-        GeneratedAmountStr: String(parseFloat(amount)),
-        BankAccountId: bankAccountId || undefined,
-        MerchantId: detail?.merchantId || undefined,
-      })
-      const data = res.data as any
-      const list: any[] = Array.isArray(data)
-        ? data
-        : (data?.payInRequests ?? data?.PayInRequests ?? data?.requests ?? data?.items ?? [])
-      if (list.length === 0) {
-        toast.error(m.toastApproveBlockedNoRequest)
-        return
-      }
-    } catch {
-      // If API call fails, don't block approve
-    }
-
+  const handleApproveConfirm = async () => {
+    setShowApproveModal(false)
     setApproving(true)
     try {
       await paymentDocumentApi.approvePayInDocumentById(id, {
@@ -330,6 +316,8 @@ export default function PayInSlipDetailPage() {
 
   const previewImageUrl = detail?.previewUrl ? buildStorageUrl(detail.previewUrl) : null
 
+  const selectedBank = bankAccounts.find(ba => (ba.bankAccountId ?? (ba as any).id ?? ba.accountId) === bankAccountId)
+
   return (
     <>
       {showRejectModal && (
@@ -339,6 +327,56 @@ export default function PayInSlipDetailPage() {
           loading={rejecting}
           m={m}
         />
+      )}
+
+      {showApproveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-base font-bold text-gray-900 mb-1">{m.approveConfirmTitle}</h3>
+              <p className="text-sm text-gray-500 mb-4">{m.approveConfirmDesc}</p>
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2.5 mb-6">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">{m.approveConfirmAmount}</span>
+                  <span className="font-semibold tabular-nums text-gray-900">{formatAmount(parseFloat(amount))}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">{m.approveConfirmRefId}</span>
+                  <span className="font-medium text-gray-900 truncate max-w-[200px]">{refId.trim() || '—'}</span>
+                </div>
+                {selectedBank && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">{m.approveConfirmBank}</span>
+                    <span className="font-medium text-gray-900">{selectedBank.bankCode} {selectedBank.accountNumber}</span>
+                  </div>
+                )}
+                {detail?.merchantCode && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">{m.approveConfirmMerchant}</span>
+                    <span className="font-medium text-gray-900">{detail.merchantCode}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowApproveModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  {m.btnCancelApprove}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApproveConfirm}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-xl transition-colors"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {m.btnConfirmApprove}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="space-y-5">
@@ -559,7 +597,7 @@ export default function PayInSlipDetailPage() {
 
               {/* Approve */}
               <button
-                onClick={handleApprove}
+                onClick={handleApproveClick}
                 disabled={!isPending || approving}
                 className={clsx(
                   'flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-colors',

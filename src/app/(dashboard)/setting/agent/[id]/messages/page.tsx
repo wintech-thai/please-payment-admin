@@ -724,19 +724,25 @@ export default function AgentMessagesPage() {
                         ) : <span className="text-gray-400">0</span>}
                       </td>
 
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100">
                         {event.status ? (
                           <div className="flex flex-col gap-1">
-                            <span className={clsx(
-                              'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ring-1 w-fit',
-                              event.status === 'OK'
-                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                                : event.status.startsWith('WARN') || event.status === 'PENDING'
-                                ? 'bg-amber-50 text-amber-700 ring-amber-200'
-                                : 'bg-red-50 text-red-700 ring-red-200'
-                            )}>
-                              {event.status}
-                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {event.status.split(',').map(s => s.trim()).filter(Boolean).map(s => (
+                                <span key={s} className={clsx(
+                                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ring-1',
+                                  /^OK$|SUCCESS/.test(s)
+                                    ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                                    : /WARN|PENDING/.test(s)
+                                    ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                                    : /NOT_FOUND|ERROR|FAIL|INVALID|REJECT|MISMATCH|UNKNOWN/.test(s)
+                                    ? 'bg-red-50 text-red-700 ring-red-200'
+                                    : 'bg-gray-100 text-gray-600 ring-gray-200'
+                                )}>
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
                             {event.statusDesc && (
                               <span className="text-xs text-gray-400 max-w-[180px] truncate" title={event.statusDesc}>{event.statusDesc}</span>
                             )}

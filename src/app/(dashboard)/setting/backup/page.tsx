@@ -263,6 +263,7 @@ function BackupContent() {
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
   const [loading, setLoading] = useState(true)
   const [showPolicy, setShowPolicy] = useState(false)
+  const [triggering, setTriggering] = useState(false)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
     const p = searchParams.get('highlight')
     if (p) return p
@@ -306,6 +307,19 @@ function BackupContent() {
   useEffect(() => { fetchData() }, [])
   useEffect(() => { fetchData() }, [page, itemsPerPage])
 
+  const handleTriggerNow = async () => {
+    setTriggering(true)
+    try {
+      await backupApi.triggerNow()
+      toast.success(m.backupNowSuccess)
+      setTimeout(() => fetchData(1), 2000)
+    } catch {
+      toast.error(m.backupNowFailed)
+    } finally {
+      setTriggering(false)
+    }
+  }
+
   const handleSearch = () => { setPage(1); fetchData(1) }
   const handleTimeRangeChange = (tr: TimeRangeValue) => {
     setTimeRange(tr); setPage(1); fetchData(1, searchTerm, statusFilter, tr)
@@ -340,13 +354,26 @@ function BackupContent() {
             <h1 className="text-2xl font-bold text-gray-900">{m.title}</h1>
             <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
           </div>
-          <button
-            onClick={() => setShowPolicy(true)}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors shadow-sm"
-          >
-            <Settings className="w-4 h-4" />
-            {m.policyBtn}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleTriggerNow}
+              disabled={triggering}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 rounded-xl transition-colors shadow-sm"
+            >
+              {triggering
+                ? <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
+              }
+              {m.backupNowBtn}
+            </button>
+            <button
+              onClick={() => setShowPolicy(true)}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors shadow-sm"
+            >
+              <Settings className="w-4 h-4" />
+              {m.policyBtn}
+            </button>
+          </div>
         </div>
 
         {/* Toolbar */}

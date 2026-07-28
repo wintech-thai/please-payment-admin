@@ -12,6 +12,9 @@ export const backupApi = {
   getPolicy: () =>
     client.get(`${BASE}/GetBackupPolicy`),
 
+  triggerNow: () =>
+    client.post(`${BASE}/TriggerBackupNow`, {}),
+
   setPolicy: (payload: {
     BackupPolicy: {
       StorageUrl: string

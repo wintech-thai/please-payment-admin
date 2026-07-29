@@ -81,10 +81,10 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     backupApi.getPolicy()
       .then(res => {
-        const cfg = (res.data as any)?.Configuration?.BackupPolicy
+        const cfg = (res.data as any)?.configuration?.backupPolicy
         if (cfg) setPolicy({ ...EMPTY_POLICY, ...cfg })
       })
-      .catch(() => toast.error(m.toastLoadFailed))
+      .catch((err: any) => { if (err?.code !== 'NOT_FOUND') toast.error(m.toastLoadFailed) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -110,7 +110,7 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -132,13 +132,14 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
               </svg>
             </div>
           ) : (
-            <div className="space-y-4">
-              <Field label={m.fieldStorageUrl}>
-                <input type="text" value={policy.StorageUrl} onChange={e => set('StorageUrl', e.target.value)}
-                  placeholder={m.fieldStorageUrlPlaceholder} className={inputCls} />
-              </Field>
-
-              <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+              {/* Left column — Storage */}
+              <div className="space-y-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Storage</p>
+                <Field label={m.fieldStorageUrl}>
+                  <input type="text" value={policy.StorageUrl} onChange={e => set('StorageUrl', e.target.value)}
+                    placeholder={m.fieldStorageUrlPlaceholder} className={inputCls} />
+                </Field>
                 <Field label={m.fieldKey}>
                   <input type="text" value={policy.StorageKey} onChange={e => set('StorageKey', e.target.value)}
                     placeholder={m.fieldKeyPlaceholder} className={inputCls} />
@@ -161,9 +162,6 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
                     </button>
                   </div>
                 </Field>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <Field label={m.fieldBucket}>
                   <input type="text" value={policy.Bucket} onChange={e => set('Bucket', e.target.value)}
                     placeholder={m.fieldBucketPlaceholder} className={inputCls} />
@@ -174,12 +172,13 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
                 </Field>
               </div>
 
-              <Field label={m.fieldPrefix}>
-                <input type="text" value={policy.FilePrefix} onChange={e => set('FilePrefix', e.target.value)}
-                  placeholder={m.fieldPrefixPlaceholder} className={inputCls} />
-              </Field>
-
-              <div className="grid grid-cols-2 gap-4">
+              {/* Right column — Schedule */}
+              <div className="space-y-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Schedule</p>
+                <Field label={m.fieldPrefix}>
+                  <input type="text" value={policy.FilePrefix} onChange={e => set('FilePrefix', e.target.value)}
+                    placeholder={m.fieldPrefixPlaceholder} className={inputCls} />
+                </Field>
                 <Field label={m.fieldInterval}>
                   <select value={policy.ScheduleInterval} onChange={e => set('ScheduleInterval', e.target.value)}
                     className={inputCls}>
@@ -194,24 +193,24 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
                     onChange={e => set('ScheduleStartHour', Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
                     className={inputCls} />
                 </Field>
-              </div>
 
-              {/* Enable toggle */}
-              <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">{m.fieldEnabled}</span>
-                <button
-                  type="button"
-                  onClick={() => set('IsEnabled', !policy.IsEnabled)}
-                  className={clsx(
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                    policy.IsEnabled ? 'bg-primary-600' : 'bg-gray-300'
-                  )}
-                >
-                  <span className={clsx(
-                    'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                    policy.IsEnabled ? 'translate-x-6' : 'translate-x-1'
-                  )} />
-                </button>
+                {/* Enable toggle */}
+                <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg mt-2">
+                  <span className="text-sm font-medium text-gray-700">{m.fieldEnabled}</span>
+                  <button
+                    type="button"
+                    onClick={() => set('IsEnabled', !policy.IsEnabled)}
+                    className={clsx(
+                      'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                      policy.IsEnabled ? 'bg-primary-600' : 'bg-gray-300'
+                    )}
+                  >
+                    <span className={clsx(
+                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                      policy.IsEnabled ? 'translate-x-6' : 'translate-x-1'
+                    )} />
+                  </button>
+                </div>
               </div>
             </div>
           )}

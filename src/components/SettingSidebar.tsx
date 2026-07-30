@@ -71,6 +71,18 @@ const menuItems: MenuItem[] = [
       { href: '/setting/notification-events', labelKey: 'sidebarNotiEvents' },
     ],
   },
+  {
+    type: 'flat',
+    href: '/setting/backup',
+    labelKey: 'sidebarBackup',
+    icon: (
+      <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 12v.01M8 12v.01M16 12v.01" />
+      </svg>
+    ),
+  },
 ]
 
 export default function SettingSidebar() {

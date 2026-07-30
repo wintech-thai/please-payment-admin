@@ -15,6 +15,9 @@ export const backupApi = {
   triggerNow: () =>
     client.post(`${BASE}/TriggerBackupNow`, {}),
 
+  getJobById: (id: string) =>
+    client.get(`${BASE}/GetBackupJobById/${id}`),
+
   setPolicy: (payload: {
     BackupPolicy: {
       StorageUrl: string

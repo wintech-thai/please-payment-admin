@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { backupApi } from '@/lib/api/backup.api'
 import { toast } from 'sonner'
 import { Search, ChevronLeft, ChevronRight, RefreshCw, Settings, Eye, EyeOff } from 'lucide-react'
@@ -251,6 +251,7 @@ const inputCls = 'w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg f
 function BackupContent() {
   const { t } = useLang()
   const m = t.backup
+  const router = useRouter()
   const searchParams = useSearchParams()
 
   const [items, setItems] = useState<any[]>([])
@@ -457,6 +458,7 @@ function BackupContent() {
 
                     return (
                       <tr
+                        id={`backup-row-${id}`}
                         key={id || idx}
                         onClick={() => {
                           const next = selectedRowId === id ? null : id
@@ -471,8 +473,14 @@ function BackupContent() {
                             : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                         )}
                       >
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm font-medium text-gray-800">
-                          {formatDate(item.createdDate ?? item.CreatedDate ?? item.startDate ?? item.StartDate)}
+                        {/* Date — clickable link */}
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={() => router.push(`/setting/backup/${id}`)}
+                            className={clsx('text-sm font-bold hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
+                          >
+                            {formatDate(item.createdDate ?? item.CreatedDate ?? item.startDate ?? item.StartDate)}
+                          </button>
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-800">
                           {item.name ?? item.Name ?? '—'}

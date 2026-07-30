@@ -276,6 +276,7 @@ function BackupContent() {
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
   const [loading, setLoading] = useState(true)
   const [showPolicy, setShowPolicy] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [triggering, setTriggering] = useState(false)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
     const p = searchParams.get('highlight')
@@ -360,6 +361,45 @@ function BackupContent() {
     <>
       {showPolicy && <PolicyModal onClose={() => setShowPolicy(false)} />}
 
+      {showConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirm(false)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-2">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-bold text-gray-900">{m.confirmTitle}</h3>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed mb-1">{m.confirmDesc}</p>
+              <ul className="text-sm text-gray-600 mt-2 mb-4 space-y-1 pl-4 list-disc">
+                <li>{m.confirmStep1}</li>
+                <li>{m.confirmStep2}</li>
+                <li>{m.confirmStep3}</li>
+                <li>{m.confirmStep4}</li>
+              </ul>
+              <p className="text-xs text-gray-400">{m.confirmNote}</p>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-2 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {m.confirmCancel}
+              </button>
+              <button
+                onClick={() => { setShowConfirm(false); handleTriggerNow() }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
+              >
+                {m.confirmBtn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
         {/* Header */}
         <div className="flex-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -369,7 +409,7 @@ function BackupContent() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={handleTriggerNow}
+              onClick={() => setShowConfirm(true)}
               disabled={triggering}
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 rounded-xl transition-colors shadow-sm"
             >

@@ -81,8 +81,21 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     backupApi.getPolicy()
       .then(res => {
-        const cfg = (res.data as any)?.configuration?.backupPolicy
-        if (cfg) setPolicy({ ...EMPTY_POLICY, ...cfg })
+        const raw = (res.data as any)
+        const cfg = raw?.configuration?.backupPolicy ?? raw?.Configuration?.BackupPolicy
+        if (cfg) {
+          setPolicy({
+            StorageUrl:        cfg.StorageUrl        ?? cfg.storageUrl        ?? '',
+            StorageKey:        cfg.StorageKey        ?? cfg.storageKey        ?? '',
+            StorageSecret:     cfg.StorageSecret     ?? cfg.storageSecret     ?? '',
+            Bucket:            cfg.Bucket            ?? cfg.bucket            ?? '',
+            Path:              cfg.Path              ?? cfg.path              ?? '',
+            FilePrefix:        cfg.FilePrefix        ?? cfg.filePrefix        ?? '',
+            ScheduleInterval:  cfg.ScheduleInterval  ?? cfg.scheduleInterval  ?? 'daily',
+            ScheduleStartHour: cfg.ScheduleStartHour ?? cfg.scheduleStartHour ?? 2,
+            IsEnabled:         cfg.IsEnabled         ?? cfg.isEnabled         ?? false,
+          })
+        }
       })
       .catch((err: any) => { if (err?.code !== 'NOT_FOUND') toast.error(m.toastLoadFailed) })
       .finally(() => setLoading(false))

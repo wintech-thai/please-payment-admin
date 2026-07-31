@@ -424,6 +424,10 @@ export interface PayInRequestItem {
   payinPromptPayId?: string | null
   payinAccountType?: string | null
   payinAccountLevel?: string | null
+  // P2P / fee fields
+  payinIsPeerToPeer?: boolean | null
+  payInFeeDecimal?: number | null
+  payInFeePct?: number | null
 }
 
 export interface PayInRequestDetail extends PayInRequestItem {
@@ -773,6 +777,21 @@ export interface PayOutRequestItem {
   payoutFeePct?: number | null
   payoutFeeDecimal?: number | null
   payOutTotalAmountDecimal?: number | null
+  // P2P / partial payout fields
+  isPartialyPayout?: boolean | null
+  payoutFeePayer?: string | null
+  totalPayOutPaidAmountDecimal?: number | null
+  totalPayOutPendingPaidAmountDecimal?: number | null
+  qrCodeP2P?: string | null
+  payOutTotalAmountDecimalP2P?: number | null
+}
+
+export interface PartialPayoutItem {
+  id?: string | null
+  createdDate?: string | null
+  txAmountDecimal?: number | null
+  txAmount?: number | null
+  status?: string | null
 }
 
 export interface PayOutRequestDetail extends PayOutRequestItem {
@@ -784,6 +803,7 @@ export interface PayOutRequestDetail extends PayOutRequestItem {
   merchantMaxPayout?: number | null
   qrCode?: string | null
   qrCodeImage?: string | null
+  partialPayouts?: PartialPayoutItem[] | null
 }
 
 export interface GetPayOutRequestsPayload {
@@ -806,6 +826,7 @@ export interface CreatePayOutRequestPayload {
   QrProvider?: string
   Tags?: string
   PayinBankAccountId: string
+  PayoutFeePayer?: string
 }
 
 export interface UpdatePayOutRequestPayload {

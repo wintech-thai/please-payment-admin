@@ -34,6 +34,17 @@ function formatAmount(n?: number | null): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function formatAge(createdDate?: string | null): string {
+  if (!createdDate) return ''
+  const diffMs = Date.now() - new Date(createdDate).getTime()
+  if (diffMs < 0) return ''
+  const totalMin = Math.floor(diffMs / 60_000)
+  const hours = Math.floor(totalMin / 60)
+  const mins = totalMin % 60
+  if (hours === 0) return `${mins}min`
+  return `${hours}h ${mins}min`
+}
+
 function formatDateTime(d?: string | null) {
   if (!d) return '—'
   try {
@@ -44,25 +55,34 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
-function StatusBadge({ status }: { status?: string | null }) {
+function StatusBadge({ status, createdDate, isPartialyPayout }: {
+  status?: string | null
+  createdDate?: string | null
+  isPartialyPayout?: boolean | null
+}) {
   const s = status?.toLowerCase()
+  const p2pSuffix = isPartialyPayout ? <span className="text-[10px] font-bold text-violet-600 ml-0.5">(P2P)</span> : null
   if (s === 'paid' || s === 'approved') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-      {status}
+      {status}{p2pSuffix}
     </span>
   )
   if (s === 'rejected') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
       <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-      {status}
+      {status}{p2pSuffix}
     </span>
   )
+  const age = formatAge(createdDate)
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-      {status ?? 'Pending'}
-    </span>
+    <div className="flex flex-col gap-0.5 items-start">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+        {status ?? 'Pending'}{p2pSuffix}
+      </span>
+      {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
+    </div>
   )
 }
 
@@ -300,6 +320,11 @@ export default function WithdrawRequestPage() {
                           {formatAmount(item.generatedAmount)}
                         </p>
                         <p className="text-xs text-gray-400">{item.currency ?? '—'}</p>
+                        {item.isPartialyPayout && item.totalPayOutPaidAmountDecimal != null && (
+                          <p className="text-xs text-emerald-600 tabular-nums mt-0.5">
+                            ✓ {formatAmount(item.totalPayOutPaidAmountDecimal)}
+                          </p>
+                        )}
                       </td>
 
                       {/* Fee */}
@@ -313,6 +338,11 @@ export default function WithdrawRequestPage() {
                           </>
                         ) : (
                           <p className="text-sm text-gray-400">—</p>
+                        )}
+                        {item.payoutFeePayer === 'Beneficiary' && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200 mt-0.5">
+                            Beneficiary
+                          </span>
                         )}
                       </td>
 
@@ -377,7 +407,11 @@ export default function WithdrawRequestPage() {
 
                       {/* Status */}
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <StatusBadge status={item.status} />
+                        <StatusBadge
+                          status={item.status}
+                          createdDate={item.createdDate}
+                          isPartialyPayout={item.isPartialyPayout}
+                        />
                         {item.status?.toLowerCase() === 'rejected' && item.rejectReason && (
                           <p
                             className="text-[11px] text-red-500 mt-1 truncate max-w-[140px]"

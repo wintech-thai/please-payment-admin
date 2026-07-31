@@ -368,7 +368,12 @@ export default function PayOutRequestDetailPage() {
             <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
 
             <InfoRow label={m.fieldStatus}>
-              <StatusBadge status={detail?.status} />
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusBadge status={detail?.status} />
+                {detail?.isPartialyPayout && (
+                  <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-violet-50 text-violet-700 ring-1 ring-violet-200">P2P</span>
+                )}
+              </div>
             </InfoRow>
 
             <InfoRow label={m.fieldMerchant}>
@@ -412,6 +417,19 @@ export default function PayOutRequestDetailPage() {
               )}
             </InfoRow>
 
+            {detail?.payoutFeePayer && (
+              <InfoRow label={m.fieldFeePayer ?? 'Fee Payer'}>
+                <span className={clsx(
+                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold',
+                  detail.payoutFeePayer === 'Beneficiary'
+                    ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200'
+                    : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
+                )}>
+                  {detail.payoutFeePayer}
+                </span>
+              </InfoRow>
+            )}
+
             <InfoRow label={m.fieldNetAmount}>
               {detail?.payOutTotalAmountDecimal != null ? (
                 <span className="font-bold tabular-nums text-emerald-700 text-xl">
@@ -419,6 +437,14 @@ export default function PayOutRequestDetailPage() {
                 </span>
               ) : '—'}
             </InfoRow>
+
+            {detail?.isPartialyPayout && detail?.totalPayOutPaidAmountDecimal != null && (
+              <InfoRow label={m.labelTotalPaid ?? 'Total Paid (P2P)'}>
+                <span className="font-bold tabular-nums text-emerald-600">
+                  {formatAmount(detail.totalPayOutPaidAmountDecimal)}
+                </span>
+              </InfoRow>
+            )}
 
             <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
 
@@ -466,23 +492,41 @@ export default function PayOutRequestDetailPage() {
 
           </div>
 
-          {/* QR Code — shown on the right when qrCode or qrCodeImage field has data */}
-          {(detail?.qrCodeImage || detail?.qrCode) && (
-            <div className="flex-shrink-0 flex flex-col items-center gap-2 pt-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">QR Code</p>
-              {detail.qrCodeImage ? (
-                <img
-                  src={detail.qrCodeImage.startsWith('data:') ? detail.qrCodeImage : `data:image/png;base64,${detail.qrCodeImage}`}
-                  alt="QR Code"
-                  className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
-                />
-              ) : (
-                <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
-                  <QRCode value={detail.qrCode!} size={200} />
-                </div>
-              )}
-            </div>
-          )}
+          {/* QR Code — P2P uses qrCodeP2P; regular uses qrCodeImage / qrCode */}
+          {(() => {
+            const paidAmt = detail?.totalPayOutPaidAmountDecimal ?? 0
+            const useP2P = detail?.isPartialyPayout && detail?.qrCodeP2P
+            const qrBase64 = useP2P ? detail!.qrCodeP2P! : detail?.qrCodeImage
+            const qrText = !qrBase64 ? detail?.qrCode : null
+            const remaining = useP2P && detail?.payOutTotalAmountDecimalP2P != null
+              ? detail.payOutTotalAmountDecimalP2P - paidAmt
+              : null
+            if (!qrBase64 && !qrText) return null
+            return (
+              <div className="flex-shrink-0 flex flex-col items-center gap-2 pt-1">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">
+                  {useP2P ? 'QR P2P' : 'QR Code'}
+                </p>
+                {qrBase64 ? (
+                  <img
+                    src={qrBase64.startsWith('data:') ? qrBase64 : `data:image/png;base64,${qrBase64}`}
+                    alt="QR Code"
+                    className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
+                  />
+                ) : (
+                  <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
+                    <QRCode value={qrText!} size={200} />
+                  </div>
+                )}
+                {remaining != null && remaining > 0 && (
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400">{m.fieldRemainingP2P ?? 'P2P Remaining'}</p>
+                    <p className="text-sm font-bold tabular-nums text-emerald-700">{formatAmount(remaining)}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           </div>
         </div>
@@ -641,6 +685,49 @@ export default function PayOutRequestDetailPage() {
             </div>
           )}
         </div>
+
+        {/* ── Section 3: Partial Payouts (P2P) ── */}
+        {detail?.partialPayouts && detail.partialPayouts.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>{m.sectionPartialPayouts ?? 'P2P Transfer Records'}</SectionHeader>
+            <div className="flex gap-4 mb-4 flex-wrap">
+              {detail.totalPayOutPaidAmountDecimal != null && (
+                <div className="px-4 py-2.5 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <p className="text-xs text-emerald-600 font-semibold mb-0.5">{m.labelTotalPaid ?? 'Total Paid'}</p>
+                  <p className="text-xl font-bold text-emerald-700 tabular-nums">{formatAmount(detail.totalPayOutPaidAmountDecimal)}</p>
+                </div>
+              )}
+              {detail.totalPayOutPendingPaidAmountDecimal != null && (
+                <div className="px-4 py-2.5 bg-amber-50 rounded-xl border border-amber-100">
+                  <p className="text-xs text-amber-600 font-semibold mb-0.5">{m.labelTotalPending ?? 'Total Pending'}</p>
+                  <p className="text-xl font-bold text-amber-700 tabular-nums">{formatAmount(detail.totalPayOutPendingPaidAmountDecimal)}</p>
+                </div>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialDate ?? 'Date'}</th>
+                    <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialId ?? 'Transaction ID'}</th>
+                    <th className="px-3 py-2.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialAmount ?? 'Amount'}</th>
+                    <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialStatus ?? 'Status'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detail.partialPayouts.map((p, i) => (
+                    <tr key={p.id ?? i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
+                      <td className="px-3 py-2.5 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">{formatDateTime(p.createdDate)}</td>
+                      <td className="px-3 py-2.5 border-b border-gray-100 text-xs text-gray-500 max-w-[160px] truncate">{p.id ?? '—'}</td>
+                      <td className="px-3 py-2.5 border-b border-gray-100 text-right font-semibold tabular-nums text-gray-800">{formatAmount(p.txAmountDecimal ?? p.txAmount)}</td>
+                      <td className="px-3 py-2.5 border-b border-gray-100"><StatusBadge status={p.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
       </div>
 

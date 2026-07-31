@@ -36,6 +36,7 @@ export default function CreatePayOutRequestPage() {
   const [refId2, setRefId2] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
+  const [payoutFeePayer, setPayoutFeePayer] = useState('Merchant')
 
   // Data lists
   const [merchants, setMerchants] = useState<MerchantItem[]>([])
@@ -175,6 +176,7 @@ export default function CreatePayOutRequestPage() {
         RequestedAmount: parseFloat(amount),
         QrProvider: 'PP',
         PayinBankAccountId: payoutBankAccountId,
+        PayoutFeePayer: payoutFeePayer,
       })
       setIsDirty(false)
       toast.success(m.toastCreateSuccess)
@@ -436,6 +438,17 @@ export default function CreatePayOutRequestPage() {
                   />
                 </FormField>
               </div>
+
+              <FormField label={m.fieldFeePayer ?? 'Fee Payer'}>
+                <select
+                  value={payoutFeePayer}
+                  onChange={e => { setPayoutFeePayer(e.target.value); mark() }}
+                  className={inputCls(false)}
+                >
+                  <option value="Merchant">{m.feePayerMerchant ?? 'Merchant'}</option>
+                  <option value="Beneficiary">{m.feePayerBeneficiary ?? 'Beneficiary'}</option>
+                </select>
+              </FormField>
 
             </div>
           </div>

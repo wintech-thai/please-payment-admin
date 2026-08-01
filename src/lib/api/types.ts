@@ -502,9 +502,15 @@ export interface PayInTxItem {
   payInBankCode?: string | null
   payInBankAccountNo?: string | null
   payInBankAccountName?: string | null
+  payInPromptPayId?: string | null
+  payInAccountType?: string | null
   fromBankCode?: string | null
   fromBankAccountNo?: string | null
   fromBankAccountName?: string | null
+  refId1?: string | null
+  refId2?: string | null
+  refId3?: string | null
+  txIsPeerToPeer?: boolean | null
   processingMessages?: string | null
   createdDate?: string | null
   processingSteps?: string[] | null
@@ -787,10 +793,9 @@ export interface PayOutRequestItem {
 }
 
 export interface PartialPayoutItem {
-  id?: string | null
-  createdDate?: string | null
-  txAmountDecimal?: number | null
-  txAmount?: number | null
+  payinRequestId?: string | null
+  txDate?: string | null
+  partialAmount?: number | null
   status?: string | null
 }
 

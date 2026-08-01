@@ -11,6 +11,7 @@ import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, Bu
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import QrPaymentModal from '@/components/QrPaymentModal'
+import QrPaymentP2PModal from '@/components/QrPaymentP2PModal'
 
 function StatusBadge({ status }: { status?: string | null }) {
   const lower = status?.toLowerCase()
@@ -101,6 +102,7 @@ function MerchantContent() {
   const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ type: 'enable' | 'disable'; merchant: MerchantItem } | null>(null)
   const [qrMerchant, setQrMerchant] = useState<MerchantItem | null>(null)
+  const [qrP2PMerchant, setQrP2PMerchant] = useState<MerchantItem | null>(null)
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
@@ -198,6 +200,13 @@ function MerchantContent() {
           merchantId={qrMerchant.id}
           merchantName={qrMerchant.name ?? qrMerchant.code ?? undefined}
           onClose={() => setQrMerchant(null)}
+        />
+      )}
+      {qrP2PMerchant && (
+        <QrPaymentP2PModal
+          merchantId={qrP2PMerchant.id}
+          merchantName={qrP2PMerchant.name ?? qrP2PMerchant.code ?? undefined}
+          onClose={() => setQrP2PMerchant(null)}
         />
       )}
       {confirmDialog && (
@@ -477,6 +486,13 @@ function MerchantContent() {
                               >
                                 <QrCode className="w-4 h-4 flex-shrink-0" />
                                 {m.qrPayment}
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); setQrP2PMerchant(merchant) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <QrCode className="w-4 h-4 flex-shrink-0" />
+                                {m.qrPaymentP2P}
                               </button>
                             </div>
                           )}

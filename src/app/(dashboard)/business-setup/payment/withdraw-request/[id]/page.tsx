@@ -40,21 +40,22 @@ function formatDateTime(d?: string | null) {
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status?: string | null }) {
+function StatusBadge({ status, isPartialyPayout }: { status?: string | null; isPartialyPayout?: boolean | null }) {
   const s = status?.toLowerCase()
+  const p2p = isPartialyPayout ? <span className="text-[10px] font-bold text-current ml-0.5">(P2P)</span> : null
   if (s === 'paid' || s === 'approved') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-      <CheckCircle className="w-3.5 h-3.5" />{status}
+      <CheckCircle className="w-3.5 h-3.5" />{status}{p2p}
     </span>
   )
   if (s === 'rejected') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
-      <AlertCircle className="w-3.5 h-3.5" />{status}
+      <AlertCircle className="w-3.5 h-3.5" />{status}{p2p}
     </span>
   )
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-      <Clock className="w-3.5 h-3.5" />{status ?? 'Pending'}
+      <Clock className="w-3.5 h-3.5" />{status ?? 'Pending'}{p2p}
     </span>
   )
 }
@@ -368,12 +369,7 @@ export default function PayOutRequestDetailPage() {
             <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
 
             <InfoRow label={m.fieldStatus}>
-              <div className="flex items-center gap-2 flex-wrap">
-                <StatusBadge status={detail?.status} />
-                {detail?.isPartialyPayout && (
-                  <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-violet-50 text-violet-700 ring-1 ring-violet-200">P2P</span>
-                )}
-              </div>
+              <StatusBadge status={detail?.status} isPartialyPayout={detail?.isPartialyPayout} />
             </InfoRow>
 
             <InfoRow label={m.fieldMerchant}>
@@ -496,26 +492,26 @@ export default function PayOutRequestDetailPage() {
           {(() => {
             const paidAmt = detail?.totalPayOutPaidAmountDecimal ?? 0
             const useP2P = detail?.isPartialyPayout && detail?.qrCodeP2P
-            const qrBase64 = useP2P ? detail!.qrCodeP2P! : detail?.qrCodeImage
-            const qrText = !qrBase64 ? detail?.qrCode : null
+            const rawQr = useP2P ? detail!.qrCodeP2P! : (detail?.qrCodeImage ?? detail?.qrCode ?? null)
             const remaining = useP2P && detail?.payOutTotalAmountDecimalP2P != null
               ? detail.payOutTotalAmountDecimalP2P - paidAmt
               : null
-            if (!qrBase64 && !qrText) return null
+            if (!rawQr) return null
+const isImage = rawQr.startsWith('data:') || rawQr.startsWith('iVBOR') || rawQr.startsWith('/9j/')
             return (
               <div className="flex-shrink-0 flex flex-col items-center gap-2 pt-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">
                   {useP2P ? 'QR P2P' : 'QR Code'}
                 </p>
-                {qrBase64 ? (
+                {isImage ? (
                   <img
-                    src={qrBase64.startsWith('data:') ? qrBase64 : `data:image/png;base64,${qrBase64}`}
+                    src={rawQr.startsWith('data:') ? rawQr : `data:image/png;base64,${rawQr}`}
                     alt="QR Code"
                     className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
                   />
                 ) : (
                   <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
-                    <QRCode value={qrText!} size={200} />
+                    <QRCode value={rawQr} size={200} />
                   </div>
                 )}
                 {remaining != null && remaining > 0 && (
@@ -716,10 +712,10 @@ export default function PayOutRequestDetailPage() {
                 </thead>
                 <tbody>
                   {detail.partialPayouts.map((p, i) => (
-                    <tr key={p.id ?? i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
-                      <td className="px-3 py-2.5 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">{formatDateTime(p.createdDate)}</td>
-                      <td className="px-3 py-2.5 border-b border-gray-100 text-xs text-gray-500 max-w-[160px] truncate">{p.id ?? '—'}</td>
-                      <td className="px-3 py-2.5 border-b border-gray-100 text-right font-semibold tabular-nums text-gray-800">{formatAmount(p.txAmountDecimal ?? p.txAmount)}</td>
+                    <tr key={p.payinRequestId ?? i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
+                      <td className="px-3 py-2.5 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">{p.txDate ? formatDateTime(p.txDate) : '—'}</td>
+                      <td className="px-3 py-2.5 border-b border-gray-100 text-xs text-gray-500 max-w-[160px] truncate">{p.payinRequestId ?? '—'}</td>
+                      <td className="px-3 py-2.5 border-b border-gray-100 text-right font-semibold tabular-nums text-gray-800">{formatAmount(p.partialAmount)}</td>
                       <td className="px-3 py-2.5 border-b border-gray-100"><StatusBadge status={p.status} /></td>
                     </tr>
                   ))}

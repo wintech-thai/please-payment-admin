@@ -63,7 +63,7 @@ function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToP
   isPeerToPeer?: boolean | null
 }) {
   const s = status?.toLowerCase()
-  const p2pSuffix = isPeerToPeer ? <span className="text-[10px] font-bold text-violet-600 ml-0.5">(P2P)</span> : null
+  const p2pSuffix = isPeerToPeer ? <span className="text-[10px] font-bold text-current ml-0.5">(P2P)</span> : null
   if (s === 'match' || s === 'paid') return (
     <div className="flex flex-col gap-0.5 items-start">
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
@@ -583,12 +583,12 @@ export default function PayInRequestsPage() {
 
                       {/* Fee */}
                       <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
-                        {item.payInFeeDecimal != null && item.payInFeeDecimal > 0 ? (
+                        {item.payInFeePct != null && item.payInFeePct > 0 ? (
                           <>
-                            <p className="text-sm font-semibold tabular-nums text-gray-800">{formatAmount(item.payInFeeDecimal)}</p>
-                            {item.payInFeePct != null && item.payInFeePct > 0 && (
-                              <p className="text-xs text-gray-400">{item.payInFeePct}%</p>
+                            {item.generatedAmount != null && (
+                              <p className="text-sm font-semibold tabular-nums text-gray-800">{formatAmount(item.generatedAmount * item.payInFeePct / 100)}</p>
                             )}
+                            <p className="text-xs text-gray-400">{item.payInFeePct}%</p>
                           </>
                         ) : (
                           <p className="text-sm text-gray-400">—</p>

@@ -61,7 +61,7 @@ function StatusBadge({ status, createdDate, isPartialyPayout }: {
   isPartialyPayout?: boolean | null
 }) {
   const s = status?.toLowerCase()
-  const p2pSuffix = isPartialyPayout ? <span className="text-[10px] font-bold text-violet-600 ml-0.5">(P2P)</span> : null
+  const p2pSuffix = isPartialyPayout ? <span className="text-[10px] font-bold text-current ml-0.5">(P2P)</span> : null
   if (s === 'paid' || s === 'approved') return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
@@ -164,7 +164,7 @@ export default function WithdrawRequestPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colDestBank, m.colSourceBank, m.colStatus, m.colRefId1, m.colRefId2]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colDestBank, m.colSourceBank, m.colStatus, m.colRefId, m.colRefId1, m.colRefId2]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -424,10 +424,15 @@ export default function WithdrawRequestPage() {
 
                       {/* Ref ID 1 */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId1 ?? '—'}</span>
+                        <span className="text-sm text-gray-600">{item.refId ?? '—'}</span>
                       </td>
 
                       {/* Ref ID 2 */}
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <span className="text-sm text-gray-600">{item.refId1 ?? '—'}</span>
+                      </td>
+
+                      {/* Ref ID 3 */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <span className="text-sm text-gray-600">{item.refId2 ?? '—'}</span>
                       </td>

@@ -10,75 +10,12 @@ import { useLang } from '@/context/LanguageContext'
 
 const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
   'payment.success': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
-  'paymentout.success': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
   'payment.failed': { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200' },
   'payment.unidentified': { bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200' },
 }
 const DEFAULT_EVENT_COLOR = { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200' }
 function getEventTypeColor(type: string) {
   return EVENT_TYPE_COLORS[type.toLowerCase()] ?? DEFAULT_EVENT_COLOR
-}
-
-function MessageTabs({ messages, messages2, label }: { messages: string[]; messages2: string[]; label: string }) {
-  const [activeTab, setActiveTab] = useState<'msg1' | 'msg2'>('msg2')
-  const hasBoth = messages.length > 0 && messages2.length > 0
-  const activeList = activeTab === 'msg1' ? messages : messages2
-
-  if (!hasBoth) {
-    const list = messages2.length > 0 ? messages2 : messages
-    return (
-      <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{label}</p>
-        <MessageList lines={list} />
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <div className="flex items-center gap-1 mb-3">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mr-3">{label}</p>
-        <button
-          onClick={() => setActiveTab('msg1')}
-          className={clsx(
-            'px-3 py-1 text-xs font-semibold rounded-full transition-colors',
-            activeTab === 'msg1'
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          )}
-        >
-          Message
-        </button>
-        <button
-          onClick={() => setActiveTab('msg2')}
-          className={clsx(
-            'px-3 py-1 text-xs font-semibold rounded-full transition-colors',
-            activeTab === 'msg2'
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          )}
-        >
-          Message 2
-        </button>
-      </div>
-      <MessageList lines={activeList} />
-    </div>
-  )
-}
-
-function MessageList({ lines }: { lines: string[] }) {
-  return (
-    <ol className="flex flex-col gap-2">
-      {lines.map((msg, i) => (
-        <li key={i} className="flex items-start gap-3">
-          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center mt-0.5">
-            {i + 1}
-          </span>
-          <span className="text-sm text-gray-700 leading-relaxed break-all">{msg.trim()}</span>
-        </li>
-      ))}
-    </ol>
-  )
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -152,14 +89,6 @@ export default function NotiEventDetailPage() {
     } catch { return d }
   }
 
-  const getJobMessages = (): string[] => {
-    if (!data) return []
-    const raw = data.jobMessage ?? data.JobMessage ?? []
-    if (Array.isArray(raw)) return raw.map(String)
-    if (typeof raw === 'string') return raw.split('\n').filter(Boolean)
-    return []
-  }
-
   const getJobMessages2 = (): string[] => {
     if (!data) return []
     const raw = data.jobMessage2 ?? data.JobMessage2 ?? []
@@ -202,9 +131,7 @@ export default function NotiEventDetailPage() {
 
   if (!data) return null
 
-  const jobMessages = getJobMessages()
   const jobMessages2 = getJobMessages2()
-  const hasMessages = jobMessages.length > 0 || jobMessages2.length > 0
   const parameters = getParameters()
 
   return (
@@ -288,9 +215,21 @@ export default function NotiEventDetailPage() {
               )}
             </div>
 
-            {/* Job Messages — tabs สำหรับ Message (webhook) และ Message2 (notification) */}
-            {hasMessages && (
-              <MessageTabs messages={jobMessages} messages2={jobMessages2} label={m.jobMessage} />
+            {/* Notify Messages (job_message2) — หน้านี้เป็น Notification Event โดยเฉพาะ จึงดึง message2 มาแสดงแทน jobMessage เดิม */}
+            {jobMessages2.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{m.jobMessage}</p>
+                <ol className="flex flex-col gap-2">
+                  {jobMessages2.map((msg, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm text-gray-700 leading-relaxed break-all">{msg.trim()}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             )}
 
             {/* Parameters */}

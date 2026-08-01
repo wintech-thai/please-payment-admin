@@ -888,9 +888,6 @@ export default function PayInTransactionsPage() {
                         <p className="text-sm font-semibold text-gray-800 tabular-nums">
                           {formatAmount(item.txAmountDecimal ?? item.txAmount)}
                         </p>
-                        {item.payInFeePct != null && (
-                          <p className="text-xs text-gray-400 tabular-nums">{item.payInFeePct}%</p>
-                        )}
                         <p className="text-xs text-gray-400">{item.currency ?? '—'}</p>
                       </td>
 
@@ -904,6 +901,9 @@ export default function PayInTransactionsPage() {
                           )}
                           {formatAmount(item.payInFeeDecimal ?? item.payInFee)}
                         </p>
+                        {item.payInFeePct != null && (
+                          <p className="text-xs text-gray-400 tabular-nums">{item.payInFeePct}%</p>
+                        )}
                       </td>
 
                       {/* Bank Account */}

@@ -61,26 +61,31 @@ function StatusBadge({ status, createdDate, isPartialyPayout }: {
   isPartialyPayout?: boolean | null
 }) {
   const s = status?.toLowerCase()
-  const p2pSuffix = isPartialyPayout ? <span className="text-[10px] font-bold text-current ml-0.5">(P2P)</span> : null
   if (s === 'paid' || s === 'approved') return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-      {status}{p2pSuffix}
-    </span>
+    <div className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />{status}
+      </span>
+      {isPartialyPayout && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
+    </div>
   )
   if (s === 'rejected') return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-      {status}{p2pSuffix}
-    </span>
+    <div className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />{status}
+      </span>
+      {isPartialyPayout && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-red-50 text-red-700 ring-red-200">P2P</span>}
+    </div>
   )
   const age = formatAge(createdDate)
   return (
     <div className="flex flex-col gap-0.5 items-start">
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-        {status ?? 'Pending'}{p2pSuffix}
-      </span>
+      <div className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />{status ?? 'Pending'}
+        </span>
+        {isPartialyPayout && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-amber-50 text-amber-700 ring-amber-200">P2P</span>}
+      </div>
       {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
     </div>
   )
@@ -164,7 +169,7 @@ export default function WithdrawRequestPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colDestBank, m.colSourceBank, m.colStatus, m.colRefId, m.colRefId1, m.colRefId2]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colDestBank, m.colSourceBank, m.colStatus, 'REF']
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -339,9 +344,14 @@ export default function WithdrawRequestPage() {
                         ) : (
                           <p className="text-sm text-gray-400">—</p>
                         )}
-                        {item.payoutFeePayer === 'Beneficiary' && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200 mt-0.5">
-                            Beneficiary
+                        {item.payoutFeePayer && (
+                          <span className={clsx(
+                            'inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded-full ring-1 mt-0.5',
+                            item.payoutFeePayer.toLowerCase() === 'merchant'
+                              ? 'bg-blue-50 text-blue-700 ring-blue-200'
+                              : 'bg-orange-50 text-orange-700 ring-orange-200'
+                          )}>
+                            {item.payoutFeePayer}
                           </span>
                         )}
                       </td>
@@ -422,19 +432,14 @@ export default function WithdrawRequestPage() {
                         )}
                       </td>
 
-                      {/* Ref ID 1 */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId ?? '—'}</span>
-                      </td>
-
-                      {/* Ref ID 2 */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId1 ?? '—'}</span>
-                      </td>
-
-                      {/* Ref ID 3 */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId2 ?? '—'}</span>
+                      {/* REF */}
+                      <td className="px-4 py-3 border-b border-gray-100">
+                        <div className="flex flex-col gap-0.5">
+                          {item.refId ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId}</span> : null}
+                          {item.refId1 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId1}</span> : null}
+                          {item.refId2 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId2}</span> : null}
+                          {!item.refId && !item.refId1 && !item.refId2 && <span className="text-xs text-gray-400">—</span>}
+                        </div>
                       </td>
                     </tr>
                   )

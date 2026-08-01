@@ -42,21 +42,29 @@ function formatDateTime(d?: string | null) {
 
 function StatusBadge({ status, isPartialyPayout }: { status?: string | null; isPartialyPayout?: boolean | null }) {
   const s = status?.toLowerCase()
-  const p2p = isPartialyPayout ? <span className="text-[10px] font-bold text-current ml-0.5">(P2P)</span> : null
   if (s === 'paid' || s === 'approved') return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-      <CheckCircle className="w-3.5 h-3.5" />{status}{p2p}
-    </span>
+    <div className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+        <CheckCircle className="w-3.5 h-3.5" />{status}
+      </span>
+      {isPartialyPayout && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
+    </div>
   )
   if (s === 'rejected') return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
-      <AlertCircle className="w-3.5 h-3.5" />{status}{p2p}
-    </span>
+    <div className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
+        <AlertCircle className="w-3.5 h-3.5" />{status}
+      </span>
+      {isPartialyPayout && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-red-50 text-red-700 ring-red-200">P2P</span>}
+    </div>
   )
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-      <Clock className="w-3.5 h-3.5" />{status ?? 'Pending'}{p2p}
-    </span>
+    <div className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+        <Clock className="w-3.5 h-3.5" />{status ?? 'Pending'}
+      </span>
+      {isPartialyPayout && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-amber-50 text-amber-700 ring-amber-200">P2P</span>}
+    </div>
   )
 }
 
@@ -403,28 +411,27 @@ export default function PayOutRequestDetailPage() {
             )}
 
             <InfoRow label={m.fieldFee}>
-              {detail?.payoutFeeDecimal != null && detail.payoutFeeDecimal > 0 ? (
-                <span className="font-semibold tabular-nums text-red-600">
-                  -{formatAmount(detail.payoutFeeDecimal)}
-                  {detail.payoutFeePct ? <span className="text-xs font-normal text-gray-400 ml-1">({detail.payoutFeePct}%)</span> : null}
-                </span>
-              ) : (
-                <span className="font-semibold text-gray-400">0.00</span>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {detail?.payoutFeeDecimal != null && detail.payoutFeeDecimal > 0 ? (
+                  <span className="font-semibold tabular-nums text-red-600">
+                    -{formatAmount(detail.payoutFeeDecimal)}
+                    {detail.payoutFeePct ? <span className="text-xs font-normal text-gray-400 ml-1">({detail.payoutFeePct}%)</span> : null}
+                  </span>
+                ) : (
+                  <span className="font-semibold text-gray-400">0.00</span>
+                )}
+                {detail?.payoutFeePayer && (
+                  <span className={clsx(
+                    'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1',
+                    detail.payoutFeePayer === 'Beneficiary'
+                      ? 'bg-orange-50 text-orange-700 ring-orange-200'
+                      : 'bg-blue-50 text-blue-700 ring-blue-200'
+                  )}>
+                    {detail.payoutFeePayer}
+                  </span>
+                )}
+              </div>
             </InfoRow>
-
-            {detail?.payoutFeePayer && (
-              <InfoRow label={m.fieldFeePayer ?? 'Fee Payer'}>
-                <span className={clsx(
-                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold',
-                  detail.payoutFeePayer === 'Beneficiary'
-                    ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200'
-                    : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
-                )}>
-                  {detail.payoutFeePayer}
-                </span>
-              </InfoRow>
-            )}
 
             <InfoRow label={m.fieldNetAmount}>
               {detail?.payOutTotalAmountDecimal != null ? (
@@ -432,15 +439,19 @@ export default function PayOutRequestDetailPage() {
                   {formatAmount(detail.payOutTotalAmountDecimal)}
                 </span>
               ) : '—'}
+              {detail?.isPartialyPayout && detail?.totalPayOutPaidAmountDecimal != null && detail.totalPayOutPaidAmountDecimal > 0 && (
+                <div className="mt-1.5 flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">
+                    {m.labelTotalPaid ?? 'Total Paid'}: <span className="font-semibold text-emerald-600 tabular-nums">{formatAmount(detail.totalPayOutPaidAmountDecimal)}</span>
+                  </span>
+                  {detail.payOutTotalAmountDecimalP2P != null && (
+                    <span className="text-xs text-gray-400">
+                      {m.fieldRemainingP2P ?? 'P2P Remaining'}: <span className="font-semibold text-primary-600 tabular-nums">{formatAmount(detail.payOutTotalAmountDecimalP2P)}</span>
+                    </span>
+                  )}
+                </div>
+              )}
             </InfoRow>
-
-            {detail?.isPartialyPayout && detail?.totalPayOutPaidAmountDecimal != null && (
-              <InfoRow label={m.labelTotalPaid ?? 'Total Paid (P2P)'}>
-                <span className="font-bold tabular-nums text-emerald-600">
-                  {formatAmount(detail.totalPayOutPaidAmountDecimal)}
-                </span>
-              </InfoRow>
-            )}
 
             <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
 
@@ -493,11 +504,8 @@ export default function PayOutRequestDetailPage() {
             const paidAmt = detail?.totalPayOutPaidAmountDecimal ?? 0
             const useP2P = detail?.isPartialyPayout && detail?.qrCodeP2P
             const rawQr = useP2P ? detail!.qrCodeP2P! : (detail?.qrCodeImage ?? detail?.qrCode ?? null)
-            const remaining = useP2P && detail?.payOutTotalAmountDecimalP2P != null
-              ? detail.payOutTotalAmountDecimalP2P - paidAmt
-              : null
             if (!rawQr) return null
-const isImage = rawQr.startsWith('data:') || rawQr.startsWith('iVBOR') || rawQr.startsWith('/9j/')
+            const isImage = rawQr.startsWith('data:') || rawQr.startsWith('iVBOR') || rawQr.startsWith('/9j/')
             return (
               <div className="flex-shrink-0 flex flex-col items-center gap-2 pt-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">
@@ -514,10 +522,10 @@ const isImage = rawQr.startsWith('data:') || rawQr.startsWith('iVBOR') || rawQr.
                     <QRCode value={rawQr} size={200} />
                   </div>
                 )}
-                {remaining != null && remaining > 0 && (
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400">{m.fieldRemainingP2P ?? 'P2P Remaining'}</p>
-                    <p className="text-sm font-bold tabular-nums text-emerald-700">{formatAmount(remaining)}</p>
+                {useP2P && paidAmt > 0 && detail?.payOutTotalAmountDecimalP2P != null && (
+                  <div className="text-center max-w-[220px]">
+                    <p className="text-xs font-semibold text-primary-600 tabular-nums">{formatAmount(detail.payOutTotalAmountDecimalP2P)}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{m.qrP2PDescription ?? 'ยอดคงเหลือหลัง partial payment'}</p>
                   </div>
                 )}
               </div>

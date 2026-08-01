@@ -65,13 +65,14 @@ function StatusBadge({ status, createdDate, paymentRequestId, statusReason, txIs
   txIsPeerToPeer?: boolean | null
 }) {
   const s = status?.toLowerCase()
-  const p2p = txIsPeerToPeer ? <span className="text-[10px] font-bold text-current ml-0.5">(P2P)</span> : null
   if (s === 'identified' || s === 'approved') return (
     <div className="flex flex-col gap-0.5 items-start">
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-        {status}{p2p}
-      </span>
+      <div className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />{status}
+        </span>
+        {txIsPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
+      </div>
       {paymentRequestId && (
         <a
           href={`/business-setup/payment/pay-in-requests/${paymentRequestId}`}
@@ -91,15 +92,18 @@ function StatusBadge({ status, createdDate, paymentRequestId, statusReason, txIs
     const age = !isRejected ? formatAge(createdDate) : null
     return (
       <div className="flex flex-col gap-0.5 items-start">
-        <span className={clsx(
-          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1',
-          isRejected
-            ? 'bg-red-50 text-red-700 ring-red-200'
-            : 'bg-amber-50 text-amber-700 ring-amber-200'
-        )}>
-          <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', isRejected ? 'bg-red-500' : 'bg-amber-400')} />
-          {status}{p2p}
-        </span>
+        <div className="inline-flex items-center gap-1">
+          <span className={clsx(
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1',
+            isRejected
+              ? 'bg-red-50 text-red-700 ring-red-200'
+              : 'bg-amber-50 text-amber-700 ring-amber-200'
+          )}>
+            <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', isRejected ? 'bg-red-500' : 'bg-amber-400')} />
+            {status}
+          </span>
+          {txIsPeerToPeer && <span className={clsx('px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1', isRejected ? 'bg-red-50 text-red-700 ring-red-200' : 'bg-amber-50 text-amber-700 ring-amber-200')}>P2P</span>}
+        </div>
         {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
         {isRejected && statusReason && (
           <span className="text-[10px] text-red-500 ml-1 max-w-[160px] truncate" title={statusReason}>{statusReason}</span>
@@ -723,7 +727,7 @@ export default function PayInTransactionsPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, m.colRef1, m.colRef2, m.colRef3, m.colAction]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, 'REF', m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -914,10 +918,12 @@ export default function PayInTransactionsPage() {
                         {item.payInBankAccountName && (
                           <p className="text-xs text-gray-500 mt-0.5">{item.payInBankAccountName}</p>
                         )}
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {item.payInAccountType && (
+                        <div className="flex gap-1 mt-1 flex-wrap items-center">
+                          {item.payInPromptPayId ? (
+                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">PromptPay</span>
+                          ) : item.payInAccountType ? (
                             <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">{item.payInAccountType}</span>
-                          )}
+                          ) : null}
                           {item.payInPromptPayId && (
                             <span className="text-[10px] text-gray-500">{item.payInPromptPayId}</span>
                           )}
@@ -938,19 +944,14 @@ export default function PayInTransactionsPage() {
                         />
                       </td>
 
-                      {/* REF 1 */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId1 ?? '—'}</span>
-                      </td>
-
-                      {/* REF 2 */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId2 ?? '—'}</span>
-                      </td>
-
-                      {/* REF 3 */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId3 ?? '—'}</span>
+                      {/* REF */}
+                      <td className="px-4 py-3 border-b border-gray-100">
+                        <div className="flex flex-col gap-0.5">
+                          {item.refId1 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId1}</span> : null}
+                          {item.refId2 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId2}</span> : null}
+                          {item.refId3 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId3}</span> : null}
+                          {!item.refId1 && !item.refId2 && !item.refId3 && <span className="text-xs text-gray-400">—</span>}
+                        </div>
                       </td>
 
                       {/* Action */}

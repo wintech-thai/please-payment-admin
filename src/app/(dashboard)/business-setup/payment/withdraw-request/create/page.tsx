@@ -36,7 +36,7 @@ export default function CreatePayOutRequestPage() {
   const [refId2, setRefId2] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [payoutFeePayer, setPayoutFeePayer] = useState('Merchant')
+  const [payoutFeePayer, setPayoutFeePayer] = useState<'Merchant' | 'Beneficiary'>('Merchant')
 
   // Data lists
   const [merchants, setMerchants] = useState<MerchantItem[]>([])
@@ -286,85 +286,114 @@ export default function CreatePayOutRequestPage() {
           {/* Section 2: Destination Payout Bank Account */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
             <SectionHeader>{m.sectionPayoutBank}</SectionHeader>
-            <div className="max-w-md">
-              <FormField label={m.fieldPayoutBankAccount} required error={errors.payoutBankAccountId}>
-                <div ref={bankRef} className="relative">
-                  <button
-                    type="button"
-                    disabled={!merchantId || loadingAccounts}
-                    onClick={() => { if (merchantId && !loadingAccounts) setBankOpen(p => !p) }}
-                    className={clsx(
-                      'w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm border rounded-lg text-left transition-colors focus:outline-none focus:ring-2 focus:border-transparent',
-                      errors.payoutBankAccountId ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary-500',
-                      (!merchantId || loadingAccounts) ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'
-                    )}
-                  >
-                    <span className="flex items-center gap-2 min-w-0 flex-1">
-                      {selectedBankAccount ? (
-                        <>
-                          <span className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1">
-                            <span className="font-semibold text-gray-900 text-sm">
-                              {[selectedBankAccount.bankCode, selectedBankAccount.accountNumber].filter(Boolean).join(' ')}
-                            </span>
-                            {selectedBankAccount.accountName && (
-                              <span className="text-gray-400 text-sm font-normal">— {selectedBankAccount.accountName}</span>
-                            )}
-                            <AccountTypeBadge type={selectedBankAccount.accountType} />
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-gray-400">
-                          {!merchantId ? m.placeholderMerchantSelect : loadingAccounts ? t.admin.loading : m.placeholderPayoutBankAccount}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-gray-400 text-xs flex-shrink-0">▾</span>
-                  </button>
+            <div className="flex flex-wrap items-start gap-4">
 
-                  {bankOpen && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto custom-scrollbar">
-                      <button
-                        type="button"
-                        onClick={() => { setPayoutBankAccountId(''); setBankOpen(false); mark(); clearErr('payoutBankAccountId') }}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50"
-                      >
-                        {m.placeholderPayoutBankAccount}
-                      </button>
-                      {payoutAccounts.map(ba => {
-                        const id = ba.bankAccountId ?? ba.accountId
-                        const bankPart = [ba.bankCode, ba.accountNumber].filter(Boolean).join(' ')
-                        const namePart = ba.accountName
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => { setPayoutBankAccountId(id); setBankOpen(false); mark(); clearErr('payoutBankAccountId') }}
-                            className={clsx(
-                              'w-full text-left px-4 py-3 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-b-0',
-                              payoutBankAccountId === id
-                                ? 'bg-primary-50'
-                                : 'hover:bg-gray-50'
-                            )}
-                          >
-                            <span className="flex-1 min-w-0 flex items-center flex-wrap gap-1.5">
-                              <span className={clsx('text-sm font-semibold', payoutBankAccountId === id ? 'text-primary-700' : 'text-gray-900')}>
-                                {bankPart}
+              {/* Bank account picker */}
+              <div className="flex-1 min-w-0 max-w-md">
+                <FormField label={m.fieldPayoutBankAccount} required error={errors.payoutBankAccountId}>
+                  <div ref={bankRef} className="relative">
+                    <button
+                      type="button"
+                      disabled={!merchantId || loadingAccounts}
+                      onClick={() => { if (merchantId && !loadingAccounts) setBankOpen(p => !p) }}
+                      className={clsx(
+                        'w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm border rounded-lg text-left transition-colors focus:outline-none focus:ring-2 focus:border-transparent',
+                        errors.payoutBankAccountId ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary-500',
+                        (!merchantId || loadingAccounts) ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'
+                      )}
+                    >
+                      <span className="flex items-center gap-2 min-w-0 flex-1">
+                        {selectedBankAccount ? (
+                          <>
+                            <span className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1">
+                              <span className="font-semibold text-gray-900 text-sm">
+                                {[selectedBankAccount.bankCode, selectedBankAccount.accountNumber].filter(Boolean).join(' ')}
                               </span>
-                              {namePart && (
-                                <span className="text-sm text-gray-400 font-normal">— {namePart}</span>
+                              {selectedBankAccount.accountName && (
+                                <span className="text-gray-400 text-sm font-normal">— {selectedBankAccount.accountName}</span>
                               )}
-                              <AccountTypeBadge type={ba.accountType} />
+                              <AccountTypeBadge type={selectedBankAccount.accountType} />
                             </span>
-                          </button>
-                        )
-                      })}
-                    </div>
+                          </>
+                        ) : (
+                          <span className="text-gray-400">
+                            {!merchantId ? m.placeholderMerchantSelect : loadingAccounts ? t.admin.loading : m.placeholderPayoutBankAccount}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-gray-400 text-xs flex-shrink-0">▾</span>
+                    </button>
+
+                    {bankOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto custom-scrollbar">
+                        <button
+                          type="button"
+                          onClick={() => { setPayoutBankAccountId(''); setBankOpen(false); mark(); clearErr('payoutBankAccountId') }}
+                          className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50"
+                        >
+                          {m.placeholderPayoutBankAccount}
+                        </button>
+                        {payoutAccounts.map(ba => {
+                          const id = ba.bankAccountId ?? ba.accountId
+                          const bankPart = [ba.bankCode, ba.accountNumber].filter(Boolean).join(' ')
+                          const namePart = ba.accountName
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => { setPayoutBankAccountId(id); setBankOpen(false); mark(); clearErr('payoutBankAccountId') }}
+                              className={clsx(
+                                'w-full text-left px-4 py-3 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-b-0',
+                                payoutBankAccountId === id
+                                  ? 'bg-primary-50'
+                                  : 'hover:bg-gray-50'
+                              )}
+                            >
+                              <span className="flex-1 min-w-0 flex items-center flex-wrap gap-1.5">
+                                <span className={clsx('text-sm font-semibold', payoutBankAccountId === id ? 'text-primary-700' : 'text-gray-900')}>
+                                  {bankPart}
+                                </span>
+                                {namePart && (
+                                  <span className="text-sm text-gray-400 font-normal">— {namePart}</span>
+                                )}
+                                <AccountTypeBadge type={ba.accountType} />
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {merchantId && !loadingAccounts && payoutAccounts.length === 0 && (
+                    <p className="text-xs text-gray-400 mt-1.5">{m.noPayoutBankAccounts}</p>
                   )}
+                </FormField>
+              </div>
+
+              {/* Fee Payer Switch */}
+              <div className="flex-shrink-0">
+                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">{m.fieldFeePayer ?? 'Fee Payer'}</p>
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                  {(['Merchant', 'Beneficiary'] as const).map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => { setPayoutFeePayer(opt); mark() }}
+                      className={clsx(
+                        'px-4 py-2.5 text-sm font-semibold transition-colors',
+                        payoutFeePayer === opt
+                          ? opt === 'Merchant'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-orange-500 text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      )}
+                    >
+                      {opt === 'Merchant' ? (m.feePayerMerchant ?? 'Merchant') : (m.feePayerBeneficiary ?? 'Beneficiary')}
+                    </button>
+                  ))}
                 </div>
-                {merchantId && !loadingAccounts && payoutAccounts.length === 0 && (
-                  <p className="text-xs text-gray-400 mt-1.5">{m.noPayoutBankAccounts}</p>
-                )}
-              </FormField>
+              </div>
+
             </div>
           </div>
 
@@ -438,17 +467,6 @@ export default function CreatePayOutRequestPage() {
                   />
                 </FormField>
               </div>
-
-              <FormField label={m.fieldFeePayer ?? 'Fee Payer'}>
-                <select
-                  value={payoutFeePayer}
-                  onChange={e => { setPayoutFeePayer(e.target.value); mark() }}
-                  className={inputCls(false)}
-                >
-                  <option value="Merchant">{m.feePayerMerchant ?? 'Merchant'}</option>
-                  <option value="Beneficiary">{m.feePayerBeneficiary ?? 'Beneficiary'}</option>
-                </select>
-              </FormField>
 
             </div>
           </div>

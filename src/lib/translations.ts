@@ -1386,8 +1386,8 @@ export const translations = {
       amountAboveMax: 'ยอดเงินเกินขีดสูงสุด',
       // P2P / Fee Payer
       fieldFeePayer: 'ผู้จ่ายค่าธรรมเนียม',
-      feePayerMerchant: 'Merchant (ร้านค้าจ่าย)',
-      feePayerBeneficiary: 'Beneficiary (ผู้รับจ่าย)',
+      feePayerMerchant: 'Merchant',
+      feePayerBeneficiary: 'Beneficiary',
       sectionPartialPayouts: 'รายการโอน P2P',
       colPartialDate: 'วันที่',
       colPartialId: 'Transaction ID',
@@ -1396,6 +1396,7 @@ export const translations = {
       labelTotalPaid: 'โอนแล้ว',
       labelTotalPending: 'รอโอน',
       fieldRemainingP2P: 'ยอดคงเหลือ P2P',
+      qrP2PDescription: 'ยอดคงเหลือหลัง partial payment',
     },
     transferRequest: {
       title: 'คำขอ Transfer',
@@ -3393,8 +3394,8 @@ export const translations = {
       amountAboveMax: 'Amount exceeds maximum',
       // P2P / Fee Payer
       fieldFeePayer: 'Fee Payer',
-      feePayerMerchant: 'Merchant (merchant pays)',
-      feePayerBeneficiary: 'Beneficiary (recipient pays)',
+      feePayerMerchant: 'Merchant',
+      feePayerBeneficiary: 'Beneficiary',
       sectionPartialPayouts: 'P2P Transfer Records',
       colPartialDate: 'Date',
       colPartialId: 'Transaction ID',
@@ -3403,6 +3404,7 @@ export const translations = {
       labelTotalPaid: 'Total Paid',
       labelTotalPending: 'Total Pending',
       fieldRemainingP2P: 'P2P Remaining',
+      qrP2PDescription: 'Remaining amount after partial payment',
     },
     transferRequest: {
       title: 'Transfer Requests',

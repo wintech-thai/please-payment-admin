@@ -115,7 +115,7 @@ export default function PayInSlipListPage() {
   const startRow = items.length === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, items.length)
 
-  const cols = [m.colRefId, m.colMerchant, m.colAmount, m.colBankAccount, m.colStatus, m.colCreatedDate]
+  const cols = [m.colRefId, m.colMerchant, m.colAmount, 'TO BANK ACCOUNT', m.colStatus, m.colCreatedDate]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">

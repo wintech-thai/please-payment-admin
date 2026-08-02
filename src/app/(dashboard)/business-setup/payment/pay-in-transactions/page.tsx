@@ -727,7 +727,7 @@ export default function PayInTransactionsPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, 'REF', m.colAction]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, 'TO BANK ACCOUNT', m.colStatus, 'REF', m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">

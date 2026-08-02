@@ -424,6 +424,10 @@ export interface PayInRequestItem {
   payinPromptPayId?: string | null
   payinAccountType?: string | null
   payinAccountLevel?: string | null
+  // P2P / fee fields
+  payinIsPeerToPeer?: boolean | null
+  payInFeeDecimal?: number | null
+  payInFeePct?: number | null
 }
 
 export interface PayInRequestDetail extends PayInRequestItem {
@@ -498,9 +502,15 @@ export interface PayInTxItem {
   payInBankCode?: string | null
   payInBankAccountNo?: string | null
   payInBankAccountName?: string | null
+  payInPromptPayId?: string | null
+  payInAccountType?: string | null
   fromBankCode?: string | null
   fromBankAccountNo?: string | null
   fromBankAccountName?: string | null
+  refId1?: string | null
+  refId2?: string | null
+  refId3?: string | null
+  txIsPeerToPeer?: boolean | null
   processingMessages?: string | null
   createdDate?: string | null
   processingSteps?: string[] | null
@@ -773,6 +783,20 @@ export interface PayOutRequestItem {
   payoutFeePct?: number | null
   payoutFeeDecimal?: number | null
   payOutTotalAmountDecimal?: number | null
+  // P2P / partial payout fields
+  isPartialyPayout?: boolean | null
+  payoutFeePayer?: string | null
+  totalPayOutPaidAmountDecimal?: number | null
+  totalPayOutPendingPaidAmountDecimal?: number | null
+  qrCodeP2P?: string | null
+  payOutTotalAmountDecimalP2P?: number | null
+}
+
+export interface PartialPayoutItem {
+  payinRequestId?: string | null
+  txDate?: string | null
+  partialAmount?: number | null
+  status?: string | null
 }
 
 export interface PayOutRequestDetail extends PayOutRequestItem {
@@ -784,6 +808,7 @@ export interface PayOutRequestDetail extends PayOutRequestItem {
   merchantMaxPayout?: number | null
   qrCode?: string | null
   qrCodeImage?: string | null
+  partialPayouts?: PartialPayoutItem[] | null
 }
 
 export interface GetPayOutRequestsPayload {
@@ -806,6 +831,7 @@ export interface CreatePayOutRequestPayload {
   QrProvider?: string
   Tags?: string
   PayinBankAccountId: string
+  PayoutFeePayer?: string
 }
 
 export interface UpdatePayOutRequestPayload {

@@ -14,15 +14,14 @@ title: Webhooks
 
 ## Events
 
-ขณะนี้มี event เดียวคือ:
-
 | Event | คำอธิบาย |
 |---|---|
 | `Payment.Success` | ลูกค้าชำระเงิน Pay-In สำเร็จ เงินเข้าบัญชี Merchant แล้ว |
+| `PaymentOut.Success` | ระบบโอนเงิน Pay-Out ออกสำเร็จ เงินถูกโอนไปยังบัญชีปลายทางแล้ว |
 
 ## รูปแบบ Payload
 
-Please Payment จะ POST JSON body ต่อไปนี้มาให้:
+### Payment.Success
 
 ```json
 {
@@ -47,7 +46,7 @@ Please Payment จะ POST JSON body ต่อไปนี้มาให้:
 }
 ```
 
-### Field ที่สำคัญ
+#### Field ที่สำคัญ
 
 | Parameter | คำอธิบาย |
 |---|---|
@@ -55,6 +54,51 @@ Please Payment จะ POST JSON body ต่อไปนี้มาให้:
 | `PMR_ID` | UUID ของ Payment Request ในระบบ Please Payment |
 | `PAYIN_REQUEST_AMOUNT` | จำนวนเงินที่ขอตั้งต้น |
 | `PAYIN_GENERATED_AMOUNT` | จำนวนเงินที่รับจริง (อาจมีเศษสตางค์ต่างกัน) |
+
+---
+
+### PaymentOut.Success
+
+```json
+{
+  "Id": "job-uuid",
+  "Type": "PaymentOut.Success",
+  "Parameters": [
+    { "Name": "ORG_ID",                    "Value": "org-id" },
+    { "Name": "PMT_ID",                    "Value": "payment-tx-uuid" },
+    { "Name": "PMR_ID",                    "Value": "payment-request-uuid" },
+    { "Name": "PMR_REF_ID1",               "Value": "260802110325" },
+    { "Name": "PMR_REF_ID2",               "Value": "CUST-12345" },
+    { "Name": "PMR_REF_ID3",               "Value": null },
+    { "Name": "MERCHANT_ID",               "Value": "merchant-uuid" },
+    { "Name": "MERCHANT_CODE",             "Value": "merchant-code" },
+    { "Name": "MERCHANT_NAME",             "Value": "ชื่อร้านค้า" },
+    { "Name": "TX_AMOUNT",                 "Value": "1000.00" },
+    { "Name": "PAYOUT_REQUEST_AMOUNT",     "Value": "1000" },
+    { "Name": "PAYOUT_FEE",                "Value": "5.00" },
+    { "Name": "PAYOUT_FEE_PCT",            "Value": "0.5" },
+    { "Name": "PAYOUT_BANK_CODE",          "Value": "KBank" },
+    { "Name": "PAYOUT_BANK_ACCOUNT_NO",    "Value": "xxx-xxxxx-x" },
+    { "Name": "PAYOUT_BANK_ACCOUNT_NAME",  "Value": "ชื่อบัญชีปลายทาง" },
+    { "Name": "PAYOUT_PROMPTPAY_ID",       "Value": null },
+    { "Name": "PAYOUT_IS_PARTIAL",         "Value": "False" }
+  ]
+}
+```
+
+#### Field ที่สำคัญ
+
+| Parameter | คำอธิบาย |
+|---|---|
+| `PMR_REF_ID1` | Ref 1 (auto-generated YYMMDDHHMMSS) |
+| `PMR_REF_ID2` | Ref 2 — optional reference ที่ Merchant กำหนด |
+| `PMR_REF_ID3` | Ref 3 — optional reference ที่ Merchant กำหนด |
+| `PMR_ID` | UUID ของ Pay-Out Request ในระบบ Please Payment |
+| `TX_AMOUNT` | จำนวนเงินที่โอนออกจริง |
+| `PAYOUT_REQUEST_AMOUNT` | จำนวนเงินที่ขอโอนตั้งต้น |
+| `PAYOUT_FEE` | ค่าธรรมเนียม |
+| `PAYOUT_BANK_CODE` | รหัสธนาคารปลายทาง |
+| `PAYOUT_IS_PARTIAL` | `True` ถ้าเป็น P2P partial payout |
 
 ## ตัวอย่างการรับ Webhook
 
@@ -68,18 +112,19 @@ app = Flask(__name__)
 @app.route('/webhooks/payment', methods=['POST'])
 def handle_webhook():
     data = request.get_json()
-
-    if data.get('Type') != 'Payment.Success':
-        return jsonify({'ok': True})
+    event_type = data.get('Type')
 
     # แปลง Parameters array เป็น dict
     params = {p['Name']: p['Value'] for p in data.get('Parameters', [])}
-
     ref_id = params.get('PMR_REF_ID')
-    amount = params.get('PAYIN_REQUEST_AMOUNT')
 
-    # อัปเดต order ในระบบของเรา
-    update_order_status(ref_id, 'paid', amount)
+    if event_type == 'Payment.Success':
+        amount = params.get('PAYIN_REQUEST_AMOUNT')
+        update_order_status(ref_id, 'paid_in', amount)
+
+    elif event_type == 'PaymentOut.Success':
+        amount = params.get('TX_AMOUNT')
+        update_order_status(ref_id, 'paid_out', amount)
 
     return jsonify({'ok': True}), 200
 ```
@@ -89,18 +134,14 @@ def handle_webhook():
 ```javascript
 app.post('/webhooks/payment', express.json(), (req, res) => {
   const { Type, Parameters } = req.body
-
-  if (Type !== 'Payment.Success') return res.json({ ok: true })
-
-  const params = Object.fromEntries(
-    Parameters.map(p => [p.Name, p.Value])
-  )
-
+  const params = Object.fromEntries(Parameters.map(p => [p.Name, p.Value]))
   const refId = params.PMR_REF_ID
-  const amount = params.PAYIN_REQUEST_AMOUNT
 
-  // อัปเดต order ในระบบของเรา
-  updateOrderStatus(refId, 'paid', amount)
+  if (Type === 'Payment.Success') {
+    updateOrderStatus(refId, 'paid_in', params.PAYIN_REQUEST_AMOUNT)
+  } else if (Type === 'PaymentOut.Success') {
+    updateOrderStatus(refId, 'paid_out', params.TX_AMOUNT)
+  }
 
   res.json({ ok: true })
 })

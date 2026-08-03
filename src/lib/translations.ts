@@ -1193,7 +1193,7 @@ export const translations = {
       colDate: 'วันที่',
       colMerchant: 'ร้านค้า',
       colAmount: 'ยอด',
-      colFee: 'Payout Fee',
+      colFee: 'ค่าธรรมเนียม Payout',
       colDestBank: 'ไปยังบัญชีธนาคาร',
       colSourceBank: 'จากบัญชีธนาคาร',
       colStatus: 'สถานะ',

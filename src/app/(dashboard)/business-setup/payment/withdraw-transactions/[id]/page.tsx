@@ -23,22 +23,26 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
-function StatusBadge({ status }: { status?: string | null }) {
+function StatusBadge({ status, isPeerToPeer }: { status?: string | null; isPeerToPeer?: boolean | null }) {
   const s = status?.toLowerCase()
-  if (s === 'completed' || s === 'success' || s === 'paid' || s === 'approved') return (
+  const badge = s === 'completed' || s === 'success' || s === 'paid' || s === 'approved' ? (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
       <CheckCircle className="w-3.5 h-3.5" />{status}
     </span>
-  )
-  if (s === 'failed' || s === 'error' || s === 'rejected') return (
+  ) : s === 'failed' || s === 'error' || s === 'rejected' ? (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
       <AlertCircle className="w-3.5 h-3.5" />{status}
     </span>
-  )
-  return (
+  ) : (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
       <Clock className="w-3.5 h-3.5" />{status ?? '—'}
     </span>
+  )
+  return (
+    <div className="inline-flex items-center gap-1">
+      {badge}
+      {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
+    </div>
   )
 }
 
@@ -153,7 +157,7 @@ export default function PayOutTxDetailPage() {
   })()
 
   const hasFeeInfo = detail?.payoutFeePct != null || detail?.payoutFeeDecimal != null || detail?.payOutTotalAmountDecimal != null
-  const hasDestInfo = detail?.payOutBankCode || detail?.payOutBankAccountNo || detail?.payOutBankAccountName
+  const hasDestInfo = detail?.payInBankCode || detail?.payInBankAccountNo || detail?.payInBankAccountName
   const hasSourceInfo = detail?.fromBankCode || detail?.fromBankAccountNo || detail?.fromBankAccountName
   const msg1Lines = (job?.jobMessage ?? '').split('\n').filter(l => l.trim())
   const msg2Lines = (job?.jobMessage2 ?? '').split('\n').filter(l => l.trim())
@@ -192,7 +196,7 @@ export default function PayOutTxDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
             <InfoRow label={m.fieldStatus}>
-              <StatusBadge status={detail?.status} />
+              <StatusBadge status={detail?.status} isPeerToPeer={detail?.txIsPeerToPeer} />
             </InfoRow>
             <InfoRow label={m.fieldOrgId}>{detail?.orgId ?? '—'}</InfoRow>
             <InfoRow label={m.fieldMerchant}>
@@ -221,9 +225,9 @@ export default function PayOutTxDetailPage() {
             {/* REF */}
             {(detail?.refId1 || detail?.refId2 || detail?.refId3) && (
               <>
-                {detail?.refId1 && <InfoRow label="REF 1">{detail.refId1}</InfoRow>}
-                {detail?.refId2 && <InfoRow label="REF 2">{detail.refId2}</InfoRow>}
-                {detail?.refId3 && <InfoRow label="REF 3">{detail.refId3}</InfoRow>}
+                {detail?.refId1 && <InfoRow label="RefId1">{detail.refId1}</InfoRow>}
+                {detail?.refId2 && <InfoRow label="RefId2">{detail.refId2}</InfoRow>}
+                {detail?.refId3 && <InfoRow label="RefId3">{detail.refId3}</InfoRow>}
               </>
             )}
             {detail?.description && (
@@ -263,13 +267,13 @@ export default function PayOutTxDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
             <SectionHeader>{m.sectionDestination}</SectionHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <InfoRow label={m.fieldDestBank}>{detail?.payOutBankCode ?? '—'}</InfoRow>
-              <InfoRow label={m.fieldDestAccountNo}>{detail?.payOutBankAccountNo ?? '—'}</InfoRow>
-              {detail?.payOutBankAccountName && (
-                <InfoRow label={m.fieldDestAccountName}>{detail.payOutBankAccountName}</InfoRow>
+              <InfoRow label={m.fieldDestBank}>{detail?.payInBankCode ?? '—'}</InfoRow>
+              <InfoRow label={m.fieldDestAccountNo}>{detail?.payInBankAccountNo ?? '—'}</InfoRow>
+              {detail?.payInBankAccountName && (
+                <InfoRow label={m.fieldDestAccountName}>{detail.payInBankAccountName}</InfoRow>
               )}
-              {detail?.payOutPromptPayId && (
-                <InfoRow label="PromptPay ID">{detail.payOutPromptPayId}</InfoRow>
+              {detail?.payInPromptPayId && (
+                <InfoRow label="PromptPay ID">{detail.payInPromptPayId}</InfoRow>
               )}
             </div>
           </div>

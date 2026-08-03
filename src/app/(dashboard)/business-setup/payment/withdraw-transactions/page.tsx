@@ -56,23 +56,29 @@ function formatAge(createdDate?: string | null): string {
   return `${hours}h ${mins}min`
 }
 
-function StatusBadge({ status, createdDate, statusReason, paymentRequestId }: {
+function StatusBadge({ status, createdDate, statusReason, isPeerToPeer }: {
   status?: string | null
   createdDate?: string | null
   statusReason?: string | null
-  paymentRequestId?: string | null
+  isPeerToPeer?: boolean | null
 }) {
   const s = status?.toLowerCase()
   if (s === 'completed' || s === 'success' || s === 'paid' || s === 'approved') return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />{status}
-    </span>
+    <div className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />{status}
+      </span>
+      {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
+    </div>
   )
   if (s === 'failed' || s === 'error' || s === 'rejected') return (
     <div className="flex flex-col gap-0.5 items-start">
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />{status}
-      </span>
+      <div className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />{status}
+        </span>
+        {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-red-50 text-red-700 ring-red-200">P2P</span>}
+      </div>
       {statusReason && (
         <span className="text-[11px] text-red-500 ml-1 truncate max-w-[140px]" title={statusReason}>{statusReason}</span>
       )}
@@ -82,18 +88,24 @@ function StatusBadge({ status, createdDate, statusReason, paymentRequestId }: {
     const age = formatAge(createdDate)
     return (
       <div className="flex flex-col gap-0.5 items-start">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />{status}
-        </span>
+        <div className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />{status}
+          </span>
+          {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-amber-50 text-amber-700 ring-amber-200">P2P</span>}
+        </div>
         {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
       </div>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 ring-1 ring-gray-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
-      {status ?? '—'}
-    </span>
+    <div className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 ring-1 ring-gray-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
+        {status ?? '—'}
+      </span>
+      {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-gray-100 text-gray-600 ring-gray-200">P2P</span>}
+    </div>
   )
 }
 
@@ -316,6 +328,7 @@ export default function PayOutTransactionsPage() {
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/withdraw-transactions/${item.id}`) }}
                       >
                         <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
+                        {item.refId1 && <p className="text-xs text-gray-400 mt-0.5">{item.refId1}</p>}
                       </td>
 
                       {/* Merchant */}
@@ -354,26 +367,22 @@ export default function PayOutTransactionsPage() {
 
                       {/* Dest Bank */}
                       <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
-                        {item.payOutBankCode || item.payOutBankAccountNo ? (
+                        {item.payInBankCode || item.payInBankAccountNo ? (
                           <p className="text-sm font-semibold text-gray-800">
-                            {[item.payOutBankCode, item.payOutBankAccountNo].filter(Boolean).join(' · ')}
+                            {[item.payInBankCode, item.payInBankAccountNo].filter(Boolean).join(' · ')}
                           </p>
                         ) : (
                           <p className="text-sm text-gray-400">—</p>
                         )}
-                        {item.payOutBankAccountName && (
-                          <p className="text-xs text-gray-500 mt-0.5">{item.payOutBankAccountName}</p>
+                        {item.payInBankAccountName && (
+                          <p className="text-xs text-gray-500 mt-0.5">{item.payInBankAccountName}</p>
                         )}
-                        {item.payOutPromptPayId ? (
+                        {item.payInPromptPayId && (
                           <div className="flex gap-1 mt-1">
                             <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">PromptPay</span>
-                            <span className="text-[10px] text-gray-500">{item.payOutPromptPayId}</span>
+                            <span className="text-[10px] text-gray-500">{item.payInPromptPayId}</span>
                           </div>
-                        ) : item.payOutAccountType ? (
-                          <div className="mt-1">
-                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">{item.payOutAccountType}</span>
-                          </div>
-                        ) : null}
+                        )}
                       </td>
 
                       {/* Source Bank */}
@@ -397,7 +406,7 @@ export default function PayOutTransactionsPage() {
 
                       {/* Status */}
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <StatusBadge status={item.status} createdDate={item.createdDate} statusReason={item.statusReason} paymentRequestId={item.paymentRequestId} />
+                        <StatusBadge status={item.status} createdDate={item.createdDate} statusReason={item.statusReason} isPeerToPeer={item.txIsPeerToPeer} />
                       </td>
 
                       {/* REF */}

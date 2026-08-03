@@ -551,8 +551,10 @@ export interface PayOutTxItem {
   txAmount?: number | null
   txAmountDecimal?: number | null
   payoutFeePct?: number | null
+  payOutFeePct?: number | null
   payoutFeeDecimal?: number | null
   payOutTotalAmountDecimal?: number | null
+  payoutFeePayer?: string | null
   payInBankCode?: string | null
   payInBankAccountNo?: string | null
   payInBankAccountName?: string | null

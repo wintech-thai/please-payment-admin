@@ -356,12 +356,20 @@ export default function PayOutTransactionsPage() {
                         {item.payoutFeeDecimal != null && item.payoutFeeDecimal > 0 ? (
                           <>
                             <p className="text-sm font-semibold tabular-nums text-gray-800">{formatAmount(item.payoutFeeDecimal)}</p>
-                            {item.payoutFeePct != null && item.payoutFeePct > 0 && (
-                              <p className="text-xs text-gray-400">{item.payoutFeePct}%</p>
-                            )}
+                            {(() => { const pct = item.payOutFeePct ?? item.payoutFeePct; return pct != null && pct > 0 ? <p className="text-xs text-gray-400">{pct}%</p> : null })()}
                           </>
                         ) : (
                           <p className="text-sm text-gray-400">—</p>
+                        )}
+                        {item.payoutFeePayer && (
+                          <span className={clsx(
+                            'inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded-full ring-1 mt-0.5',
+                            item.payoutFeePayer.toLowerCase() === 'merchant'
+                              ? 'bg-blue-50 text-blue-700 ring-blue-200'
+                              : 'bg-orange-50 text-orange-700 ring-orange-200'
+                          )}>
+                            {item.payoutFeePayer}
+                          </span>
                         )}
                       </td>
 

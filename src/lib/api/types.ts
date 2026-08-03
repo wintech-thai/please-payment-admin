@@ -568,6 +568,7 @@ export interface PayOutTxItem {
   refId1?: string | null
   refId2?: string | null
   refId3?: string | null
+  txIsPeerToPeer?: boolean | null
   processingMessages?: string | null
   createdDate?: string | null
   processingSteps?: string[] | null

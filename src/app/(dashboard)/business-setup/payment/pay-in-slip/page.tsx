@@ -8,8 +8,24 @@ import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
 import { Search, RefreshCw, ChevronLeft, ChevronRight, Upload, ExternalLink } from 'lucide-react'
 import clsx from 'clsx'
+import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+
+function getTimeFilter(tr: TimeRangeValue): { FromDate: string; ToDate: string } {
+  if (tr.type === 'absolute' && tr.start && tr.end) {
+    return { FromDate: new Date(tr.start * 1000).toISOString(), ToDate: new Date(tr.end * 1000).toISOString() }
+  }
+  const now = Date.now()
+  const val = tr.type === 'relative' ? tr.value ?? '24h' : '24h'
+  const num = parseInt(val)
+  const unit = val.replace(/[0-9]/g, '')
+  let startMs = now - 24 * 3_600_000
+  if (unit === 'h') startMs = now - num * 3_600_000
+  else startMs = now - num * 86_400_000
+  return { FromDate: new Date(startMs).toISOString(), ToDate: new Date(now).toISOString() }
+}
 
 const HIGHLIGHTED_KEY = 'payInSlip_highlightedId'
+const FILTER_KEY = 'payInSlip_filter'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
@@ -56,8 +72,15 @@ export default function PayInSlipListPage() {
   const [items, setItems] = useState<PayInSlipItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [search, setSearch] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
+  )
+  const [statusFilter, setStatusFilter] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.statusFilter ?? '') : ''
+  )
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.timeRange ?? { type: 'relative', value: '24h' }) : { type: 'relative', value: '24h' }
+  )
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
@@ -67,10 +90,12 @@ export default function PayInSlipListPage() {
     return ''
   })
 
-  const fetchData = useCallback(async (s: string, status: string) => {
+  const fetchData = useCallback(async (tr: TimeRangeValue, s: string, status: string) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: s, statusFilter: status, timeRange: tr }))
     setLoading(true)
     try {
-      const payload = { FullTextSearch: s || undefined, Status: status || undefined }
+      const { FromDate, ToDate } = getTimeFilter(tr)
+      const payload = { FullTextSearch: s || undefined, Status: status || undefined, FromDate, ToDate }
       const [listRes, countRes] = await Promise.all([
         paymentDocumentApi.getPayInDocuments(payload),
         paymentDocumentApi.getPayInDocumentCount(payload),
@@ -93,9 +118,15 @@ export default function PayInSlipListPage() {
     }
   }, [m.failedToLoad])
 
-  useEffect(() => { fetchData('', '') }, [])
+  useEffect(() => { fetchData(timeRange, search, statusFilter) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSearch = () => fetchData(search, statusFilter)
+  const handleSearch = () => fetchData(timeRange, search, statusFilter)
+
+  const handleTimeRangeChange = (tr: TimeRangeValue) => {
+    setTimeRange(tr)
+    setPage(1)
+    fetchData(tr, search, statusFilter)
+  }
 
   const handleRowHighlight = (id: string) => {
     setHighlightedId(id)
@@ -167,7 +198,7 @@ export default function PayInSlipListPage() {
           onChange={e => {
             setStatusFilter(e.target.value)
             setPage(1)
-            fetchData(search, e.target.value)
+            fetchData(timeRange, search, e.target.value)
           }}
           className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         >
@@ -177,8 +208,10 @@ export default function PayInSlipListPage() {
           <option value="Rejected">{m.filterRejected}</option>
         </select>
 
+        <AdvancedTimeRangeSelector value={timeRange} onChange={handleTimeRangeChange} disabled={loading} />
+
         <button
-          onClick={() => fetchData(search, statusFilter)}
+          onClick={() => fetchData(timeRange, search, statusFilter)}
           disabled={loading}
           title={m.refresh}
           className="p-2 text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"

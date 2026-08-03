@@ -360,13 +360,8 @@ export default function TransferRequestDetailPage() {
             </InfoRow>
 
             <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
-
-            {(detail?.refId1 || detail?.refId2) && (
-              <>
-                <InfoRow label={m.fieldRefId1}>{detail?.refId1 ?? '—'}</InfoRow>
-                <InfoRow label={m.fieldRefId2}>{detail?.refId2 ?? '—'}</InfoRow>
-              </>
-            )}
+            <InfoRow label={m.fieldRefId1}>{detail?.refId1 ?? '—'}</InfoRow>
+            <InfoRow label={m.fieldRefId2}>{detail?.refId2 ?? '—'}</InfoRow>
 
             <InfoRow label={m.fieldDescription}>
               <span className="text-gray-600">{detail?.description ?? '—'}</span>

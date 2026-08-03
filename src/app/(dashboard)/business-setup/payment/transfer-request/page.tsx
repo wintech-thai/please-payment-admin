@@ -11,6 +11,7 @@ import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
 const HIGHLIGHTED_KEY = 'transferRequests_highlightedId'
+const FILTER_KEY = 'transferRequests_filter'
 
 function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string } {
   if (tr.type === 'absolute' && tr.start && tr.end) {
@@ -68,9 +69,15 @@ export default function TransferRequestPage() {
   const m = t.transferRequest
   const router = useRouter()
 
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
+  const [search, setSearch] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
+  )
+  const [statusFilter, setStatusFilter] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.statusFilter ?? '') : ''
+  )
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.timeRange ?? { type: 'relative', value: '24h' }) : { type: 'relative', value: '24h' }
+  )
   const [items, setItems] = useState<TransferRequestItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -82,6 +89,7 @@ export default function TransferRequestPage() {
   })
 
   const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: q, statusFilter: status, timeRange: tr }))
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)
@@ -115,7 +123,7 @@ export default function TransferRequestPage() {
     }
   }, [m.failedToLoad])
 
-  useEffect(() => { load(1, itemsPerPage, timeRange, search, statusFilter) }, [])
+  useEffect(() => { load(1, itemsPerPage, timeRange, search, statusFilter) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = () => {
     setPage(1)
@@ -138,7 +146,7 @@ export default function TransferRequestPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colAmount, m.colDescription, m.colDestBank, m.colSourceBank, m.colStatus, m.colRefId1, m.colRefId2]
+  const cols = [m.colDate, m.colAmount, m.colDescription, m.colDestBank, m.colSourceBank, m.colStatus, m.colRef]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -349,14 +357,14 @@ export default function TransferRequestPage() {
                         )}
                       </td>
 
-                      {/* Ref ID 1 */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId1 ?? '—'}</span>
-                      </td>
-
-                      {/* Ref ID 2 */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{item.refId2 ?? '—'}</span>
+                      {/* REF */}
+                      <td className="px-4 py-3 border-b border-gray-100">
+                        <div className="flex flex-col gap-0.5">
+                          {item.refId ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId}</span> : null}
+                          {item.refId1 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId1}</span> : null}
+                          {item.refId2 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId2}</span> : null}
+                          {!item.refId && !item.refId1 && !item.refId2 && <span className="text-xs text-gray-400">—</span>}
+                        </div>
                       </td>
                     </tr>
                   )

@@ -18,6 +18,13 @@ const DEFAULT_EVENT_COLOR = { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ri
 function getEventTypeColor(type: string) {
   return EVENT_TYPE_COLORS[type.toLowerCase()] ?? DEFAULT_EVENT_COLOR
 }
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  'Payment.Success': 'Payment In Success',
+  'PaymentOut.Success': 'Payment Out Success',
+}
+function getEventTypeLabel(type: string) {
+  return EVENT_TYPE_LABELS[type] ?? type
+}
 
 function MessageList({ lines }: { lines: string[] }) {
   return (
@@ -232,7 +239,7 @@ export default function NotiEventDetailPage() {
                     const c = getEventTypeColor(et)
                     return (
                       <span key={et} className={clsx('inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ring-1', c.bg, c.text, c.ring)}>
-                        {et}
+                        {getEventTypeLabel(et)}
                       </span>
                     )
                   })

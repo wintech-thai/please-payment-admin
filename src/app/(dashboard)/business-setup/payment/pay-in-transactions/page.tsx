@@ -13,6 +13,7 @@ import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
 const HIGHLIGHTED_KEY = 'payInTx_highlightedId'
+const FILTER_KEY = 'payInTx_filter'
 
 function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string } {
   if (tr.type === 'absolute' && tr.start && tr.end) {
@@ -649,9 +650,15 @@ export default function PayInTransactionsPage() {
   const m = t.payInTx
   const router = useRouter()
 
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
+  const [search, setSearch] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
+  )
+  const [statusFilter, setStatusFilter] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.statusFilter ?? '') : ''
+  )
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.timeRange ?? { type: 'relative', value: '24h' }) : { type: 'relative', value: '24h' }
+  )
   const [items, setItems] = useState<PayInTxItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -668,6 +675,7 @@ export default function PayInTransactionsPage() {
   })
 
   const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: q, statusFilter: status, timeRange: tr }))
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)
@@ -869,6 +877,7 @@ export default function PayInTransactionsPage() {
                         <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">
                           {formatDateTime(item.createdDate)}
                         </span>
+                        {item.refId1 && <p className="text-xs text-gray-400 mt-0.5">{item.refId1}</p>}
                       </td>
 
                       {/* Merchant */}

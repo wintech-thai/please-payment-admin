@@ -225,9 +225,9 @@ export default function PayOutTxDetailPage() {
             {/* REF */}
             {(detail?.refId1 || detail?.refId2 || detail?.refId3) && (
               <>
-                {detail?.refId1 && <InfoRow label="RefId1">{detail.refId1}</InfoRow>}
-                {detail?.refId2 && <InfoRow label="RefId2">{detail.refId2}</InfoRow>}
-                {detail?.refId3 && <InfoRow label="RefId3">{detail.refId3}</InfoRow>}
+                {detail?.refId1 && <InfoRow label="REF 1">{detail.refId1}</InfoRow>}
+                {detail?.refId2 && <InfoRow label="REF 2">{detail.refId2}</InfoRow>}
+                {detail?.refId3 && <InfoRow label="REF 3">{detail.refId3}</InfoRow>}
               </>
             )}
             {detail?.description && (

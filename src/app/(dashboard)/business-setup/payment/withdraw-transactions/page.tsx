@@ -397,9 +397,10 @@ export default function PayOutTransactionsPage() {
                       <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
                         {(() => {
                           const isKnown = (v?: string | null) => v && v.toUpperCase() !== 'UNKNOWN'
-                          const code = isKnown(item.fromBankCode) ? item.fromBankCode : null
-                          const acctNo = isKnown(item.fromBankAccountNo) ? item.fromBankAccountNo : null
-                          const acctName = isKnown(item.fromBankAccountName) ? item.fromBankAccountName : null
+                          const code = isKnown(item.payOutBankCode) ? item.payOutBankCode : null
+                          const acctNo = isKnown(item.payOutBankAccountNo) ? item.payOutBankAccountNo : null
+                          const acctName = isKnown(item.payOutBankAccountName) ? item.payOutBankAccountName : null
+                          const promptPay = item.payOutPromptPayId
                           if (!code && !acctNo) return <p className="text-sm text-gray-400">—</p>
                           return (
                             <>
@@ -407,6 +408,12 @@ export default function PayOutTransactionsPage() {
                                 {[code, acctNo].filter(Boolean).join(' · ')}
                               </p>
                               {acctName && <p className="text-xs text-gray-500 mt-0.5">{acctName}</p>}
+                              {promptPay && (
+                                <div className="flex gap-1 mt-1">
+                                  <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full ring-1 ring-blue-200">PromptPay</span>
+                                  <span className="text-[10px] text-gray-500">{promptPay}</span>
+                                </div>
+                              )}
                             </>
                           )
                         })()}

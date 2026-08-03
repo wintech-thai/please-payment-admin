@@ -158,7 +158,7 @@ export default function PayOutTxDetailPage() {
 
   const hasFeeInfo = detail?.payoutFeePct != null || detail?.payoutFeeDecimal != null || detail?.payOutTotalAmountDecimal != null
   const hasDestInfo = detail?.payInBankCode || detail?.payInBankAccountNo || detail?.payInBankAccountName
-  const hasSourceInfo = detail?.fromBankCode || detail?.fromBankAccountNo || detail?.fromBankAccountName
+  const hasSourceInfo = detail?.payOutBankCode || detail?.payOutBankAccountNo || detail?.payOutBankAccountName
   const msg1Lines = (job?.jobMessage ?? '').split('\n').filter(l => l.trim())
   const msg2Lines = (job?.jobMessage2 ?? '').split('\n').filter(l => l.trim())
 
@@ -288,10 +288,13 @@ export default function PayOutTxDetailPage() {
                 const known = (v?: string | null) => (v && v.toUpperCase() !== 'UNKNOWN') ? v : null
                 return (
                   <>
-                    <InfoRow label={m.fieldSourceBank}>{known(detail?.fromBankCode) ?? '—'}</InfoRow>
-                    <InfoRow label={m.fieldSourceAccountNo}>{known(detail?.fromBankAccountNo) ?? '—'}</InfoRow>
-                    {known(detail?.fromBankAccountName) && (
-                      <InfoRow label={m.fieldSourceName}>{known(detail?.fromBankAccountName)}</InfoRow>
+                    <InfoRow label={m.fieldSourceBank}>{known(detail?.payOutBankCode) ?? '—'}</InfoRow>
+                    <InfoRow label={m.fieldSourceAccountNo}>{known(detail?.payOutBankAccountNo) ?? '—'}</InfoRow>
+                    {known(detail?.payOutBankAccountName) && (
+                      <InfoRow label={m.fieldSourceName}>{known(detail?.payOutBankAccountName)}</InfoRow>
+                    )}
+                    {detail?.payOutPromptPayId && (
+                      <InfoRow label="PromptPay ID">{detail.payOutPromptPayId}</InfoRow>
                     )}
                   </>
                 )

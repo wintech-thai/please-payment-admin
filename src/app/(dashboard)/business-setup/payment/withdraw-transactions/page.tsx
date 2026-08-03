@@ -56,10 +56,11 @@ function formatAge(createdDate?: string | null): string {
   return `${hours}h ${mins}min`
 }
 
-function StatusBadge({ status, createdDate, statusReason }: {
+function StatusBadge({ status, createdDate, statusReason, paymentRequestId }: {
   status?: string | null
   createdDate?: string | null
   statusReason?: string | null
+  paymentRequestId?: string | null
 }) {
   const s = status?.toLowerCase()
   if (s === 'completed' || s === 'success' || s === 'paid' || s === 'approved') return (
@@ -396,19 +397,7 @@ export default function PayOutTransactionsPage() {
 
                       {/* Status */}
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <StatusBadge status={item.status} createdDate={item.createdDate} statusReason={item.statusReason} />
-                        {item.paymentRequestId && (
-                          <a
-                            href={`/business-setup/payment/withdraw-request/${item.paymentRequestId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={e => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 hover:underline mt-1"
-                          >
-                            <span className="truncate max-w-[130px]">{item.paymentRequestId}</span>
-                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                          </a>
-                        )}
+                        <StatusBadge status={item.status} createdDate={item.createdDate} statusReason={item.statusReason} paymentRequestId={item.paymentRequestId} />
                       </td>
 
                       {/* REF */}

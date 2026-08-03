@@ -53,7 +53,6 @@ export default function PaymentSidebar() {
         </svg>
       ),
     },
-    { divider: true },
     {
       href: '/business-setup/payment/withdraw-transactions',
       label: t.nav.withdrawTransactions,
@@ -63,6 +62,7 @@ export default function PaymentSidebar() {
         </svg>
       ),
     },
+    { divider: true },
     {
       href: '/business-setup/payment/transfer-request',
       label: t.nav.transferRequest,

@@ -367,11 +367,11 @@ export default function PayInTxDetailPage() {
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{m.fieldJobMessage}</p>
                     {msg1Lines.length > 0 && (
                       <div>
-                        {msg2Lines.length > 0 && <p className="text-xs font-semibold text-gray-500 mb-2">Message 1</p>}
+                        {msg2Lines.length > 0 && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 mb-2">Message 1</span>}
                         <ol className="flex flex-col gap-2">
                           {msg1Lines.map((line, i) => (
                             <li key={i} className="flex items-start gap-3">
-                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
                               <span className="text-sm text-gray-700 leading-relaxed break-all">{line}</span>
                             </li>
                           ))}
@@ -380,11 +380,11 @@ export default function PayInTxDetailPage() {
                     )}
                     {msg2Lines.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-500 mb-2">Message 2</p>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 mb-2">Message 2</span>
                         <ol className="flex flex-col gap-2">
                           {msg2Lines.map((line, i) => (
                             <li key={i} className="flex items-start gap-3">
-                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
                               <span className="text-sm text-gray-700 leading-relaxed break-all">{line}</span>
                             </li>
                           ))}

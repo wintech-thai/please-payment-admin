@@ -886,6 +886,7 @@ export interface CreatePayOutRequestPayload {
   RefId: string
   RefId1?: string
   RefId2?: string
+  RefId3?: string
   Description?: string
   Currency?: string
   RequestedAmount: number

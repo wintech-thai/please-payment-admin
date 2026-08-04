@@ -7,7 +7,7 @@ import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { PayOutRequestDetail } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check } from 'lucide-react'
 import QRCode from 'react-qr-code'
 import clsx from 'clsx'
 
@@ -99,6 +99,55 @@ function PromptPayBadge({ accountType, promptPayId }: { accountType?: string | n
       {accountType?.toLowerCase() === 'promptpay' && promptPayId && (
         <span className="text-[10px] text-gray-500">{promptPayId}</span>
       )}
+    </div>
+  )
+}
+
+// ── Raw JSON Modal ────────────────────────────────────────────────────────────
+
+function highlightJson(json: string): string {
+  return json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    (match) => {
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) return `<span style="color:#6366f1;font-weight:600">${match}</span>`
+        return `<span style="color:#059669">${match}</span>`
+      }
+      if (/true|false/.test(match)) return `<span style="color:#d97706">${match}</span>`
+      if (/null/.test(match)) return `<span style="color:#9ca3af">${match}</span>`
+      return `<span style="color:#0284c7">${match}</span>`
+    }
+  )
+}
+
+function RawJsonModal({ data, onClose }: { data: unknown; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const json = JSON.stringify(data, null, 2)
+  const copy = () => {
+    navigator.clipboard.writeText(json)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col mx-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-none">
+          <span className="text-sm font-semibold text-gray-700 font-mono">Raw JSON</span>
+          <div className="flex items-center gap-2">
+            <button onClick={copy} className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        <pre
+          className="overflow-auto p-5 text-xs font-mono leading-relaxed whitespace-pre-wrap break-all bg-gray-50"
+          dangerouslySetInnerHTML={{ __html: highlightJson(json) }}
+        />
+      </div>
     </div>
   )
 }
@@ -372,17 +421,7 @@ export default function PayOutRequestDetailPage() {
         )}
       </div>
 
-      {showRawJson && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowRawJson(false)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col mx-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-              <span className="text-sm font-semibold text-gray-700 font-mono">Raw JSON</span>
-              <button onClick={() => setShowRawJson(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"><X className="w-4 h-4" /></button>
-            </div>
-            <pre className="overflow-auto p-5 text-xs font-mono text-gray-800 leading-relaxed whitespace-pre-wrap break-all">{JSON.stringify(detail, null, 2)}</pre>
-          </div>
-        </div>
-      )}
+      {showRawJson && detail && <RawJsonModal data={detail} onClose={() => setShowRawJson(false)} />}
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
 

@@ -261,9 +261,9 @@ export default function PayInRequestDetailPage() {
                 </div>
               ) : '—'}
             </InfoRow>
-            <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldRefId1}>{detail?.refId1 ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldRefId2}>{detail?.refId2 ?? '—'}</InfoRow>
+            <InfoRow label={m.fieldRefId}>{detail?.refId1 ?? '—'}</InfoRow>
+            <InfoRow label={m.fieldRefId1}>{detail?.refId2 ?? '—'}</InfoRow>
+            <InfoRow label={m.fieldRefId2}>{detail?.refId3 ?? '—'}</InfoRow>
             {isApproved && (
               <InfoRow label={m.fieldPaymentTxId}>
                 {detail?.paymentTxId ? (

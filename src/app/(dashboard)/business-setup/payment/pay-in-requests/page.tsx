@@ -581,8 +581,8 @@ export default function PayInRequestsPage() {
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/pay-in-requests/${item.id}`) }}
                       >
                         <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
-                        {(item.refId || item.refId1) && (
-                          <p className="text-xs text-gray-400 mt-0.5">{item.refId ?? item.refId1}</p>
+                        {item.refId1 && (
+                          <p className="text-xs text-gray-400 mt-0.5">{item.refId1}</p>
                         )}
                       </td>
 

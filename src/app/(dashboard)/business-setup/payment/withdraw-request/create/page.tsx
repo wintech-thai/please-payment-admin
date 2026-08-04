@@ -156,8 +156,9 @@ export default function CreatePayOutRequestPage() {
     const payload = {
       MerchantId: merchantId,
       RefId: refId.trim(),
-      RefId1: refId1.trim() || undefined,
-      RefId2: refId2.trim() || undefined,
+      RefId1: refId.trim(),
+      RefId2: refId1.trim() || undefined,
+      RefId3: refId2.trim() || undefined,
       Description: description.trim() || undefined,
       Currency: 'THB' as const,
       RequestedAmount: parseFloat(amount),
@@ -169,8 +170,9 @@ export default function CreatePayOutRequestPage() {
       await paymentRequestApi.createPayOutRequest({
         MerchantId: merchantId,
         RefId: refId.trim(),
-        RefId1: refId1.trim() || undefined,
-        RefId2: refId2.trim() || undefined,
+        RefId1: refId.trim(),
+        RefId2: refId1.trim() || undefined,
+        RefId3: refId2.trim() || undefined,
         Description: description.trim() || undefined,
         Currency: 'THB',
         RequestedAmount: parseFloat(amount),

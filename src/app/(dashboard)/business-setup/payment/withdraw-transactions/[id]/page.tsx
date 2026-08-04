@@ -6,7 +6,7 @@ import { paymentTxApi } from '@/lib/api/payment-tx.api'
 import type { PayOutTxDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, X } from 'lucide-react'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
@@ -115,6 +115,7 @@ export default function PayOutTxDetailPage() {
   const [loading, setLoading] = useState(true)
   const [job, setJob] = useState<PaymentTxJob | null>(null)
   const [loadingJob, setLoadingJob] = useState(false)
+  const [showRawJson, setShowRawJson] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -182,11 +183,28 @@ export default function PayOutTxDetailPage() {
         <button onClick={() => router.back()} className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">{m.detailTitle}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{id}</p>
         </div>
+        {detail && (
+          <button onClick={() => setShowRawJson(true)} className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors">
+            {'{ }'}
+          </button>
+        )}
       </div>
+
+      {showRawJson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowRawJson(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+              <span className="text-sm font-semibold text-gray-700 font-mono">Raw JSON</span>
+              <button onClick={() => setShowRawJson(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"><X className="w-4 h-4" /></button>
+            </div>
+            <pre className="overflow-auto p-5 text-xs font-mono text-gray-800 leading-relaxed whitespace-pre-wrap break-all">{JSON.stringify(detail, null, 2)}</pre>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
 

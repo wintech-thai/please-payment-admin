@@ -440,6 +440,7 @@ export interface PayInRequestDetail extends PayInRequestItem {
   merchantId?: string | null
   paymentTxId?: string | null
   direction?: string | null
+  jobId?: string | null
 }
 
 export interface GetPayInRequestsPayload {
@@ -870,6 +871,7 @@ export interface PayOutRequestDetail extends PayOutRequestItem {
   qrCode?: string | null
   qrCodeImage?: string | null
   partialPayouts?: PartialPayoutItem[] | null
+  jobId?: string | null
 }
 
 export interface GetPayOutRequestsPayload {
@@ -909,6 +911,7 @@ export interface ApprovePayOutRequestPayload {
 
 export interface RejectPayOutRequestPayload {
   RejectReason: string
+  RejectStatus?: string
 }
 
 // ── Transfer Request ──────────────────────────────────────────────────────────

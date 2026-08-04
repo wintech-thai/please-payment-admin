@@ -3,6 +3,7 @@ import type {
   PayInRequestItem,
   PayInRequestDetail,
   GetPayInRequestsPayload,
+  PaymentTxJob,
   PayOutRequestItem,
   PayOutRequestDetail,
   GetPayOutRequestsPayload,
@@ -35,8 +36,14 @@ export const paymentRequestApi = {
   createPaymentTxByPayInRequestId: (id: string) =>
     client.post(`/admin-api/AdminPaymentTx/org/global/action/CreatePaymentTxByPayInRequestId/${id}`, {}),
 
-  rejectPendingPayInRequestById: (id: string, reason?: string) =>
-    client.post(`${BASE}/RejectPendingPayInRequestById/${id}`, { StatusReason: reason ?? '' }),
+  rejectPendingPayInRequestById: (id: string, reason?: string, rejectStatus?: string) =>
+    client.post(`${BASE}/RejectPendingPayInRequestById/${id}`, {
+      StatusReason: reason ?? '',
+      ...(rejectStatus ? { RejectStatus: rejectStatus } : {}),
+    }),
+
+  getPaymentRequestJobById: (pmtId: string, jobId: string) =>
+    client.get<PaymentTxJob>(`${BASE}/GetPaymentRequestJobById/${pmtId}/${jobId}`),
 
   // ── Pay-Out ───────────────────────────────────────────────────────────────
   createPayOutRequest: (payload: CreatePayOutRequestPayload) =>

@@ -228,6 +228,8 @@ function WebhookFormModal({ orgId, merchantId, editing, onClose, onSaved, m }: {
                 <select value={eventName} onChange={e => setEventName(e.target.value)} className={inputCls(!!errors.eventName)}>
                   <option value="Payment.Success">Payment In Success</option>
                   <option value="PaymentOut.Success">Payment Out Success</option>
+                  <option value="PaymentIn.Rejected">Payment In Rejected</option>
+                  <option value="PaymentOut.Rejected">Payment Out Rejected</option>
                 </select>
               </FormField>
               <FormField label={m.fieldHttpMethod} required error={errors.httpMethod}>

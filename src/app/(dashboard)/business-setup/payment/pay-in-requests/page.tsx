@@ -6,7 +6,8 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayInRequestItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, MoreVertical, X } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, MoreVertical, X, ChevronDown } from 'lucide-react'
+import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
@@ -235,13 +236,52 @@ function RejectModal({
   const { t } = useLang()
   const m = t.payInRequest
   const [reason, setReason] = useState('')
+  const [rejectStatusCode, setRejectStatusCode] = useState('')
+  const [statuses, setStatuses] = useState<MasterRefItem[]>([])
+  const [statusSearch, setStatusSearch] = useState('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [statusError, setStatusError] = useState('')
   const [loading, setLoading] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    masterRefApi.getMasterRefs({ RefType: 'PayInRejectStatus', Limit: 200 })
+      .then(res => {
+        const data = res.data as any
+        setStatuses(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = statuses.filter(s =>
+    s.code?.toLowerCase().includes(statusSearch.toLowerCase()) ||
+    s.description?.toLowerCase().includes(statusSearch.toLowerCase())
+  )
+
+  const selectStatus = (item: MasterRefItem) => {
+    setRejectStatusCode(item.code ?? '')
+    setStatusSearch(item.code ?? '')
+    setReason(item.description ?? '')
+    setStatusError('')
+    setDropdownOpen(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!rejectStatusCode) { setStatusError(m.rejectStatusRequired); return }
     setLoading(true)
     try {
-      await paymentRequestApi.rejectPendingPayInRequestById(item.id, reason)
+      await paymentRequestApi.rejectPendingPayInRequestById(item.id, reason, rejectStatusCode)
       toast.success(m.toastRejectSuccess)
       onSuccess()
       onClose()
@@ -254,7 +294,7 @@ function RejectModal({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
           <h3 className="text-base font-bold text-gray-900">{m.modalRejectTitle}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
@@ -262,6 +302,50 @@ function RejectModal({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Reject Status — searchable dropdown */}
+          <div ref={dropdownRef} className="relative">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+              {m.labelRejectStatus} <span className="text-red-500">*</span>
+            </label>
+            <div
+              className={clsx(
+                'flex items-center border rounded-lg px-3 py-2 cursor-text bg-white',
+                statusError ? 'border-red-400 ring-1 ring-red-400' : dropdownOpen ? 'border-primary-500 ring-1 ring-primary-500' : 'border-gray-200'
+              )}
+              onClick={() => { setDropdownOpen(true) }}
+            >
+              <input
+                value={statusSearch}
+                onChange={e => { setStatusSearch(e.target.value); setRejectStatusCode(''); setDropdownOpen(true) }}
+                onFocus={() => setDropdownOpen(true)}
+                placeholder={m.rejectStatusPlaceholder}
+                className="flex-1 text-sm outline-none bg-transparent"
+              />
+              <ChevronDown className={clsx('w-4 h-4 text-gray-400 flex-shrink-0 transition-transform', dropdownOpen && 'rotate-180')} />
+            </div>
+            {statusError && <p className="text-red-500 text-xs mt-1">{statusError}</p>}
+            {dropdownOpen && (
+              <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {filtered.length === 0 ? (
+                  <div className="px-3 py-3 text-sm text-gray-400 text-center">—</div>
+                ) : (
+                  filtered.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onMouseDown={e => { e.preventDefault(); selectStatus(s) }}
+                      className="w-full text-left px-3 py-2.5 hover:bg-gray-50 flex items-start gap-3 border-b border-gray-50 last:border-0"
+                    >
+                      <span className="text-xs font-bold text-primary-700 min-w-[80px]">{s.code}</span>
+                      {s.description && <span className="text-xs text-gray-500 truncate">{s.description}</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Reason */}
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{m.labelRejectReason}</label>
             <textarea
@@ -272,6 +356,7 @@ function RejectModal({
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
             />
           </div>
+
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
               {m.btnCancel}

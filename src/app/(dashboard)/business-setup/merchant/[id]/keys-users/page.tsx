@@ -147,9 +147,13 @@ function ApiKeysTable({ keys, selectedKeyId, setSelectedKeyId, formatDate, m, on
                   </span>
                 </td>
                 <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-500">{key.keyDescription ?? '—'}</td>
-                <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
+                <td className="px-4 py-3 border-b border-gray-100 text-left">
                   {key.rolesList ? (
-                    <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{key.rolesList}</span>
+                    <div className="flex flex-wrap gap-1">
+                      {key.rolesList.split(',').map(r => r.trim()).filter(Boolean).map(r => (
+                        <span key={r} className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{r}</span>
+                      ))}
+                    </div>
                   ) : '—'}
                 </td>
                 <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
@@ -754,9 +758,13 @@ export default function MerchantKeysUsersPage() {
                             <span key={tag} className="inline-flex mr-1 mb-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[10px] font-medium">{tag.trim()}</span>
                           )) : '—'}
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <td className="px-4 py-3 border-b border-gray-100">
                           {user.rolesList ? (
-                            <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{user.rolesList}</span>
+                            <div className="flex flex-wrap gap-1">
+                              {user.rolesList.split(',').map(r => r.trim()).filter(Boolean).map(r => (
+                                <span key={r} className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{r}</span>
+                              ))}
+                            </div>
                           ) : '—'}
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">

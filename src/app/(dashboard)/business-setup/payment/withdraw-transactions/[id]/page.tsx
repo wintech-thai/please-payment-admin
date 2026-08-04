@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { paymentTxApi } from '@/lib/api/payment-tx.api'
-import type { PayInTxDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
+import type { PayOutTxDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, Scissors, X, Copy, Check } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, X, Copy, Check } from 'lucide-react'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
@@ -23,30 +23,25 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
-function StatusBadge({ status, txIsPeerToPeer }: { status?: string | null; txIsPeerToPeer?: boolean | null }) {
+function StatusBadge({ status, isPeerToPeer }: { status?: string | null; isPeerToPeer?: boolean | null }) {
   const s = status?.toLowerCase()
-  if (s === 'identified') return (
-    <div className="inline-flex items-center gap-1">
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-        <CheckCircle className="w-3.5 h-3.5" />{status}
-      </span>
-      {txIsPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
-    </div>
-  )
-  if (s === 'error' || s === 'failed') return (
-    <div className="inline-flex items-center gap-1">
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
-        <AlertCircle className="w-3.5 h-3.5" />{status}
-      </span>
-      {txIsPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-red-50 text-red-700 ring-red-200">P2P</span>}
-    </div>
+  const badge = s === 'completed' || s === 'success' || s === 'paid' || s === 'approved' ? (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+      <CheckCircle className="w-3.5 h-3.5" />{status}
+    </span>
+  ) : s === 'failed' || s === 'error' || s === 'rejected' ? (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
+      <AlertCircle className="w-3.5 h-3.5" />{status}
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+      <Clock className="w-3.5 h-3.5" />{status ?? '—'}
+    </span>
   )
   return (
     <div className="inline-flex items-center gap-1">
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-        <Clock className="w-3.5 h-3.5" />{status ?? '—'}
-      </span>
-      {txIsPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-amber-50 text-amber-700 ring-amber-200">P2P</span>}
+      {badge}
+      {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
     </div>
   )
 }
@@ -85,10 +80,11 @@ function highlightJson(json: string): string {
 }
 
 function JsonHighlight({ json }: { json: string }) {
+  const highlighted = highlightJson(json)
   return (
     <pre
       className="text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed text-gray-800"
-      dangerouslySetInnerHTML={{ __html: highlightJson(json) }}
+      dangerouslySetInnerHTML={{ __html: highlighted }}
     />
   )
 }
@@ -144,14 +140,14 @@ function JobStatusBadge({ status }: { status?: string | null }) {
   )
 }
 
-export default function PayInTxDetailPage() {
+export default function PayOutTxDetailPage() {
   const { t } = useLang()
-  const m = t.payInTx
+  const m = t.payOutTx
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
-  const [detail, setDetail] = useState<PayInTxDetail | null>(null)
+  const [detail, setDetail] = useState<PayOutTxDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [job, setJob] = useState<PaymentTxJob | null>(null)
   const [loadingJob, setLoadingJob] = useState(false)
@@ -166,7 +162,6 @@ export default function PayInTxDetailPage() {
         const raw = data?.paymentTransaction ?? data?.PaymentTransaction ?? data?.transaction ?? data?.Transaction ?? data
         setDetail(raw)
 
-        // Load Job if jobId exists
         const jobId = raw?.jobId ?? raw?.JobId
         if (jobId) {
           setLoadingJob(true)
@@ -190,7 +185,7 @@ export default function PayInTxDetailPage() {
     if (!detail?.rawInputObj) return null
     try {
       const parsed = typeof detail.rawInputObj === 'string'
-        ? JSON.parse(detail.rawInputObj)
+        ? JSON.parse(detail.rawInputObj as string)
         : detail.rawInputObj
       return JSON.stringify(parsed, null, 2)
     } catch {
@@ -198,8 +193,9 @@ export default function PayInTxDetailPage() {
     }
   })()
 
-  const hasFeeInfo = detail?.payInFeePct != null || (detail?.payInFeeDecimal ?? detail?.payInFee) != null || (detail?.payInTotalAmountDecimal ?? detail?.payInTotalAmount) != null
-  const hasSenderInfo = detail?.fromBankCode || detail?.fromBankAccountNo || detail?.fromBankAccountName
+  const hasFeeInfo = detail?.payoutFeePct != null || detail?.payoutFeeDecimal != null || detail?.payOutTotalAmountDecimal != null
+  const hasDestInfo = detail?.payInBankCode || detail?.payInBankAccountNo || detail?.payInBankAccountName
+  const hasSourceInfo = detail?.payOutBankCode || detail?.payOutBankAccountNo || detail?.payOutBankAccountName
   const msg1Lines = (job?.jobMessage ?? '').split('\n').filter(l => l.trim())
   const msg2Lines = (job?.jobMessage2 ?? '').split('\n').filter(l => l.trim())
 
@@ -244,7 +240,7 @@ export default function PayInTxDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
             <InfoRow label={m.fieldStatus}>
-              <StatusBadge status={detail?.status} txIsPeerToPeer={detail?.txIsPeerToPeer} />
+              <StatusBadge status={detail?.status} isPeerToPeer={detail?.txIsPeerToPeer} />
             </InfoRow>
             <InfoRow label={m.fieldOrgId}>{detail?.orgId ?? '—'}</InfoRow>
             <InfoRow label={m.fieldMerchant}>
@@ -258,13 +254,10 @@ export default function PayInTxDetailPage() {
                 : '—'}
             </InfoRow>
             <InfoRow label={m.fieldCurrency}>{detail?.currency ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldBank}>{detail?.payInBankCode ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldAccountNo}>{detail?.payInBankAccountNo ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldAccountName}>{detail?.payInBankAccountName ?? '—'}</InfoRow>
             <InfoRow label={m.fieldPaymentRequestId}>
               {detail?.paymentRequestId ? (
                 <a
-                  href={`/business-setup/payment/pay-in-requests/${detail.paymentRequestId}`}
+                  href={`/business-setup/payment/withdraw-request/${detail.paymentRequestId}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary-600 hover:underline text-sm"
@@ -273,9 +266,14 @@ export default function PayInTxDetailPage() {
                 </a>
               ) : '—'}
             </InfoRow>
-            <InfoRow label={m.fieldRefId}>{detail?.refId1 ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldRefId1}>{detail?.refId2 ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldRefId2}>{detail?.refId3 ?? '—'}</InfoRow>
+            {/* REF */}
+            {(detail?.refId1 || detail?.refId2 || detail?.refId3) && (
+              <>
+                {detail?.refId1 && <InfoRow label="REF 1">{detail.refId1}</InfoRow>}
+                {detail?.refId2 && <InfoRow label="REF 2">{detail.refId2}</InfoRow>}
+                {detail?.refId3 && <InfoRow label="REF 3">{detail.refId3}</InfoRow>}
+              </>
+            )}
             {detail?.description && (
               <InfoRow label={m.fieldDescription}>{detail.description}</InfoRow>
             )}
@@ -295,37 +293,56 @@ export default function PayInTxDetailPage() {
               <InfoRow label={m.fieldTxAmount}>
                 <span className="font-semibold tabular-nums">{formatAmount(detail?.txAmountDecimal ?? detail?.txAmount)}</span>
               </InfoRow>
-              <InfoRow label={m.fieldPayInFeePct}>
-                {detail?.payInFeePct != null ? `${detail.payInFeePct}%` : '—'}
+              <InfoRow label={m.fieldPayOutFeePct}>
+                {detail?.payoutFeePct != null ? `${detail.payoutFeePct}%` : '—'}
               </InfoRow>
-              <InfoRow label={m.fieldPayInFee}>
-                <span className="flex flex-col gap-1">
-                  <span className="tabular-nums">{formatAmount(detail?.payInFeeDecimal ?? detail?.payInFee)}</span>
-                  {detail?.discardCent && (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
-                      <Scissors className="w-3.5 h-3.5 flex-shrink-0" />
-                      {m.discardCentHint}
-                    </span>
-                  )}
-                </span>
+              <InfoRow label={m.fieldPayOutFee}>
+                <span className="tabular-nums">{formatAmount(detail?.payoutFeeDecimal)}</span>
               </InfoRow>
-              <InfoRow label={m.fieldPayInTotalAmount}>
-                <span className="font-bold text-primary-700 tabular-nums text-base">{formatAmount(detail?.payInTotalAmountDecimal ?? detail?.payInTotalAmount)}</span>
+              <InfoRow label={m.fieldPayOutTotalAmount}>
+                <span className="font-bold text-primary-700 tabular-nums text-base">{formatAmount(detail?.payOutTotalAmountDecimal)}</span>
               </InfoRow>
             </div>
           </div>
         )}
 
-        {/* Sender Info */}
-        {hasSenderInfo && (
+        {/* Destination Bank */}
+        {hasDestInfo && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>{m.sectionDestination}</SectionHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <InfoRow label={m.fieldDestBank}>{detail?.payInBankCode ?? '—'}</InfoRow>
+              <InfoRow label={m.fieldDestAccountNo}>{detail?.payInBankAccountNo ?? '—'}</InfoRow>
+              {detail?.payInBankAccountName && (
+                <InfoRow label={m.fieldDestAccountName}>{detail.payInBankAccountName}</InfoRow>
+              )}
+              {detail?.payInPromptPayId && (
+                <InfoRow label="PromptPay ID">{detail.payInPromptPayId}</InfoRow>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Source Bank */}
+        {hasSourceInfo && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
             <SectionHeader>{m.sectionSender}</SectionHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <InfoRow label={m.fieldSenderBank}>{detail?.fromBankCode ?? '—'}</InfoRow>
-              <InfoRow label={m.fieldSenderAccountNo}>{detail?.fromBankAccountNo ?? '—'}</InfoRow>
-              {detail?.fromBankAccountName && (
-                <InfoRow label={m.fieldSenderName}>{detail.fromBankAccountName}</InfoRow>
-              )}
+              {(() => {
+                const known = (v?: string | null) => (v && v.toUpperCase() !== 'UNKNOWN') ? v : null
+                return (
+                  <>
+                    <InfoRow label={m.fieldSourceBank}>{known(detail?.payOutBankCode) ?? '—'}</InfoRow>
+                    <InfoRow label={m.fieldSourceAccountNo}>{known(detail?.payOutBankAccountNo) ?? '—'}</InfoRow>
+                    {known(detail?.payOutBankAccountName) && (
+                      <InfoRow label={m.fieldSourceName}>{known(detail?.payOutBankAccountName)}</InfoRow>
+                    )}
+                    {detail?.payOutPromptPayId && (
+                      <InfoRow label="PromptPay ID">{detail.payOutPromptPayId}</InfoRow>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           </div>
         )}
@@ -373,8 +390,6 @@ export default function PayInTxDetailPage() {
               </div>
             ) : job ? (
               <div className="flex flex-col gap-6">
-
-                {/* Job ID + Status + Type */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <InfoRow label={m.fieldJobId}>
                     <span className="text-xs text-gray-600 break-all">{job.id ?? detail?.jobId ?? '—'}</span>
@@ -404,7 +419,6 @@ export default function PayInTxDetailPage() {
                   )}
                 </div>
 
-                {/* Job Messages */}
                 {(msg1Lines.length > 0 || msg2Lines.length > 0) && (
                   <div className="flex flex-col gap-3">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{m.fieldJobMessage}</p>
@@ -437,7 +451,6 @@ export default function PayInTxDetailPage() {
                   </div>
                 )}
 
-                {/* Parameters */}
                 {job.parameters && job.parameters.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{m.fieldJobParameters}</p>
@@ -461,7 +474,6 @@ export default function PayInTxDetailPage() {
                     </div>
                   </div>
                 )}
-
               </div>
             ) : (
               <p className="text-sm text-gray-400">{m.noJobData}</p>

@@ -7,7 +7,7 @@ import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { TransferRequestDetail } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check } from 'lucide-react'
 import QRCode from 'react-qr-code'
 import clsx from 'clsx'
 
@@ -88,6 +88,53 @@ function PromptPayBadge({ accountType, promptPayId, color = 'blue' }: { accountT
   )
 }
 
+function highlightJson(json: string): string {
+  return json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    (match) => {
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) return `<span style="color:#6366f1;font-weight:600">${match}</span>`
+        return `<span style="color:#059669">${match}</span>`
+      }
+      if (/true|false/.test(match)) return `<span style="color:#d97706">${match}</span>`
+      if (/null/.test(match)) return `<span style="color:#9ca3af">${match}</span>`
+      return `<span style="color:#0284c7">${match}</span>`
+    }
+  )
+}
+
+function RawJsonModal({ data, onClose }: { data: unknown; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const json = JSON.stringify(data, null, 2)
+  const copy = () => {
+    navigator.clipboard.writeText(json)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col mx-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-none">
+          <span className="text-sm font-semibold text-gray-700 font-mono">Raw JSON</span>
+          <div className="flex items-center gap-2">
+            <button onClick={copy} className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        <pre
+          className="overflow-auto p-5 text-xs font-mono leading-relaxed whitespace-pre-wrap break-all bg-gray-50"
+          dangerouslySetInnerHTML={{ __html: highlightJson(json) }}
+        />
+      </div>
+    </div>
+  )
+}
+
 function RejectModal({ title, desc, labelReason, placeholder, btnCancel, btnConfirm, onCancel, onConfirm }: {
   title: string; desc: string; labelReason: string; placeholder: string
   btnCancel: string; btnConfirm: string
@@ -147,6 +194,7 @@ export default function TransferRequestDetailPage() {
   const [approving, setApproving] = useState(false)
   const [rejecting, setRejecting] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const [showRawJson, setShowRawJson] = useState(false)
 
   const isPending = detail?.status?.toLowerCase() === 'pending'
   const isRejected = detail?.status?.toLowerCase() === 'rejected'
@@ -323,6 +371,8 @@ export default function TransferRequestDetailPage() {
         />
       )}
 
+      {showRawJson && detail && <RawJsonModal data={detail} onClose={() => setShowRawJson(false)} />}
+
       {/* Header */}
       <div className="flex-none flex items-center gap-3 mb-6">
         <button
@@ -331,10 +381,15 @@ export default function TransferRequestDetailPage() {
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">{m.detailTitle}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{id}</p>
         </div>
+        {detail && (
+          <button onClick={() => setShowRawJson(true)} className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors">
+            {'{ }'}
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
@@ -359,14 +414,9 @@ export default function TransferRequestDetailPage() {
                 : '—'}
             </InfoRow>
 
-            <InfoRow label={m.fieldRefId}>{detail?.refId ?? '—'}</InfoRow>
-
-            {(detail?.refId1 || detail?.refId2) && (
-              <>
-                <InfoRow label={m.fieldRefId1}>{detail?.refId1 ?? '—'}</InfoRow>
-                <InfoRow label={m.fieldRefId2}>{detail?.refId2 ?? '—'}</InfoRow>
-              </>
-            )}
+            {detail?.refId1 && <InfoRow label="REF 1">{detail.refId1}</InfoRow>}
+            {detail?.refId2 && <InfoRow label="REF 2">{detail.refId2}</InfoRow>}
+            {detail?.refId3 && <InfoRow label="REF 3">{detail.refId3}</InfoRow>}
 
             <InfoRow label={m.fieldDescription}>
               <span className="text-gray-600">{detail?.description ?? '—'}</span>

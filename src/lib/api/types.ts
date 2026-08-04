@@ -464,6 +464,7 @@ export interface PaymentTxJob {
   orgId?: string | null
   status?: string | null
   jobMessage?: string | null
+  jobMessage2?: string | null
   name?: string | null
   tags?: string | null
   description?: string | null
@@ -524,6 +525,64 @@ export interface PayInTxDetail extends PayInTxItem {
 }
 
 export interface GetPayInTxPayload {
+  FullTextSearch?: string
+  Status?: string
+  FromDate?: string
+  ToDate?: string
+  Page?: number
+  Limit?: number
+}
+
+// ─── Pay-Out Transactions ─────────────────────────────────────────────────────
+
+export interface PayOutTxItem {
+  id: string
+  orgId?: string | null
+  merchantId?: string | null
+  merchantCode?: string | null
+  merchantName?: string | null
+  paymentRequestId?: string | null
+  description?: string | null
+  currency?: string | null
+  tags?: string | null
+  status?: string | null
+  statusReason?: string | null
+  direction?: string | null
+  txAmount?: number | null
+  txAmountDecimal?: number | null
+  payoutFeePct?: number | null
+  payOutFeePct?: number | null
+  payoutFeeDecimal?: number | null
+  payOutTotalAmountDecimal?: number | null
+  payoutFeePayer?: string | null
+  payInBankCode?: string | null
+  payInBankAccountNo?: string | null
+  payInBankAccountName?: string | null
+  payInPromptPayId?: string | null
+  payOutBankCode?: string | null
+  payOutBankAccountNo?: string | null
+  payOutBankAccountName?: string | null
+  payOutPromptPayId?: string | null
+  payOutAccountType?: string | null
+  fromBankCode?: string | null
+  fromBankAccountNo?: string | null
+  fromBankAccountName?: string | null
+  refId1?: string | null
+  refId2?: string | null
+  refId3?: string | null
+  txIsPeerToPeer?: boolean | null
+  processingMessages?: string | null
+  createdDate?: string | null
+  processingSteps?: string[] | null
+  rawInputObj?: unknown | null
+  jobId?: string | null
+}
+
+export interface PayOutTxDetail extends PayOutTxItem {
+  rawInput?: string | null
+}
+
+export interface GetPayOutTxPayload {
   FullTextSearch?: string
   Status?: string
   FromDate?: string
@@ -692,6 +751,8 @@ export interface PayInSlipDetail extends PayInSlipItem {}
 export interface GetPayInDocumentsPayload {
   FullTextSearch?: string
   Status?: string
+  FromDate?: string
+  ToDate?: string
 }
 
 export interface GetPresignedUrlPayload {
@@ -825,6 +886,7 @@ export interface CreatePayOutRequestPayload {
   RefId: string
   RefId1?: string
   RefId2?: string
+  RefId3?: string
   Description?: string
   Currency?: string
   RequestedAmount: number
@@ -905,6 +967,7 @@ export interface CreateTransferRequestPayload {
   RefId?: string
   RefId1?: string
   RefId2?: string
+  RefId3?: string
   Description?: string
   Currency?: string
   RequestedAmount: number

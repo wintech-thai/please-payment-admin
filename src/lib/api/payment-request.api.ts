@@ -39,7 +39,7 @@ export const paymentRequestApi = {
   rejectPendingPayInRequestById: (id: string, reason?: string, rejectStatus?: string) =>
     client.post(`${BASE}/RejectPendingPayInRequestById/${id}`, {
       StatusReason: reason ?? '',
-      ...(rejectStatus ? { RejectStatus: rejectStatus } : {}),
+      ...(rejectStatus ? { StatusCode: rejectStatus } : {}),
     }),
 
   getPaymentRequestJobById: (pmtId: string, jobId: string) =>

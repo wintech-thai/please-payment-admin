@@ -244,4 +244,17 @@ body {
   .prose-docs hr { @apply border-zinc-700 my-8; }
   .prose-docs img { @apply rounded-xl border border-zinc-700 my-6 max-w-full; }
   .prose-docs figcaption { @apply text-xs text-zinc-500 text-center mt-2; }
+
+  .prose-docs .warning-box {
+    @apply border border-red-500/40 bg-red-950/40 rounded-xl px-5 py-4 my-6;
+  }
+  .prose-docs .warning-box .warning-title {
+    @apply flex items-center gap-2 text-red-400 font-bold text-sm uppercase tracking-wide mb-3;
+  }
+  .prose-docs .warning-box ul {
+    @apply mb-0;
+  }
+  .prose-docs .warning-box li {
+    @apply text-red-300;
+  }
 }

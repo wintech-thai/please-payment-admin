@@ -489,7 +489,7 @@ export default function PayOutRequestDetailPage() {
     setShowRejectModal(false)
     setRejecting(true)
     try {
-      await paymentRequestApi.rejectPayOutRequestById(id, { RejectReason: reason, RejectStatus: rejectStatus })
+      await paymentRequestApi.rejectPayOutRequestById(id, { RejectReason: reason, StatusCode: rejectStatus })
       toast.success(m.toastRejectSuccess)
       router.push('/business-setup/payment/withdraw-request')
     } catch (err: any) {
@@ -663,18 +663,16 @@ export default function PayOutRequestDetailPage() {
               })()}
             </InfoRow>
 
-            {isRejected && (detail?.rejectStatus || detail?.rejectReason) && (
-              <InfoRow label={m.labelRejectReason}>
-                <div className="flex flex-col gap-0.5">
-                  {detail?.rejectStatus && (
-                    <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 ring-1 ring-red-200">
-                      {detail.rejectStatus}
-                    </span>
-                  )}
-                  {detail?.rejectReason && (
-                    <span className="text-red-600 font-medium">{detail.rejectReason}</span>
-                  )}
-                </div>
+            {isRejected && (detail?.statusCode ?? detail?.rejectStatus) && (
+              <InfoRow label={m.fieldStatusCode}>
+                <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 ring-1 ring-red-200">
+                  {detail?.statusCode ?? detail?.rejectStatus}
+                </span>
+              </InfoRow>
+            )}
+            {isRejected && detail?.rejectReason && (
+              <InfoRow label={m.fieldRejectReason}>
+                <span className="text-red-600 font-medium">{detail.rejectReason}</span>
               </InfoRow>
             )}
 

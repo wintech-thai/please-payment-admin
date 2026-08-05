@@ -314,9 +314,16 @@ export default function PayInRequestDetailPage() {
                 ) : '—'}
               </InfoRow>
             )}
+            {isRejected && detail?.statusCode && (
+              <InfoRow label={m.fieldStatusCode}>
+                <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 ring-1 ring-red-200">
+                  {detail.statusCode}
+                </span>
+              </InfoRow>
+            )}
             {isRejected && detail?.statusReason && (
               <InfoRow label={m.fieldStatusReason}>
-                <span className="text-red-600">{detail.statusReason}</span>
+                <span className="text-red-600 font-medium">{detail.statusReason}</span>
               </InfoRow>
             )}
           </div>

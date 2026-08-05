@@ -29,6 +29,7 @@ title: Webhooks
 |---|---|
 | `EVENT_TYPE` | ประเภทของ event เช่น `PaymentIn.Success`, `PaymentIn.Rejected`, `PaymentOut.Success`, `PaymentOut.Rejected` |
 | `STATUS_CODE` | สถานะการทำงาน — เป็น `OK` เมื่อไม่มีปัญหา; **สำหรับ Rejected events จะมีค่าไม่เท่ากับ `OK`** |
+| `STATUS_REASON` | คำอธิบายเหตุผลของ status — จะมีค่าเมื่อ `STATUS_CODE` ไม่เท่ากับ `OK` (เช่น Rejected events) |
 | `PAYMENT_TYPE` | ประเภทของ payment — มีค่าเป็น `PayIn` หรือ `PayOut` เท่านั้น |
 
 > **หมายเหตุ:** พวก event ที่เป็น Rejected (`PaymentIn.Rejected`, `PaymentOut.Rejected`) จะมี `STATUS_CODE` ไม่เท่ากับ `"OK"` เสมอ ใช้ field นี้เพื่อเช็คว่าการทำงานมีปัญหาหรือไม่

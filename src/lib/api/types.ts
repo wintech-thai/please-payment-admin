@@ -411,6 +411,7 @@ export interface PayInRequestItem {
   requestedAmount?: number | null
   currency?: string | null
   status?: string | null
+  statusCode?: string | null
   statusReason?: string | null
   refId?: string | null
   refId1?: string | null
@@ -817,6 +818,7 @@ export interface PayOutRequestItem {
   refId3?: string | null
   rejectReason?: string | null
   rejectStatus?: string | null
+  statusCode?: string | null
   paymentTxId?: string | null
   // Source (PayIn) bank account — API uses camelCase "payin" (lowercase)
   payinBankAccountId?: string | null
@@ -912,7 +914,7 @@ export interface ApprovePayOutRequestPayload {
 
 export interface RejectPayOutRequestPayload {
   RejectReason: string
-  RejectStatus?: string
+  StatusCode?: string
 }
 
 // ── Transfer Request ──────────────────────────────────────────────────────────

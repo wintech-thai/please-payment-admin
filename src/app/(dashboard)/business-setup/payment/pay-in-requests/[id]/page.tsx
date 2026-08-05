@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
-import type { PayInRequestDetail } from '@/lib/api/types'
+import type { PayInRequestDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check } from 'lucide-react'
@@ -55,6 +55,25 @@ function StatusBadge({ status, createdDate, isPeerToPeer }: { status?: string | 
       </div>
       {age && <span className="text-xs text-gray-400">{age}</span>}
     </div>
+  )
+}
+
+function JobStatusBadge({ status }: { status?: string | null }) {
+  const s = status?.toLowerCase()
+  if (s === 'success' || s === 'completed' || s === 'done') return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+      <CheckCircle className="w-3.5 h-3.5" />{status}
+    </span>
+  )
+  if (s === 'failed' || s === 'error') return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
+      <AlertCircle className="w-3.5 h-3.5" />{status}
+    </span>
+  )
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+      <Clock className="w-3.5 h-3.5" />{status ?? 'Unknown'}
+    </span>
   )
 }
 
@@ -151,6 +170,8 @@ export default function PayInRequestDetailPage() {
 
   const [detail, setDetail] = useState<PayInRequestDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [job, setJob] = useState<PaymentTxJob | null>(null)
+  const [loadingJob, setLoadingJob] = useState(false)
   const [showRawJson, setShowRawJson] = useState(false)
 
   useEffect(() => {
@@ -159,7 +180,19 @@ export default function PayInRequestDetailPage() {
       try {
         const res = await paymentRequestApi.getPaymentRequestById(id)
         const data = res.data as any
-        setDetail(data?.paymentRequest ?? data)
+        const raw = data?.paymentRequest ?? data
+        setDetail(raw)
+
+        const jobId = raw?.jobId ?? raw?.JobId
+        if (jobId) {
+          setLoadingJob(true)
+          try {
+            const jobRes = await paymentRequestApi.getPaymentRequestJobById(id, jobId)
+            const jobData = jobRes.data as any
+            setJob(jobData?.job ?? jobData?.Job ?? jobData)
+          } catch { /* job section will show no data */ }
+          finally { setLoadingJob(false) }
+        }
       } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : 'Failed to load payment request detail')
       } finally {
@@ -201,6 +234,8 @@ export default function PayInRequestDetailPage() {
   const statusLower = detail?.status?.toLowerCase()
   const isApproved = statusLower === 'approved'
   const isRejected = statusLower === 'rejected'
+  const msg1Lines = (job?.jobMessage ?? '').split('\n').filter(l => l.trim())
+  const msg2Lines = (job?.jobMessage2 ?? '').split('\n').filter(l => l.trim())
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -279,9 +314,16 @@ export default function PayInRequestDetailPage() {
                 ) : '—'}
               </InfoRow>
             )}
+            {isRejected && detail?.statusCode && (
+              <InfoRow label={m.fieldStatusCode}>
+                <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 ring-1 ring-red-200">
+                  {detail.statusCode}
+                </span>
+              </InfoRow>
+            )}
             {isRejected && detail?.statusReason && (
               <InfoRow label={m.fieldStatusReason}>
-                <span className="text-red-600">{detail.statusReason}</span>
+                <span className="text-red-600 font-medium">{detail.statusReason}</span>
               </InfoRow>
             )}
           </div>
@@ -315,6 +357,116 @@ export default function PayInRequestDetailPage() {
             <p className="text-sm text-gray-400">{m.noProcessingSteps}</p>
           )}
         </div>
+
+        {/* Job */}
+        {(detail?.jobId || loadingJob) && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>{m.sectionJob}</SectionHeader>
+            {loadingJob ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <svg className="w-4 h-4 animate-spin text-primary-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                {t.admin.loading}
+              </div>
+            ) : job ? (
+              <div className="flex flex-col gap-6">
+
+                {/* Job ID + Status + Type */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <InfoRow label={m.fieldJobId}>
+                    <span className="text-xs text-gray-600 break-all">{job.id ?? detail?.jobId ?? '—'}</span>
+                  </InfoRow>
+                  <InfoRow label={m.fieldJobStatus}>
+                    <JobStatusBadge status={job.status} />
+                  </InfoRow>
+                  {job.type && (
+                    <InfoRow label={m.fieldJobType}>
+                      <span className="text-sm font-medium text-gray-700">{job.type}</span>
+                    </InfoRow>
+                  )}
+                  {job.description && (
+                    <InfoRow label={m.fieldJobDescription}>
+                      <span className="text-sm text-gray-600">{job.description}</span>
+                    </InfoRow>
+                  )}
+                  {(job.succeedCount != null || job.failedCount != null) && (
+                    <InfoRow label={m.fieldJobResult}>
+                      <span className="text-sm">
+                        <span className="text-emerald-600 font-semibold">{job.succeedCount ?? 0}</span>
+                        <span className="text-gray-400 mx-1">/</span>
+                        <span className="text-red-500 font-semibold">{job.failedCount ?? 0}</span>
+                        <span className="text-gray-400 ml-1 text-xs">(success / failed)</span>
+                      </span>
+                    </InfoRow>
+                  )}
+                </div>
+
+                {/* Job Messages */}
+                {(msg1Lines.length > 0 || msg2Lines.length > 0) && (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{m.fieldJobMessage}</p>
+                    {msg1Lines.length > 0 && (
+                      <div>
+                        {msg2Lines.length > 0 && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 mb-2">Message 1</span>}
+                        <ol className="flex flex-col gap-2">
+                          {msg1Lines.map((line, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                              <span className="text-sm text-gray-700 leading-relaxed break-all">{line}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                    {msg2Lines.length > 0 && (
+                      <div>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 mb-2">Message 2</span>
+                        <ol className="flex flex-col gap-2">
+                          {msg2Lines.map((line, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                              <span className="text-sm text-gray-700 leading-relaxed break-all">{line}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Parameters */}
+                {job.parameters && job.parameters.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{m.fieldJobParameters}</p>
+                    <div className="rounded-lg border border-gray-200 overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-gray-50 border-b border-gray-200">
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase w-1/3">{m.fieldJobParamName}</th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">{m.fieldJobParamValue}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {job.parameters.map((p: PaymentTxJobParameter, i: number) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                              <td className="px-4 py-2 text-xs text-gray-600 font-medium">{p.name ?? '—'}</td>
+                              <td className="px-4 py-2 text-xs text-gray-700">{p.value ?? <span className="text-gray-300">null</span>}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">{m.noJobData}</p>
+            )}
+          </div>
+        )}
 
       </div>
     </div>

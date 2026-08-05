@@ -4,11 +4,21 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { notificationApi } from '@/lib/api/notification.api'
 import { toast } from 'sonner'
-import { ChevronLeft, X } from 'lucide-react'
+import { ChevronLeft, X, Check } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
 import { useLang } from '@/context/LanguageContext'
+
+const EVENT_TYPE_META: Record<string, { label: string; checkedCls: string; dotCls: string }> = {
+  'Payment.Success':                    { label: 'Payment In Success',      checkedCls: 'border-emerald-400 bg-emerald-50 text-emerald-700', dotCls: 'bg-emerald-400' },
+  'PaymentOut.Success':                 { label: 'Payment Out Success',     checkedCls: 'border-emerald-400 bg-emerald-50 text-emerald-700', dotCls: 'bg-emerald-400' },
+  'PaymentIn.Rejected':                 { label: 'Payment In Rejected',     checkedCls: 'border-rose-400 bg-rose-50 text-rose-700',         dotCls: 'bg-rose-400' },
+  'PaymentOut.Rejected':                { label: 'Payment Out Rejected',    checkedCls: 'border-rose-400 bg-rose-50 text-rose-700',         dotCls: 'bg-rose-400' },
+  'Payment.Unidentified':               { label: 'Payment Unidentified',    checkedCls: 'border-amber-400 bg-amber-50 text-amber-700',      dotCls: 'bg-amber-400' },
+  'Payment.DailyTxAmountLimitExceeded': { label: 'Daily Tx Limit Exceeded', checkedCls: 'border-orange-400 bg-orange-50 text-orange-700',   dotCls: 'bg-orange-400' },
+  'Backup.Done':                        { label: 'Backup Done',             checkedCls: 'border-sky-400 bg-sky-50 text-sky-700',            dotCls: 'bg-sky-400' },
+}
 
 function CreateNotiChannelContent() {
   const { t } = useLang()
@@ -295,7 +305,7 @@ function CreateNotiChannelContent() {
                   {m.fieldEventTypes} <span className="text-red-500">*</span>
                 </label>
                 <div className={clsx(
-                  'w-full min-h-[80px] p-3 border rounded-lg',
+                  'w-full p-3 border rounded-lg',
                   errors.eventTypes ? 'border-red-400 bg-red-50/30' : 'border-gray-200 bg-gray-50/40'
                 )}>
                   {loadingEventTypes ? (
@@ -303,18 +313,28 @@ function CreateNotiChannelContent() {
                   ) : availableEventTypes.length === 0 ? (
                     <span className="text-sm text-gray-400">—</span>
                   ) : (
-                    <div className="flex flex-wrap gap-x-6 gap-y-2">
-                      {availableEventTypes.map(et => (
-                        <label key={et} className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={selectedEventTypes.includes(et)}
-                            onChange={() => toggleEventType(et)}
-                            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
-                          />
-                          <span className="text-sm text-gray-700">{et}</span>
-                        </label>
-                      ))}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {availableEventTypes.map(et => {
+                        const meta = EVENT_TYPE_META[et]
+                        const checked = selectedEventTypes.includes(et)
+                        return (
+                          <button
+                            key={et}
+                            type="button"
+                            onClick={() => toggleEventType(et)}
+                            className={clsx(
+                              'flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-all text-left',
+                              checked
+                                ? (meta?.checkedCls ?? 'border-primary-400 bg-primary-50 text-primary-700')
+                                : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                            )}
+                          >
+                            <span className={clsx('w-2 h-2 rounded-full flex-shrink-0 transition-colors', checked ? (meta?.dotCls ?? 'bg-primary-400') : 'bg-gray-300')} />
+                            <span className="flex-1">{meta?.label ?? et}</span>
+                            {checked && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                          </button>
+                        )
+                      })}
                     </div>
                   )}
                 </div>

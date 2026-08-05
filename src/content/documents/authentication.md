@@ -63,8 +63,11 @@ response = requests.post(
 print(response.json())
 ```
 
-## ข้อควรระวัง
+<div class="warning-box">
+<div class="warning-title">⚠ ข้อควรระวัง</div>
 
 - ไม่เปิดเผย API Key ใน frontend code หรือ public repository
 - หากสงสัยว่า API Key รั่วไหล ให้แจ้งผู้ให้บริการ เพื่อขอ API Key ใหม่ทันที
 - API Key ผูกกับ Merchant — ใช้ Key ของ Merchant ที่ถูกต้องสำหรับแต่ละ request
+
+</div>

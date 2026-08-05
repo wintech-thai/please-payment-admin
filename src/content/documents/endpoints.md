@@ -114,6 +114,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 
 > ข้อมูลบัญชีปลายทาง: ส่ง `PayinBankAccountId` (ID จากระบบ) หรือ ส่ง `BankCode`+`BankAccountNo`+`BankAccountName` หรือ `PromptPayId`+`AccountType` อย่างใดอย่างหนึ่ง
 
+> **แนะนำ:** หากทราบหมายเลข PromptPay ของบัญชีปลายทาง แนะนำให้ส่ง `PromptPayId` มาด้วย เนื่องจากการโอนผ่าน PromptPay จะช่วยให้ระบบประมวลผลได้เร็วขึ้น และผู้รับได้รับเงินได้รวดเร็วยิ่งขึ้น
+
 ### ตัวอย่าง Request (โอนผ่านบัญชีธนาคาร)
 
 ```json

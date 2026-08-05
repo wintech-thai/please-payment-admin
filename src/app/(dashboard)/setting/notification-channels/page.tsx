@@ -9,9 +9,15 @@ import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
 const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
-  'payment.success': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
-  'payment.failed': { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200' },
-  'payment.unidentified': { bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200' },
+  'paymentin.success':                    { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
+  'payment.success':                      { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
+  'paymentout.success':                   { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
+  'paymentin.rejected':                   { bg: 'bg-rose-50',    text: 'text-rose-700',    ring: 'ring-rose-200' },
+  'paymentout.rejected':                  { bg: 'bg-rose-50',    text: 'text-rose-700',    ring: 'ring-rose-200' },
+  'payment.failed':                       { bg: 'bg-rose-50',    text: 'text-rose-700',    ring: 'ring-rose-200' },
+  'payment.unidentified':                 { bg: 'bg-amber-50',   text: 'text-amber-700',   ring: 'ring-amber-200' },
+  'payment.dailytxamountlimitexceeded':   { bg: 'bg-orange-50',  text: 'text-orange-700',  ring: 'ring-orange-200' },
+  'backup.done':                          { bg: 'bg-slate-50',   text: 'text-slate-600',   ring: 'ring-slate-200' },
 }
 const DEFAULT_EVENT_COLOR = { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200' }
 function getEventTypeColor(type: string) {

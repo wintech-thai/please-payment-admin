@@ -4,10 +4,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
-import type { PayOutRequestDetail } from '@/lib/api/types'
+import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
+import type { PayOutRequestDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check } from 'lucide-react'
+import { ChevronLeft, ChevronDown, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check } from 'lucide-react'
 import QRCode from 'react-qr-code'
 import clsx from 'clsx'
 
@@ -69,6 +70,25 @@ function StatusBadge({ status, isPartialyPayout }: { status?: string | null; isP
 }
 
 // ── Shared UI ─────────────────────────────────────────────────────────────────
+
+function JobStatusBadge({ status }: { status?: string | null }) {
+  const s = status?.toLowerCase()
+  if (s === 'success' || s === 'completed' || s === 'done') return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+      <CheckCircle className="w-3.5 h-3.5" />{status}
+    </span>
+  )
+  if (s === 'failed' || s === 'error') return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
+      <AlertCircle className="w-3.5 h-3.5" />{status}
+    </span>
+  )
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+      <Clock className="w-3.5 h-3.5" />{status ?? 'Unknown'}
+    </span>
+  )
+}
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -155,39 +175,133 @@ function RawJsonModal({ data, onClose }: { data: unknown; onClose: () => void })
 // ── Reject Modal ──────────────────────────────────────────────────────────────
 
 function RejectModal({
-  title, desc, labelReason, placeholder, btnCancel, btnConfirm, onCancel, onConfirm,
+  onCancel, onConfirm,
 }: {
-  title: string; desc: string; labelReason: string; placeholder: string
-  btnCancel: string; btnConfirm: string
-  onCancel: () => void; onConfirm: (reason: string) => void
+  onCancel: () => void
+  onConfirm: (reason: string, rejectStatus: string) => void
 }) {
+  const { t } = useLang()
+  const m = t.payOutRequest
   const [reason, setReason] = useState('')
-  const [err, setErr] = useState('')
+  const [rejectStatusCode, setRejectStatusCode] = useState('')
+  const [statuses, setStatuses] = useState<MasterRefItem[]>([])
+  const [statusSearch, setStatusSearch] = useState('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [statusError, setStatusError] = useState('')
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    masterRefApi.getMasterRefs({ RefType: 'PayOutRejectStatus', Limit: 200 })
+      .then(res => {
+        const data = res.data as any
+        setStatuses(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = statuses.filter(s =>
+    s.code?.toLowerCase().includes(statusSearch.toLowerCase()) ||
+    s.description?.toLowerCase().includes(statusSearch.toLowerCase())
+  )
+
+  const selectStatus = (item: MasterRefItem) => {
+    setRejectStatusCode(item.code ?? '')
+    setStatusSearch(item.code ?? '')
+    setReason(item.description ?? '')
+    setStatusError('')
+    setDropdownOpen(false)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!rejectStatusCode) { setStatusError(m.rejectStatusRequired); return }
+    onConfirm(reason.trim(), rejectStatusCode)
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-1">{title}</h3>
-        <p className="text-sm text-gray-500 mb-4">{desc}</p>
-        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">{labelReason}</label>
-        <textarea
-          value={reason}
-          onChange={e => { setReason(e.target.value); setErr('') }}
-          placeholder={placeholder}
-          rows={3}
-          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none"
-        />
-        {err && <p className="text-red-500 text-xs mt-1">{err}</p>}
-        <div className="flex justify-end gap-3 mt-5">
-          <button onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            {btnCancel}
-          </button>
-          <button
-            onClick={() => { if (!reason.trim()) { setErr('Required'); return } onConfirm(reason.trim()) }}
-            className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-          >
-            {btnConfirm}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+          <h3 className="text-base font-bold text-gray-900">{m.rejectModalTitle}</h3>
+          <button onClick={onCancel} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Reject Status — searchable dropdown */}
+          <div ref={dropdownRef} className="relative">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+              {m.labelRejectStatus} <span className="text-red-500">*</span>
+            </label>
+            <div
+              className={clsx(
+                'flex items-center border rounded-lg px-3 py-2 cursor-text bg-white',
+                statusError ? 'border-red-400 ring-1 ring-red-400' : dropdownOpen ? 'border-primary-500 ring-1 ring-primary-500' : 'border-gray-200'
+              )}
+              onClick={() => setDropdownOpen(true)}
+            >
+              <input
+                value={statusSearch}
+                onChange={e => { setStatusSearch(e.target.value); setRejectStatusCode(''); setDropdownOpen(true) }}
+                onFocus={() => setDropdownOpen(true)}
+                placeholder={m.rejectStatusPlaceholder}
+                className="flex-1 text-sm outline-none bg-transparent"
+              />
+              <ChevronDown className={clsx('w-4 h-4 text-gray-400 flex-shrink-0 transition-transform', dropdownOpen && 'rotate-180')} />
+            </div>
+            {statusError && <p className="text-red-500 text-xs mt-1">{statusError}</p>}
+            {dropdownOpen && (
+              <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {filtered.length === 0 ? (
+                  <div className="px-3 py-3 text-sm text-gray-400 text-center">—</div>
+                ) : (
+                  filtered.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onMouseDown={e => { e.preventDefault(); selectStatus(s) }}
+                      className="w-full text-left px-3 py-2.5 hover:bg-gray-50 flex items-start gap-3 border-b border-gray-50 last:border-0"
+                    >
+                      <span className="text-xs font-bold text-primary-700 min-w-[80px]">{s.code}</span>
+                      {s.description && <span className="text-xs text-gray-500 truncate">{s.description}</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Reason */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{m.labelRejectReason}</label>
+            <textarea
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              placeholder={m.placeholderRejectReason}
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-1">
+            <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              {m.btnCancelReject}
+            </button>
+            <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+              {m.confirmReject}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
@@ -205,6 +319,8 @@ export default function PayOutRequestDetailPage() {
   // Data
   const [detail, setDetail] = useState<PayOutRequestDetail | null>(null)
   const [allAccounts, setAllAccounts] = useState<AccountOption[]>([])
+  const [job, setJob] = useState<PaymentTxJob | null>(null)
+  const [loadingJob, setLoadingJob] = useState(false)
 
   // Bank selection state
   const [selectedAccountId, setSelectedAccountId] = useState('')
@@ -224,6 +340,8 @@ export default function PayOutRequestDetailPage() {
 
   const isPending = detail?.status?.toLowerCase() === 'pending'
   const isRejected = detail?.status?.toLowerCase() === 'rejected'
+  const msg1Lines = (job?.jobMessage ?? '').split('\n').filter(l => l.trim())
+  const msg2Lines = (job?.jobMessage2 ?? '').split('\n').filter(l => l.trim())
 
   // ── Computed ────────────────────────────────────────────────────────────────
 
@@ -252,6 +370,17 @@ export default function PayOutRequestDetailPage() {
         const data = res.data as any
         const req: PayOutRequestDetail = data?.paymentRequest ?? data?.paymentRequests ?? data
         setDetail(req)
+
+        const jobId = req?.jobId ?? (req as any)?.JobId
+        if (jobId) {
+          setLoadingJob(true)
+          try {
+            const jobRes = await paymentRequestApi.getPaymentRequestJobById(id, jobId)
+            const jobData = jobRes.data as any
+            setJob(jobData?.job ?? jobData?.Job ?? jobData)
+          } catch { /* job section will show no data */ }
+          finally { setLoadingJob(false) }
+        }
 
         const [payinRes, transitRes] = await Promise.allSettled([
           bankAccountApi.getPayInBankAccountsWithGlobalAll(),
@@ -356,11 +485,11 @@ export default function PayOutRequestDetailPage() {
     }
   }
 
-  const handleReject = async (reason: string) => {
+  const handleReject = async (reason: string, rejectStatus: string) => {
     setShowRejectModal(false)
     setRejecting(true)
     try {
-      await paymentRequestApi.rejectPayOutRequestById(id, { RejectReason: reason })
+      await paymentRequestApi.rejectPayOutRequestById(id, { RejectReason: reason, StatusCode: rejectStatus })
       toast.success(m.toastRejectSuccess)
       router.push('/business-setup/payment/withdraw-request')
     } catch (err: any) {
@@ -391,12 +520,6 @@ export default function PayOutRequestDetailPage() {
 
       {showRejectModal && (
         <RejectModal
-          title={m.rejectModalTitle}
-          desc={m.rejectModalDesc}
-          labelReason={m.labelRejectReason}
-          placeholder={m.placeholderRejectReason}
-          btnCancel={m.btnCancelReject}
-          btnConfirm={m.confirmReject}
           onCancel={() => setShowRejectModal(false)}
           onConfirm={handleReject}
         />
@@ -540,45 +663,53 @@ export default function PayOutRequestDetailPage() {
               })()}
             </InfoRow>
 
-            {/* Reject reason */}
+            {isRejected && (detail?.statusCode ?? detail?.rejectStatus) && (
+              <InfoRow label={m.fieldStatusCode}>
+                <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 ring-1 ring-red-200">
+                  {detail?.statusCode ?? detail?.rejectStatus}
+                </span>
+              </InfoRow>
+            )}
             {isRejected && detail?.rejectReason && (
-              <div className="sm:col-span-2">
-                <InfoRow label={m.labelRejectReason}>
-                  <span className="text-red-600 font-medium">{detail.rejectReason}</span>
-                </InfoRow>
-              </div>
+              <InfoRow label={m.fieldRejectReason}>
+                <span className="text-red-600 font-medium">{detail.rejectReason}</span>
+              </InfoRow>
             )}
 
           </div>
 
-          {/* QR Code — P2P uses qrCodeP2P; regular uses qrCodeImage / qrCode */}
+          {/* Right column — QR code and/or reject reason */}
           {(() => {
             const paidAmt = detail?.totalPayOutPaidAmountDecimal ?? 0
             const useP2P = detail?.isPartialyPayout && detail?.qrCodeP2P
             const rawQr = useP2P ? detail!.qrCodeP2P! : (detail?.qrCodeImage ?? detail?.qrCode ?? null)
             if (!rawQr) return null
-            const isImage = rawQr.startsWith('data:') || rawQr.startsWith('iVBOR') || rawQr.startsWith('/9j/')
+            const isImage = rawQr ? (rawQr.startsWith('data:') || rawQr.startsWith('iVBOR') || rawQr.startsWith('/9j/')) : false
             return (
-              <div className="flex-shrink-0 flex flex-col items-center gap-2 pt-1">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">
-                  {useP2P ? 'QR P2P' : 'QR Code'}
-                </p>
-                {isImage ? (
-                  <img
-                    src={rawQr.startsWith('data:') ? rawQr : `data:image/png;base64,${rawQr}`}
-                    alt="QR Code"
-                    className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
-                  />
-                ) : (
-                  <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
-                    <QRCode value={rawQr} size={200} />
-                  </div>
-                )}
-                {useP2P && paidAmt > 0 && detail?.payOutTotalAmountDecimalP2P != null && (
-                  <div className="text-center max-w-[220px]">
-                    <p className="text-xs font-semibold text-primary-600 tabular-nums">{formatAmount(detail.payOutTotalAmountDecimalP2P)}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{m.qrP2PDescription ?? 'ยอดคงเหลือหลัง partial payment'}</p>
-                  </div>
+              <div className="flex-shrink-0 flex flex-col items-center gap-4 pt-1">
+                {rawQr && (
+                  <>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">
+                      {useP2P ? 'QR P2P' : 'QR Code'}
+                    </p>
+                    {isImage ? (
+                      <img
+                        src={rawQr.startsWith('data:') ? rawQr : `data:image/png;base64,${rawQr}`}
+                        alt="QR Code"
+                        className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
+                      />
+                    ) : (
+                      <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
+                        <QRCode value={rawQr} size={200} />
+                      </div>
+                    )}
+                    {useP2P && paidAmt > 0 && detail?.payOutTotalAmountDecimalP2P != null && (
+                      <div className="text-center max-w-[220px]">
+                        <p className="text-xs font-semibold text-primary-600 tabular-nums">{formatAmount(detail.payOutTotalAmountDecimalP2P)}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{m.qrP2PDescription ?? 'ยอดคงเหลือหลัง partial payment'}</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )
@@ -782,6 +913,113 @@ export default function PayOutRequestDetailPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* ── Section 4: Job ── */}
+        {(detail?.jobId || loadingJob) && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>{m.sectionJob}</SectionHeader>
+            {loadingJob ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <svg className="w-4 h-4 animate-spin text-primary-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                {t.admin.loading}
+              </div>
+            ) : job ? (
+              <div className="flex flex-col gap-6">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <InfoRow label={m.fieldJobId}>
+                    <span className="text-xs text-gray-600 break-all">{job.id ?? detail?.jobId ?? '—'}</span>
+                  </InfoRow>
+                  <InfoRow label={m.fieldJobStatus}>
+                    <JobStatusBadge status={job.status} />
+                  </InfoRow>
+                  {job.type && (
+                    <InfoRow label={m.fieldJobType}>
+                      <span className="text-sm font-medium text-gray-700">{job.type}</span>
+                    </InfoRow>
+                  )}
+                  {job.description && (
+                    <InfoRow label={m.fieldJobDescription}>
+                      <span className="text-sm text-gray-600">{job.description}</span>
+                    </InfoRow>
+                  )}
+                  {(job.succeedCount != null || job.failedCount != null) && (
+                    <InfoRow label={m.fieldJobResult}>
+                      <span className="text-sm">
+                        <span className="text-emerald-600 font-semibold">{job.succeedCount ?? 0}</span>
+                        <span className="text-gray-400 mx-1">/</span>
+                        <span className="text-red-500 font-semibold">{job.failedCount ?? 0}</span>
+                        <span className="text-gray-400 ml-1 text-xs">(success / failed)</span>
+                      </span>
+                    </InfoRow>
+                  )}
+                </div>
+
+                {(msg1Lines.length > 0 || msg2Lines.length > 0) && (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{m.fieldJobMessage}</p>
+                    {msg1Lines.length > 0 && (
+                      <div>
+                        {msg2Lines.length > 0 && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 mb-2">Message 1</span>}
+                        <ol className="flex flex-col gap-2">
+                          {msg1Lines.map((line, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                              <span className="text-sm text-gray-700 leading-relaxed break-all">{line}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                    {msg2Lines.length > 0 && (
+                      <div>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 mb-2">Message 2</span>
+                        <ol className="flex flex-col gap-2">
+                          {msg2Lines.map((line, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                              <span className="text-sm text-gray-700 leading-relaxed break-all">{line}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {job.parameters && job.parameters.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{m.fieldJobParameters}</p>
+                    <div className="rounded-lg border border-gray-200 overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-gray-50 border-b border-gray-200">
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase w-1/3">{m.fieldJobParamName}</th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">{m.fieldJobParamValue}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {job.parameters.map((p: PaymentTxJobParameter, i: number) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                              <td className="px-4 py-2 text-xs text-gray-600 font-medium">{p.name ?? '—'}</td>
+                              <td className="px-4 py-2 text-xs text-gray-700">{p.value ?? <span className="text-gray-300">null</span>}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">{m.noJobData}</p>
+            )}
           </div>
         )}
 

@@ -10,18 +10,27 @@ import { useLang } from '@/context/LanguageContext'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
 const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
-  'payment.success': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
-  'paymentout.success': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
-  'payment.failed': { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200' },
-  'payment.unidentified': { bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200' },
+  'payment.success':                    { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
+  'paymentout.success':                 { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
+  'paymentin.rejected':                 { bg: 'bg-rose-50',    text: 'text-rose-700',    ring: 'ring-rose-200' },
+  'paymentout.rejected':                { bg: 'bg-rose-50',    text: 'text-rose-700',    ring: 'ring-rose-200' },
+  'payment.failed':                     { bg: 'bg-red-50',     text: 'text-red-700',     ring: 'ring-red-200' },
+  'payment.unidentified':               { bg: 'bg-amber-50',   text: 'text-amber-700',   ring: 'ring-amber-200' },
+  'payment.dailytxamountlimitexceeded': { bg: 'bg-orange-50',  text: 'text-orange-700',  ring: 'ring-orange-200' },
+  'backup.done':                        { bg: 'bg-sky-50',     text: 'text-sky-700',     ring: 'ring-sky-200' },
 }
 const DEFAULT_EVENT_COLOR = { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200' }
 function getEventTypeColor(type: string) {
   return EVENT_TYPE_COLORS[type.toLowerCase()] ?? DEFAULT_EVENT_COLOR
 }
 const EVENT_TYPE_LABELS: Record<string, string> = {
-  'Payment.Success': 'Payment In Success',
-  'PaymentOut.Success': 'Payment Out Success',
+  'Payment.Success':                    'Payment In Success',
+  'PaymentOut.Success':                 'Payment Out Success',
+  'PaymentIn.Rejected':                 'Payment In Rejected',
+  'PaymentOut.Rejected':                'Payment Out Rejected',
+  'Payment.Unidentified':               'Payment Unidentified',
+  'Payment.DailyTxAmountLimitExceeded': 'Daily Tx Limit Exceeded',
+  'Backup.Done':                        'Backup Done',
 }
 function getEventTypeLabel(type: string) {
   return EVENT_TYPE_LABELS[type] ?? type
@@ -325,9 +334,12 @@ function NotiEventListContent() {
                       {/* Tags */}
                       <td className="px-4 py-3 border-b border-gray-100">
                         {tags
-                          ? String(tags).split(',').map((tag: string) => (
-                            <span key={tag} className="inline-flex mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-[10px] font-semibold">{tag.trim()}</span>
-                          ))
+                          ? String(tags).split(',').map((tag: string) => {
+                              const c = getEventTypeColor(tag.trim())
+                              return (
+                                <span key={tag} className={clsx('inline-flex mr-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ring-1', c.bg, c.text, c.ring)}>{tag.trim()}</span>
+                              )
+                            })
                           : <span className="text-gray-400">—</span>}
                       </td>
                       {/* Type */}

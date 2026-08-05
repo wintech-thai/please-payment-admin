@@ -8,11 +8,15 @@ import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
 
+const REF_TYPE = 'PayOutRejectStatus'
+const BASE_PATH = '/business-setup/master-reference/pay-out-reject-status'
+const ROW_KEY = 'payout_reject_status_highlight'
+
 function DeleteModal({ name, onConfirm, onCancel, deleting }: {
   name?: string; onConfirm: () => void; onCancel: () => void; deleting: boolean
 }) {
   const { t } = useLang()
-  const m = t.expenseType
+  const m = t.payOutRejectStatus
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onCancel}>
       <div
@@ -39,9 +43,9 @@ function DeleteModal({ name, onConfirm, onCancel, deleting }: {
   )
 }
 
-function ExpenseTypeListContent() {
+function PayOutRejectStatusListContent() {
   const { t } = useLang()
-  const m = t.expenseType
+  const m = t.payOutRejectStatus
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -56,7 +60,7 @@ function ExpenseTypeListContent() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
     if (highlightIdParam) return highlightIdParam
-    if (typeof window !== 'undefined') return sessionStorage.getItem('expense_type_highlight') ?? null
+    if (typeof window !== 'undefined') return sessionStorage.getItem(ROW_KEY) ?? null
     return null
   })
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; id?: string; name?: string }>({ open: false })
@@ -66,8 +70,8 @@ function ExpenseTypeListContent() {
     setLoading(true)
     try {
       const [listRes, countRes] = await Promise.allSettled([
-        masterRefApi.getMasterRefs({ RefType: 'ExpenseType', FullTextSearch: search, Page: p, Limit: itemsPerPage }),
-        masterRefApi.getMasterRefCount({ RefType: 'ExpenseType', FullTextSearch: search }),
+        masterRefApi.getMasterRefs({ RefType: REF_TYPE, FullTextSearch: search, Page: p, Limit: itemsPerPage }),
+        masterRefApi.getMasterRefCount({ RefType: REF_TYPE, FullTextSearch: search }),
       ])
       if (listRes.status === 'fulfilled') {
         const data = listRes.value.data as any
@@ -95,7 +99,7 @@ function ExpenseTypeListContent() {
     params.delete('highlight')
     window.history.replaceState(null, '', `${pathname}?${params.toString()}`)
     const timer = setTimeout(() => {
-      document.getElementById(`expense-type-row-${highlightIdParam}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      document.getElementById(`payout-reject-row-${highlightIdParam}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 300)
     return () => clearTimeout(timer)
   }, [highlightIdParam])
@@ -138,7 +142,7 @@ function ExpenseTypeListContent() {
           <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
         </div>
         <button
-          onClick={() => router.push('/business-setup/financial-settlement/expense-type/create')}
+          onClick={() => router.push(`${BASE_PATH}/create`)}
           className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -220,13 +224,13 @@ function ExpenseTypeListContent() {
                   const isChecked = selectedId === item.id
                   return (
                     <tr
-                      id={`expense-type-row-${item.id}`}
+                      id={`payout-reject-row-${item.id}`}
                       key={item.id}
                       onClick={() => {
                         const next = selectedRowId === item.id ? null : item.id
                         setSelectedRowId(next)
-                        if (next) sessionStorage.setItem('expense_type_highlight', next)
-                        else sessionStorage.removeItem('expense_type_highlight')
+                        if (next) sessionStorage.setItem(ROW_KEY, next)
+                        else sessionStorage.removeItem(ROW_KEY)
                       }}
                       className={clsx(
                         'border-b border-gray-100 cursor-pointer transition-colors',
@@ -245,7 +249,7 @@ function ExpenseTypeListContent() {
                       </td>
                       <td className="px-6 py-4">
                         <button
-                          onClick={e => { e.stopPropagation(); router.push(`/business-setup/financial-settlement/expense-type/${item.id}/update`) }}
+                          onClick={e => { e.stopPropagation(); router.push(`${BASE_PATH}/${item.id}/update`) }}
                           className={clsx('text-sm font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
                           {item.code}
@@ -260,7 +264,7 @@ function ExpenseTypeListContent() {
                             ? item.tags.split(',').map(tag => (
                               <span key={tag} className="px-2.5 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-[10px] font-semibold">{tag.trim()}</span>
                             ))
-                            : <span className="text-gray-400">—</span>}
+                            : <span className="text-gray-400 text-sm">—</span>}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-center" onClick={e => e.stopPropagation()}>
@@ -316,10 +320,10 @@ function ExpenseTypeListContent() {
   )
 }
 
-export default function ExpenseTypePage() {
+export default function PayOutRejectStatusPage() {
   return (
     <Suspense>
-      <ExpenseTypeListContent />
+      <PayOutRejectStatusListContent />
     </Suspense>
   )
 }

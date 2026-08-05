@@ -283,7 +283,7 @@ export default function TransferRequestPage() {
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/transfer-request/${item.id}`) }}
                       >
                         <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
-                        {item.refId && <p className="text-xs text-gray-400 mt-0.5">{item.refId}</p>}
+                        {item.refId1 && <p className="text-xs text-gray-400 mt-0.5">{item.refId1}</p>}
                       </td>
 
                       {/* Amount */}

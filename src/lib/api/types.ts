@@ -816,6 +816,7 @@ export interface PayOutRequestItem {
   refId2?: string | null
   refId3?: string | null
   rejectReason?: string | null
+  rejectStatus?: string | null
   paymentTxId?: string | null
   // Source (PayIn) bank account — API uses camelCase "payin" (lowercase)
   payinBankAccountId?: string | null

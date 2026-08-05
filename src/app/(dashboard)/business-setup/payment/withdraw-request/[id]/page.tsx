@@ -663,9 +663,18 @@ export default function PayOutRequestDetailPage() {
               })()}
             </InfoRow>
 
-            {isRejected && detail?.rejectReason && (
+            {isRejected && (detail?.rejectStatus || detail?.rejectReason) && (
               <InfoRow label={m.labelRejectReason}>
-                <span className="text-red-600 font-medium">{detail.rejectReason}</span>
+                <div className="flex flex-col gap-0.5">
+                  {detail?.rejectStatus && (
+                    <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 ring-1 ring-red-200">
+                      {detail.rejectStatus}
+                    </span>
+                  )}
+                  {detail?.rejectReason && (
+                    <span className="text-red-600 font-medium">{detail.rejectReason}</span>
+                  )}
+                </div>
               </InfoRow>
             )}
 

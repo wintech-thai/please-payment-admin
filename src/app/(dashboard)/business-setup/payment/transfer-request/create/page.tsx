@@ -132,7 +132,6 @@ export default function CreateTransferRequestPage() {
     setSaveMode(mode)
     try {
       const res = await paymentRequestApi.createTransferRequest({
-        RefId: refId.trim() || undefined,
         RefId1: refId.trim() || undefined,
         RefId2: refId1.trim() || undefined,
         RefId3: refId2.trim() || undefined,

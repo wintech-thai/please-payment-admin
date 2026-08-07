@@ -23,11 +23,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | Field | Type | Required | คำอธิบาย |
 |---|---|---|---|
 | `RefId1` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
+| `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
+| `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0 และอยู่ใน range ที่ Merchant กำหนด) |
 | `Currency` | string | ✅ | สกุลเงิน — ปัจจุบันรองรับเฉพาะ `THB` |
 | `QrProvider` | string | ✅ | ธนาคารที่ออก QR — `PP` (PromptPay) หรือ `SCB` |
-| `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
-| `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `Description` | string | ❌ | คำอธิบายรายการ |
 | `CustomerEmail` | string | ❌ | อีเมลของลูกค้า |
 | `CustomerPhone` | string | ❌ | เบอร์โทรของลูกค้า |

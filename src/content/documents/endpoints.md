@@ -69,7 +69,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
     "PayInBankCode": "SCB",
     "PayInBankAccountNo": "xxx-xxxxx-x",
     "PayInBankAccountName": "ชื่อบริษัท",
-    "PayInPromptPayId": null
+    "PayInPromptPayId": null,
+    "SlipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
   }
 }
 ```
@@ -86,6 +87,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `SessionId` | ใช้เชื่อมต่อ WebSocket เพื่อรับสถานะแบบ real-time |
 | `WebsocketPath` | path สำหรับ WebSocket (`/realtime/payment-tx`) |
 | `ExpireAt` | QR Code หมดอายุเมื่อไหร่ |
+| `SlipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ domain ของ merchant portal เองเช่น `https://<merchant-domain>` + `SlipUploadUrl` เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
 
 > แม้ HTTP status code จะเป็น `200` แต่ต้องตรวจสอบ `status` ใน response body ด้วย — ถ้า `"OK"` คือสำเร็จ ถ้าค่าอื่นคือมีข้อผิดพลาด (ดู [การจัดการ Error](/documents/error-handling))
 

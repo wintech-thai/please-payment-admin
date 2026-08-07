@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayOutRequestItem } from '@/lib/api/types'
@@ -92,7 +92,7 @@ function StatusBadge({ status, createdDate, isPartialyPayout }: {
   )
 }
 
-export default function WithdrawRequestPage() {
+function WithdrawRequestPageContent() {
   const { t } = useLang()
   const m = t.payOutRequest
   const router = useRouter()
@@ -507,5 +507,13 @@ export default function WithdrawRequestPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function WithdrawRequestPage() {
+  return (
+    <Suspense>
+      <WithdrawRequestPageContent />
+    </Suspense>
   )
 }

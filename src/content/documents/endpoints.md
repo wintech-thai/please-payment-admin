@@ -103,7 +103,9 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 
 | Field | Type | Required | คำอธิบาย |
 |---|---|---|---|
-| `RefId` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
+| `RefId1` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
+| `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
+| `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0) |
 | `QrProvider` | string | ✅ | ต้องเป็น `PP` (PromptPay เท่านั้น สำหรับ Pay-Out) |
 | `BankCode` | string | ❌ | รหัสธนาคารปลายทาง เช่น `SCB`, `KBANK`, `BAY` |
@@ -120,7 +122,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 
 ```json
 {
-  "RefId": "PAYOUT-20260701-001",
+  "RefId1": "PAYOUT-20260701-001",
   "RequestedAmount": 500,
   "QrProvider": "PP",
   "BankCode": "KBANK",
@@ -134,7 +136,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 
 ```json
 {
-  "RefId": "PAYOUT-20260701-002",
+  "RefId1": "PAYOUT-20260701-002",
   "RequestedAmount": 200,
   "QrProvider": "PP",
   "PromptPayId": "0812345678",

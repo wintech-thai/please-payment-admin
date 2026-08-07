@@ -180,7 +180,7 @@ export default function CreatePayOutRequestPage() {
       })
       setIsDirty(false)
       toast.success(m.toastCreateSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push('/business-setup/payment/withdraw-request?refresh=1')
     } catch (err: any) {
       toast.error(err?.message ?? m.toastCreateFailed)
     } finally {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayOutRequestItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
@@ -96,6 +96,7 @@ export default function WithdrawRequestPage() {
   const { t } = useLang()
   const m = t.payOutRequest
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [search, setSearch] = useState<string>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
@@ -154,7 +155,12 @@ export default function WithdrawRequestPage() {
     }
   }, [m.failedToLoad])
 
-  useEffect(() => { load(1, itemsPerPage, timeRange, search, statusFilter) }, [])
+  useEffect(() => {
+    load(1, itemsPerPage, timeRange, search, statusFilter)
+    if (searchParams.get('refresh') === '1') {
+      router.replace('/business-setup/payment/withdraw-request')
+    }
+  }, [])
 
   const handleRefresh = () => {
     setPage(1)

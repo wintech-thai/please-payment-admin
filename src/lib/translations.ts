@@ -1104,6 +1104,11 @@ export const translations = {
       fieldJobParamName: 'ชื่อ',
       fieldJobParamValue: 'ค่า',
       noJobData: 'ไม่มีข้อมูล Job',
+      slipLinkTitle: 'Slip Upload Link',
+      slipLinkDesc: 'ลิงก์นี้ใช้สำหรับให้ลูกค้าอัปโหลดสลิปโอนเงิน (หมดอายุใน 24 ชั่วโมง)',
+      slipLinkLoading: 'กำลังสร้างลิงก์...',
+      slipLinkError: 'ไม่สามารถสร้างลิงก์ได้',
+      slipLinkOpen: 'เปิดหน้าอัปโหลด',
     },
     payInTx: {
       title: 'Pay-In Transactions',
@@ -3267,6 +3272,11 @@ export const translations = {
       fieldJobParamName: 'Name',
       fieldJobParamValue: 'Value',
       noJobData: 'No job data',
+      slipLinkTitle: 'Slip Upload Link',
+      slipLinkDesc: 'This link is for customers to upload payment slips (expires in 24 hours)',
+      slipLinkLoading: 'Generating link...',
+      slipLinkError: 'Could not generate link',
+      slipLinkOpen: 'Open upload page',
     },
     payInTx: {
       title: 'Pay-In Transactions',

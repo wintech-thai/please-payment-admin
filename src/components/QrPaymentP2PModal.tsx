@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getMerchantBase } from '@/lib/merchant-url'
 import QRCode from 'react-qr-code'
-import { X, QrCode, Loader2, RefreshCw } from 'lucide-react'
+import { X, QrCode, Loader2, RefreshCw, Link2, Copy, Check, ExternalLink } from 'lucide-react'
 import { merchantApi } from '@/lib/api/merchant.api'
 import type { PaymentRequestResponse } from '@/lib/api/types'
 import { toast } from 'sonner'
@@ -12,6 +13,7 @@ import { useLang } from '@/context/LanguageContext'
 interface Props {
   merchantId: string
   merchantName?: string
+  orgId?: string | null
   onClose: () => void
 }
 
@@ -28,7 +30,7 @@ function generateRefId(): string {
   )
 }
 
-export default function QrPaymentP2PModal({ merchantId, merchantName, onClose }: Props) {
+export default function QrPaymentP2PModal({ merchantId, merchantName, orgId, onClose }: Props) {
   const { t } = useLang()
   const m = t.merchant
   const a = t.admin
@@ -41,6 +43,11 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, onClose }:
 
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<PaymentRequestResponse | null>(null)
+
+  // Slip upload link
+  const [slipUrl, setSlipUrl] = useState<string | null>(null)
+  const [slipUrlLoading, setSlipUrlLoading] = useState(false)
+  const [slipUrlCopied, setSlipUrlCopied] = useState(false)
 
   const validate = () => {
     const e: Record<string, string> = {}
@@ -72,6 +79,12 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, onClose }:
     }
   }
 
+  useEffect(() => {
+    if (!result) return
+    const rel = result.slipUploadUrl ?? null
+    setSlipUrl(rel ? `${getMerchantBase()}${rel}` : null)
+  }, [result])
+
   const handleReset = () => {
     setResult(null)
     setAmount('')
@@ -79,6 +92,8 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, onClose }:
     setRef2('')
     setRef3('')
     setErrors({})
+    setSlipUrl(null)
+    setSlipUrlCopied(false)
   }
 
   return (
@@ -168,6 +183,46 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, onClose }:
                 </div>
               </div>
             </div>
+
+            {/* Slip Upload Link — แสดงหลัง generate QR */}
+            {result && orgId && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+                <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                  <Link2 className="w-3.5 h-3.5" />
+                  ลิงก์อัปโหลดสลิป
+                </p>
+                {slipUrlLoading ? (
+                  <div className="flex items-center justify-center py-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                  </div>
+                ) : slipUrl ? (
+                  <div className="flex gap-3 items-start">
+                    <div className="bg-white p-2 rounded-xl border border-amber-200 flex-shrink-0">
+                      <QRCode value={slipUrl} size={96} fgColor="#92400e" />
+                    </div>
+                    <div className="flex flex-col gap-2 flex-1 min-w-0">
+                      <p className="text-[10px] text-gray-500 break-all leading-relaxed">{slipUrl}</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(slipUrl); setSlipUrlCopied(true); setTimeout(() => setSlipUrlCopied(false), 2000) }}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-amber-700 bg-white border border-amber-300 rounded-lg hover:bg-amber-50 transition-colors"
+                        >
+                          {slipUrlCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          {slipUrlCopied ? 'Copied!' : 'Copy'}
+                        </button>
+                        <a href={slipUrl} target="_blank" rel="noopener noreferrer"
+                           className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-amber-700 bg-white border border-amber-300 rounded-lg hover:bg-amber-50 transition-colors">
+                          <ExternalLink className="w-3 h-3" />
+                          Open
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-amber-500">ไม่สามารถโหลด link ได้</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* QR Result — right column */}
@@ -190,9 +245,7 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, onClose }:
                   ฿{result.generatedAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                 </p>
               )}
-              <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-primary-100 text-primary-700 ring-1 ring-primary-200">
-                P2P
-              </span>
+              <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-primary-100 text-primary-700 ring-1 ring-primary-200">P2P</span>
             </div>
           )}
         </div>

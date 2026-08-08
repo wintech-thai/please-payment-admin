@@ -1109,6 +1109,9 @@ export const translations = {
       slipLinkLoading: 'กำลังสร้างลิงก์...',
       slipLinkError: 'ไม่สามารถสร้างลิงก์ได้',
       slipLinkOpen: 'เปิดหน้าอัปโหลด',
+      slipViewBtn: 'สลิป',
+      slipViewerTitle: 'สลิปที่อัปโหลด',
+      confirmApproveDesc: 'กรุณาตรวจสอบข้อมูลก่อนยืนยัน',
     },
     payInTx: {
       title: 'Pay-In Transactions',
@@ -3277,6 +3280,9 @@ export const translations = {
       slipLinkLoading: 'Generating link...',
       slipLinkError: 'Could not generate link',
       slipLinkOpen: 'Open upload page',
+      slipViewBtn: 'Slips',
+      slipViewerTitle: 'Uploaded Slips',
+      confirmApproveDesc: 'Please verify the details before approving.',
     },
     payInTx: {
       title: 'Pay-In Transactions',

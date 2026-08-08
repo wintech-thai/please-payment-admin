@@ -164,29 +164,22 @@ function RawJsonModal({ data, onClose }: { data: unknown; onClose: () => void })
 
 // ── Slip Viewer Modal ─────────────────────────────────────────────────────────
 
-function ApproveFromSlipButton({ paymentRequestId, onDone }: { paymentRequestId: string; onDone: () => void }) {
-  const [loading, setLoading] = useState(false)
-  const handle = async () => {
-    setLoading(true)
-    try {
-      await paymentRequestApi.createPaymentTxByPayInRequestId(paymentRequestId)
-      toast.success('Approved successfully')
-      onDone()
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Approve failed')
-    } finally {
-      setLoading(false)
-    }
-  }
+type ConfirmData = {
+  merchantCode?: string | null
+  merchantName?: string | null
+  payinBankCode?: string | null
+  payinBankAccountNo?: string | null
+  generatedAmount?: number | null
+  currency?: string | null
+  refId1?: string | null
+}
+
+function ConfirmRow({ label, value }: { label: string; value: string }) {
   return (
-    <button
-      type="button"
-      onClick={handle}
-      disabled={loading}
-      className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
-    >
-      {loading ? '...' : 'Approve'}
-    </button>
+    <div className="flex items-start justify-between gap-4 py-2.5 border-b border-gray-100 last:border-0">
+      <span className="text-xs text-gray-500 shrink-0 pt-0.5">{label}</span>
+      <span className="text-sm font-semibold text-gray-900 text-right">{value || '—'}</span>
+    </div>
   )
 }
 
@@ -194,17 +187,44 @@ function SlipViewerModal({
   slips,
   isPending,
   paymentRequestId,
+  confirmData,
   onClose,
   onApproved,
 }: {
   slips: Array<{ imageBase64: string; uploadedAt: string }>
   isPending: boolean
   paymentRequestId: string
+  confirmData?: ConfirmData
   onClose: () => void
   onApproved: () => void
 }) {
+  const { t } = useLang()
+  const m = t.payInRequest
   const [idx, setIdx] = useState(0)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [approving, setApproving] = useState(false)
   const slip = slips[idx]
+
+  const handleApprove = async () => {
+    setApproving(true)
+    try {
+      await paymentRequestApi.createPaymentTxByPayInRequestId(paymentRequestId)
+      toast.success(m.toastApproveSuccess)
+      setShowConfirm(false)
+      onClose()
+      onApproved()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.toastApproveFailed)
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  const accountNo = [confirmData?.payinBankCode, confirmData?.payinBankAccountNo].filter(Boolean).join(' · ') || '—'
+  const amountDisplay = confirmData?.generatedAmount != null
+    ? `${formatAmount(confirmData.generatedAmount)} ${confirmData.currency ?? ''}`.trim()
+    : '—'
+  const merchantDisplay = [confirmData?.merchantCode, confirmData?.merchantName].filter(Boolean).join(' ') || '—'
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/90" onClick={onClose}>
@@ -212,7 +232,7 @@ function SlipViewerModal({
       <div className="flex-none flex items-center justify-between px-5 py-3" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3">
           <span className="text-white text-sm font-semibold">
-            สลิปที่อัปโหลด ({idx + 1} / {slips.length})
+            {m.slipViewerTitle} ({idx + 1} / {slips.length})
           </span>
           {slip?.uploadedAt && (
             <span className="text-white/60 text-xs">
@@ -222,10 +242,13 @@ function SlipViewerModal({
         </div>
         <div className="flex items-center gap-3">
           {isPending && (
-            <ApproveFromSlipButton
-              paymentRequestId={paymentRequestId}
-              onDone={() => { onClose(); onApproved() }}
-            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(true)}
+              className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              {m.btnApprove}
+            </button>
           )}
           <button
             onClick={onClose}
@@ -262,6 +285,45 @@ function SlipViewerModal({
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Confirm Approve dialog */}
+      {showConfirm && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/60"
+          onClick={() => !approving && setShowConfirm(false)}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-[360px] max-w-[90vw] p-6" onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-gray-900 mb-1">{m.modalApproveTitle}</h2>
+            <p className="text-sm text-gray-400 mb-4">{m.confirmApproveDesc}</p>
+
+            <div className="mb-6">
+              <ConfirmRow label={m.fieldMerchant} value={merchantDisplay} />
+              <ConfirmRow label={m.fieldAccountNo} value={accountNo} />
+              <ConfirmRow label={m.fieldAmount} value={amountDisplay} />
+              <ConfirmRow label={m.fieldRefId} value={confirmData?.refId1 ?? '—'} />
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                disabled={approving}
+                className="px-5 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-60 rounded-xl transition-colors"
+              >
+                {m.btnCancel}
+              </button>
+              <button
+                type="button"
+                onClick={handleApprove}
+                disabled={approving}
+                className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
+              >
+                {approving ? '...' : m.btnApprove}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -483,7 +545,7 @@ export default function PayInRequestDetailPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors disabled:opacity-50"
             >
               <Paperclip className="w-3.5 h-3.5" />
-              สลิป
+              {m.slipViewBtn}
               {slips.length > 0 && (
                 <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-200 text-blue-800">{slips.length}</span>
               )}
@@ -514,6 +576,15 @@ export default function PayInRequestDetailPage() {
           slips={slips}
           isPending={isPending}
           paymentRequestId={id}
+          confirmData={detail ? {
+            merchantCode: detail.merchantCode,
+            merchantName: detail.merchantName,
+            payinBankCode: detail.payinBankCode,
+            payinBankAccountNo: detail.payinBankAccountNo,
+            generatedAmount: detail.generatedAmount,
+            currency: detail.currency,
+            refId1: detail.refId1,
+          } : undefined}
           onClose={() => setShowSlipViewer(false)}
           onApproved={() => { setShowSlipViewer(false); window.location.reload() }}
         />

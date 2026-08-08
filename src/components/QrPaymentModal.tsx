@@ -385,7 +385,7 @@ export default function QrPaymentModal({ merchantId, merchantName, orgId, onClos
                   <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
                     <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5 mb-3">
                       <Link2 className="w-3.5 h-3.5" />
-                      ลิงก์อัปโหลดสลิป
+                      {t.payInRequest.slipLinkTitle}
                     </p>
                     {slipUrlLoading ? (
                       <div className="flex items-center justify-center py-2">

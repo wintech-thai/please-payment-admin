@@ -45,6 +45,12 @@ export const paymentRequestApi = {
   getPaymentRequestJobById: (pmtId: string, jobId: string) =>
     client.get<PaymentTxJob>(`${BASE}/GetPaymentRequestJobById/${pmtId}/${jobId}`),
 
+  getPayInSlipUploads: (_orgId: string, paymentRequestId: string) =>
+    client.get(`/admin-api/AdminPaymentRequest/org/global/action/GetPayInSlipUpload/${paymentRequestId}`),
+
+  generatePayInSlipUploadToken: (_orgId: string, paymentRequestId: string) =>
+    client.get(`/admin-api/AdminPaymentRequest/org/global/action/GeneratePayInSlipUploadToken/${paymentRequestId}`),
+
   // ── Pay-Out ───────────────────────────────────────────────────────────────
   createPayOutRequest: (payload: CreatePayOutRequestPayload) =>
     client.post(`${BASE}/CreatePayOutRequest`, payload),

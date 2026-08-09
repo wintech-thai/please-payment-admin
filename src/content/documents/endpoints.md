@@ -23,11 +23,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | Field | Type | Required | คำอธิบาย |
 |---|---|---|---|
 | `RefId1` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
+| `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
+| `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0 และอยู่ใน range ที่ Merchant กำหนด) |
 | `Currency` | string | ✅ | สกุลเงิน — ปัจจุบันรองรับเฉพาะ `THB` |
 | `QrProvider` | string | ✅ | ธนาคารที่ออก QR — `PP` (PromptPay) หรือ `SCB` |
-| `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
-| `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `Description` | string | ❌ | คำอธิบายรายการ |
 | `CustomerEmail` | string | ❌ | อีเมลของลูกค้า |
 | `CustomerPhone` | string | ❌ | เบอร์โทรของลูกค้า |
@@ -69,7 +69,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
     "PayInBankCode": "SCB",
     "PayInBankAccountNo": "xxx-xxxxx-x",
     "PayInBankAccountName": "ชื่อบริษัท",
-    "PayInPromptPayId": null
+    "PayInPromptPayId": null,
+    "SlipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
   }
 }
 ```
@@ -86,6 +87,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `SessionId` | ใช้เชื่อมต่อ WebSocket เพื่อรับสถานะแบบ real-time |
 | `WebsocketPath` | path สำหรับ WebSocket (`/realtime/payment-tx`) |
 | `ExpireAt` | QR Code หมดอายุเมื่อไหร่ |
+| `SlipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ domain ของ merchant portal เองเช่น `https://<merchant-domain>` + `SlipUploadUrl` เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
 
 > แม้ HTTP status code จะเป็น `200` แต่ต้องตรวจสอบ `status` ใน response body ด้วย — ถ้า `"OK"` คือสำเร็จ ถ้าค่าอื่นคือมีข้อผิดพลาด (ดู [การจัดการ Error](/documents/error-handling))
 
@@ -103,7 +105,9 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 
 | Field | Type | Required | คำอธิบาย |
 |---|---|---|---|
-| `RefId` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
+| `RefId1` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
+| `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
+| `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0) |
 | `QrProvider` | string | ✅ | ต้องเป็น `PP` (PromptPay เท่านั้น สำหรับ Pay-Out) |
 | `BankCode` | string | ❌ | รหัสธนาคารปลายทาง เช่น `SCB`, `KBANK`, `BAY` |
@@ -120,7 +124,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 
 ```json
 {
-  "RefId": "PAYOUT-20260701-001",
+  "RefId1": "PAYOUT-20260701-001",
   "RequestedAmount": 500,
   "QrProvider": "PP",
   "BankCode": "KBANK",
@@ -134,7 +138,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 
 ```json
 {
-  "RefId": "PAYOUT-20260701-002",
+  "RefId1": "PAYOUT-20260701-002",
   "RequestedAmount": 200,
   "QrProvider": "PP",
   "PromptPayId": "0812345678",

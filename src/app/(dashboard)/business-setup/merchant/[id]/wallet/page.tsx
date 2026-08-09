@@ -46,7 +46,8 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 
 function TagsCell({ tags }: { tags?: string | null }) {
   if (!tags) return <span className="text-gray-400">—</span>
-  const parts = tags.split(',').map(p => p.trim()).filter(Boolean)
+  const refId1 = tags.match(/RefId1=\[([^\]]+)\]/i)?.[1] ?? null
+  const parts = tags.split(',').map(p => p.trim()).filter(p => p && !/^RefId1=/i.test(p))
   return (
     <div className="flex flex-col gap-1">
       {parts.map((part, i) => {
@@ -63,7 +64,7 @@ function TagsCell({ tags }: { tags?: string | null }) {
               onClick={e => e.stopPropagation()}
               className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
             >
-              <span className="truncate max-w-[160px]">{uuid}</span>
+              <span className="truncate max-w-[160px]">{refId1 ?? uuid}</span>
               <ExternalLink className="w-3 h-3 flex-shrink-0" />
             </a>
           )
@@ -82,7 +83,7 @@ function TagsCell({ tags }: { tags?: string | null }) {
               onClick={e => e.stopPropagation()}
               className="inline-flex items-center gap-1 text-xs text-amber-600 hover:underline"
             >
-              <span className="truncate max-w-[160px]">{uuid}</span>
+              <span className="truncate max-w-[160px]">{refId1 ?? uuid}</span>
               <ExternalLink className="w-3 h-3 flex-shrink-0" />
             </a>
           )

@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { getMerchantBase } from '@/lib/merchant-url'
 import { useRouter } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayInRequestItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, MoreVertical, X, ChevronDown } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, MoreVertical, X, ChevronDown, Paperclip, Link2, Copy, Check } from 'lucide-react'
 import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
@@ -128,6 +129,100 @@ function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToP
         {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-amber-50 text-amber-700 ring-amber-200">P2P</span>}
       </div>
       {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
+    </div>
+  )
+}
+
+// ── Slip Upload Link Modal ─────────────────────────────────────────────────
+
+function SlipUploadLinkModal({ item, onClose }: { item: PayInRequestItem; onClose: () => void }) {
+  const { t } = useLang()
+  const m = t.payInRequest
+  const [url, setUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const orgId = item.orgId
+        if (!orgId) {
+          // Fallback: fetch detail to get orgId
+          const res = await paymentRequestApi.getPaymentRequestById(item.id)
+          const d = (res.data as any)
+          const detail = d?.paymentRequest ?? d
+          const oid = detail?.orgId
+          if (!oid) throw new Error('orgId not found')
+          const tokenRes = await paymentRequestApi.generatePayInSlipUploadToken(oid, item.id)
+          const td = (tokenRes.data as any)
+          const relUrl = td?.slipUploadUrl ?? td?.SlipUploadUrl
+          if (!relUrl) throw new Error('URL not returned')
+          setUrl(`${getMerchantBase()}${relUrl}`)
+        } else {
+          const tokenRes = await paymentRequestApi.generatePayInSlipUploadToken(orgId, item.id)
+          const td = (tokenRes.data as any)
+          const relUrl = td?.slipUploadUrl ?? td?.SlipUploadUrl
+          if (!relUrl) throw new Error('URL not returned')
+          setUrl(`${getMerchantBase()}${relUrl}`)
+        }
+      } catch {
+        setErrorMsg(m.slipLinkError)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [item])
+
+  const handleCopy = () => {
+    if (!url) return
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-primary-600" />
+            <h3 className="text-base font-bold text-gray-900">{m.slipLinkTitle}</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="px-6 py-5">
+          {loading ? (
+            <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
+              <svg className="w-5 h-5 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">{m.slipLinkLoading}</span>
+            </div>
+          ) : errorMsg ? (
+            <p className="text-sm text-red-500 text-center py-4">{errorMsg}</p>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-500">{m.slipLinkDesc}</p>
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                <span className="flex-1 text-xs text-gray-700 font-mono break-all">{url}</span>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded transition-colors"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -377,10 +472,12 @@ function ActionMenu({
   item,
   onApprove,
   onReject,
+  onSlipLink,
 }: {
   item: PayInRequestItem
   onApprove: () => void
   onReject: () => void
+  onSlipLink: () => void
 }) {
   const { t } = useLang()
   const m = t.payInRequest
@@ -434,6 +531,14 @@ function ActionMenu({
           >
             {m.menuReject}
           </button>
+          <button
+            type="button"
+            disabled={!isPending}
+            onClick={() => { setOpen(false); onSlipLink() }}
+            className="w-full px-3 py-2 text-left text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Slip Upload Link
+          </button>
         </div>
       )}
     </div>
@@ -463,6 +568,7 @@ export default function PayInRequestsPage() {
   const [loading, setLoading] = useState(false)
   const [approveTarget, setApproveTarget] = useState<PayInRequestItem | null>(null)
   const [rejectTarget, setRejectTarget] = useState<PayInRequestItem | null>(null)
+  const [slipLinkTarget, setSlipLinkTarget] = useState<PayInRequestItem | null>(null)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
@@ -718,13 +824,21 @@ export default function PayInRequestsPage() {
                       </td>
 
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <StatusBadge
-                          status={item.status}
-                          createdDate={item.createdDate}
-                          paymentTxId={item.paymentTxId}
-                          statusReason={item.statusReason}
-                          isPeerToPeer={item.payinIsPeerToPeer}
-                        />
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <StatusBadge
+                            status={item.status}
+                            createdDate={item.createdDate}
+                            paymentTxId={item.paymentTxId}
+                            statusReason={item.statusReason}
+                            isPeerToPeer={item.payinIsPeerToPeer}
+                          />
+                          {(item.payInSlipUploadCount ?? 0) > 0 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200">
+                              <Paperclip className="w-3 h-3" />
+                              {item.payInSlipUploadCount}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* REF */}
@@ -743,6 +857,7 @@ export default function PayInRequestsPage() {
                           item={item}
                           onApprove={() => setApproveTarget(item)}
                           onReject={() => setRejectTarget(item)}
+                          onSlipLink={() => setSlipLinkTarget(item)}
                         />
                       </td>
                     </tr>
@@ -810,6 +925,13 @@ export default function PayInRequestsPage() {
           item={rejectTarget}
           onSuccess={handleRefresh}
           onClose={() => setRejectTarget(null)}
+        />
+      )}
+
+      {slipLinkTarget && (
+        <SlipUploadLinkModal
+          item={slipLinkTarget}
+          onClose={() => setSlipLinkTarget(null)}
         />
       )}
     </div>

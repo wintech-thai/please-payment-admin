@@ -329,6 +329,7 @@ export default function PayOutRequestDetailPage() {
   const [bankErrors, setBankErrors] = useState<Record<string, string>>({})
   const [sourceTab, setSourceTab] = useState<'PayIn' | 'Transit'>('PayIn')
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const bankSectionRef = useRef<HTMLDivElement>(null)
 
   // UI state
   const [loading, setLoading] = useState(true)
@@ -431,6 +432,8 @@ export default function PayOutRequestDetailPage() {
   const validateBankSelection = () => {
     if (!selectedAccountId) {
       setBankErrors({ account: m.sourceAccountRequired })
+      toast.error(m.sourceAccountRequired)
+      bankSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return false
     }
     setBankErrors({})
@@ -719,7 +722,7 @@ export default function PayOutRequestDetailPage() {
         </div>
 
         {/* ── Section 2: Source Bank Account ── */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+        <div ref={bankSectionRef} className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{m.sectionSource}</SectionHeader>
 
           {!isPending ? (

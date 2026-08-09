@@ -199,6 +199,7 @@ function MerchantContent() {
         <QrPaymentModal
           merchantId={qrMerchant.id}
           merchantName={qrMerchant.name ?? qrMerchant.code ?? undefined}
+          orgId={qrMerchant.orgId}
           onClose={() => setQrMerchant(null)}
         />
       )}
@@ -206,6 +207,7 @@ function MerchantContent() {
         <QrPaymentP2PModal
           merchantId={qrP2PMerchant.id}
           merchantName={qrP2PMerchant.name ?? qrP2PMerchant.code ?? undefined}
+          orgId={qrP2PMerchant.orgId}
           onClose={() => setQrP2PMerchant(null)}
         />
       )}

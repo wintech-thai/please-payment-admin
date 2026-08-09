@@ -50,9 +50,9 @@ title: Webhooks
     { "Name": "PAYMENT_TYPE",            "Value": "PayIn" },
     { "Name": "ORG_ID",                  "Value": "org-id" },
     { "Name": "PMR_ID",                  "Value": "payment-request-uuid" },
-    { "Name": "PMR_REF_ID",              "Value": "ORDER-20260701-001" },
-    { "Name": "PMR_REF_ID1",             "Value": "CUST-12345" },
-    { "Name": "PMR_REF_ID2",             "Value": null },
+    { "Name": "PMR_REF_ID1",             "Value": "ORDER-20260701-001" },
+    { "Name": "PMR_REF_ID2",             "Value": "CUST-12345" },
+    { "Name": "PMR_REF_ID3",             "Value": null },
     { "Name": "MERCHANT_ID",             "Value": "merchant-uuid" },
     { "Name": "MERCHANT_CODE",           "Value": "merchant-code" },
     { "Name": "MERCHANT_NAME",           "Value": "ชื่อร้านค้า" },
@@ -73,7 +73,9 @@ title: Webhooks
 | `EVENT_TYPE` | `PaymentIn.Success` |
 | `STATUS_CODE` | `OK` |
 | `PAYMENT_TYPE` | `PayIn` |
-| `PMR_REF_ID` | Reference ID ที่ Merchant ส่งมาตั้งแต่ตอนสร้าง Payment Request — ใช้สำหรับ mapping กับ order ในระบบของ Merchant |
+| `PMR_REF_ID1` | Ref 1 — Reference ID ที่ Merchant ส่งมาตอนสร้าง Payment Request ใช้สำหรับ mapping กับ order ในระบบของ Merchant |
+| `PMR_REF_ID2` | Ref 2 — optional reference ที่ Merchant กำหนด |
+| `PMR_REF_ID3` | Ref 3 — optional reference ที่ Merchant กำหนด |
 | `PMR_ID` | UUID ของ Payment Request ในระบบ Please Payment |
 | `PAYIN_REQUEST_AMOUNT` | จำนวนเงินที่ขอตั้งต้น |
 | `PAYIN_GENERATED_AMOUNT` | จำนวนเงินที่รับจริง (อาจมีเศษสตางค์ต่างกัน) |
@@ -93,9 +95,9 @@ title: Webhooks
     { "Name": "PAYMENT_TYPE",            "Value": "PayIn" },
     { "Name": "ORG_ID",                  "Value": "org-id" },
     { "Name": "PMR_ID",                  "Value": "payment-request-uuid" },
-    { "Name": "PMR_REF_ID",              "Value": "ORDER-20260701-001" },
-    { "Name": "PMR_REF_ID1",             "Value": "CUST-12345" },
-    { "Name": "PMR_REF_ID2",             "Value": null },
+    { "Name": "PMR_REF_ID1",             "Value": "ORDER-20260701-001" },
+    { "Name": "PMR_REF_ID2",             "Value": "CUST-12345" },
+    { "Name": "PMR_REF_ID3",             "Value": null },
     { "Name": "MERCHANT_ID",             "Value": "merchant-uuid" },
     { "Name": "MERCHANT_CODE",           "Value": "merchant-code" },
     { "Name": "MERCHANT_NAME",           "Value": "ชื่อร้านค้า" },
@@ -223,7 +225,7 @@ def handle_webhook():
 
     # แปลง Parameters array เป็น dict
     params = {p['Name']: p['Value'] for p in data.get('Parameters', [])}
-    ref_id = params.get('PMR_REF_ID')
+    ref_id = params.get('PMR_REF_ID1')
 
     status_code = params.get('STATUS_CODE')
     payment_type = params.get('PAYMENT_TYPE')
@@ -253,7 +255,7 @@ def handle_webhook():
 app.post('/webhooks/payment', express.json(), (req, res) => {
   const { Type, Parameters } = req.body
   const params = Object.fromEntries(Parameters.map(p => [p.Name, p.Value]))
-  const refId = params.PMR_REF_ID
+  const refId = params.PMR_REF_ID1
 
   if (Type === 'PaymentIn.Success') {
     updateOrderStatus(refId, 'paid_in', params.PAYIN_REQUEST_AMOUNT)
@@ -273,4 +275,4 @@ app.post('/webhooks/payment', express.json(), (req, res) => {
 
 - ตอบกลับด้วย HTTP `200` เพื่อยืนยันว่าได้รับ webhook แล้ว
 - ระบบยังไม่มี retry policy — หาก webhook ล้มเหลว ข้อมูลจะไม่ถูกส่งซ้ำ
-- ระบบยังไม่มี signature verification — แนะนำให้ตรวจสอบ `PMR_REF_ID` ว่าตรงกับ order ในระบบก่อนทำรายการ
+- ระบบยังไม่มี signature verification — แนะนำให้ตรวจสอบ `PMR_REF_ID1` ว่าตรงกับ order ในระบบก่อนทำรายการ

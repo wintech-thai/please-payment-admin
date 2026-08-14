@@ -278,6 +278,12 @@ function BackupContent() {
   const [showPolicy, setShowPolicy] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [triggering, setTriggering] = useState(false)
+  const [showRestore, setShowRestore] = useState(false)
+  const [restoreFiles, setRestoreFiles] = useState<any[]>([])
+  const [restoreFilesLoading, setRestoreFilesLoading] = useState(false)
+  const [restoreSelected, setRestoreSelected] = useState<any>(null)
+  const [restoreConfirmText, setRestoreConfirmText] = useState('')
+  const [restoring, setRestoring] = useState(false)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
     const p = searchParams.get('highlight')
     if (p) return p
@@ -321,6 +327,14 @@ function BackupContent() {
   useEffect(() => { fetchData() }, [])
   useEffect(() => { fetchData() }, [page, itemsPerPage])
 
+  // Auto-poll every 4s while any job is Running
+  useEffect(() => {
+    const hasRunning = items.some(item => (item.status ?? item.Status ?? '').toLowerCase() === 'running')
+    if (!hasRunning) return
+    const id = setInterval(() => fetchData(page), 4000)
+    return () => clearInterval(id)
+  }, [items, page])
+
   const handleTriggerNow = async () => {
     setTriggering(true)
     try {
@@ -331,6 +345,41 @@ function BackupContent() {
       toast.error(m.backupNowFailed)
     } finally {
       setTriggering(false)
+    }
+  }
+
+  const handleOpenRestore = async () => {
+    setRestoreSelected(null)
+    setRestoreConfirmText('')
+    setRestoreFiles([])
+    setShowRestore(true)
+    setRestoreFilesLoading(true)
+    try {
+      const res = await backupApi.listFiles()
+      setRestoreFiles(Array.isArray(res.data) ? res.data : [])
+    } catch {
+      toast.error(m.restoreFailed)
+    } finally {
+      setRestoreFilesLoading(false)
+    }
+  }
+
+  const handleTriggerRestore = async () => {
+    if (!restoreSelected) return
+    setRestoring(true)
+    try {
+      await backupApi.triggerRestore({
+        Filename: restoreSelected.filename,
+        Bucket:   restoreSelected.bucket ?? '',
+        Folder:   restoreSelected.folder ?? '',
+      })
+      toast.success(m.restoreSuccess)
+      setShowRestore(false)
+      fetchData(1)
+    } catch {
+      toast.error(m.restoreFailed)
+    } finally {
+      setRestoring(false)
     }
   }
 
@@ -355,7 +404,7 @@ function BackupContent() {
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
-  const cols = [m.colDate, m.colName, m.colDescription, m.colTags, m.colType, m.colStatus]
+  const cols = [m.colDate, m.colName, m.colDescription, m.colTags, m.colType, m.colStatus, m.colFile]
 
   return (
     <>
@@ -400,6 +449,95 @@ function BackupContent() {
         </div>
       )}
 
+      {/* Restore Modal */}
+      {showRestore && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowRestore(false)}>
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">{m.restoreModalTitle}</h3>
+                  <p className="text-xs text-red-600 font-medium mt-0.5">{m.restoreModalDesc}</p>
+                </div>
+              </div>
+
+              {/* File list */}
+              <div className="mt-4 mb-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{m.restoreSelectFile}</p>
+                {restoreFilesLoading ? (
+                  <div className="flex items-center justify-center py-8 text-sm text-gray-400 gap-2">
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    {m.restoreLoadingFiles}
+                  </div>
+                ) : restoreFiles.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6">{m.restoreNoFiles}</p>
+                ) : (
+                  <div className="max-h-52 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
+                    {restoreFiles.map((f, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setRestoreSelected(f)}
+                        className={clsx(
+                          'w-full text-left px-3 py-2.5 flex items-center gap-3 text-sm transition-colors',
+                          restoreSelected?.key === f.key
+                            ? 'bg-primary-50 text-primary-700'
+                            : 'hover:bg-gray-50 text-gray-800'
+                        )}
+                      >
+                        <span className={clsx('w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 transition-colors',
+                          restoreSelected?.key === f.key ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-700 truncate">{f.filename}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            {f.lastModified ? new Date(f.lastModified).toLocaleString('th-TH') : ''}{' '}
+                            {f.size ? `· ${(f.size / 1024 / 1024).toFixed(1)} MB` : ''}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm input */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">{m.restoreConfirmLabel}</label>
+                <input
+                  type="text"
+                  value={restoreConfirmText}
+                  onChange={e => setRestoreConfirmText(e.target.value)}
+                  placeholder={m.restoreConfirmPlaceholder}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-2 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => setShowRestore(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {m.confirmCancel}
+              </button>
+              <button
+                onClick={handleTriggerRestore}
+                disabled={!restoreSelected || restoreConfirmText !== 'restore' || restoring}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+              >
+                {restoring
+                  ? <svg className="w-4 h-4 animate-spin inline" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                  : m.restoreConfirmBtn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
         {/* Header */}
         <div className="flex-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -408,6 +546,15 @@ function BackupContent() {
             <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenRestore}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+              {m.restoreBtn}
+            </button>
             <button
               onClick={() => setShowConfirm(true)}
               disabled={triggering}
@@ -555,6 +702,15 @@ function BackupContent() {
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={item.status ?? item.Status} />
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-100 max-w-[200px]">
+                          {(() => {
+                            try {
+                              const meta = JSON.parse(item.metadata ?? item.Metadata ?? 'null')
+                              if (!meta?.filename) return <span className="text-gray-400">—</span>
+                              return <span className="text-sm text-gray-600 truncate block">{meta.filename}</span>
+                            } catch { return <span className="text-gray-400">—</span> }
+                          })()}
                         </td>
                       </tr>
                     )

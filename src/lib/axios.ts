@@ -144,11 +144,6 @@ client.interceptors.response.use(
     // Only treat as an API envelope when status is a known short code.
     // Job / task responses carry their own status field ("Done", "Processing", etc.)
     // and must NOT be intercepted here.
-    const API_ENVELOPE_STATUSES = new Set([
-      'OK', 'SUCCESS', 'ERROR', 'FAILED', 'UNAUTHORIZED',
-      'FORBIDDEN', 'NOT_FOUND', 'VALIDATION_ERROR', 'BAD_REQUEST',
-      'INTERNAL_SERVER_ERROR',
-    ])
     const statusUpper = typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : ''
 
     // Screaming-snake-case strings (e.g. ACCOUNT_NUMBER_DUPLICATE, ERROR_TOKEN_EXPIRED)
@@ -158,7 +153,6 @@ client.interceptors.response.use(
 
     const isEnvelopeStatus =
       isScreamingCase ||
-      API_ENVELOPE_STATUSES.has(statusUpper) ||
       statusUpper.startsWith('ERROR_') ||
       statusUpper.startsWith('FAILED_')
 

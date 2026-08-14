@@ -124,6 +124,13 @@ export default function BackupJobDetailPage() {
   const tags: string = data?.tags ?? data?.Tags ?? ''
   const typeColor = getTypeColor(type)
 
+  const getMetadata = (): { bucket?: string; folder?: string; filename?: string } | null => {
+    const raw = data?.metadata ?? data?.Metadata
+    if (!raw) return null
+    try { return typeof raw === 'string' ? JSON.parse(raw) : raw } catch { return null }
+  }
+  const metadata = getMetadata()
+
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
       {/* Header */}
@@ -168,6 +175,18 @@ export default function BackupJobDetailPage() {
             </InfoRow>
           </div>
         </div>
+
+        {/* Backup File Location */}
+        {metadata && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+            <SectionHeader>Backup File</SectionHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <InfoRow label="Bucket"><span className="text-sm text-gray-800">{metadata.bucket ?? '—'}</span></InfoRow>
+              <InfoRow label="Folder"><span className="text-sm text-gray-800">{metadata.folder || '—'}</span></InfoRow>
+              <InfoRow label="Filename"><span className="text-sm text-gray-800 break-all">{metadata.filename ?? '—'}</span></InfoRow>
+            </div>
+          </div>
+        )}
 
         {/* Job detail */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">

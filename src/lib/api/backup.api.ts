@@ -31,4 +31,10 @@ export const backupApi = {
       IsEnabled: boolean
     }
   }) => client.post(`${BASE}/SetBackupPolicy`, payload),
+
+  listFiles: () =>
+    client.get(`${BASE}/ListBackupFiles`),
+
+  triggerRestore: (payload: { Filename: string; Bucket: string; Folder: string }) =>
+    client.post(`${BASE}/TriggerRestore`, payload),
 }

@@ -18,6 +18,8 @@ const EVENT_TYPE_META: Record<string, { label: string; checkedCls: string; dotCl
   'Payment.Unidentified':               { label: 'Payment Unidentified',    checkedCls: 'border-amber-400 bg-amber-50 text-amber-700',      dotCls: 'bg-amber-400' },
   'Payment.DailyTxAmountLimitExceeded': { label: 'Daily Tx Limit Exceeded', checkedCls: 'border-orange-400 bg-orange-50 text-orange-700',   dotCls: 'bg-orange-400' },
   'Backup.Done':                        { label: 'Backup Done',             checkedCls: 'border-sky-400 bg-sky-50 text-sky-700',            dotCls: 'bg-sky-400' },
+  'Restore.Success':                    { label: 'Restore Success',         checkedCls: 'border-teal-400 bg-teal-50 text-teal-700',         dotCls: 'bg-teal-400' },
+  'Restore.Failed':                     { label: 'Restore Failed',          checkedCls: 'border-rose-400 bg-rose-50 text-rose-700',         dotCls: 'bg-rose-400' },
 }
 
 function CreateNotiChannelContent() {

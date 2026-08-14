@@ -493,7 +493,7 @@ function NotiChannelListContent() {
                       <td className="px-4 py-3 border-b border-gray-100 max-w-[200px]">
                         {eventTypes.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {eventTypes.map(et => {
+                            {eventTypes.slice(0, 3).map(et => {
                               const c = getEventTypeColor(et)
                               return (
                                 <span key={et} className={clsx('inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ring-1', c.bg, c.text, c.ring)}>
@@ -501,6 +501,11 @@ function NotiChannelListContent() {
                                 </span>
                               )
                             })}
+                            {eventTypes.length > 3 && (
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ring-1 bg-gray-100 text-gray-500 ring-gray-200">
+                                +{eventTypes.length - 3}
+                              </span>
+                            )}
                           </div>
                         ) : <span className="text-gray-400">—</span>}
                       </td>

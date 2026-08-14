@@ -327,13 +327,6 @@ function BackupContent() {
   useEffect(() => { fetchData() }, [])
   useEffect(() => { fetchData() }, [page, itemsPerPage])
 
-  // Auto-poll every 4s while any job is Running
-  useEffect(() => {
-    const hasRunning = items.some(item => (item.status ?? item.Status ?? '').toLowerCase() === 'running')
-    if (!hasRunning) return
-    const id = setInterval(() => fetchData(page), 4000)
-    return () => clearInterval(id)
-  }, [items, page])
 
   const handleTriggerNow = async () => {
     setTriggering(true)

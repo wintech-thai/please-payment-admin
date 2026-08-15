@@ -37,4 +37,7 @@ export const backupApi = {
 
   triggerRestore: (payload: { Filename: string; Bucket: string; Folder: string }) =>
     client.post(`${BASE}/TriggerRestore`, payload),
+
+  closeJob: (jobId: string) =>
+    client.post(`${BASE}/CloseBackupJob/${jobId}`, {}),
 }

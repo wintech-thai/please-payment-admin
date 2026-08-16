@@ -180,6 +180,7 @@ export interface MerchantItem {
   payinDailyTxCountLimit?: number | null
   currentPayinDailyTxAmount?: number | null
   currentPayinDailyTxCount?: number | null
+  payinExpireMinute?: number | null
 }
 
 export interface GetMerchantsPayload {

@@ -29,6 +29,7 @@ export default function CreateMerchantPage() {
   const [payOutMax, setPayOutMax] = useState<string>('50000')
   const [discardCent, setDiscardCent] = useState(false)
   const [includeGlobalBankAccount, setIncludeGlobalBankAccount] = useState(true)
+  const [payinExpireMinute, setPayinExpireMinute] = useState<string>('15')
   const [whitelistNames, setWhitelistNames] = useState<string[]>([])
   const [whitelistInput, setWhitelistInput] = useState('')
   const [saving, setSaving] = useState(false)
@@ -51,6 +52,8 @@ export default function CreateMerchantPage() {
     if (payInMax === '' || isNaN(parseFloat(payInMax))) errs.payInMax = m.payInMaxRequired
     if (payOutMin === '' || isNaN(parseFloat(payOutMin))) errs.payOutMin = m.payOutMinRequired
     if (payOutMax === '' || isNaN(parseFloat(payOutMax))) errs.payOutMax = m.payOutMaxRequired
+    const expireVal = parseInt(payinExpireMinute)
+    if (isNaN(expireVal) || expireVal < 5 || expireVal > 60) errs.payinExpireMinute = m.payinExpireMinuteInvalid
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -99,6 +102,7 @@ export default function CreateMerchantPage() {
           PayoutMaxAmount: toNum(payOutMax),
           DiscardCent: discardCent,
           IncludeGlobalBankAccount: includeGlobalBankAccount,
+          PayinExpireMinute: parseInt(payinExpireMinute),
           WhitelistBankAccountNamesArr: whitelistNames,
         },
       })
@@ -247,6 +251,21 @@ export default function CreateMerchantPage() {
                   <p className="text-xs text-gray-400 mt-0.5">{m.fieldIncludeGlobalBankAccountHint}</p>
                 </div>
               </label>
+
+              <div className="sm:col-start-2">
+                <FormField label={m.fieldPayinExpireMinute} error={errors.payinExpireMinute}>
+                  <input
+                    type="number"
+                    min={5}
+                    max={60}
+                    step={1}
+                    value={payinExpireMinute}
+                    onChange={e => { setPayinExpireMinute(e.target.value); mark(); clearErr('payinExpireMinute') }}
+                    className={inputCls(!!errors.payinExpireMinute)}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">{m.hintPayinExpireMinute}</p>
+                </FormField>
+              </div>
             </div>
 
             <div className="border-t border-gray-100 mt-5 pt-5">

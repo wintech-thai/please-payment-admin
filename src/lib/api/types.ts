@@ -214,6 +214,7 @@ export interface AddMerchantPayload {
     WhitelistBankAccountNamesArr?: string[]
     PayinDailyTxAmountLimit?: number | string
     PayinDailyTxCountLimit?: number | string
+    PayinExpireMinute?: number
   }
 }
 

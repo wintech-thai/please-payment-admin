@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { backupApi } from '@/lib/api/backup.api'
 import { toast } from 'sonner'
-import { Search, ChevronLeft, ChevronRight, RefreshCw, Settings, Eye, EyeOff } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, RefreshCw, Settings, Eye, EyeOff, MoreVertical } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
@@ -31,12 +31,15 @@ function StatusBadge({ status }: { status?: string | null }) {
   const isDone = lower === 'done' || lower === 'success'
   const isRunning = lower === 'running'
   const isFailed = lower === 'failed' || lower === 'error'
+  const isClosed = lower === 'closed'
   const cfg = isDone
     ? { bg: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500' }
     : isRunning
     ? { bg: 'bg-blue-50 text-blue-700 ring-blue-200', dot: 'bg-blue-500 animate-pulse' }
     : isFailed
     ? { bg: 'bg-red-50 text-red-700 ring-red-200', dot: 'bg-red-500' }
+    : isClosed
+    ? { bg: 'bg-gray-100 text-gray-500 ring-gray-200', dot: 'bg-gray-400' }
     : { bg: 'bg-amber-50 text-amber-700 ring-amber-200', dot: 'bg-amber-400' }
   return (
     <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', cfg.bg)}>
@@ -74,6 +77,7 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
   const { t } = useLang()
   const m = t.backup
   const [policy, setPolicy] = useState<BackupPolicy>(EMPTY_POLICY)
+  const [savedSecret, setSavedSecret] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showSecret, setShowSecret] = useState(false)
@@ -84,10 +88,12 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
         const raw = (res.data as any)
         const cfg = raw?.configuration?.backupPolicy ?? raw?.Configuration?.BackupPolicy
         if (cfg) {
+          const secret = cfg.StorageSecret ?? cfg.storageSecret ?? ''
+          setSavedSecret(secret)
           setPolicy({
             StorageUrl:        cfg.StorageUrl        ?? cfg.storageUrl        ?? '',
             StorageKey:        cfg.StorageKey        ?? cfg.storageKey        ?? '',
-            StorageSecret:     cfg.StorageSecret     ?? cfg.storageSecret     ?? '',
+            StorageSecret:     '',
             Bucket:            cfg.Bucket            ?? cfg.bucket            ?? '',
             Path:              cfg.Path              ?? cfg.path              ?? '',
             FilePrefix:        cfg.FilePrefix        ?? cfg.filePrefix        ?? '',
@@ -107,7 +113,11 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
   const handleSave = async () => {
     setSaving(true)
     try {
-      await backupApi.setPolicy({ BackupPolicy: policy })
+      const payload = {
+        ...policy,
+        StorageSecret: policy.StorageSecret || savedSecret,
+      }
+      await backupApi.setPolicy({ BackupPolicy: payload })
       toast.success(m.toastSaved)
       onClose()
     } catch {
@@ -161,9 +171,10 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
                   <div className="relative">
                     <input
                       type={showSecret ? 'text' : 'password'}
+                      autoComplete="new-password"
                       value={policy.StorageSecret}
                       onChange={e => set('StorageSecret', e.target.value)}
-                      placeholder={m.fieldSecretPlaceholder}
+                      placeholder={savedSecret ? m.fieldSecretSavedPlaceholder : m.fieldSecretPlaceholder}
                       className={clsx(inputCls, 'pr-10')}
                     />
                     <button
@@ -284,6 +295,9 @@ function BackupContent() {
   const [restoreSelected, setRestoreSelected] = useState<any>(null)
   const [restoreConfirmText, setRestoreConfirmText] = useState('')
   const [restoring, setRestoring] = useState(false)
+  const [closeConfirmJobId, setCloseConfirmJobId] = useState<string | null>(null)
+  const [closing, setClosing] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
     const p = searchParams.get('highlight')
     if (p) return p
@@ -376,6 +390,28 @@ function BackupContent() {
     }
   }
 
+  const handleCloseJob = async () => {
+    if (!closeConfirmJobId) return
+    setClosing(true)
+    try {
+      await backupApi.closeJob(closeConfirmJobId)
+      toast.success(m.closeJobSuccess)
+      setCloseConfirmJobId(null)
+      fetchData(1)
+    } catch {
+      toast.error(m.closeJobFailed)
+    } finally {
+      setClosing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!openMenuId) return
+    const handler = () => setOpenMenuId(null)
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [openMenuId])
+
   const handleSearch = () => { setPage(1); fetchData(1) }
   const handleTimeRangeChange = (tr: TimeRangeValue) => {
     setTimeRange(tr); setPage(1); fetchData(1, searchTerm, statusFilter, tr)
@@ -397,7 +433,7 @@ function BackupContent() {
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
-  const cols = [m.colDate, m.colName, m.colDescription, m.colTags, m.colType, m.colStatus, m.colFile]
+  const cols = [m.colDate, m.colName, m.colDescription, m.colTags, m.colType, m.colStatus, m.colFile, '']
 
   return (
     <>
@@ -537,6 +573,42 @@ function BackupContent() {
                 {restoring
                   ? <svg className="w-4 h-4 animate-spin inline" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                   : m.restoreConfirmBtn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close Job Confirm Modal */}
+      {closeConfirmJobId && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setCloseConfirmJobId(null)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-2">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-bold text-gray-900">{m.closeJobConfirmTitle}</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">{m.closeJobConfirmDesc}</p>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-2 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => setCloseConfirmJobId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {m.confirmCancel}
+              </button>
+              <button
+                onClick={handleCloseJob}
+                disabled={closing}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gray-600 hover:bg-gray-700 disabled:opacity-50 rounded-lg transition-colors"
+              >
+                {closing
+                  ? <svg className="w-4 h-4 animate-spin inline" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                  : m.closeJobBtn}
               </button>
             </div>
           </div>
@@ -716,6 +788,29 @@ function BackupContent() {
                               return <span className="text-sm text-gray-600 truncate block">{meta.filename}</span>
                             } catch { return <span className="text-gray-400">—</span> }
                           })()}
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-100 text-right" onClick={e => e.stopPropagation()}>
+                          {(item.status ?? item.Status)?.toLowerCase() === 'running' &&
+                            (type === 'Backup.Adhoc' || type === 'Backup.Schedule') && (
+                            <div className="relative inline-block">
+                              <button
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === id ? null : id) }}
+                                className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                              {openMenuId === id && (
+                                <div className="absolute right-0 top-full mt-1 z-50 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                                  <button
+                                    onClick={e => { e.stopPropagation(); setOpenMenuId(null); setCloseConfirmJobId(id) }}
+                                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    {m.closeJobBtn}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )

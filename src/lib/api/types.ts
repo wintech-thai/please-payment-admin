@@ -180,6 +180,7 @@ export interface MerchantItem {
   payinDailyTxCountLimit?: number | null
   currentPayinDailyTxAmount?: number | null
   currentPayinDailyTxCount?: number | null
+  payinExpireMinute?: number | null
 }
 
 export interface GetMerchantsPayload {
@@ -213,6 +214,7 @@ export interface AddMerchantPayload {
     WhitelistBankAccountNamesArr?: string[]
     PayinDailyTxAmountLimit?: number | string
     PayinDailyTxCountLimit?: number | string
+    PayinExpireMinute?: number
   }
 }
 
@@ -232,6 +234,7 @@ export interface UpdateMerchantPayload {
   WhitelistBankAccountNamesArr?: string[]
   PayinDailyTxAmountLimit?: number | string
   PayinDailyTxCountLimit?: number | string
+  PayinExpireMinute?: number
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────

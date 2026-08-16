@@ -171,6 +171,7 @@ function PolicyModal({ onClose }: { onClose: () => void }) {
                   <div className="relative">
                     <input
                       type={showSecret ? 'text' : 'password'}
+                      autoComplete="new-password"
                       value={policy.StorageSecret}
                       onChange={e => set('StorageSecret', e.target.value)}
                       placeholder={savedSecret ? m.fieldSecretSavedPlaceholder : m.fieldSecretPlaceholder}

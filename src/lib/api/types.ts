@@ -233,6 +233,7 @@ export interface UpdateMerchantPayload {
   WhitelistBankAccountNamesArr?: string[]
   PayinDailyTxAmountLimit?: number | string
   PayinDailyTxCountLimit?: number | string
+  PayinExpireMinute?: number
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────

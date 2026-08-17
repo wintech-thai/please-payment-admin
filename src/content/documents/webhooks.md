@@ -168,7 +168,42 @@ title: Webhooks
 | `PAYOUT_REQUEST_AMOUNT` | จำนวนเงินที่ขอโอนตั้งต้น |
 | `PAYOUT_FEE` | ค่าธรรมเนียม |
 | `PAYOUT_BANK_CODE` | รหัสธนาคารปลายทาง |
-| `PAYOUT_IS_PARTIAL` | `True` ถ้าเป็น P2P partial payout |
+| `PAYOUT_IS_PARTIAL` | `True` ถ้าเป็น P2P partial payout (ดูด้านล่าง) |
+
+#### PaymentOut.Success กับรายการ P2P
+
+สำหรับ Pay-Out Request ที่ถูกจับคู่กับ **P2P Pay-In** (`PAYOUT_IS_PARTIAL = "True"`) webhook `PaymentOut.Success` **อาจถูกส่งมากกว่าหนึ่งครั้งสำหรับ Pay-Out Request เดียวกัน** — เพราะ Pay-Out หนึ่งรายการอาจถูกแบ่งชำระจาก P2P Pay-In หลายรายการ (partial payouts)
+
+**ตัวอย่าง:** Pay-Out Request 10,000 บาท อาจถูก fulfill จาก P2P Pay-In 3 รอบ:
+
+| รอบ | จำนวนเงิน | PAYOUT_IS_PARTIAL |
+|---|---|---|
+| รอบที่ 1 | 4,000 บาท | `True` |
+| รอบที่ 2 | 3,500 บาท | `True` |
+| รอบที่ 3 | 2,500 บาท | `True` |
+
+**สิ่งที่ต้องทำในระบบของ Merchant:**
+
+- ตรวจสอบ `PAYOUT_IS_PARTIAL` ก่อนเสมอ
+- ถ้า `True` — อย่า mark Pay-Out ว่า "สำเร็จ" ทันที ให้รวม `TX_AMOUNT` สะสมจนครบ `PAYOUT_REQUEST_AMOUNT`
+- ถ้า `False` — Pay-Out สำเร็จในครั้งเดียว สามารถ mark ว่า "สำเร็จ" ได้ทันที
+
+```python
+# ตัวอย่าง: รับ PaymentOut.Success แบบ P2P
+elif event_type == 'PaymentOut.Success':
+    tx_amount = float(params.get('TX_AMOUNT', 0))
+    is_partial = params.get('PAYOUT_IS_PARTIAL', 'False') == 'True'
+    pmr_id = params.get('PMR_ID')
+
+    if is_partial:
+        # P2P partial — สะสมยอด อย่าเพิ่ง mark completed
+        add_partial_payout(pmr_id, tx_amount)
+        if get_total_payout(pmr_id) >= get_requested_amount(pmr_id):
+            mark_payout_completed(pmr_id)
+    else:
+        # จ่ายครบรอบเดียว
+        mark_payout_completed(pmr_id)
+```
 
 ---
 

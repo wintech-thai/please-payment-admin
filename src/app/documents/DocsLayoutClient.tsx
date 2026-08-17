@@ -38,16 +38,7 @@ export default function DocsLayoutClient({
             Please Payment Docs
           </Link>
         </div>
-        <div className="flex items-center gap-4 text-sm">
-          <a
-            href={typeof window !== 'undefined' ? window.location.origin : '/'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            หน้าแรก
-          </a>
-          <span className="text-zinc-600">|</span>
+        <div className="flex items-center text-sm">
           <span className="text-white font-medium">API Reference</span>
         </div>
       </header>

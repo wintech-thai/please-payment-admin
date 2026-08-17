@@ -7,7 +7,15 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayInRequestDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip, TriangleAlert } from 'lucide-react'
+
+type SlipItem = {
+  imageBase64: string
+  uploadedAt: string
+  first4?: string | null
+  last4?: string | null
+  note?: string | null
+}
 import QRCode from 'react-qr-code'
 
 function formatAmount(n?: number | null): string {
@@ -187,13 +195,25 @@ function SlipViewerModal({
   slips,
   isPending,
   paymentRequestId,
+  orgId,
+  destBankCode,
+  destAccountName,
+  destAccountNo,
+  destAccountType,
+  destPromptPayId,
   confirmData,
   onClose,
   onApproved,
 }: {
-  slips: Array<{ imageBase64: string; uploadedAt: string }>
+  slips: SlipItem[]
   isPending: boolean
   paymentRequestId: string
+  orgId?: string | null
+  destBankCode?: string | null
+  destAccountName?: string | null
+  destAccountNo?: string | null
+  destAccountType?: string | null
+  destPromptPayId?: string | null
   confirmData?: ConfirmData
   onClose: () => void
   onApproved: () => void
@@ -203,7 +223,22 @@ function SlipViewerModal({
   const [idx, setIdx] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
   const [approving, setApproving] = useState(false)
+  const [dupIds, setDupIds] = useState<string[]>([])
   const slip = slips[idx]
+
+  useEffect(() => {
+    setDupIds([])
+    const f4 = slip?.first4?.trim().toUpperCase()
+    const l4 = slip?.last4?.trim().toUpperCase()
+    if (!f4 || !l4 || f4.length !== 4 || l4.length !== 4 || !orgId) return
+    fetch(`/api/proxy/admin-api/AdminPaymentRequest/org/${orgId}/action/CheckPayInSlipDup/${paymentRequestId}/${f4}/${l4}`)
+      .then(r => r.json())
+      .then(data => {
+        const dups = data?.Duplicates ?? data?.duplicates ?? []
+        setDupIds(dups.map((d: { documentId?: string }) => d.documentId).filter(Boolean))
+      })
+      .catch(() => {})
+  }, [idx, slip?.first4, slip?.last4, orgId, paymentRequestId])
 
   const handleApprove = async () => {
     setApproving(true)
@@ -259,6 +294,64 @@ function SlipViewerModal({
         </div>
       </div>
 
+      {/* Dup warning banner */}
+      {dupIds.length > 0 && (
+        <div className="flex-none mx-5 mb-1 rounded-lg bg-red-600/90 px-4 py-2.5 flex items-start gap-2" onClick={e => e.stopPropagation()}>
+          <TriangleAlert className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-white">
+            <span className="font-semibold">{m.slipDupFound} ({dupIds.length})</span>
+            {dupIds.map(docId => (
+              <span key={docId} className="block mt-0.5 opacity-90">
+                {m.slipDupViewRequest}{' '}
+                <a
+                  href={`/business-setup/payment/pay-in-requests/${docId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded underline underline-offset-2"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {docId}
+                </a>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Slip metadata */}
+      {(slip?.first4 || slip?.last4 || slip?.note || destAccountName || destAccountNo || destPromptPayId) && (
+        <div className="flex-none mx-5 mb-1 flex flex-wrap gap-3 px-4 py-3 bg-black/40 rounded-xl" onClick={e => e.stopPropagation()}>
+          {(slip?.first4 || slip?.last4) && (
+            <div className="bg-white/10 rounded-lg px-3 py-2 min-w-[120px]">
+              <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1">{m.slipRefLabel}</p>
+              <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">{slip.first4} — {slip.last4}</p>
+            </div>
+          )}
+          {(destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
+            <div className="bg-teal-900/60 border border-teal-500/40 rounded-lg px-3 py-2 min-w-[160px]">
+              <p className="text-[9px] text-teal-300/70 uppercase tracking-widest mb-1.5">{m.slipDestAccount}</p>
+              {destBankCode && (
+                <span className="inline-block mb-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500 text-white uppercase tracking-wide">{destBankCode}</span>
+              )}
+              {destAccountNo && <p className="text-sm font-mono font-bold text-white leading-tight">{destAccountNo}</p>}
+              {destAccountName && <p className="text-xs text-teal-100 font-medium mt-0.5">{destAccountName}</p>}
+              {destPromptPayId && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[9px] font-bold text-teal-400 uppercase tracking-wide">PromptPay</span>
+                  <span className="text-xs font-mono font-bold text-yellow-300">{destPromptPayId}</span>
+                </div>
+              )}
+            </div>
+          )}
+          {slip?.note && (
+            <div className="bg-white/10 rounded-lg px-3 py-2 min-w-[100px]">
+              <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1">{m.slipNoteLabel}</p>
+              <p className="text-sm text-white font-medium">{slip.note}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Image + nav */}
       <div className="flex-1 flex items-center gap-4 px-4 min-h-0" onClick={e => e.stopPropagation()}>
         <button
@@ -273,7 +366,7 @@ function SlipViewerModal({
             <img
               src={`data:image/jpeg;base64,${slip.imageBase64}`}
               alt={`slip ${idx + 1}`}
-              className="max-h-[calc(100vh-120px)] max-w-full rounded-xl shadow-2xl object-contain"
+              className="max-h-[calc(100vh-200px)] max-w-full rounded-xl shadow-2xl object-contain"
             />
           )}
         </div>
@@ -441,7 +534,7 @@ export default function PayInRequestDetailPage() {
   const [job, setJob] = useState<PaymentTxJob | null>(null)
   const [loadingJob, setLoadingJob] = useState(false)
   const [showRawJson, setShowRawJson] = useState(false)
-  const [slips, setSlips] = useState<Array<{ imageBase64: string; uploadedAt: string }>>([])
+  const [slips, setSlips] = useState<SlipItem[]>([])
   const [loadingSlips, setLoadingSlips] = useState(false)
   const [showSlipViewer, setShowSlipViewer] = useState(false)
   const [showSlipLink, setShowSlipLink] = useState(false)
@@ -460,11 +553,17 @@ export default function PayInRequestDetailPage() {
         paymentRequestApi.getPayInSlipUploads(orgId, id)
           .then(r => {
             const d = (r.data as any)
-            const list = d?.slips ?? d?.Slips ?? []
-            const sorted = [...(Array.isArray(list) ? list : [])].sort((a, b) =>
+            const rawList: any[] = Array.isArray(d) ? d : (d?.slips ?? d?.Slips ?? [])
+            const list: SlipItem[] = rawList.map(s => ({
+              imageBase64: s.imageBase64 ?? s.ImageBase64 ?? '',
+              uploadedAt: s.uploadedAt ?? s.UploadedAt ?? '',
+              first4: s.first4 ?? s.First4 ?? null,
+              last4: s.last4 ?? s.Last4 ?? null,
+              note: s.note ?? s.Note ?? null,
+            }))
+            setSlips([...list].sort((a, b) =>
               new Date(b.uploadedAt || 0).getTime() - new Date(a.uploadedAt || 0).getTime()
-            )
-            setSlips(sorted)
+            ))
           })
           .catch(() => {})
           .finally(() => setLoadingSlips(false))
@@ -576,6 +675,12 @@ export default function PayInRequestDetailPage() {
           slips={slips}
           isPending={isPending}
           paymentRequestId={id}
+          orgId={detail?.orgId}
+          destBankCode={detail?.payinBankCode}
+          destAccountName={detail?.payinBankAccountName}
+          destAccountNo={detail?.payinBankAccountNo}
+          destAccountType={detail?.payinAccountType}
+          destPromptPayId={detail?.payinPromptPayId}
           confirmData={detail ? {
             merchantCode: detail.merchantCode,
             merchantName: detail.merchantName,

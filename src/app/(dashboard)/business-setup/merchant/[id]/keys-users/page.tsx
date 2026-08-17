@@ -201,13 +201,12 @@ export default function MerchantKeysUsersPage() {
   const merchantId = params.id as string
 
   const [merchant, setMerchant] = useState<MerchantItem | null>(null)
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
-  const [payOutUrl, setPayOutUrl] = useState<string | null>(null)
+  const [paymentEndpoints, setPaymentEndpoints] = useState<Array<{ name: string; value: string }>>([])
   const [users, setUsers] = useState<OrgUserItem[]>([])
   const [apiKeys, setApiKeys] = useState<OrgApiKeyItem[]>([])
-  const [payOutApiKeys, setPayOutApiKeys] = useState<OrgApiKeyItem[]>([])
-  const [endpointTab, setEndpointTab] = useState<'payin' | 'payout'>('payin')
   const [loading, setLoading] = useState(true)
+  const [showCreateKeyModal, setShowCreateKeyModal] = useState(false)
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([])
 
   // Invite modal
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -220,6 +219,7 @@ export default function MerchantKeysUsersPage() {
   // Row highlight
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null)
+  const [selectedEndpointIdx, setSelectedEndpointIdx] = useState<number | null>(null)
 
   // New API key modal
   const [newApiKey, setNewApiKey] = useState<string | null>(null)
@@ -241,24 +241,16 @@ export default function MerchantKeysUsersPage() {
 
       const customId: string = raw?.code ?? ''
 
-      const [endpointRes, payOutEndpointRes, usersRes, keysRes, payOutKeysRes] = await Promise.allSettled([
-        merchantApi.getPaymentEndpoint(merchantId),
-        merchantApi.getPayOutEndpoint(merchantId),
+      const [endpointsRes, usersRes, keysRes] = await Promise.allSettled([
+        merchantApi.getMerchantPaymentEndpoints(merchantId),
         merchantApi.getOrgUsers(customId),
-        merchantApi.getOrgApiKeys(customId),
-        merchantApi.getPayOutApiKeys(customId),
+        merchantApi.getPaymentApiKeys(customId),
       ])
 
-      if (endpointRes.status === 'fulfilled') {
-        const data = endpointRes.value.data as any
-        const rawUrl: string = data?.paymentRequestUrl ?? data?.PaymentRequestUrl ?? ''
-        setPaymentUrl(rawUrl ? processPaymentUrl(rawUrl) : null)
-      }
-
-      if (payOutEndpointRes.status === 'fulfilled') {
-        const data = payOutEndpointRes.value.data as any
-        const rawUrl: string = data?.payoutRequestUrl ?? data?.PayoutRequestUrl ?? data?.paymentRequestUrl ?? data?.PaymentRequestUrl ?? ''
-        setPayOutUrl(rawUrl ? processPaymentUrl(rawUrl) : null)
+      if (endpointsRes.status === 'fulfilled') {
+        const data = endpointsRes.value.data as any
+        const list: Array<{ name: string; value: string }> = Array.isArray(data) ? data : (Array.isArray(data?.endpoints) ? data.endpoints : [])
+        setPaymentEndpoints(list.map(ep => ({ name: ep.name, value: processPaymentUrl(ep.value) })))
       }
 
       if (usersRes.status === 'fulfilled') {
@@ -269,11 +261,6 @@ export default function MerchantKeysUsersPage() {
       if (keysRes.status === 'fulfilled') {
         const data = keysRes.value.data as any
         setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
-      }
-
-      if (payOutKeysRes.status === 'fulfilled') {
-        const data = payOutKeysRes.value.data as any
-        setPayOutApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToLoadMerchant)
@@ -349,15 +336,21 @@ export default function MerchantKeysUsersPage() {
   }
 
   // ── API Key actions ─────────────────────────────────────────────────────────
-  const handleCreateApiKey = async () => {
+  const refreshApiKeys = async () => {
+    const res = await merchantApi.getPaymentApiKeys(orgCustomId)
+    const data = res.data as any
+    setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
+  }
+
+  const handleCreatePaymentKey = async () => {
+    if (selectedRoles.length === 0) return
     try {
-      const createRes = await merchantApi.createOrgApiKey(orgCustomId)
+      const createRes = await merchantApi.createPaymentEndpointsApiKey(orgCustomId, selectedRoles.join(','))
       const cdata = createRes.data as any
       const createdKey = cdata?.apiKey ?? cdata?.ApiKey
-      // Refresh list
-      const keysRes = await merchantApi.getOrgApiKeys(orgCustomId)
-      const kdata = keysRes.data as any
-      setApiKeys(Array.isArray(kdata) ? kdata : (kdata?.apiKeys ?? kdata?.ApiKeys ?? []))
+      await refreshApiKeys()
+      setShowCreateKeyModal(false)
+      setSelectedRoles([])
       if (createdKey?.apiKey) {
         setNewApiKey(createdKey.apiKey)
       } else {
@@ -366,27 +359,6 @@ export default function MerchantKeysUsersPage() {
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToCreateApiKey)
     }
-  }
-
-  const handleCreatePayOutApiKey = async () => {
-    try {
-      const createRes = await merchantApi.createPayOutApiKey(orgCustomId)
-      const cdata = createRes.data as any
-      const createdKey = cdata?.apiKey ?? cdata?.ApiKey
-      const keysRes = await merchantApi.getPayOutApiKeys(orgCustomId)
-      const kdata = keysRes.data as any
-      setPayOutApiKeys(Array.isArray(kdata) ? kdata : (kdata?.apiKeys ?? kdata?.ApiKeys ?? []))
-      if (createdKey?.apiKey) setNewApiKey(createdKey.apiKey)
-      else toast.success(m.apiKeyCreatedTitle)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : m.failedToCreateApiKey)
-    }
-  }
-
-  const refreshPayOutApiKeys = async () => {
-    const res = await merchantApi.getPayOutApiKeys(orgCustomId)
-    const data = res.data as any
-    setPayOutApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
   }
 
   const handleDeleteUser = (user: OrgUserItem) => {
@@ -509,6 +481,56 @@ export default function MerchantKeysUsersPage() {
         </div>
       )}
 
+      {/* Create Payment API Key Modal */}
+      {showCreateKeyModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100">
+              <h3 className="text-base font-bold text-gray-900">{m.addApiKey}</h3>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Select Roles</p>
+              <div className="flex flex-col gap-2">
+                {(['PAYIN_REQUEST', 'PAYIN_REQUEST_P2P', 'PAYOUT_REQUEST'] as const).map(role => (
+                  <label key={role} className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={selectedRoles.includes(role)}
+                      onChange={e => {
+                        if (e.target.checked) setSelectedRoles(prev => [...prev, role])
+                        else setSelectedRoles(prev => prev.filter(r => r !== role))
+                      }}
+                      className="w-4 h-4 rounded accent-primary-600"
+                    />
+                    <span className="text-sm font-medium text-gray-700">{role}</span>
+                  </label>
+                ))}
+              </div>
+              {selectedRoles.length === 0 && (
+                <p className="text-xs text-amber-600 mt-2">Please select at least one role</p>
+              )}
+              <div className="flex justify-end gap-3 mt-5">
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateKeyModal(false); setSelectedRoles([]) }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  {t.admin.cancel}
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedRoles.length === 0}
+                  onClick={handleCreatePaymentKey}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 rounded-lg transition-colors"
+                >
+                  {m.addApiKey}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* New API Key Modal */}
       {newApiKey && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -581,128 +603,87 @@ export default function MerchantKeysUsersPage() {
           </div>
         </div>
 
-        {/* Payment Request Endpoint + API Keys — tabs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6 flex flex-col gap-6">
-          {/* Section header + tab bar */}
-          <div>
-            <SectionHeader>{m.sectionEndpoint}</SectionHeader>
-            <div className="flex gap-1 -mt-3 border-b border-gray-200">
-              <button
-                onClick={() => setEndpointTab('payin')}
-                className={clsx(
-                  'px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all',
-                  endpointTab === 'payin'
-                    ? 'text-primary-600 border-primary-600'
-                    : 'text-gray-400 border-transparent hover:text-gray-600'
-                )}
-              >
-                {m.tabPayIn}
-              </button>
-              <button
-                onClick={() => setEndpointTab('payout')}
-                className={clsx(
-                  'px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all',
-                  endpointTab === 'payout'
-                    ? 'text-primary-600 border-primary-600'
-                    : 'text-gray-400 border-transparent hover:text-gray-600'
-                )}
-              >
-                {m.tabPayOut}
-              </button>
+        {/* Payment Request Endpoints — table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+          <SectionHeader>{m.sectionEndpoint}</SectionHeader>
+          {paymentEndpoints.length === 0 ? (
+            <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 rounded-tl-xl w-48">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Endpoint</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-24">Copy</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paymentEndpoints.map((ep, idx) => (
+                    <tr key={idx} onClick={() => setSelectedEndpointIdx(prev => prev === idx ? null : idx)} className={clsx('cursor-pointer transition-colors', selectedEndpointIdx === idx ? 'bg-primary-50' : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50')}>
+                      <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-semibold whitespace-nowrap', selectedEndpointIdx === idx ? 'text-primary-700' : 'text-gray-700')}>{ep.name}</td>
+                      <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-mono break-all', selectedEndpointIdx === idx ? 'text-primary-600' : 'text-gray-500')}>{ep.value}</td>
+                      <td className="px-4 py-3 border-b border-gray-100">
+                        <CopyButton text={ep.value} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Endpoint URL */}
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              {endpointTab === 'payin' ? m.endpointLabel : m.endpointPayOutLabel}
-            </p>
-            {endpointTab === 'payin' ? (
-              paymentUrl ? (
-                <div className="flex items-start gap-3">
-                  <textarea readOnly value={paymentUrl} rows={2} className="flex-1 px-3 py-2.5 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 resize-none focus:outline-none" />
-                  <CopyButton text={paymentUrl} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
-              )
-            ) : (
-              payOutUrl ? (
-                <div className="flex items-start gap-3">
-                  <textarea readOnly value={payOutUrl} rows={2} className="flex-1 px-3 py-2.5 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 resize-none focus:outline-none" />
-                  <CopyButton text={payOutUrl} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
-              )
-            )}
-          </div>
+        {/* API Keys — global */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
+          <SectionHeader
+            action={
+              <button
+                onClick={() => { setSelectedRoles([]); setShowCreateKeyModal(true) }}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {m.addApiKey}
+              </button>
+            }
+          >
+            {m.sectionApiKeys}
+          </SectionHeader>
 
-          <div className="border-t border-gray-100" />
-
-          {/* API Keys */}
-          <div>
-            <SectionHeader
-              action={
-                <button
-                  onClick={endpointTab === 'payin' ? handleCreateApiKey : handleCreatePayOutApiKey}
-                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  {m.addApiKey}
-                </button>
-              }
-            >
-              {m.sectionApiKeys}
-            </SectionHeader>
-
-            <ApiKeysTable
-              keys={endpointTab === 'payin' ? apiKeys : payOutApiKeys}
-              selectedKeyId={selectedKeyId}
-              setSelectedKeyId={setSelectedKeyId}
-              formatDate={formatDate}
-              m={m}
-              onToggle={(key) => {
-                const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
-                setConfirm({
-                  title: isActive ? m.confirmDisableApiKey : m.confirmEnableApiKey,
-                  onConfirm: async () => {
-                    setConfirm(null)
-                    try {
-                      if (isActive) { await merchantApi.disableOrgApiKey(orgCustomId, key.keyId); toast.success(m.disableApiKeySuccess) }
-                      else { await merchantApi.enableOrgApiKey(orgCustomId, key.keyId); toast.success(m.enableApiKeySuccess) }
-                      if (endpointTab === 'payin') {
-                        const res = await merchantApi.getOrgApiKeys(orgCustomId)
-                        const data = res.data as any
-                        setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
-                      } else {
-                        await refreshPayOutApiKeys()
-                      }
-                    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : m.failedToToggleApiKey) }
-                  },
-                })
-              }}
-              onDelete={(key) => {
-                setConfirm({
-                  title: m.confirmDeleteApiKey,
-                  onConfirm: async () => {
-                    setConfirm(null)
-                    try {
-                      await merchantApi.deleteOrgApiKey(orgCustomId, key.keyId)
-                      toast.success(m.deleteApiKeySuccess)
-                      if (endpointTab === 'payin') {
-                        const res = await merchantApi.getOrgApiKeys(orgCustomId)
-                        const data = res.data as any
-                        setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
-                      } else {
-                        await refreshPayOutApiKeys()
-                      }
-                    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : m.failedToDeleteApiKey) }
-                  },
-                })
-              }}
-            />
-          </div>
+          <ApiKeysTable
+            keys={apiKeys}
+            selectedKeyId={selectedKeyId}
+            setSelectedKeyId={setSelectedKeyId}
+            formatDate={formatDate}
+            m={m}
+            onToggle={(key) => {
+              const isActive = key.keyStatus?.toLowerCase() === 'active' || key.keyStatus == null
+              setConfirm({
+                title: isActive ? m.confirmDisableApiKey : m.confirmEnableApiKey,
+                onConfirm: async () => {
+                  setConfirm(null)
+                  try {
+                    if (isActive) { await merchantApi.disableOrgApiKey(orgCustomId, key.keyId); toast.success(m.disableApiKeySuccess) }
+                    else { await merchantApi.enableOrgApiKey(orgCustomId, key.keyId); toast.success(m.enableApiKeySuccess) }
+                    await refreshApiKeys()
+                  } catch (err: unknown) { toast.error(err instanceof Error ? err.message : m.failedToToggleApiKey) }
+                },
+              })
+            }}
+            onDelete={(key) => {
+              setConfirm({
+                title: m.confirmDeleteApiKey,
+                onConfirm: async () => {
+                  setConfirm(null)
+                  try {
+                    await merchantApi.deleteOrgApiKey(orgCustomId, key.keyId)
+                    toast.success(m.deleteApiKeySuccess)
+                    await refreshApiKeys()
+                  } catch (err: unknown) { toast.error(err instanceof Error ? err.message : m.failedToDeleteApiKey) }
+                },
+              })
+            }}
+          />
         </div>
 
         {/* Users Section */}

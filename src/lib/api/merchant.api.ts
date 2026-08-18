@@ -39,6 +39,9 @@ export const merchantApi = {
   getPayOutEndpoint: (id: string) =>
     client.get(`${BASE}/GetMerchantPayOutRequestEndpoint/${id}`),
 
+  getMerchantPaymentEndpoints: (merchantId: string) =>
+    client.get<Array<{ name: string; value: string }>>(`${BASE}/GetMerchantPaymentEndpoints/${merchantId}`),
+
   getPayOutApiKeys: (orgCustomId: string) =>
     client.get(`${ORG_BASE}/GetPayOutRequestApiKeys/${orgCustomId}`),
 
@@ -68,8 +71,14 @@ export const merchantApi = {
   getOrgApiKeys: (orgCustomId: string) =>
     client.get<{ apiKeys: OrgApiKeyItem[] }>(`${ORG_BASE}/GetPaymentRequestApiKeys/${orgCustomId}`),
 
+  getPaymentApiKeys: (orgCustomId: string) =>
+    client.get<OrgApiKeyItem[]>(`${ORG_BASE}/GetPaymentApiKeys/${orgCustomId}`),
+
   createOrgApiKey: (orgCustomId: string) =>
     client.post(`${ORG_BASE}/CreatePaymentRequestApiKey/${orgCustomId}`, {}),
+
+  createPaymentEndpointsApiKey: (orgCustomId: string, roles: string) =>
+    client.post(`/admin-api/AdminApiKey/org/global/action/CreatePaymentEndpointsApiKey/${orgCustomId}/${encodeURIComponent(roles)}`, {}),
 
   enableOrgApiKey: (orgCustomId: string, keyId: string) =>
     client.post(`${ORG_BASE}/EnablePaymentRequestApiKeyById/${orgCustomId}/${keyId}`, null),

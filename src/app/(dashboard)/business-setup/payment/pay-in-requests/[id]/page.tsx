@@ -7,7 +7,15 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayInRequestDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip, TriangleAlert } from 'lucide-react'
+
+type SlipItem = {
+  imageBase64: string
+  uploadedAt: string
+  first4?: string | null
+  last4?: string | null
+  note?: string | null
+}
 import QRCode from 'react-qr-code'
 
 function formatAmount(n?: number | null): string {
@@ -187,13 +195,25 @@ function SlipViewerModal({
   slips,
   isPending,
   paymentRequestId,
+  orgId,
+  destBankCode,
+  destAccountName,
+  destAccountNo,
+  destAccountType,
+  destPromptPayId,
   confirmData,
   onClose,
   onApproved,
 }: {
-  slips: Array<{ imageBase64: string; uploadedAt: string }>
+  slips: SlipItem[]
   isPending: boolean
   paymentRequestId: string
+  orgId?: string | null
+  destBankCode?: string | null
+  destAccountName?: string | null
+  destAccountNo?: string | null
+  destAccountType?: string | null
+  destPromptPayId?: string | null
   confirmData?: ConfirmData
   onClose: () => void
   onApproved: () => void
@@ -203,7 +223,22 @@ function SlipViewerModal({
   const [idx, setIdx] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
   const [approving, setApproving] = useState(false)
+  const [dupIds, setDupIds] = useState<string[]>([])
   const slip = slips[idx]
+
+  useEffect(() => {
+    setDupIds([])
+    const f4 = slip?.first4?.trim().toUpperCase()
+    const l4 = slip?.last4?.trim().toUpperCase()
+    if (!f4 || !l4 || f4.length !== 4 || l4.length !== 4 || !orgId) return
+    fetch(`/api/proxy/admin-api/AdminPaymentRequest/org/${orgId}/action/CheckPayInSlipDup/${paymentRequestId}/${f4}/${l4}`)
+      .then(r => r.json())
+      .then(data => {
+        const dups = data?.Duplicates ?? data?.duplicates ?? []
+        setDupIds(dups.map((d: { documentId?: string }) => d.documentId).filter(Boolean))
+      })
+      .catch(() => {})
+  }, [idx, slip?.first4, slip?.last4, orgId, paymentRequestId])
 
   const handleApprove = async () => {
     setApproving(true)
@@ -259,31 +294,94 @@ function SlipViewerModal({
         </div>
       </div>
 
-      {/* Image + nav */}
-      <div className="flex-1 flex items-center gap-4 px-4 min-h-0" onClick={e => e.stopPropagation()}>
-        <button
-          onClick={() => setIdx(i => Math.max(0, i - 1))}
-          disabled={idx <= 0}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white disabled:opacity-30 transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          {slip && (
-            <img
-              src={`data:image/jpeg;base64,${slip.imageBase64}`}
-              alt={`slip ${idx + 1}`}
-              className="max-h-[calc(100vh-120px)] max-w-full rounded-xl shadow-2xl object-contain"
-            />
-          )}
+      {/* Dup warning banner */}
+      {dupIds.length > 0 && (
+        <div className="flex-none mx-5 mb-1 rounded-lg bg-red-600/90 px-4 py-2.5 flex items-start gap-2" onClick={e => e.stopPropagation()}>
+          <TriangleAlert className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-white">
+            <span className="font-semibold">{m.slipDupFound} ({dupIds.length})</span>
+            {dupIds.map(docId => (
+              <span key={docId} className="block mt-0.5 opacity-90">
+                {m.slipDupViewRequest}{' '}
+                <a
+                  href={`/business-setup/payment/pay-in-requests/${docId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded underline underline-offset-2"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {docId}
+                </a>
+              </span>
+            ))}
+          </div>
         </div>
-        <button
-          onClick={() => setIdx(i => Math.min(slips.length - 1, i + 1))}
-          disabled={idx >= slips.length - 1}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white disabled:opacity-30 transition-colors"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+      )}
+
+      {/* Image + left metadata panel */}
+      <div className="flex-1 flex items-stretch gap-0 min-h-0" onClick={e => e.stopPropagation()}>
+
+        {/* Left metadata panel */}
+        {(slip?.first4 || slip?.last4 || slip?.note || destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
+          <div className="flex-none w-52 flex flex-col gap-3 px-4 py-4 overflow-y-auto">
+            {(destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
+              <div className="bg-teal-900/60 border border-teal-500/40 rounded-xl px-3 py-3">
+                <p className="text-[9px] text-teal-300/70 uppercase tracking-widest mb-2">{m.slipDestAccount}</p>
+                {destBankCode && (
+                  <span className="inline-block mb-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500 text-white uppercase tracking-wide">{destBankCode}</span>
+                )}
+                {destAccountNo && <p className="text-sm font-mono font-bold text-white leading-tight">{destAccountNo}</p>}
+                {destAccountName && <p className="text-xs text-teal-100 font-medium mt-1">{destAccountName}</p>}
+                {destPromptPayId && (
+                  <div className="mt-2 pt-2 border-t border-teal-700/50">
+                    <p className="text-[9px] font-bold text-teal-400 uppercase tracking-wide mb-0.5">PromptPay</p>
+                    <p className="text-xs font-mono font-bold text-yellow-300">{destPromptPayId}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {(slip?.first4 || slip?.last4) && (
+              <div className="bg-white/10 rounded-xl px-3 py-3">
+                <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
+                <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">{slip.first4} — {slip.last4}</p>
+              </div>
+            )}
+            {slip?.note && (
+              <div className="bg-white/10 rounded-xl px-3 py-3">
+                <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipNoteLabel}</p>
+                <p className="text-sm text-white font-medium leading-snug">{slip.note}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Nav + image */}
+        <div className="flex-1 flex items-center gap-4 px-4 min-h-0">
+          <button
+            onClick={() => setIdx(i => Math.max(0, i - 1))}
+            disabled={idx <= 0}
+            className="flex-shrink-0 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white disabled:opacity-30 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            {slip && (
+              <img
+                src={`data:image/jpeg;base64,${slip.imageBase64}`}
+                alt={`slip ${idx + 1}`}
+                className="max-h-[calc(100vh-160px)] max-w-full rounded-xl shadow-2xl object-contain"
+              />
+            )}
+          </div>
+          <button
+            onClick={() => setIdx(i => Math.min(slips.length - 1, i + 1))}
+            disabled={idx >= slips.length - 1}
+            className="flex-shrink-0 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white disabled:opacity-30 transition-colors"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
       </div>
 
       {/* Confirm Approve dialog */}
@@ -441,7 +539,7 @@ export default function PayInRequestDetailPage() {
   const [job, setJob] = useState<PaymentTxJob | null>(null)
   const [loadingJob, setLoadingJob] = useState(false)
   const [showRawJson, setShowRawJson] = useState(false)
-  const [slips, setSlips] = useState<Array<{ imageBase64: string; uploadedAt: string }>>([])
+  const [slips, setSlips] = useState<SlipItem[]>([])
   const [loadingSlips, setLoadingSlips] = useState(false)
   const [showSlipViewer, setShowSlipViewer] = useState(false)
   const [showSlipLink, setShowSlipLink] = useState(false)
@@ -460,11 +558,17 @@ export default function PayInRequestDetailPage() {
         paymentRequestApi.getPayInSlipUploads(orgId, id)
           .then(r => {
             const d = (r.data as any)
-            const list = d?.slips ?? d?.Slips ?? []
-            const sorted = [...(Array.isArray(list) ? list : [])].sort((a, b) =>
+            const rawList: any[] = Array.isArray(d) ? d : (d?.slips ?? d?.Slips ?? [])
+            const list: SlipItem[] = rawList.map(s => ({
+              imageBase64: s.imageBase64 ?? s.ImageBase64 ?? '',
+              uploadedAt: s.uploadedAt ?? s.UploadedAt ?? '',
+              first4: s.first4 ?? s.First4 ?? null,
+              last4: s.last4 ?? s.Last4 ?? null,
+              note: s.note ?? s.Note ?? null,
+            }))
+            setSlips([...list].sort((a, b) =>
               new Date(b.uploadedAt || 0).getTime() - new Date(a.uploadedAt || 0).getTime()
-            )
-            setSlips(sorted)
+            ))
           })
           .catch(() => {})
           .finally(() => setLoadingSlips(false))
@@ -576,6 +680,12 @@ export default function PayInRequestDetailPage() {
           slips={slips}
           isPending={isPending}
           paymentRequestId={id}
+          orgId={detail?.orgId}
+          destBankCode={detail?.payinBankCode}
+          destAccountName={detail?.payinBankAccountName}
+          destAccountNo={detail?.payinBankAccountNo}
+          destAccountType={detail?.payinAccountType}
+          destPromptPayId={detail?.payinPromptPayId}
           confirmData={detail ? {
             merchantCode: detail.merchantCode,
             merchantName: detail.merchantName,

@@ -34,6 +34,7 @@ export default function UpdateBankAccountPage() {
   const [payOutMin, setPayOutMin] = useState('')
   const [payOutMax, setPayOutMax] = useState('')
   const [dailyQuota, setDailyQuota] = useState('')
+  const [isRandomCent, setIsRandomCent] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [loading, setLoading] = useState(true)
@@ -66,6 +67,7 @@ export default function UpdateBankAccountPage() {
         setPayOutMin(a.payoutMinAmount != null ? String(a.payoutMinAmount) : '')
         setPayOutMax(a.payoutMaxAmount != null ? String(a.payoutMaxAmount) : '')
         setDailyQuota(a.dailyQuota != null ? String(a.dailyQuota) : '')
+        setIsRandomCent(a.isRandomCent ?? false)
         setTags(a.tags ? a.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
       } else {
         toast.error(m.failedToLoadAccount)
@@ -119,6 +121,7 @@ export default function UpdateBankAccountPage() {
         PayoutMaxAmount: toInt(payOutMax),
         DailyQuota: toInt(dailyQuota),
         Tags: tags.length ? tags.join(',') : undefined,
+        IsRandomCent: isRandomCent,
       })
       setIsDirty(false)
       toast.success(m.updatedSuccess)
@@ -251,6 +254,27 @@ export default function UpdateBankAccountPage() {
                 </select>
               </FormField>
             </div>
+
+            {/* Random Cent toggle */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <label className="flex items-center gap-3 cursor-pointer w-fit select-none">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={isRandomCent}
+                    onChange={e => { setIsRandomCent(e.target.checked); mark() }}
+                  />
+                  <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-primary-500 transition-colors" />
+                  <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">{m.fieldRandomCent}</p>
+                  <p className="text-xs text-gray-400">{m.fieldRandomCentHint}</p>
+                </div>
+              </label>
+            </div>
+
           </div>
 
           {/* Amount Limits */}

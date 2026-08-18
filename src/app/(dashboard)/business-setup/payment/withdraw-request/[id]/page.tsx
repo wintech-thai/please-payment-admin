@@ -39,6 +39,18 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
+function formatAge(d?: string | null): string {
+  if (!d) return ''
+  const diffMs = Date.now() - new Date(d).getTime()
+  if (diffMs < 0) return ''
+  const mins = Math.floor(diffMs / 60_000)
+  if (mins < 60) return `${mins}min`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ${mins % 60}min`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ${hrs % 24}h`
+}
+
 // ── Status Badge ──────────────────────────────────────────────────────────────
 
 function StatusBadge({ status, isPartialyPayout }: { status?: string | null; isPartialyPayout?: boolean | null }) {
@@ -910,7 +922,14 @@ export default function PayOutRequestDetailPage() {
                       <td className="px-3 py-2.5 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">{p.txDate ? formatDateTime(p.txDate) : '—'}</td>
                       <td className="px-3 py-2.5 border-b border-gray-100 text-xs text-gray-500 max-w-[160px] truncate">{p.payinRequestId ?? '—'}</td>
                       <td className="px-3 py-2.5 border-b border-gray-100 text-right font-semibold tabular-nums text-gray-800">{formatAmount(p.partialAmount)}</td>
-                      <td className="px-3 py-2.5 border-b border-gray-100"><StatusBadge status={p.status} /></td>
+                      <td className="px-3 py-2.5 border-b border-gray-100">
+                        <div className="flex flex-col gap-0.5">
+                          <StatusBadge status={p.status} />
+                          {p.status?.toLowerCase() === 'pending' && p.txDate && (
+                            <span className="text-[11px] text-amber-600 font-medium pl-0.5">{formatAge(p.txDate)}</span>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

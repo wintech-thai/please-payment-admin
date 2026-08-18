@@ -44,9 +44,9 @@ function formatAge(d?: string | null): string {
   const diffMs = Date.now() - new Date(d).getTime()
   if (diffMs < 0) return ''
   const mins = Math.floor(diffMs / 60_000)
-  if (mins < 60) return `${mins}m`
+  if (mins < 60) return `${mins}min`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ${mins % 60}m`
+  if (hrs < 24) return `${hrs}h ${mins % 60}min`
   const days = Math.floor(hrs / 24)
   return `${days}d ${hrs % 24}h`
 }

@@ -34,18 +34,25 @@ async function getTesseractWorker() {
   return _tesseractWorkerLoading
 }
 
-function buildStorageUrl(presignedUrl: string): string {
-  // Replace <STORAGE-API-BASE> with the correct storage API base.
-  // Strategy: derive from the current web origin by swapping the subdomain to "storage-api".
-  //   prod:  https://admin.please-payment.com  → https://storage-api.please-payment.com
-  //   dev:   https://admin-dev.please-payment.com → https://storage-api.please-payment.com
-  // On localhost the origin has no subdomain, so we fall back to NEXT_PUBLIC_API_URL
-  // (e.g. https://api-dev.please-payment.com) and apply the same subdomain swap.
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const isLocalhost = /localhost|127\.0\.0\.1/.test(origin)
-  const base = isLocalhost ? (process.env.NEXT_PUBLIC_API_URL ?? '') : origin
-  const storageBase = base.replace(/^(https?:\/\/)[^.]+\./, '$1storage-api.')
-  return presignedUrl.replace('<STORAGE-API-BASE>', storageBase)
+async function compressImageToBase64(file: File, maxWidth = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let w = img.width, h = img.height
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth }
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1])
+      }
+      img.onerror = reject
+      img.src = e.target?.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 async function decodeQrFromImage(file: File): Promise<string | null> {
@@ -493,27 +500,10 @@ export default function UploadPayInSlipPage() {
 
     setSaving(true)
     try {
-      // 1. Get presigned URL (merchantId is required in the URL path)
       const mimeType = file.type || 'image/jpeg'
-      const presignedRes = await paymentDocumentApi.getPresignedUrl(merchantId, { MimeType: mimeType })
-      const presignedData = presignedRes.data as any
-      const rawPresignedUrl: string = presignedData?.presignedUrl ?? presignedData?.PresignedUrl ?? ''
-      const objectName: string = presignedData?.objectName ?? presignedData?.ObjectName ?? ''
-
-      if (!rawPresignedUrl || !objectName) throw new Error('Invalid presigned URL response')
-
-      // 2. Upload file directly from browser to presigned URL
-      const uploadUrl = buildStorageUrl(rawPresignedUrl)
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': mimeType },
-        body: file,
-      })
-      if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`)
-
-      // 3. Register document
+      const imageBase64 = await compressImageToBase64(file)
       await paymentDocumentApi.addPayInDocument(merchantId, {
-        UploadedFilePath: objectName,
+        ImageBase64: imageBase64,
         MimeType: mimeType,
         TxAmountDecimal: parseFloat(amount),
         PayInBankAccountId: bankAccountId,

@@ -272,6 +272,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const inputCls = 'w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white transition-colors'
 
+const FILTER_KEY = 'backup_filters'
+
 function BackupContent() {
   const { t } = useLang()
   const m = t.backup
@@ -282,9 +284,15 @@ function BackupContent() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
+  const [searchTerm, setSearchTerm] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
+  )
+  const [statusFilter, setStatusFilter] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.statusFilter ?? '') : ''
+  )
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.timeRange ?? { type: 'relative', value: '24h' }) : { type: 'relative', value: '24h' }
+  )
   const [loading, setLoading] = useState(true)
   const [showPolicy, setShowPolicy] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -311,6 +319,7 @@ function BackupContent() {
     status = statusFilter,
     tr = timeRange
   ) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search, statusFilter: status, timeRange: tr }))
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)

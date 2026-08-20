@@ -229,7 +229,7 @@ export default function AuditLogFlyout({
                       </div>
                       <div className="w-[62%] px-4 py-2.5 min-w-0">
                         <div className="relative group/val pr-8 flex items-start min-h-[20px]">
-                          <span className={clsx('font-mono text-xs select-text cursor-text break-all', getValueColor(v))}>
+                          <span className={clsx('text-xs select-text cursor-text break-all', getValueColor(v))}>
                             {valStr}
                           </span>
                           <button

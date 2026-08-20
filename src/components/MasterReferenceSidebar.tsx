@@ -24,6 +24,15 @@ export default function MasterReferenceSidebar() {
       ),
     },
     {
+      href: '/business-setup/master-reference/pay-in-approve-status',
+      label: t.nav.payInApproveStatus,
+      icon: (
+        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
       href: '/business-setup/master-reference/pay-out-reject-status',
       label: t.nav.payOutRejectStatus,
       icon: (
@@ -39,7 +48,7 @@ export default function MasterReferenceSidebar() {
       className={clsx(
         'relative flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out',
         'border-r border-white/10',
-        collapsed ? 'w-14' : 'w-56'
+        collapsed ? 'w-14' : 'w-64'
       )}
       style={{ background: 'linear-gradient(180deg, rgb(var(--color-primary-800)) 0%, rgb(var(--color-primary-900)) 100%)' }}
     >

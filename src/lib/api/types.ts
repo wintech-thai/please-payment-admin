@@ -310,6 +310,7 @@ export interface BankAccountItem {
   selectedChannel?: string | null    // "LINE" | "SMS"
   isNativeQrSupport?: boolean | null
   isRandomCent?: boolean | null
+  centRoundingMode?: string | null
   bankConfigObj?: BankAccountConfigItem | null
 }
 
@@ -353,6 +354,7 @@ export interface AddBankAccountPayload {
   PayoutMaxAmount?: number
   DailyQuota?: number
   IsRandomCent?: boolean
+  CentRoundingMode?: string
 }
 
 export interface UpdateBankAccountPayload {
@@ -369,6 +371,7 @@ export interface UpdateBankAccountPayload {
   PayoutMaxAmount?: number
   DailyQuota?: number
   IsRandomCent?: boolean
+  CentRoundingMode?: string
 }
 
 export interface BankAccountMerchantItem {
@@ -399,9 +402,11 @@ export interface PaymentRequestResponse {
   currency?: string
   qrCode?: string
   qrCodeImage?: string
+  isQrAvailable?: boolean | null
   payInBankAccountNo?: string
   payInBankAccountName?: string
   payInBankCode?: string
+  payInPromptPayId?: string | null
   websocketPath?: string
   sessionId?: string
   slipUploadUrl?: string | null
@@ -756,6 +761,8 @@ export interface PayInSlipItem {
   mimeType?: string | null
   documentType?: string | null
   previewUrl?: string | null
+  imageBase64?: string | null
+  isPeerToPeer?: boolean | null
   createdDate?: string | null
 }
 
@@ -768,12 +775,8 @@ export interface GetPayInDocumentsPayload {
   ToDate?: string
 }
 
-export interface GetPresignedUrlPayload {
-  MimeType: string
-}
-
 export interface AddPayInDocumentPayload {
-  UploadedFilePath: string
+  ImageBase64: string
   MimeType: string
   TxAmountDecimal: number
   PayInBankAccountId: string
@@ -866,6 +869,10 @@ export interface PayOutRequestItem {
   totalPayOutPendingPaidAmountDecimal?: number | null
   qrCodeP2P?: string | null
   payOutTotalAmountDecimalP2P?: number | null
+  payOutSlipUploadCount?: number | null
+  isQrAvailable?: boolean | null
+  qrCodeImage?: string | null
+  qrCode?: string | null
 }
 
 export interface PartialPayoutItem {

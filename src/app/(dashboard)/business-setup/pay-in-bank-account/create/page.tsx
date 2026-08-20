@@ -32,6 +32,7 @@ export default function CreateBankAccountPage() {
   const [payOutMax, setPayOutMax] = useState('')
   const [dailyQuota, setDailyQuota] = useState('')
   const [isRandomCent, setIsRandomCent] = useState(false)
+  const [centRoundingMode, setCentRoundingMode] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
@@ -113,6 +114,7 @@ export default function CreateBankAccountPage() {
         DailyQuota: toInt(dailyQuota),
         Tags: tags.length ? tags.join(',') : undefined,
         IsRandomCent: isRandomCent,
+        CentRoundingMode: isRandomCent ? undefined : (centRoundingMode || undefined),
       })
       setIsDirty(false)
       toast.success(m.createdSuccess)
@@ -250,7 +252,7 @@ export default function CreateBankAccountPage() {
               </FormField>
             </div>
 
-            {/* Random Cent toggle */}
+            {/* Random Cent toggle + rounding dropdown */}
             <div className="mt-4 pt-4 border-t border-gray-100">
               <label className="flex items-center gap-3 cursor-pointer w-fit select-none">
                 <div className="relative">
@@ -268,6 +270,21 @@ export default function CreateBankAccountPage() {
                   <p className="text-xs text-gray-400">{m.fieldRandomCentHint}</p>
                 </div>
               </label>
+              {!isRandomCent && (
+                <div className="mt-3 ml-12">
+                  <p className="text-xs font-semibold text-gray-500 mb-1">{m.fieldCentRoundingMode}</p>
+                  <select
+                    value={centRoundingMode}
+                    onChange={e => { setCentRoundingMode(e.target.value); mark() }}
+                    className="w-52 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+                  >
+                    <option value="">{m.centRoundingNone}</option>
+                    <option value="Round">{m.centRoundingRound}</option>
+                    <option value="Round Up">{m.centRoundingRoundUp}</option>
+                    <option value="Truncate">{m.centRoundingTruncate}</option>
+                  </select>
+                </div>
+              )}
             </div>
 
           </div>

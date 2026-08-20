@@ -33,8 +33,8 @@ export const paymentRequestApi = {
   getPaymentRequestById: (id: string) =>
     client.get<{ paymentRequest: PayInRequestDetail }>(`${BASE}/GetPaymentRequestById/${id}`),
 
-  createPaymentTxByPayInRequestId: (id: string) =>
-    client.post(`/admin-api/AdminPaymentTx/org/global/action/CreatePaymentTxByPayInRequestId/${id}`, {}),
+  createPaymentTxByPayInRequestId: (id: string, payload?: { StatusReason?: string; StatusCode?: string }) =>
+    client.post(`/admin-api/AdminPaymentTx/org/global/action/CreatePaymentTxByPayInRequestId/${id}`, payload ?? {}),
 
   rejectPendingPayInRequestById: (id: string, reason?: string, rejectStatus?: string) =>
     client.post(`${BASE}/RejectPendingPayInRequestById/${id}`, {
@@ -50,6 +50,12 @@ export const paymentRequestApi = {
 
   generatePayInSlipUploadToken: (_orgId: string, paymentRequestId: string) =>
     client.get(`/admin-api/AdminPaymentRequest/org/global/action/GeneratePayInSlipUploadToken/${paymentRequestId}`),
+
+  getPayOutSlipUploads: (paymentRequestId: string) =>
+    client.get(`/admin-api/AdminPaymentRequest/org/global/action/GetPayOutSlipUpload/${paymentRequestId}`),
+
+  generatePayOutSlipUploadToken: (paymentRequestId: string) =>
+    client.get(`/admin-api/AdminPaymentRequest/org/global/action/GeneratePayOutSlipUploadToken/${paymentRequestId}`),
 
   // ── Pay-Out ───────────────────────────────────────────────────────────────
   createPayOutRequest: (payload: CreatePayOutRequestPayload) =>

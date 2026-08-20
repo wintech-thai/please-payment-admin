@@ -368,7 +368,7 @@ function AuditLogContent() {
                           : clsx('hover:bg-gray-50', isHighlighted && '!bg-primary-100 border-l-[3px] border-l-primary-500')
                       )}
                     >
-                      <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-gray-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
                         {formatDate(log['@timestamp'])}
                       </td>
                       <td className={clsx('px-4 py-3 font-medium', isError ? 'text-red-600' : 'text-primary-700')}>
@@ -400,7 +400,7 @@ function AuditLogContent() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-600 text-xs">{log.role}</td>
-                      <td className="px-4 py-3 text-gray-500 font-mono text-xs">{log.client_ip}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{log.client_ip}</td>
                       <td className="px-4 py-3 text-center">
                         <button
                           onClick={e => { e.stopPropagation(); handleOpenFlyout(log, idx) }}

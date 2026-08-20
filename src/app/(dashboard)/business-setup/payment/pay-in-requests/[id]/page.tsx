@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react'
 import { getMerchantBase } from '@/lib/merchant-url'
 import { useRouter, useParams } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
+import { masterRefApi } from '@/lib/api/master-ref.api'
 import type { PayInRequestDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip, TriangleAlert } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip, TriangleAlert, History } from 'lucide-react'
+import AuditTrailDrawer from '@/components/AuditTrailDrawer'
 
 type SlipItem = {
   imageBase64: string
@@ -201,6 +203,7 @@ function SlipViewerModal({
   destAccountNo,
   destAccountType,
   destPromptPayId,
+  isPeerToPeer,
   confirmData,
   onClose,
   onApproved,
@@ -214,6 +217,7 @@ function SlipViewerModal({
   destAccountNo?: string | null
   destAccountType?: string | null
   destPromptPayId?: string | null
+  isPeerToPeer?: boolean | null
   confirmData?: ConfirmData
   onClose: () => void
   onApproved: () => void
@@ -224,7 +228,20 @@ function SlipViewerModal({
   const [showConfirm, setShowConfirm] = useState(false)
   const [approving, setApproving] = useState(false)
   const [dupIds, setDupIds] = useState<string[]>([])
+  const [approveStatusCode, setApproveStatusCode] = useState('')
+  const [approveReason, setApproveReason] = useState('')
+  const [approveStatuses, setApproveStatuses] = useState<{ code: string; description?: string }[]>([])
   const slip = slips[idx]
+
+  useEffect(() => {
+    masterRefApi.getMasterRefs({ RefType: 'PayInApproveStatus', Limit: 200 })
+      .then(r => {
+        const data = r.data as any
+        const list: any[] = Array.isArray(data) ? data : []
+        setApproveStatuses(list.map(i => ({ code: i.code ?? '', description: i.description ?? '' })))
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     setDupIds([])
@@ -243,7 +260,10 @@ function SlipViewerModal({
   const handleApprove = async () => {
     setApproving(true)
     try {
-      await paymentRequestApi.createPaymentTxByPayInRequestId(paymentRequestId)
+      await paymentRequestApi.createPaymentTxByPayInRequestId(paymentRequestId, {
+        StatusCode: approveStatusCode || undefined,
+        StatusReason: approveReason.trim() || undefined,
+      })
       toast.success(m.toastApproveSuccess)
       setShowConfirm(false)
       onClose()
@@ -323,35 +343,44 @@ function SlipViewerModal({
 
         {/* Left metadata panel */}
         {(slip?.first4 || slip?.last4 || slip?.note || destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
-          <div className="flex-none w-52 flex flex-col gap-3 px-4 py-4 overflow-y-auto">
-            {(destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
-              <div className="bg-teal-900/60 border border-teal-500/40 rounded-xl px-3 py-3">
-                <p className="text-[9px] text-teal-300/70 uppercase tracking-widest mb-2">{m.slipDestAccount}</p>
-                {destBankCode && (
-                  <span className="inline-block mb-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500 text-white uppercase tracking-wide">{destBankCode}</span>
-                )}
-                {destAccountNo && <p className="text-sm font-mono font-bold text-white leading-tight">{destAccountNo}</p>}
-                {destAccountName && <p className="text-xs text-teal-100 font-medium mt-1">{destAccountName}</p>}
-                {destPromptPayId && (
-                  <div className="mt-2 pt-2 border-t border-teal-700/50">
-                    <p className="text-[9px] font-bold text-teal-400 uppercase tracking-wide mb-0.5">PromptPay</p>
-                    <p className="text-xs font-mono font-bold text-yellow-300">{destPromptPayId}</p>
+          <div className="flex-none w-52 flex flex-col px-4 py-4 overflow-y-auto">
+            <div className="flex flex-col gap-3">
+              {(destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
+                <div className="bg-teal-900/60 border border-teal-500/40 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-teal-300/70 uppercase tracking-widest mb-2">{m.slipDestAccount}</p>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    {destBankCode && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500 text-white uppercase tracking-wide">{destBankCode}</span>
+                    )}
+                    {isPeerToPeer && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold bg-purple-500/80 text-white uppercase tracking-wide">P2P</span>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
-            {(slip?.first4 || slip?.last4) && (
-              <div className="bg-white/10 rounded-xl px-3 py-3">
-                <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
-                <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">{slip.first4} — {slip.last4}</p>
-              </div>
-            )}
-            {slip?.note && (
-              <div className="bg-white/10 rounded-xl px-3 py-3">
-                <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipNoteLabel}</p>
-                <p className="text-sm text-white font-medium leading-snug">{slip.note}</p>
-              </div>
-            )}
+                  {destAccountNo && <p className="text-sm font-mono font-bold text-white leading-tight">{destAccountNo}</p>}
+                  {destAccountName && <p className="text-xs text-teal-100 font-medium mt-1">{destAccountName}</p>}
+                  {destPromptPayId && (
+                    <div className="mt-2 pt-2 border-t border-teal-700/50">
+                      <p className="text-[9px] font-bold text-teal-400 uppercase tracking-wide mb-0.5">PromptPay</p>
+                      <p className="text-xs font-mono font-bold text-yellow-300">{destPromptPayId}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="mt-auto flex flex-col gap-3 pt-3">
+              {(slip?.first4 || slip?.last4) && (
+                <div className="bg-white/10 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
+                  <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">{slip.first4} — {slip.last4}</p>
+                </div>
+              )}
+              {slip?.note && (
+                <div className="bg-white/10 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipNoteLabel}</p>
+                  <p className="text-sm text-white font-medium leading-snug">{slip.note}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -390,15 +419,41 @@ function SlipViewerModal({
           className="absolute inset-0 z-10 flex items-center justify-center bg-black/60"
           onClick={() => !approving && setShowConfirm(false)}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-[360px] max-w-[90vw] p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[420px] max-w-[90vw] p-6" onClick={e => e.stopPropagation()}>
             <h2 className="text-base font-bold text-gray-900 mb-1">{m.modalApproveTitle}</h2>
             <p className="text-sm text-gray-400 mb-4">{m.confirmApproveDesc}</p>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <ConfirmRow label={m.fieldMerchant} value={merchantDisplay} />
               <ConfirmRow label={m.fieldAccountNo} value={accountNo} />
               <ConfirmRow label={m.fieldAmount} value={amountDisplay} />
               <ConfirmRow label={m.fieldRefId} value={confirmData?.refId1 ?? '—'} />
+            </div>
+
+            {/* Approve Status dropdown */}
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{m.labelApproveStatus}</label>
+              <select
+                value={approveStatusCode}
+                onChange={e => setApproveStatusCode(e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+              >
+                <option value="">{m.approveStatusPlaceholder}</option>
+                {approveStatuses.map(s => (
+                  <option key={s.code} value={s.code}>{s.code}{s.description ? ` — ${s.description}` : ''}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Approve Reason */}
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{m.labelApproveReason}</label>
+              <input
+                value={approveReason}
+                onChange={e => setApproveReason(e.target.value)}
+                placeholder={m.approveReasonPlaceholder}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              />
             </div>
 
             <div className="flex gap-3 justify-end">
@@ -543,6 +598,7 @@ export default function PayInRequestDetailPage() {
   const [loadingSlips, setLoadingSlips] = useState(false)
   const [showSlipViewer, setShowSlipViewer] = useState(false)
   const [showSlipLink, setShowSlipLink] = useState(false)
+  const [showAuditTrail, setShowAuditTrail] = useState(false)
 
   const loadDetail = async () => {
     setLoading(true)
@@ -655,8 +711,8 @@ export default function PayInRequestDetailPage() {
               )}
             </button>
           )}
-          {/* Slip Upload Link button */}
-          {detail?.orgId && isPending && (
+          {/* Slip Upload Link button — show for all statuses */}
+          {detail?.orgId && (
             <button
               onClick={() => setShowSlipLink(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors"
@@ -665,6 +721,13 @@ export default function PayInRequestDetailPage() {
               Slip Link
             </button>
           )}
+          <button
+            onClick={() => setShowAuditTrail(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+          >
+            <History className="w-3.5 h-3.5" />
+            Audit Trail
+          </button>
           {detail && (
             <button onClick={() => setShowRawJson(true)} className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors">
               {'{ }'}
@@ -673,6 +736,7 @@ export default function PayInRequestDetailPage() {
         </div>
       </div>
 
+      {showAuditTrail && <AuditTrailDrawer rowId={id} onClose={() => setShowAuditTrail(false)} />}
       {showRawJson && detail && <RawJsonModal data={detail} onClose={() => setShowRawJson(false)} />}
 
       {showSlipViewer && slips.length > 0 && (
@@ -686,6 +750,7 @@ export default function PayInRequestDetailPage() {
           destAccountNo={detail?.payinBankAccountNo}
           destAccountType={detail?.payinAccountType}
           destPromptPayId={detail?.payinPromptPayId}
+          isPeerToPeer={detail?.payinIsPeerToPeer}
           confirmData={detail ? {
             merchantCode: detail.merchantCode,
             merchantName: detail.merchantName,
@@ -771,16 +836,16 @@ export default function PayInRequestDetailPage() {
                 ) : '—'}
               </InfoRow>
             )}
-            {isRejected && detail?.statusCode && (
+            {(isRejected || isApproved) && detail?.statusCode && (
               <InfoRow label={m.fieldStatusCode}>
-                <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 ring-1 ring-red-200">
+                <span className={`inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-bold ring-1 ${isApproved ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 'bg-red-100 text-red-700 ring-red-200'}`}>
                   {detail.statusCode}
                 </span>
               </InfoRow>
             )}
-            {isRejected && detail?.statusReason && (
+            {(isRejected || isApproved) && detail?.statusReason && (
               <InfoRow label={m.fieldStatusReason}>
-                <span className="text-red-600 font-medium">{detail.statusReason}</span>
+                <span className={isApproved ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>{detail.statusReason}</span>
               </InfoRow>
             )}
           </div>

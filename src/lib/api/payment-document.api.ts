@@ -7,7 +7,6 @@ import type {
   UpdatePayInDocumentPayload,
   ApprovePayInDocumentPayload,
   RejectPayInDocumentPayload,
-  GetPresignedUrlPayload,
 } from './types'
 
 const BASE = '/admin-api/AdminPaymentDocument/org/global/action'
@@ -21,9 +20,6 @@ export const paymentDocumentApi = {
 
   getPaymentDocumentById: (id: string) =>
     client.get<{ paymentDocument: PayInSlipDetail }>(`${BASE}/GetPaymentDocumentById/${id}`),
-
-  getPresignedUrl: (merchantId: string, payload: GetPresignedUrlPayload) =>
-    client.post<{ presignedUrl: string; objectName: string }>(`${BASE}/GetPayInSlipUploadPresignedUrl/${merchantId}`, payload),
 
   addPayInDocument: (merchantId: string, payload: AddPayInDocumentPayload) =>
     client.post(`${BASE}/AddPayInDocument/${merchantId}`, payload),

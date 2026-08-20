@@ -83,11 +83,27 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `Status` | สถานะปัจจุบัน (ดู [สถานะการชำระเงิน](/documents/payment-status)) |
 | `RequestedAmount` | จำนวนเงินที่ขอ |
 | `GeneratedAmount` | จำนวนเงินที่ใช้จริง (อาจมีเศษสตางค์ random เพื่อ matching) |
-| `QrCodeImage` | รูป QR Code เป็น Base64 — นำไปแสดงในแอปได้เลย |
+| `IsQrAvailable` | `true` หาก QR Code พร้อมให้ลูกค้า scan, `false` หากบัญชีปลายทางไม่รองรับ QR (เช่น ไม่ได้ผูกกับ PromptPay) — ดูรายละเอียดด้านล่าง |
+| `QrCodeImage` | รูป QR Code เป็น Base64 — นำไปแสดงในแอปได้เลย (ว่างเปล่าหาก `IsQrAvailable` เป็น `false`) |
+| `PayInBankCode` | รหัสธนาคารปลายทาง |
+| `PayInBankAccountNo` | เลขบัญชีปลายทาง |
+| `PayInBankAccountName` | ชื่อบัญชีปลายทาง |
+| `PayInPromptPayId` | หมายเลข PromptPay ปลายทาง (ถ้ามี) |
 | `SessionId` | ใช้เชื่อมต่อ WebSocket เพื่อรับสถานะแบบ real-time |
 | `WebsocketPath` | path สำหรับ WebSocket (`/realtime/payment-tx`) |
 | `ExpireAt` | QR Code หมดอายุเมื่อไหร่ |
 | `SlipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ domain ของ merchant portal เองเช่น `https://<merchant-domain>` + `SlipUploadUrl` เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
+
+### การแสดงผล QR และข้อมูลบัญชี
+
+**ควรตรวจสอบ `IsQrAvailable` ก่อนแสดงผลเสมอ:**
+
+| สถานการณ์ | วิธีแสดงผล |
+|---|---|
+| `IsQrAvailable = true` | แสดง QR Code จาก `QrCodeImage` ให้ลูกค้า scan ตามปกติ |
+| `IsQrAvailable = false` | ไม่มี QR Code — แสดงข้อมูลบัญชี (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) เพื่อให้ลูกค้ากรอกข้อมูลโอนเงินเอง |
+
+> **หมายเหตุ:** แนะนำให้แสดงข้อมูลบัญชี (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) ควบคู่กับ QR Code เสมอ — ลูกค้าบางรายอาจต้องการโอนด้วยตัวเองแม้มี QR
 
 > **แนะนำ:** นำ `SlipUploadUrl` ไปทำเป็น **QR Code** แสดงในหน้าชำระเงินของคุณ — ลูกค้าสแกน QR ด้วยกล้องมือถือแล้วเปิดหน้าอัปโหลดสลิปได้เลย ไม่ต้องพิมพ์ URL เอง ใช้ได้ทั้ง **Pay-In ปกติ** และ **Pay-In P2P**
 
@@ -225,12 +241,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 
 | | Pay-In ปกติ | Pay-In P2P |
 |---|---|---|
-| `QrCodeImage` | รูป QR Code | ว่างเปล่า (`""`) |
+| `IsQrAvailable` | `true` (ส่วนใหญ่) | `false` (ส่วนใหญ่) — บัญชี P2P มักไม่ผูกกับ PromptPay |
+| `QrCodeImage` | รูป QR Code | ว่างเปล่า (`""`) เมื่อ `IsQrAvailable = false` |
 | `PayInBankAccountName` | บัญชี Merchant | บัญชีของผู้รับปลายทาง (จาก Pay-Out Request ที่จับคู่) |
-| การโอนเงิน | สแกน QR Code | โอนตรงไปยังบัญชีที่ระบุใน response |
+| การโอนเงิน | สแกน QR Code | โอนตรงไปยังบัญชีที่ระบุใน response (กรอกข้อมูลบัญชีเอง) |
 | `SlipUploadUrl` | ✅ | ✅ (สำคัญมาก — ลูกค้าต้องอัปโหลดสลิปเป็นหลักฐาน) |
 
-> **สำคัญ:** สำหรับ P2P ลูกค้าต้องโอนเงินตรงไปยัง `PayInBankAccountNo` / `PayInBankAccountName` ที่ได้รับใน response และอัปโหลดสลิปผ่าน `SlipUploadUrl` เพื่อยืนยันการโอน — ระบบจะ approve รายการเมื่อผู้ดูแลระบบตรวจสอบสลิปแล้ว
+> **สำคัญ:** สำหรับ P2P — `IsQrAvailable` มักเป็น `false` เพราะบัญชีปลายทางอาจไม่ผูกกับ PromptPay ในกรณีนี้ **ต้องแสดงข้อมูลบัญชี** (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) เพื่อให้ลูกค้ากรอกโอนเงินเองด้วยตัวเอง พร้อมทั้งแสดง `SlipUploadUrl` เพื่อให้อัปโหลดสลิปหลักฐานการโอน
 
 > **แนะนำ:** นำ `SlipUploadUrl` ไปทำเป็น **QR Code** แสดงควบคู่กับข้อมูลบัญชีปลายทาง — ลูกค้าโอนเงินแล้วสแกน QR เปิดหน้าอัปโหลดสลิปได้เลยโดยไม่ต้องพิมพ์ URL เอง (ดูตัวอย่างหน้าอัปโหลดสลิปด้านบน)
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getMerchantBase } from '@/lib/merchant-url'
 import QRCode from 'react-qr-code'
-import { X, QrCode, Loader2, RefreshCw, Link2, Copy, Check, ExternalLink } from 'lucide-react'
+import { X, QrCode, Loader2, RefreshCw, Link2, Copy, Check, ExternalLink, BanknoteIcon } from 'lucide-react'
 import { merchantApi } from '@/lib/api/merchant.api'
 import type { PaymentRequestResponse } from '@/lib/api/types'
 import { toast } from 'sonner'
@@ -98,7 +98,7 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, orgId, onC
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className={clsx('w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] transition-all duration-300', result && result.qrCode ? 'max-w-3xl' : 'max-w-md')}>
+      <div className={clsx('w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] transition-all duration-300', result ? 'max-w-3xl' : 'max-w-md')}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
@@ -225,21 +225,39 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, orgId, onC
             )}
           </div>
 
-          {/* QR Result — right column */}
-          {result && result.qrCode && (
+          {/* QR / Account Info — right column, always shown when result exists */}
+          {result && (
             <div className="w-72 flex-shrink-0 border-l border-gray-100 flex flex-col items-center justify-center gap-4 px-6 py-5 bg-primary-50/30">
-              <div className="bg-white p-3 rounded-xl shadow-sm">
-                <QRCode value={result.qrCode} size={180} />
-              </div>
-              {result?.payInBankAccountName && (
-                <div className="text-center">
+
+              {/* QR or No-QR indicator */}
+              {result.isQrAvailable !== false && result.qrCode ? (
+                <div className="bg-white p-3 rounded-xl shadow-sm">
+                  <QRCode value={result.qrCode} size={180} />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 px-4 py-5 bg-amber-50 border border-amber-200 rounded-xl w-full text-center">
+                  <BanknoteIcon className="w-10 h-10 text-amber-400" />
+                  <p className="text-xs font-semibold text-amber-700">ไม่มี QR Code</p>
+                  <p className="text-[11px] text-amber-600 leading-snug">กรุณาโอนเงินโดยใส่ข้อมูลบัญชีด้านล่างด้วยตนเอง</p>
+                </div>
+              )}
+
+              {/* Bank account info — always shown */}
+              {(result.payInBankAccountName || result.payInBankCode) && (
+                <div className="w-full text-center space-y-1">
                   <p className="text-xs text-gray-500">{m.qrPayTo}</p>
-                  <p className="text-sm font-bold text-gray-800">{result.payInBankAccountName}</p>
-                  {result.payInBankAccountNo && (
-                    <p className="text-xs text-gray-500">{result.payInBankCode} · {result.payInBankAccountNo}</p>
+                  {result.payInBankAccountName && (
+                    <p className="text-sm font-bold text-gray-800">{result.payInBankAccountName}</p>
+                  )}
+                  {(result.payInBankCode || result.payInBankAccountNo) && (
+                    <p className="text-xs text-gray-500">{[result.payInBankCode, result.payInBankAccountNo].filter(Boolean).join(' · ')}</p>
+                  )}
+                  {result.payInPromptPayId && (
+                    <p className="text-xs font-mono font-semibold text-sky-600">PromptPay: {result.payInPromptPayId}</p>
                   )}
                 </div>
               )}
+
               {result?.generatedAmount != null && (
                 <p className="text-lg font-bold text-primary-700">
                   ฿{result.generatedAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}

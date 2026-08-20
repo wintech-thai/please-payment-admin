@@ -47,7 +47,7 @@ function computeDiff(oldJson: string | null | undefined, newJson: string | null 
   try {
     const oldObj: Record<string, unknown> = oldJson ? JSON.parse(oldJson) : {}
     const newObj: Record<string, unknown> = newJson ? JSON.parse(newJson) : {}
-    const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)])
+    const allKeys = Array.from(new Set([...Object.keys(oldObj), ...Object.keys(newObj)]))
     const diffOld: Record<string, unknown> = {}
     const diffNew: Record<string, unknown> = {}
     for (const k of allKeys) {

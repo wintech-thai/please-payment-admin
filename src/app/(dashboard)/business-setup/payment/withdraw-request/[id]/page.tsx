@@ -14,7 +14,7 @@ import AuditTrailDrawer from '@/components/AuditTrailDrawer'
 import QRCode from 'react-qr-code'
 import clsx from 'clsx'
 
-type SlipItem = { imageBase64: string; uploadedAt: string; note?: string | null }
+type SlipItem = { imageBase64: string; uploadedAt: string; note?: string | null; first4?: string | null; last4?: string | null }
 
 interface AccountOption {
   bankAccountId: string

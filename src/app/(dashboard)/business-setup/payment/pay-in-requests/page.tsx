@@ -650,9 +650,16 @@ function SlipQuickViewModal({
               </div>
             )}
 
-            {/* ── Slip Upload Section — pinned to bottom ────── */}
+            {/* ── Amount + Slip Upload Section — pinned to bottom ────── */}
+            <div className="mt-auto pt-3 flex flex-col gap-2">
+              {item.generatedAmount != null && (
+                <div className="bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
+                  <p className="text-base font-bold text-amber-300 tabular-nums">{Number(item.generatedAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+              )}
             {(slip?.first4 || slip?.last4 || slip?.note) && (
-              <div className="mt-auto pt-3 flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
                 {(slip.first4 || slip.last4) && (
                   <div className="bg-white/10 rounded-xl px-3 py-3">
                     <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
@@ -667,6 +674,7 @@ function SlipQuickViewModal({
                 )}
               </div>
             )}
+            </div>
           </div>
         )}
 

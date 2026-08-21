@@ -1127,6 +1127,7 @@ export const translations = {
       slipRefLabel: 'เลขอ้างอิง',
       slipNoteLabel: 'หมายเหตุ',
       slipDestAccount: 'บัญชีปลายทาง',
+      slipAmount: 'ยอดที่ต้องโอน',
       slipDupFound: 'พบสลิปที่อาจซ้ำในระบบ!',
       slipDupViewRequest: 'ดูรายการ:',
       confirmApproveDesc: 'กรุณาตรวจสอบข้อมูลก่อนยืนยัน',
@@ -1474,6 +1475,7 @@ export const translations = {
       slipRefLabel: 'เลขอ้างอิง',
       slipNoteLabel: 'หมายเหตุ',
       slipDestAccount: 'บัญชีปลายทาง',
+      slipAmount: 'ยอดที่ต้องโอน',
       // Create page
       createTitle: 'เพิ่ม Pay-Out Request',
       createSubtitle: 'สร้างคำขอโอนเงินออกใหม่',
@@ -3389,6 +3391,7 @@ export const translations = {
       slipRefLabel: 'Reference',
       slipNoteLabel: 'Note',
       slipDestAccount: 'Destination Account',
+      slipAmount: 'Amount to Transfer',
       slipDupFound: 'Possible duplicate slip found!',
       slipDupViewRequest: 'View request:',
       confirmApproveDesc: 'Please verify the details before approving.',
@@ -3736,6 +3739,7 @@ export const translations = {
       slipRefLabel: 'Reference',
       slipNoteLabel: 'Note',
       slipDestAccount: 'Destination Account',
+      slipAmount: 'Amount to Transfer',
       // Create page
       createTitle: 'Add Pay-Out Request',
       createSubtitle: 'Create a new outgoing transfer request',

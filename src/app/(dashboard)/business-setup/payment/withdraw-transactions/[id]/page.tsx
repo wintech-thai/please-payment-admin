@@ -6,7 +6,8 @@ import { paymentTxApi } from '@/lib/api/payment-tx.api'
 import type { PayOutTxDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, X, Copy, Check } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, X, Copy, Check, History } from 'lucide-react'
+import AuditTrailDrawer from '@/components/AuditTrailDrawer'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
@@ -152,6 +153,7 @@ export default function PayOutTxDetailPage() {
   const [job, setJob] = useState<PaymentTxJob | null>(null)
   const [loadingJob, setLoadingJob] = useState(false)
   const [showRawJson, setShowRawJson] = useState(false)
+  const [showAuditTrail, setShowAuditTrail] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -224,12 +226,18 @@ export default function PayOutTxDetailPage() {
           <p className="text-sm text-gray-500 mt-0.5">{id}</p>
         </div>
         {detail && (
-          <button onClick={() => setShowRawJson(true)} className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors">
-            {'{ }'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowAuditTrail(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors">
+              <History className="w-3.5 h-3.5" />Audit Trail
+            </button>
+            <button onClick={() => setShowRawJson(true)} className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors">
+              {'{ }'}
+            </button>
+          </div>
         )}
       </div>
 
+      {showAuditTrail && <AuditTrailDrawer rowId={id} onClose={() => setShowAuditTrail(false)} />}
       {showRawJson && detail && <RawJsonModal data={detail} onClose={() => setShowRawJson(false)} />}
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">

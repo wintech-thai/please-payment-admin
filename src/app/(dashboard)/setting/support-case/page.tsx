@@ -82,6 +82,8 @@ function formatAge(d?: string | null): string {
   return `${mins}min`
 }
 
+const FILTER_KEY = 'support_case_filter'
+
 function SupportCaseListContent() {
   const { lang } = useLang()
   const router = useRouter()
@@ -94,10 +96,18 @@ function SupportCaseListContent() {
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<CaseStatus | 'All'>('All')
-  const [orgFilter, setOrgFilter] = useState('')
-  const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '30d' })
+  const [search, setSearch] = useState(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
+  )
+  const [statusFilter, setStatusFilter] = useState<CaseStatus | 'All'>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.statusFilter ?? 'All') : 'All'
+  )
+  const [orgFilter, setOrgFilter] = useState(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.orgFilter ?? '') : ''
+  )
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.timeRange ?? { type: 'relative', value: '30d' }) : { type: 'relative', value: '30d' }
+  )
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
     if (highlightIdParam) return highlightIdParam
     if (typeof window !== 'undefined') return sessionStorage.getItem('support_case_highlight') ?? null
@@ -105,6 +115,7 @@ function SupportCaseListContent() {
   })
 
   const fetchCases = async (p = page, s = search, st = statusFilter, org = orgFilter, limit = itemsPerPage, tr = timeRange) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: s, statusFilter: st, orgFilter: org, timeRange: tr }))
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)

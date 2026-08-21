@@ -11,6 +11,7 @@ import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, MoreVertica
 import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import QRCode from 'react-qr-code'
 
 const HIGHLIGHTED_KEY = 'payInRequests_highlightedId'
 const FILTER_KEY = 'payInRequests_filter'
@@ -95,6 +96,9 @@ function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToP
           <span className="truncate max-w-[130px]">{paymentTxId}</span>
           <ExternalLink className="w-3 h-3 flex-shrink-0" />
         </a>
+      )}
+      {statusReason && (
+        <span className="text-[10px] text-emerald-600 ml-1 max-w-[160px] truncate" title={statusReason}>{statusReason}</span>
       )}
     </div>
   )
@@ -183,8 +187,8 @@ function SlipUploadLinkModal({ item, onClose }: { item: PayInRequestItem; onClos
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <Link2 className="w-4 h-4 text-primary-600" />
@@ -205,9 +209,12 @@ function SlipUploadLinkModal({ item, onClose }: { item: PayInRequestItem; onClos
             </div>
           ) : errorMsg ? (
             <p className="text-sm text-red-500 text-center py-4">{errorMsg}</p>
-          ) : (
-            <div className="space-y-3">
+          ) : url ? (
+            <div className="space-y-4">
               <p className="text-xs text-gray-500">{m.slipLinkDesc}</p>
+              <div className="flex justify-center p-3 bg-white border border-gray-200 rounded-xl">
+                <QRCode value={url} size={160} />
+              </div>
               <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                 <span className="flex-1 text-xs text-gray-700 font-mono break-all">{url}</span>
                 <button
@@ -219,8 +226,12 @@ function SlipUploadLinkModal({ item, onClose }: { item: PayInRequestItem; onClos
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 hover:underline">
+                <ExternalLink className="w-3.5 h-3.5" />
+                {m.slipLinkOpen}
+              </a>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -241,11 +252,49 @@ function ApproveConfirmModal({
   const { t } = useLang()
   const m = t.payInRequest
   const [loading, setLoading] = useState(false)
+  const [approveStatusCode, setApproveStatusCode] = useState('')
+  const [reason, setReason] = useState('')
+  const [statuses, setStatuses] = useState<MasterRefItem[]>([])
+  const [statusSearch, setStatusSearch] = useState('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    masterRefApi.getMasterRefs({ RefType: 'PayInApproveStatus', Limit: 200 })
+      .then(res => {
+        const data = res.data as any
+        setStatuses(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = statuses.filter(s =>
+    s.code?.toLowerCase().includes(statusSearch.toLowerCase()) ||
+    s.description?.toLowerCase().includes(statusSearch.toLowerCase())
+  )
+
+  const selectStatus = (s: MasterRefItem) => {
+    setApproveStatusCode(s.code ?? '')
+    setStatusSearch(s.code ?? '')
+    setReason(s.description ?? '')
+    setDropdownOpen(false)
+  }
 
   const handleConfirm = async () => {
     setLoading(true)
     try {
-      await paymentRequestApi.createPaymentTxByPayInRequestId(item.id)
+      await paymentRequestApi.createPaymentTxByPayInRequestId(item.id, {
+        StatusCode: approveStatusCode || undefined,
+        StatusReason: reason.trim() || undefined,
+      })
       toast.success(m.toastApproveSuccess)
       onSuccess()
       onClose()
@@ -294,6 +343,61 @@ function ApproveConfirmModal({
               </div>
             )}
           </div>
+
+          {/* Approve Status — searchable dropdown (optional) */}
+          <div ref={dropdownRef} className="relative">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+              {m.labelApproveStatus}
+            </label>
+            <div
+              className={clsx(
+                'flex items-center border rounded-lg px-3 py-2 cursor-text bg-white',
+                dropdownOpen ? 'border-primary-500 ring-1 ring-primary-500' : 'border-gray-200'
+              )}
+              onClick={() => setDropdownOpen(true)}
+            >
+              <input
+                value={statusSearch}
+                onChange={e => { setStatusSearch(e.target.value); setApproveStatusCode(''); setDropdownOpen(true) }}
+                onFocus={() => setDropdownOpen(true)}
+                placeholder={m.approveStatusPlaceholder}
+                className="flex-1 text-sm outline-none bg-transparent"
+              />
+              <ChevronDown className={clsx('w-4 h-4 text-gray-400 flex-shrink-0 transition-transform', dropdownOpen && 'rotate-180')} />
+            </div>
+            {dropdownOpen && (
+              <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {filtered.length === 0 ? (
+                  <div className="px-3 py-3 text-sm text-gray-400 text-center">—</div>
+                ) : (
+                  filtered.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onMouseDown={e => { e.preventDefault(); selectStatus(s) }}
+                      className="w-full text-left px-3 py-2.5 hover:bg-gray-50 flex items-start gap-3 border-b border-gray-50 last:border-0"
+                    >
+                      <span className="text-xs font-bold text-primary-700 min-w-[80px]">{s.code}</span>
+                      {s.description && <span className="text-xs text-gray-500 truncate">{s.description}</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Reason */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{m.labelApproveReason}</label>
+            <textarea
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              placeholder={m.approveReasonPlaceholder}
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+            />
+          </div>
+
           <div className="flex gap-3 pt-1">
             <button
               type="button"
@@ -466,6 +570,157 @@ function RejectModal({
   )
 }
 
+// ── Slip Quick View Modal (list page) ─────────────────────────────────────────
+
+type SlipQuickItem ={ imageBase64: string; uploadedAt: string; first4?: string | null; last4?: string | null; note?: string | null }
+
+function SlipQuickViewModal({
+  item,
+  onClose,
+  onApprove,
+}: {
+  item: PayInRequestItem
+  onClose: () => void
+  onApprove: () => void
+}) {
+  const { t } = useLang()
+  const m = t.payInRequest
+  const [slips, setSlips] = useState<SlipQuickItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [idx, setIdx] = useState(0)
+  const isPending = item.status?.toLowerCase() === 'pending'
+
+  useEffect(() => {
+    paymentRequestApi.getPayInSlipUploads(item.orgId ?? '', item.id)
+      .then(r => {
+        const d = r.data as any
+        const list: any[] = Array.isArray(d) ? d : (d?.slips ?? d?.Slips ?? [])
+        setSlips(list.map(s => ({
+          imageBase64: s.imageBase64 ?? s.ImageBase64 ?? '',
+          uploadedAt: s.uploadedAt ?? s.UploadedAt ?? '',
+          first4: s.first4 ?? s.First4 ?? null,
+          last4: s.last4 ?? s.Last4 ?? null,
+          note: s.note ?? s.Note ?? null,
+        })).sort((a, b) => new Date(b.uploadedAt || 0).getTime() - new Date(a.uploadedAt || 0).getTime()))
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [item.id])
+
+  const slip = slips[idx]
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/90" onClick={onClose}>
+      <div className="flex-none flex items-center justify-between px-5 py-3" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3">
+          <span className="text-white text-sm font-semibold">{m.slipViewerTitle} ({slips.length === 0 ? '—' : `${idx + 1} / ${slips.length}`})</span>
+          {slip?.uploadedAt && <span className="text-white/60 text-xs">{new Date(slip.uploadedAt).toLocaleString('th-TH')}</span>}
+        </div>
+        <div className="flex items-center gap-3">
+          {isPending && slips.length > 0 && (
+            <button type="button" onClick={() => { onClose(); onApprove() }} className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors">
+              {m.btnApprove}
+            </button>
+          )}
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-stretch gap-0 min-h-0" onClick={e => e.stopPropagation()}>
+        {/* Left metadata panel */}
+        {!loading && slips.length > 0 && (
+          <div className="flex-none w-56 flex flex-col px-4 py-4 overflow-y-auto gap-0">
+
+            {/* ── Payment Request Section ───────────────────── */}
+            {(item.payinBankCode || item.payinBankAccountName || item.payinBankAccountNo || item.payinPromptPayId) && (
+              <div>
+                <div className="bg-teal-900/60 border border-teal-500/40 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-teal-300/70 uppercase tracking-widest mb-2">{m.slipDestAccount}</p>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    {item.payinBankCode && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500 text-white uppercase tracking-wide">{item.payinBankCode}</span>
+                    )}
+                    {item.payinIsPeerToPeer && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold bg-purple-500/80 text-white uppercase tracking-wide">P2P</span>
+                    )}
+                  </div>
+                  {item.payinBankAccountNo && <p className="text-sm font-mono font-bold text-white leading-tight">{item.payinBankAccountNo}</p>}
+                  {item.payinBankAccountName && <p className="text-xs text-teal-100 font-medium mt-1">{item.payinBankAccountName}</p>}
+                  {item.payinPromptPayId && (
+                    <div className="mt-2 pt-2 border-t border-teal-700/50">
+                      <p className="text-[9px] font-bold text-teal-400 uppercase tracking-wide mb-0.5">PromptPay</p>
+                      <p className="text-xs font-mono font-bold text-yellow-300">{item.payinPromptPayId}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {item.generatedAmount != null && (
+              <div className="mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
+                <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
+                <p className="text-base font-bold text-amber-300 tabular-nums">{Number(item.generatedAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+            )}
+
+            {/* ── Slip Upload Section — pinned to bottom ────── */}
+            {(slip?.first4 || slip?.last4 || slip?.note) && (
+              <div className="mt-auto pt-3 flex flex-col gap-2">
+                {(slip.first4 || slip.last4) && (
+                  <div className="bg-white/10 rounded-xl px-3 py-3">
+                    <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
+                    <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">{slip.first4} — {slip.last4}</p>
+                  </div>
+                )}
+                {slip.note && (
+                  <div className="bg-white/10 rounded-xl px-3 py-3">
+                    <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipNoteLabel}</p>
+                    <p className="text-sm text-white font-medium leading-snug">{slip.note}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Nav + image */}
+        <div className="flex-1 flex items-center gap-4 px-4 min-h-0">
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <svg className="w-8 h-8 animate-spin text-white/60" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            </div>
+          ) : slips.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center text-white/60 text-sm">{m.slipViewBtn} — no slips</div>
+          ) : (
+            <>
+              <button onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx <= 0} className="flex-shrink-0 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white disabled:opacity-30 transition-colors">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="flex-1 flex items-center justify-center min-h-0">
+                {slip && (
+                  <img
+                    src={`data:image/jpeg;base64,${slip.imageBase64}`}
+                    alt={`slip ${idx + 1}`}
+                    className="max-h-[calc(100vh-120px)] max-w-full rounded-xl shadow-2xl object-contain"
+                  />
+                )}
+              </div>
+              <button onClick={() => setIdx(i => Math.min(slips.length - 1, i + 1))} disabled={idx >= slips.length - 1} className="flex-shrink-0 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white disabled:opacity-30 transition-colors">
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Action Menu ───────────────────────────────────────────────────────────────
 
 function ActionMenu({
@@ -533,9 +788,8 @@ function ActionMenu({
           </button>
           <button
             type="button"
-            disabled={!isPending}
             onClick={() => { setOpen(false); onSlipLink() }}
-            className="w-full px-3 py-2 text-left text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-3 py-2 text-left text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
           >
             Slip Upload Link
           </button>
@@ -569,6 +823,7 @@ export default function PayInRequestsPage() {
   const [approveTarget, setApproveTarget] = useState<PayInRequestItem | null>(null)
   const [rejectTarget, setRejectTarget] = useState<PayInRequestItem | null>(null)
   const [slipLinkTarget, setSlipLinkTarget] = useState<PayInRequestItem | null>(null)
+  const [slipViewerTarget, setSlipViewerTarget] = useState<PayInRequestItem | null>(null)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
@@ -833,10 +1088,14 @@ export default function PayInRequestsPage() {
                             isPeerToPeer={item.payinIsPeerToPeer}
                           />
                           {(item.payInSlipUploadCount ?? 0) > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200">
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); setSlipViewerTarget(item) }}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100 transition-colors"
+                            >
                               <Paperclip className="w-3 h-3" />
                               {item.payInSlipUploadCount}
-                            </span>
+                            </button>
                           )}
                         </div>
                       </td>
@@ -932,6 +1191,14 @@ export default function PayInRequestsPage() {
         <SlipUploadLinkModal
           item={slipLinkTarget}
           onClose={() => setSlipLinkTarget(null)}
+        />
+      )}
+
+      {slipViewerTarget && (
+        <SlipQuickViewModal
+          item={slipViewerTarget}
+          onClose={() => setSlipViewerTarget(null)}
+          onApprove={() => { setSlipViewerTarget(null); setApproveTarget(slipViewerTarget) }}
         />
       )}
     </div>

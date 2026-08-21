@@ -7,10 +7,14 @@ import { bankAccountApi } from '@/lib/api/bank-account.api'
 import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
 import type { PayOutRequestDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
+import { getMerchantBase } from '@/lib/merchant-url'
 import { toast } from 'sonner'
-import { ChevronLeft, ChevronDown, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check, Link2, Paperclip, ExternalLink, History, Loader2 } from 'lucide-react'
+import AuditTrailDrawer from '@/components/AuditTrailDrawer'
 import QRCode from 'react-qr-code'
 import clsx from 'clsx'
+
+type SlipItem = { imageBase64: string; uploadedAt: string; note?: string | null; first4?: string | null; last4?: string | null }
 
 interface AccountOption {
   bankAccountId: string
@@ -184,6 +188,207 @@ function RawJsonModal({ data, onClose }: { data: unknown; onClose: () => void })
   )
 }
 
+// ── Payout Slip Link Modal ────────────────────────────────────────────────────
+
+function SlipLinkModal({ paymentRequestId, onClose }: { paymentRequestId: string; onClose: () => void }) {
+  const { t } = useLang()
+  const m = t.payOutRequest
+  const [url, setUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    paymentRequestApi.generatePayOutSlipUploadToken(paymentRequestId)
+      .then(res => {
+        const d = res.data as any
+        const relUrl = d?.slipUploadUrl ?? d?.SlipUploadUrl
+        if (!relUrl) throw new Error('URL not returned')
+        setUrl(`${getMerchantBase()}${relUrl}`)
+      })
+      .catch(() => setErrorMsg(m.slipLinkError))
+      .finally(() => setLoading(false))
+  }, [paymentRequestId])
+
+  const handleCopy = () => {
+    if (!url) return
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-primary-600" />
+            <h3 className="text-base font-bold text-gray-900">{m.slipLinkTitle}</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="px-6 py-5">
+          {loading ? (
+            <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
+              <svg className="w-5 h-5 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">{m.slipLinkLoading}</span>
+            </div>
+          ) : errorMsg ? (
+            <p className="text-sm text-red-500 text-center py-4">{errorMsg}</p>
+          ) : url ? (
+            <div className="space-y-4">
+              <p className="text-xs text-gray-500">{m.slipLinkDesc}</p>
+              <div className="flex justify-center p-3 bg-white border border-gray-200 rounded-xl">
+                <QRCode value={url} size={160} />
+              </div>
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                <span className="flex-1 text-xs text-gray-700 font-mono break-all">{url}</span>
+                <button type="button" onClick={handleCopy} className="flex-shrink-0 flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded transition-colors">
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 hover:underline">
+                <ExternalLink className="w-3.5 h-3.5" />
+                {m.slipLinkOpen}
+              </a>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Payout Slip Viewer Modal (read-only) ──────────────────────────────────────
+
+function SlipViewerModal({
+  slips,
+  destBankCode,
+  destAccountName,
+  destAccountNo,
+  destPromptPayId,
+  isPeerToPeer,
+  generatedAmount,
+  p2pRemainingAmount,
+  onClose,
+}: {
+  slips: SlipItem[]
+  destBankCode?: string | null
+  destAccountName?: string | null
+  destAccountNo?: string | null
+  destPromptPayId?: string | null
+  isPeerToPeer?: boolean | null
+  generatedAmount?: number | null
+  p2pRemainingAmount?: number | null
+  onClose: () => void
+}) {
+  const { t } = useLang()
+  const m = t.payOutRequest
+  const [idx, setIdx] = useState(0)
+  const slip = slips[idx]
+  const hasSidebar = slip?.first4 || slip?.last4 || slip?.note || destBankCode || destAccountName || destAccountNo || destPromptPayId
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col" onClick={onClose}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 flex-none" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3">
+          <span className="text-white text-sm font-semibold">{m.slipViewerTitle} ({idx + 1} / {slips.length})</span>
+          {slip?.uploadedAt && (
+            <span className="text-white/60 text-xs">{new Date(slip.uploadedAt).toLocaleString('th-TH')}</span>
+          )}
+        </div>
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Image + left metadata panel */}
+      <div className="flex-1 flex items-stretch gap-0 min-h-0" onClick={e => e.stopPropagation()}>
+
+        {/* Left metadata panel */}
+        {hasSidebar && (
+          <div className="flex-none w-52 flex flex-col px-4 py-4 overflow-y-auto">
+            <div className="flex flex-col gap-3">
+              {(destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
+                <div className="bg-teal-900/60 border border-teal-500/40 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-teal-300/70 uppercase tracking-widest mb-2">{m.slipDestAccount}</p>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    {destBankCode && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500 text-white uppercase tracking-wide">{destBankCode}</span>
+                    )}
+                    {isPeerToPeer && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold bg-purple-500/80 text-white uppercase tracking-wide">P2P</span>
+                    )}
+                  </div>
+                  {destAccountNo && <p className="text-sm font-mono font-bold text-white leading-tight">{destAccountNo}</p>}
+                  {destAccountName && <p className="text-xs text-teal-100 font-medium mt-1">{destAccountName}</p>}
+                  {destPromptPayId && (
+                    <div className="mt-2 pt-2 border-t border-teal-700/50">
+                      <p className="text-[9px] font-bold text-teal-400 uppercase tracking-wide mb-0.5">PromptPay</p>
+                      <p className="text-xs font-mono font-bold text-yellow-300">{destPromptPayId}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {(() => {
+              const displayAmount = (isPeerToPeer && p2pRemainingAmount != null) ? p2pRemainingAmount : generatedAmount
+              return displayAmount != null ? (
+                <div className="mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
+                  <p className="text-base font-bold text-amber-300 tabular-nums">{Number(displayAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+              ) : null
+            })()}
+            <div className="mt-auto flex flex-col gap-3 pt-3">
+              {(slip?.first4 || slip?.last4) && (
+                <div className="bg-white/10 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
+                  <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">{slip.first4} — {slip.last4}</p>
+                </div>
+              )}
+              {slip?.note && (
+                <div className="bg-white/10 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipNoteLabel}</p>
+                  <p className="text-sm text-white font-medium leading-snug">{slip.note}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Nav + Image */}
+        <div className="flex-1 flex items-center min-h-0">
+          {slips.length > 1 && (
+            <button onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0}
+              className="p-2 m-2 rounded-full hover:bg-white/10 text-white disabled:opacity-30 transition-colors flex-shrink-0">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+          <div className="flex-1 flex items-center justify-center min-h-0 px-2">
+            {slip && (
+              <img src={`data:image/jpeg;base64,${slip.imageBase64}`} alt={`slip ${idx + 1}`}
+                className="max-h-[calc(100vh-120px)] max-w-full rounded-xl shadow-2xl object-contain" />
+            )}
+          </div>
+          {slips.length > 1 && (
+            <button onClick={() => setIdx(i => Math.min(slips.length - 1, i + 1))} disabled={idx === slips.length - 1}
+              className="p-2 m-2 rounded-full hover:bg-white/10 text-white disabled:opacity-30 transition-colors flex-shrink-0">
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Reject Modal ──────────────────────────────────────────────────────────────
 
 function RejectModal({
@@ -350,6 +555,11 @@ export default function PayOutRequestDetailPage() {
   const [rejecting, setRejecting] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [showRawJson, setShowRawJson] = useState(false)
+  const [showSlipLink, setShowSlipLink] = useState(false)
+  const [slips, setSlips] = useState<SlipItem[]>([])
+  const [loadingSlips, setLoadingSlips] = useState(true)
+  const [showSlipViewer, setShowSlipViewer] = useState(false)
+  const [showAuditTrail, setShowAuditTrail] = useState(false)
 
   const isPending = detail?.status?.toLowerCase() === 'pending'
   const isRejected = detail?.status?.toLowerCase() === 'rejected'
@@ -437,6 +647,22 @@ export default function PayOutRequestDetailPage() {
       }
     }
     load()
+  }, [id])
+
+  useEffect(() => {
+    setLoadingSlips(true)
+    paymentRequestApi.getPayOutSlipUploads(id)
+      .then(res => {
+        const d = res.data as any
+        const list: any[] = Array.isArray(d) ? d : (d?.slips ?? d?.Slips ?? [])
+        setSlips(list.map(s => ({
+          imageBase64: s.imageBase64 ?? s.ImageBase64 ?? '',
+          uploadedAt: s.uploadedAt ?? s.UploadedAt ?? '',
+          note: s.note ?? s.Note ?? null,
+        })))
+      })
+      .catch((err) => { console.error('[withdraw] getPayOutSlipUploads failed:', err) })
+      .finally(() => setLoadingSlips(false))
   }, [id])
 
   // ── Actions ──────────────────────────────────────────────────────────────────
@@ -552,6 +778,36 @@ export default function PayOutRequestDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900">{m.detailTitle}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{id}</p>
         </div>
+        {(loadingSlips || slips.length > 0) && (
+          <button
+            onClick={() => setShowSlipViewer(true)}
+            disabled={loadingSlips || slips.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loadingSlips ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Paperclip className="w-3.5 h-3.5" />
+            )}
+            {loadingSlips ? 'Slips…' : `Slips (${slips.length})`}
+          </button>
+        )}
+        {detail && (
+          <button
+            onClick={() => setShowSlipLink(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors"
+          >
+            <Link2 className="w-3.5 h-3.5" />
+            Slip Link
+          </button>
+        )}
+          <button
+            onClick={() => setShowAuditTrail(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+          >
+            <History className="w-3.5 h-3.5" />
+            Audit Trail
+          </button>
         {detail && (
           <button onClick={() => setShowRawJson(true)} className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors">
             {'{ }'}
@@ -559,7 +815,22 @@ export default function PayOutRequestDetailPage() {
         )}
       </div>
 
+      {showAuditTrail && <AuditTrailDrawer rowId={id} onClose={() => setShowAuditTrail(false)} />}
       {showRawJson && detail && <RawJsonModal data={detail} onClose={() => setShowRawJson(false)} />}
+      {showSlipLink && <SlipLinkModal paymentRequestId={id} onClose={() => setShowSlipLink(false)} />}
+      {showSlipViewer && slips.length > 0 && (
+        <SlipViewerModal
+          slips={slips}
+          destBankCode={detail?.isPayInBankAccountOverride ? detail.payinBankCodeOverride : detail?.payinBankCode}
+          destAccountNo={detail?.isPayInBankAccountOverride ? detail.payinBankAccountNoOverride : detail?.payinBankAccountNo}
+          destAccountName={detail?.isPayInBankAccountOverride ? detail.payinBankAccountNameOverride : detail?.payinBankAccountName}
+          destPromptPayId={detail?.isPayInBankAccountOverride ? detail.payinPromptPayIdOverride : detail?.payinPromptPayId}
+          isPeerToPeer={detail?.isPartialyPayout}
+          generatedAmount={detail?.generatedAmount}
+          p2pRemainingAmount={detail?.payOutTotalAmountDecimalP2P}
+          onClose={() => setShowSlipViewer(false)}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
 
@@ -693,38 +964,60 @@ export default function PayOutRequestDetailPage() {
 
           </div>
 
-          {/* Right column — QR code and/or reject reason */}
+          {/* Right column — QR code + destination account info */}
           {(() => {
             const paidAmt = detail?.totalPayOutPaidAmountDecimal ?? 0
             const useP2P = detail?.isPartialyPayout && detail?.qrCodeP2P
             const rawQr = useP2P ? detail!.qrCodeP2P! : (detail?.qrCodeImage ?? detail?.qrCode ?? null)
-            if (!rawQr) return null
+            const qrAvailable = detail?.isQrAvailable !== false
+            const bankCode = detail?.isPayInBankAccountOverride ? detail.payinBankCodeOverride : detail?.payinBankCode
+            const bankAccountNo = detail?.isPayInBankAccountOverride ? detail.payinBankAccountNoOverride : detail?.payinBankAccountNo
+            const bankAccountName = detail?.isPayInBankAccountOverride ? detail.payinBankAccountNameOverride : detail?.payinBankAccountName
+            const accountType = detail?.isPayInBankAccountOverride ? detail.payinAccountTypeOverride : detail?.payinAccountType
+            const promptPayId = detail?.isPayInBankAccountOverride ? detail.payinPromptPayIdOverride : detail?.payinPromptPayId
+            const hasQrOrAccount = rawQr || !qrAvailable || bankCode || bankAccountNo
+            if (!hasQrOrAccount) return null
             const isImage = rawQr ? (rawQr.startsWith('data:') || rawQr.startsWith('iVBOR') || rawQr.startsWith('/9j/')) : false
             return (
-              <div className="flex-shrink-0 flex flex-col items-center gap-4 pt-1">
-                {rawQr && (
-                  <>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">
-                      {useP2P ? 'QR P2P' : 'QR Code'}
-                    </p>
-                    {isImage ? (
-                      <img
-                        src={rawQr.startsWith('data:') ? rawQr : `data:image/png;base64,${rawQr}`}
-                        alt="QR Code"
-                        className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
-                      />
-                    ) : (
-                      <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
-                        <QRCode value={rawQr} size={200} />
-                      </div>
-                    )}
-                    {useP2P && paidAmt > 0 && detail?.payOutTotalAmountDecimalP2P != null && (
-                      <div className="text-center max-w-[220px]">
-                        <p className="text-xs font-semibold text-primary-600 tabular-nums">{formatAmount(detail.payOutTotalAmountDecimalP2P)}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{m.qrP2PDescription ?? 'ยอดคงเหลือหลัง partial payment'}</p>
-                      </div>
-                    )}
-                  </>
+              <div className="flex-shrink-0 flex flex-col items-center gap-4 pt-1 min-w-[220px]">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-start">
+                  {useP2P ? 'QR P2P' : 'QR Code'}
+                </p>
+                {rawQr && qrAvailable ? (
+                  isImage ? (
+                    <img
+                      src={rawQr.startsWith('data:') ? rawQr : `data:image/png;base64,${rawQr}`}
+                      alt="QR Code"
+                      className="w-56 h-56 rounded-lg border border-gray-200 p-1 bg-white"
+                    />
+                  ) : (
+                    <div className="p-3 bg-white rounded-lg border border-gray-200 inline-block">
+                      <QRCode value={rawQr} size={200} />
+                    </div>
+                  )
+                ) : (
+                  <div className="w-56 h-56 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-2 text-center p-4">
+                    <svg className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V4zM3 14a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4z" />
+                    </svg>
+                    <p className="text-xs text-gray-400 font-medium">QR ยังไม่พร้อม</p>
+                    <p className="text-[10px] text-gray-400">โอนด้วยเลขบัญชีด้านล่าง</p>
+                  </div>
+                )}
+                {useP2P && paidAmt > 0 && detail?.payOutTotalAmountDecimalP2P != null && (
+                  <div className="text-center max-w-[220px]">
+                    <p className="text-xs font-semibold text-primary-600 tabular-nums">{formatAmount(detail.payOutTotalAmountDecimalP2P)}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{m.qrP2PDescription ?? 'ยอดคงเหลือหลัง partial payment'}</p>
+                  </div>
+                )}
+                {/* Always show destination account info */}
+                {(bankCode || bankAccountNo) && (
+                  <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 space-y-1">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Destination Account</p>
+                    <p className="text-sm font-semibold text-gray-800">{[bankCode, bankAccountNo].filter(Boolean).join(' · ')}</p>
+                    {bankAccountName && <p className="text-xs text-gray-500">{bankAccountName}</p>}
+                    <PromptPayBadge accountType={accountType} promptPayId={promptPayId} />
+                  </div>
                 )}
               </div>
             )

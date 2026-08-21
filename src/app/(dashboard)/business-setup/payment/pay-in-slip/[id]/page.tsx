@@ -362,7 +362,9 @@ export default function PayInSlipDetailPage() {
     )
   }
 
-  const previewImageUrl = detail?.previewUrl ? buildStorageUrl(detail.previewUrl) : null
+  const previewImageSrc = detail?.imageBase64
+    ? `data:image/jpeg;base64,${detail.imageBase64}`
+    : (detail?.previewUrl ? buildStorageUrl(detail.previewUrl) : null)
 
   const selectedBank = bankAccounts.find(ba => (ba.bankAccountId ?? (ba as any).id ?? ba.accountId) === bankAccountId)
 
@@ -445,6 +447,9 @@ export default function PayInSlipDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {detail?.isPeerToPeer && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>
+            )}
             {detail && (
               <button onClick={() => setShowRawJson(true)} className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors">
                 {'{ }'}
@@ -455,13 +460,16 @@ export default function PayInSlipDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5">
-          {/* Left: Slip Preview */}
+          {/* Left: Slip Image */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-5">
-              <SectionHeader>{m.sectionSlip}</SectionHeader>
-              {previewImageUrl ? (
+              <SectionHeader>
+                <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0 inline-block" />
+                {m.sectionSlip}
+              </SectionHeader>
+              {previewImageSrc ? (
                 <div className="rounded-xl overflow-hidden border border-gray-200">
-                  <img src={previewImageUrl} alt={m.previewAlt} className="w-full object-contain max-h-[600px]" />
+                  <img src={previewImageSrc} alt={m.previewAlt} className="w-full object-contain max-h-[600px]" />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-48 bg-gray-50 rounded-xl border border-dashed border-gray-200 gap-2">
@@ -474,13 +482,21 @@ export default function PayInSlipDetailPage() {
 
           {/* Right: Info + Editable fields */}
           <div className="space-y-5">
-            {/* Read-only info */}
+            {/* ── Upload Slip Data ── */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-5">
-                <SectionHeader>{m.sectionInfo}</SectionHeader>
+                <SectionHeader>
+                  <span className="w-1 h-5 bg-violet-500 rounded-full flex-shrink-0 inline-block" />
+                  Upload Info
+                </SectionHeader>
                 <div className="grid grid-cols-2 gap-4">
                   <InfoRow label={m.colStatus}>
-                    <StatusBadge status={detail?.status} />
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <StatusBadge status={detail?.status} />
+                      {detail?.isPeerToPeer && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>
+                      )}
+                    </div>
                   </InfoRow>
                   <InfoRow label={m.colMerchant}>
                     <span className="font-medium">{detail?.merchantCode ?? '—'}</span>
@@ -498,9 +514,49 @@ export default function PayInSlipDetailPage() {
               </div>
             </div>
 
-            {/* Editable fields */}
+            {/* ── Payment Request Data ── */}
+            {(detail?.paymentRequestId || detail?.payInBankCode || detail?.fromBankCode || detail?.paymentTransactionId) && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-5">
+                  <SectionHeader>
+                    <span className="w-1 h-5 bg-emerald-500 rounded-full flex-shrink-0 inline-block" />
+                    Payment Request
+                  </SectionHeader>
+                  <div className="grid grid-cols-2 gap-4">
+                    {detail?.paymentRequestId && (
+                      <InfoRow label="Request ID">
+                        <span className="text-xs font-mono text-gray-700">{detail.paymentRequestId}</span>
+                      </InfoRow>
+                    )}
+                    {detail?.payInBankCode && (
+                      <InfoRow label="Dest Bank">
+                        <span className="font-medium">{[detail.payInBankCode, detail.payInBankAccountNo].filter(Boolean).join(' · ')}</span>
+                        {detail.payInBankAccountName && <p className="text-xs text-gray-400 mt-0.5">{detail.payInBankAccountName}</p>}
+                      </InfoRow>
+                    )}
+                    {detail?.fromBankCode && (
+                      <InfoRow label="From Bank">
+                        <span className="font-medium">{[detail.fromBankCode, detail.fromBankAccountNo].filter(Boolean).join(' · ')}</span>
+                        {detail.fromBankAccountName && <p className="text-xs text-gray-400 mt-0.5">{detail.fromBankAccountName}</p>}
+                      </InfoRow>
+                    )}
+                    {detail?.paymentTransactionId && (
+                      <InfoRow label="Tx ID">
+                        <span className="text-xs font-mono text-gray-700">{detail.paymentTransactionId}</span>
+                      </InfoRow>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Editable fields — Payment Document Data */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-5 space-y-4">
+                <SectionHeader>
+                  <span className="w-1 h-5 bg-primary-500 rounded-full flex-shrink-0 inline-block" />
+                  Document Data
+                </SectionHeader>
                 {/* Bank Account */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">

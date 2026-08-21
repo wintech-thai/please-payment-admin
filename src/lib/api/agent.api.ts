@@ -93,4 +93,10 @@ export const agentApi = {
 
   getLineApiAgentLoginStatus: (agentId: string) =>
     client.get<{ ok?: boolean; state?: string; pincode?: string; error?: string }>(`${BASE}/GetLineApiAgentLoginStatus/${agentId}`),
+
+  enableLineApiAgentById: (agentId: string) =>
+    client.post(`${BASE}/EnableLineApiAgentById/${agentId}`, {}),
+
+  disableLineApiAgentById: (agentId: string) =>
+    client.post(`${BASE}/DisableLineApiAgentById/${agentId}`, {}),
 }

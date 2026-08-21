@@ -61,8 +61,8 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
     : { bg: 'bg-gray-100 text-gray-500 ring-gray-200', dot: 'bg-gray-400' }
   const label = isRunning ? labels.running : isOffline ? labels.offline : labels.unknown
   const handleCopy = () => {
-    if (!status.raw) return
-    navigator.clipboard.writeText(JSON.stringify(JSON.parse(status.raw), null, 2))
+    const combined = { ok: status.ok, podStatus: status.podStatus, login: status.login, ...(status.raw ? JSON.parse(status.raw) : {}) }
+    navigator.clipboard.writeText(JSON.stringify(combined, null, 2))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -75,12 +75,22 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
       {status.login != null && (
         <button
           onClick={e => { e.stopPropagation(); setShowRaw(v => !v) }}
-          className="text-[10px] text-gray-400 hover:text-gray-600 ml-1 text-left"
+          className={clsx(
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1 transition-opacity hover:opacity-70',
+            status.login.toLowerCase() === 'ready'
+              ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+              : 'bg-red-50 text-red-700 ring-red-200'
+          )}
         >
+          <span className={clsx(
+            'w-1.5 h-1.5 rounded-full flex-shrink-0',
+            status.login.toLowerCase() === 'ready' ? 'bg-emerald-500' : 'bg-red-500'
+          )} />
           {status.login}
+          <ChevronDown className="w-3 h-3 opacity-60" />
         </button>
       )}
-      {showRaw && status.raw && (
+      {showRaw && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowRaw(false)}>
           <div className="w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-primary-950 border border-primary-800" onClick={e => e.stopPropagation()}>
             {/* Header */}
@@ -118,7 +128,12 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
             </div>
             {/* Body */}
             <div className="overflow-auto p-5 custom-scrollbar">
-              <pre className="text-xs font-mono leading-relaxed text-primary-200" dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify(JSON.parse(status.raw), null, 2)) }} />
+              <pre className="text-xs font-mono leading-relaxed text-primary-200" dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify({
+                ok: status.ok,
+                podStatus: status.podStatus,
+                login: status.login,
+                ...(status.raw ? JSON.parse(status.raw) : {}),
+              }, null, 2)) }} />
             </div>
           </div>
         </div>
@@ -203,12 +218,17 @@ function AgentListContent() {
   const searchParams = useSearchParams()
   const highlightIdParam = searchParams.get('highlight')
 
+  const FILTER_KEY = 'agent_filter'
   const [agents, setAgents] = useState<AgentItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [agentTypeFilter, setAgentTypeFilter] = useState('')
+  const [searchTerm, setSearchTerm] = useState(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem('agent_filter') ?? 'null')?.searchTerm ?? '') : ''
+  )
+  const [agentTypeFilter, setAgentTypeFilter] = useState(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem('agent_filter') ?? 'null')?.agentTypeFilter ?? '') : ''
+  )
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
@@ -220,7 +240,8 @@ function AgentListContent() {
   const [deleting, setDeleting] = useState(false)
   const [openActionId, setOpenActionId] = useState<string | null>(null)
   const [showRegisterMenu, setShowRegisterMenu] = useState(false)
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'restart' | 'reload'; agentId?: string; agentCode?: string }>({ open: false })
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'restart' | 'reload' | 'enable' | 'disable'; agentId?: string; agentCode?: string }>({ open: false })
+  const [togglingAgentId, setTogglingAgentId] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [lineApiStatuses, setLineApiStatuses] = useState<Record<string, LineApiStatus>>({})
   const [qrModal, setQrModal] = useState<{ open: boolean; agent?: AgentItem }>({ open: false })
@@ -237,6 +258,7 @@ function AgentListContent() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchAgents = async (p = page, search = searchTerm, typeFilter = agentTypeFilter) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem('agent_filter', JSON.stringify({ searchTerm: search, agentTypeFilter: typeFilter }))
     setLoading(true)
     try {
       const [listRes, countRes] = await Promise.allSettled([
@@ -420,15 +442,28 @@ function AgentListContent() {
       if (confirmModal.type === 'restart') {
         await agentApi.restartLineApiAgentById(confirmModal.agentId)
         toast.success(m.restartSuccess)
-      } else {
+      } else if (confirmModal.type === 'reload') {
         await agentApi.reloadLineApiAgentById(confirmModal.agentId)
         toast.success(m.reloadSuccess)
+      } else if (confirmModal.type === 'enable') {
+        await agentApi.enableLineApiAgentById(confirmModal.agentId)
+        toast.success(m.enableSuccess)
+        setAgents(prev => prev.map(a => a.agentId === confirmModal.agentId ? { ...a, agentStatus: 'Active' } : a))
+      } else if (confirmModal.type === 'disable') {
+        await agentApi.disableLineApiAgentById(confirmModal.agentId)
+        toast.success(m.disableSuccess)
+        setAgents(prev => prev.map(a => a.agentId === confirmModal.agentId ? { ...a, agentStatus: 'Disabled' } : a))
       }
       setConfirmModal({ open: false })
     } catch {
-      toast.error(confirmModal.type === 'restart' ? m.restartFailed : m.reloadFailed)
+      const errMsg = confirmModal.type === 'restart' ? m.restartFailed
+        : confirmModal.type === 'reload' ? m.reloadFailed
+        : confirmModal.type === 'enable' ? m.enableFailed
+        : m.disableFailed
+      toast.error(errMsg)
     } finally {
       setActionLoading(false)
+      setTogglingAgentId(null)
     }
   }
 
@@ -452,7 +487,7 @@ function AgentListContent() {
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
-  const cols = ['', m.colCode, m.colAgentType, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colAction]
+  const cols = ['', m.colCode, m.colAgentType, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colEnabled, m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -468,10 +503,20 @@ function AgentListContent() {
 
       {confirmModal.open && (
         <ConfirmActionModal
-          title={confirmModal.type === 'restart' ? m.confirmRestartTitle : m.confirmReloadTitle}
-          desc={confirmModal.type === 'restart' ? m.confirmRestartDesc : m.confirmReloadDesc}
+          title={
+            confirmModal.type === 'restart' ? m.confirmRestartTitle
+            : confirmModal.type === 'reload' ? m.confirmReloadTitle
+            : confirmModal.type === 'enable' ? m.confirmEnableTitle
+            : m.confirmDisableTitle
+          }
+          desc={
+            confirmModal.type === 'restart' ? m.confirmRestartDesc
+            : confirmModal.type === 'reload' ? m.confirmReloadDesc
+            : confirmModal.type === 'enable' ? m.confirmEnableDesc
+            : m.confirmDisableDesc
+          }
           onConfirm={handleConfirmAction}
-          onCancel={() => setConfirmModal({ open: false })}
+          onCancel={() => { setConfirmModal({ open: false }); setTogglingAgentId(null) }}
           loading={actionLoading}
           t={{ cancel: t.admin.cancel, confirm: m.btnConfirm }}
         />
@@ -738,8 +783,8 @@ function AgentListContent() {
                       {/* Code + ID */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <button
-                          onClick={e => { e.stopPropagation(); router.push(`/setting/agent/${agent.agentId}/update`) }}
-                          className={clsx('text-sm font-semibold hover:underline block', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
+                          onClick={e => { e.stopPropagation(); router.push(isLineApi ? `/setting/agent/${agent.agentId}/update` : `/setting/agent/${agent.agentId}/overview`) }}
+                          className={clsx('inline-flex items-center gap-1 text-sm font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-primary-600 hover:text-primary-800')}
                         >
                           {agent.code ?? '—'}
                         </button>
@@ -786,11 +831,42 @@ function AgentListContent() {
                         ) : '—'}
                       </td>
                       {/* Status */}
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        {isLineApi
-                          ? <LineApiStatusBadge status={lineApiStatuses[agent.agentId] ?? null} labels={{ running: m.podRunning, offline: m.podOffline, unknown: m.podUnknown }} />
-                          : <StatusBadge status={agent.agentStatus} />
-                        }
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                        <div className="flex flex-col gap-1.5">
+                          <StatusBadge status={agent.agentStatus} />
+                          {isLineApi && (
+                            <LineApiStatusBadge status={lineApiStatuses[agent.agentId] ?? null} labels={{ running: m.podRunning, offline: m.podOffline, unknown: m.podUnknown }} />
+                          )}
+                        </div>
+                      </td>
+                      {/* Enabled toggle */}
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                        {isLineApi ? (
+                          <button
+                            onClick={() => {
+                              const isActive = (agent.agentStatus?.toLowerCase() ?? 'active') === 'active'
+                              setTogglingAgentId(agent.agentId)
+                              setConfirmModal({ open: true, type: isActive ? 'disable' : 'enable', agentId: agent.agentId, agentCode: agent.code ?? undefined })
+                            }}
+                            disabled={togglingAgentId === agent.agentId}
+                            className={clsx(
+                              'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50',
+                              (agent.agentStatus?.toLowerCase() ?? 'active') === 'active'
+                                ? 'bg-emerald-500'
+                                : 'bg-gray-300'
+                            )}
+                            title={(agent.agentStatus?.toLowerCase() ?? 'active') === 'active' ? m.confirmDisableTitle : m.confirmEnableTitle}
+                          >
+                            <span
+                              className={clsx(
+                                'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                                (agent.agentStatus?.toLowerCase() ?? 'active') === 'active' ? 'translate-x-6' : 'translate-x-1'
+                              )}
+                            />
+                          </button>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
                       {/* Action menu */}
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>

@@ -70,6 +70,8 @@ function StatusBadge({ status }: { status?: string | null }) {
   )
 }
 
+const FILTER_KEY = 'noti_event_filter'
+
 function NotiEventListContent() {
   const { t } = useLang()
   const m = t.notiEvent
@@ -82,9 +84,15 @@ function NotiEventListContent() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '24h' })
+  const [searchTerm, setSearchTerm] = useState(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.searchTerm ?? '') : ''
+  )
+  const [statusFilter, setStatusFilter] = useState(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.statusFilter ?? '') : ''
+  )
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.timeRange ?? { type: 'relative', value: '24h' }) : { type: 'relative', value: '24h' }
+  )
   const [loading, setLoading] = useState(true)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
     if (highlightIdParam) return highlightIdParam
@@ -98,6 +106,7 @@ function NotiEventListContent() {
     status = statusFilter,
     tr = timeRange
   ) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ searchTerm: search, statusFilter: status, timeRange: tr }))
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)

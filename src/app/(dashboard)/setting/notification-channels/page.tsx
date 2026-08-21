@@ -144,8 +144,12 @@ function NotiChannelListContent() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [searchTerm, setSearchTerm] = useState(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem('noti_channel_filter') ?? 'null')?.searchTerm ?? '') : ''
+  )
+  const [statusFilter, setStatusFilter] = useState(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem('noti_channel_filter') ?? 'null')?.statusFilter ?? '') : ''
+  )
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
@@ -162,6 +166,7 @@ function NotiChannelListContent() {
   const addDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const fetchData = async (p = page, search = searchTerm, status = statusFilter) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem('noti_channel_filter', JSON.stringify({ searchTerm: search, statusFilter: status }))
     setLoading(true)
     try {
       const [listRes, countRes] = await Promise.allSettled([

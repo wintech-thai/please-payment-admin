@@ -61,8 +61,8 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
     : { bg: 'bg-gray-100 text-gray-500 ring-gray-200', dot: 'bg-gray-400' }
   const label = isRunning ? labels.running : isOffline ? labels.offline : labels.unknown
   const handleCopy = () => {
-    if (!status.raw) return
-    navigator.clipboard.writeText(JSON.stringify(JSON.parse(status.raw), null, 2))
+    const combined = { ok: status.ok, podStatus: status.podStatus, login: status.login, ...(status.raw ? JSON.parse(status.raw) : {}) }
+    navigator.clipboard.writeText(JSON.stringify(combined, null, 2))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -90,7 +90,7 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
           <ChevronDown className="w-3 h-3 opacity-60" />
         </button>
       )}
-      {showRaw && status.raw && (
+      {showRaw && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowRaw(false)}>
           <div className="w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-primary-950 border border-primary-800" onClick={e => e.stopPropagation()}>
             {/* Header */}
@@ -128,7 +128,12 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
             </div>
             {/* Body */}
             <div className="overflow-auto p-5 custom-scrollbar">
-              <pre className="text-xs font-mono leading-relaxed text-primary-200" dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify(JSON.parse(status.raw), null, 2)) }} />
+              <pre className="text-xs font-mono leading-relaxed text-primary-200" dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify({
+                ok: status.ok,
+                podStatus: status.podStatus,
+                login: status.login,
+                ...(status.raw ? JSON.parse(status.raw) : {}),
+              }, null, 2)) }} />
             </div>
           </div>
         </div>
@@ -447,7 +452,7 @@ function AgentListContent() {
       } else if (confirmModal.type === 'disable') {
         await agentApi.disableLineApiAgentById(confirmModal.agentId)
         toast.success(m.disableSuccess)
-        setAgents(prev => prev.map(a => a.agentId === confirmModal.agentId ? { ...a, agentStatus: 'Inactive' } : a))
+        setAgents(prev => prev.map(a => a.agentId === confirmModal.agentId ? { ...a, agentStatus: 'Disabled' } : a))
       }
       setConfirmModal({ open: false })
     } catch {
@@ -839,23 +844,23 @@ function AgentListContent() {
                         {isLineApi ? (
                           <button
                             onClick={() => {
-                              const isActive = (agent.agentStatus?.toLowerCase() ?? 'active') !== 'inactive'
+                              const isActive = (agent.agentStatus?.toLowerCase() ?? 'active') === 'active'
                               setTogglingAgentId(agent.agentId)
                               setConfirmModal({ open: true, type: isActive ? 'disable' : 'enable', agentId: agent.agentId, agentCode: agent.code ?? undefined })
                             }}
                             disabled={togglingAgentId === agent.agentId}
                             className={clsx(
                               'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50',
-                              (agent.agentStatus?.toLowerCase() ?? 'active') !== 'inactive'
+                              (agent.agentStatus?.toLowerCase() ?? 'active') === 'active'
                                 ? 'bg-emerald-500'
                                 : 'bg-gray-300'
                             )}
-                            title={(agent.agentStatus?.toLowerCase() ?? 'active') !== 'inactive' ? m.confirmDisableTitle : m.confirmEnableTitle}
+                            title={(agent.agentStatus?.toLowerCase() ?? 'active') === 'active' ? m.confirmDisableTitle : m.confirmEnableTitle}
                           >
                             <span
                               className={clsx(
                                 'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                                (agent.agentStatus?.toLowerCase() ?? 'active') !== 'inactive' ? 'translate-x-6' : 'translate-x-1'
+                                (agent.agentStatus?.toLowerCase() ?? 'active') === 'active' ? 'translate-x-6' : 'translate-x-1'
                               )}
                             />
                           </button>

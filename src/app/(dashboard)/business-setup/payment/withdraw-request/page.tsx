@@ -64,12 +64,15 @@ function SlipViewerModal({ slips, item, onClose }: { slips: SlipItem[]; item: Pa
                 </div>
               )}
             </div>
-            {item.generatedAmount != null && (
-              <div className="mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
-                <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
-                <p className="text-base font-bold text-amber-300 tabular-nums">{Number(item.generatedAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-              </div>
-            )}
+            {(() => {
+              const displayAmount = (item.isPartialyPayout && item.payOutTotalAmountDecimalP2P != null) ? item.payOutTotalAmountDecimalP2P : item.generatedAmount
+              return displayAmount != null ? (
+                <div className="mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
+                  <p className="text-base font-bold text-amber-300 tabular-nums">{Number(displayAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+              ) : null
+            })()}
             <div className="mt-auto flex flex-col gap-3 pt-3">
               {(slip?.first4 || slip?.last4) && (
                 <div className="bg-white/10 rounded-xl px-3 py-3">

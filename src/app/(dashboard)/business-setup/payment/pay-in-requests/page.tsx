@@ -11,6 +11,7 @@ import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, MoreVertica
 import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import QRCode from 'react-qr-code'
 
 const HIGHLIGHTED_KEY = 'payInRequests_highlightedId'
 const FILTER_KEY = 'payInRequests_filter'
@@ -186,8 +187,8 @@ function SlipUploadLinkModal({ item, onClose }: { item: PayInRequestItem; onClos
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <Link2 className="w-4 h-4 text-primary-600" />
@@ -208,9 +209,12 @@ function SlipUploadLinkModal({ item, onClose }: { item: PayInRequestItem; onClos
             </div>
           ) : errorMsg ? (
             <p className="text-sm text-red-500 text-center py-4">{errorMsg}</p>
-          ) : (
-            <div className="space-y-3">
+          ) : url ? (
+            <div className="space-y-4">
               <p className="text-xs text-gray-500">{m.slipLinkDesc}</p>
+              <div className="flex justify-center p-3 bg-white border border-gray-200 rounded-xl">
+                <QRCode value={url} size={160} />
+              </div>
               <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                 <span className="flex-1 text-xs text-gray-700 font-mono break-all">{url}</span>
                 <button
@@ -222,8 +226,12 @@ function SlipUploadLinkModal({ item, onClose }: { item: PayInRequestItem; onClos
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 hover:underline">
+                <ExternalLink className="w-3.5 h-3.5" />
+                {m.slipLinkOpen}
+              </a>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -650,16 +658,16 @@ function SlipQuickViewModal({
               </div>
             )}
 
-            {/* ── Amount + Slip Upload Section — pinned to bottom ────── */}
-            <div className="mt-auto pt-3 flex flex-col gap-2">
-              {item.generatedAmount != null && (
-                <div className="bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
-                  <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
-                  <p className="text-base font-bold text-amber-300 tabular-nums">{Number(item.generatedAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-              )}
+            {item.generatedAmount != null && (
+              <div className="mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
+                <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
+                <p className="text-base font-bold text-amber-300 tabular-nums">{Number(item.generatedAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+            )}
+
+            {/* ── Slip Upload Section — pinned to bottom ────── */}
             {(slip?.first4 || slip?.last4 || slip?.note) && (
-              <div className="flex flex-col gap-2">
+              <div className="mt-auto pt-3 flex flex-col gap-2">
                 {(slip.first4 || slip.last4) && (
                   <div className="bg-white/10 rounded-xl px-3 py-3">
                     <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
@@ -674,7 +682,6 @@ function SlipQuickViewModal({
                 )}
               </div>
             )}
-            </div>
           </div>
         )}
 

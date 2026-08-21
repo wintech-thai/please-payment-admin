@@ -6,9 +6,11 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayOutRequestItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, X, Paperclip } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, X, Paperclip, MoreHorizontal, Link2, Copy, Check, ExternalLink } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import { getMerchantBase } from '@/lib/merchant-url'
+import QRCode from 'react-qr-code'
 
 type SlipItem = { imageBase64: string; uploadedAt: string; note?: string | null; first4?: string | null; last4?: string | null }
 
@@ -62,13 +64,13 @@ function SlipViewerModal({ slips, item, onClose }: { slips: SlipItem[]; item: Pa
                 </div>
               )}
             </div>
+            {item.generatedAmount != null && (
+              <div className="mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
+                <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
+                <p className="text-base font-bold text-amber-300 tabular-nums">{Number(item.generatedAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+            )}
             <div className="mt-auto flex flex-col gap-3 pt-3">
-              {item.generatedAmount != null && (
-                <div className="bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-3">
-                  <p className="text-[9px] text-amber-300/80 uppercase tracking-widest mb-1">{m.slipAmount}</p>
-                  <p className="text-base font-bold text-amber-300 tabular-nums">{Number(item.generatedAmount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-              )}
               {(slip?.first4 || slip?.last4) && (
                 <div className="bg-white/10 rounded-xl px-3 py-3">
                   <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
@@ -188,6 +190,81 @@ function StatusBadge({ status, createdDate, isPartialyPayout }: {
   )
 }
 
+function SlipLinkModal({ paymentRequestId, onClose }: { paymentRequestId: string; onClose: () => void }) {
+  const { t } = useLang()
+  const m = t.payOutRequest
+  const [url, setUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    paymentRequestApi.generatePayOutSlipUploadToken(paymentRequestId)
+      .then(res => {
+        const d = res.data as any
+        const relUrl = d?.slipUploadUrl ?? d?.SlipUploadUrl
+        if (!relUrl) throw new Error('URL not returned')
+        setUrl(`${getMerchantBase()}${relUrl}`)
+      })
+      .catch(() => setErrorMsg(m.slipLinkError))
+      .finally(() => setLoading(false))
+  }, [paymentRequestId])
+
+  const handleCopy = () => {
+    if (!url) return
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-primary-600" />
+            <h3 className="text-base font-bold text-gray-900">{m.slipLinkTitle}</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="px-6 py-5">
+          {loading ? (
+            <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
+              <svg className="w-5 h-5 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">{m.slipLinkLoading}</span>
+            </div>
+          ) : errorMsg ? (
+            <p className="text-sm text-red-500 text-center py-4">{errorMsg}</p>
+          ) : url ? (
+            <div className="space-y-4">
+              <p className="text-xs text-gray-500">{m.slipLinkDesc}</p>
+              <div className="flex justify-center p-3 bg-white border border-gray-200 rounded-xl">
+                <QRCode value={url} size={160} />
+              </div>
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                <span className="flex-1 text-xs text-gray-700 font-mono break-all">{url}</span>
+                <button type="button" onClick={handleCopy} className="flex-shrink-0 flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded transition-colors">
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 hover:underline">
+                <ExternalLink className="w-3.5 h-3.5" />
+                {m.slipLinkOpen}
+              </a>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function WithdrawRequestPageContent() {
   const { t } = useLang()
   const m = t.payOutRequest
@@ -209,6 +286,8 @@ function WithdrawRequestPageContent() {
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [loading, setLoading] = useState(false)
   const [slipViewerTarget, setSlipViewerTarget] = useState<{ slips: SlipItem[]; loading: boolean; item: PayOutRequestItem } | null>(null)
+  const [slipLinkId, setSlipLinkId] = useState<string | null>(null)
+  const [openActionId, setOpenActionId] = useState<string | null>(null)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
     if (typeof window !== 'undefined') return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
     return ''
@@ -280,10 +359,10 @@ function WithdrawRequestPageContent() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colDestBank, m.colSourceBank, m.colStatus, 'REF']
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colDestBank, m.colSourceBank, m.colStatus, 'REF', '']
 
   return (
-    <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
+    <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]" onClick={() => setOpenActionId(null)}>
 
       {/* Header */}
       <div className="flex-none flex items-center justify-between mb-5">
@@ -572,6 +651,29 @@ function WithdrawRequestPageContent() {
                           {!item.refId1 && !item.refId2 && !item.refId3 && <span className="text-xs text-gray-400">—</span>}
                         </div>
                       </td>
+
+                      {/* Action menu */}
+                      <td className="px-2 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenActionId(openActionId === item.id ? null : item.id)}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                          {openActionId === item.id && (
+                            <div className="absolute right-0 top-8 z-50 w-52 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => { setOpenActionId(null); setSlipLinkId(item.id) }}
+                                className="w-full px-4 py-2.5 text-left text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                              >
+                                Slip Upload Link
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   )
                 })
@@ -626,6 +728,7 @@ function WithdrawRequestPageContent() {
       {slipViewerTarget && !slipViewerTarget.loading && slipViewerTarget.slips.length > 0 && (
         <SlipViewerModal slips={slipViewerTarget.slips} item={slipViewerTarget.item} onClose={() => setSlipViewerTarget(null)} />
       )}
+      {slipLinkId && <SlipLinkModal paymentRequestId={slipLinkId} onClose={() => setSlipLinkId(null)} />}
     </div>
   )
 }

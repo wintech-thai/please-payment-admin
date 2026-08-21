@@ -310,7 +310,7 @@ export interface BankAccountItem {
   selectedChannel?: string | null    // "LINE" | "SMS"
   isNativeQrSupport?: boolean | null
   isRandomCent?: boolean | null
-  centRoundingMode?: string | null
+  decimalAction?: string | null
   bankConfigObj?: BankAccountConfigItem | null
 }
 
@@ -354,7 +354,7 @@ export interface AddBankAccountPayload {
   PayoutMaxAmount?: number
   DailyQuota?: number
   IsRandomCent?: boolean
-  CentRoundingMode?: string
+  DecimalAction?: string
 }
 
 export interface UpdateBankAccountPayload {
@@ -371,7 +371,7 @@ export interface UpdateBankAccountPayload {
   PayoutMaxAmount?: number
   DailyQuota?: number
   IsRandomCent?: boolean
-  CentRoundingMode?: string
+  DecimalAction?: string
 }
 
 export interface BankAccountMerchantItem {

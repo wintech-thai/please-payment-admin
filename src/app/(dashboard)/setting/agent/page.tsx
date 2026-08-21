@@ -76,7 +76,7 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
         <button
           onClick={e => { e.stopPropagation(); setShowRaw(v => !v) }}
           className={clsx(
-            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1',
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1 transition-opacity hover:opacity-70',
             status.login.toLowerCase() === 'ready'
               ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
               : 'bg-red-50 text-red-700 ring-red-200'
@@ -87,6 +87,7 @@ function LineApiStatusBadge({ status, labels }: { status?: LineApiStatus | null;
             status.login.toLowerCase() === 'ready' ? 'bg-emerald-500' : 'bg-red-500'
           )} />
           {status.login}
+          <ChevronDown className="w-3 h-3 opacity-60" />
         </button>
       )}
       {showRaw && status.raw && (
@@ -777,8 +778,8 @@ function AgentListContent() {
                       {/* Code + ID */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <button
-                          onClick={e => { e.stopPropagation(); router.push(`/setting/agent/${agent.agentId}/update`) }}
-                          className={clsx('text-sm font-semibold hover:underline block', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
+                          onClick={e => { e.stopPropagation(); router.push(isLineApi ? `/setting/agent/${agent.agentId}/update` : `/setting/agent/${agent.agentId}/overview`) }}
+                          className={clsx('inline-flex items-center gap-1 text-sm font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-primary-600 hover:text-primary-800')}
                         >
                           {agent.code ?? '—'}
                         </button>

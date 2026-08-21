@@ -114,7 +114,7 @@ export default function CreateBankAccountPage() {
         DailyQuota: toInt(dailyQuota),
         Tags: tags.length ? tags.join(',') : undefined,
         IsRandomCent: isRandomCent,
-        CentRoundingMode: isRandomCent ? undefined : (centRoundingMode || undefined),
+        DecimalAction: isRandomCent ? undefined : (centRoundingMode || undefined),
       })
       setIsDirty(false)
       toast.success(m.createdSuccess)

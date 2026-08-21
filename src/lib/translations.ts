@@ -2825,7 +2825,7 @@ export const translations = {
       fieldRandomCent: 'Random Cent',
       fieldRandomCentHint: 'Randomize decimal when creating Pay-In QR',
       fieldCentRoundingMode: 'Decimal Handling',
-      centRoundingNone: 'No action',
+      centRoundingNone: '',
       centRoundingRound: 'Round',
       centRoundingRoundUp: 'Round Up',
       centRoundingTruncate: 'Truncate',

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
 import type { BankAccountItem, BankItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, X, Copy, Check } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
@@ -13,6 +13,21 @@ import { useLang } from '@/context/LanguageContext'
 
 const PROMPTPAY_RE = /^(0\d{9}|\d{13})$/
 const DIGITS_ONLY_RE = /^\d+$/
+
+function highlightJson(json: string): string {
+  return json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    (match) => {
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) return `<span style="color:#6366f1;font-weight:600">${match}</span>`
+        return `<span style="color:#059669">${match}</span>`
+      }
+      if (/true|false/.test(match)) return `<span style="color:#d97706">${match}</span>`
+      if (/null/.test(match)) return `<span style="color:#9ca3af">${match}</span>`
+      return `<span style="color:#0284c7">${match}</span>`
+    }
+  )
+}
 
 export default function UpdateBankAccountPage() {
   const { t, lang } = useLang()
@@ -42,6 +57,8 @@ export default function UpdateBankAccountPage() {
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showRawJson, setShowRawJson] = useState(false)
+  const [rawJsonCopied, setRawJsonCopied] = useState(false)
   const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
 
   useEffect(() => {
@@ -69,7 +86,7 @@ export default function UpdateBankAccountPage() {
         setPayOutMax(a.payoutMaxAmount != null ? String(a.payoutMaxAmount) : '')
         setDailyQuota(a.dailyQuota != null ? String(a.dailyQuota) : '')
         setIsRandomCent(a.isRandomCent ?? false)
-        setCentRoundingMode(a.centRoundingMode ?? '')
+        setCentRoundingMode(a.decimalAction ?? '')
         setTags(a.tags ? a.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
       } else {
         toast.error(m.failedToLoadAccount)
@@ -124,7 +141,7 @@ export default function UpdateBankAccountPage() {
         DailyQuota: toInt(dailyQuota),
         Tags: tags.length ? tags.join(',') : undefined,
         IsRandomCent: isRandomCent,
-        CentRoundingMode: isRandomCent ? undefined : (centRoundingMode || undefined),
+        DecimalAction: isRandomCent ? undefined : centRoundingMode,
       })
       setIsDirty(false)
       toast.success(m.updatedSuccess)
@@ -158,6 +175,26 @@ export default function UpdateBankAccountPage() {
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
       {showConfirm && <LeaveConfirmModal onConfirm={confirmLeave} onCancel={cancelLeave} />}
 
+      {showRawJson && account && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowRawJson(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-none">
+              <span className="text-sm font-semibold text-gray-700 font-mono">Raw JSON — Bank Account</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { navigator.clipboard.writeText(JSON.stringify(account, null, 2)); setRawJsonCopied(true); setTimeout(() => setRawJsonCopied(false), 2000) }} className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors">
+                  {rawJsonCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {rawJsonCopied ? 'Copied!' : 'Copy'}
+                </button>
+                <button onClick={() => setShowRawJson(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <pre className="overflow-auto p-5 text-xs font-mono leading-relaxed whitespace-pre-wrap break-all bg-gray-50" dangerouslySetInnerHTML={{ __html: highlightJson(JSON.stringify(account, null, 2)) }} />
+          </div>
+        </div>
+      )}
+
       <div className="flex-none flex items-center gap-3 mb-6">
         <button
           onClick={() => guardNavigation(() => router.push(`/business-setup/pay-in-bank-account?highlight=${id}`))}
@@ -165,10 +202,15 @@ export default function UpdateBankAccountPage() {
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">{m.editTitle}</h1>
           <p className="text-base text-gray-500 mt-0.5">{m.editSubtitle} &quot;{account?.accountName || account?.accountNumber || id.slice(0, 8)}&quot;</p>
         </div>
+        {account && (
+          <button onClick={() => setShowRawJson(true)} className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors">
+            {'{ }'}
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">

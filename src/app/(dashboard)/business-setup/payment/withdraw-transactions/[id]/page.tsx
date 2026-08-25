@@ -6,8 +6,9 @@ import { paymentTxApi } from '@/lib/api/payment-tx.api'
 import type { PayOutTxDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, X, Copy, Check, History } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, X, Copy, Check, History, TriangleAlert } from 'lucide-react'
 import AuditTrailDrawer from '@/components/AuditTrailDrawer'
+import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
@@ -154,6 +155,7 @@ export default function PayOutTxDetailPage() {
   const [loadingJob, setLoadingJob] = useState(false)
   const [showRawJson, setShowRawJson] = useState(false)
   const [showAuditTrail, setShowAuditTrail] = useState(false)
+  const [showNoticeDrawer, setShowNoticeDrawer] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -238,6 +240,7 @@ export default function PayOutTxDetailPage() {
       </div>
 
       {showAuditTrail && <AuditTrailDrawer rowId={id} onClose={() => setShowAuditTrail(false)} />}
+      {showNoticeDrawer && <AuditNoticeDrawer rowId={id} onClose={() => setShowNoticeDrawer(false)} />}
       {showRawJson && detail && <RawJsonModal data={detail} onClose={() => setShowRawJson(false)} />}
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
@@ -248,7 +251,19 @@ export default function PayOutTxDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
             <InfoRow label={m.fieldStatus}>
-              <StatusBadge status={detail?.status} isPeerToPeer={detail?.txIsPeerToPeer} />
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusBadge status={detail?.status} isPeerToPeer={detail?.txIsPeerToPeer} />
+                {(detail?.noticeCount ?? 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNoticeDrawer(true)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 ring-1 ring-amber-300 hover:bg-amber-100 transition-colors"
+                  >
+                    <TriangleAlert className="w-3 h-3" />
+                    {detail?.noticeCount}
+                  </button>
+                )}
+              </div>
             </InfoRow>
             <InfoRow label={m.fieldOrgId}>{detail?.orgId ?? '—'}</InfoRow>
             <InfoRow label={m.fieldMerchant}>

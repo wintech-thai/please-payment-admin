@@ -13,6 +13,8 @@ const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; ring: string
   'paymentout.success': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
   'payment.failed': { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200' },
   'payment.unidentified': { bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200' },
+  'agent.notready': { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200' },
+  'agent.ready': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
 }
 const DEFAULT_EVENT_COLOR = { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200' }
 function getEventTypeColor(type: string) {
@@ -21,6 +23,8 @@ function getEventTypeColor(type: string) {
 const EVENT_TYPE_LABELS: Record<string, string> = {
   'Payment.Success': 'Payment In Success',
   'PaymentOut.Success': 'Payment Out Success',
+  'Agent.NotReady': 'LINE Agent Not Ready',
+  'Agent.Ready': 'LINE Agent Ready',
 }
 function getEventTypeLabel(type: string) {
   return EVENT_TYPE_LABELS[type] ?? type

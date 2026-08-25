@@ -7,11 +7,12 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayInRequestItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, MoreVertical, X, ChevronDown, Paperclip, Link2, Copy, Check } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, MoreVertical, X, ChevronDown, Paperclip, Link2, Copy, Check, TriangleAlert, Pencil } from 'lucide-react'
 import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import QRCode from 'react-qr-code'
+import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 
 const HIGHLIGHTED_KEY = 'payInRequests_highlightedId'
 const FILTER_KEY = 'payInRequests_filter'
@@ -572,7 +573,7 @@ function RejectModal({
 
 // ── Slip Quick View Modal (list page) ─────────────────────────────────────────
 
-type SlipQuickItem ={ imageBase64: string; uploadedAt: string; first4?: string | null; last4?: string | null; note?: string | null }
+type SlipQuickItem ={ slipId?: string | null; imageBase64: string; uploadedAt: string; first4?: string | null; last4?: string | null; note?: string | null }
 
 function SlipQuickViewModal({
   item,
@@ -588,6 +589,12 @@ function SlipQuickViewModal({
   const [slips, setSlips] = useState<SlipQuickItem[]>([])
   const [loading, setLoading] = useState(true)
   const [idx, setIdx] = useState(0)
+  const [dupIds, setDupIds] = useState<string[]>([])
+  const [editOpen, setEditOpen] = useState(false)
+  const [editFirst4, setEditFirst4] = useState('')
+  const [editLast4, setEditLast4] = useState('')
+  const [editNote, setEditNote] = useState('')
+  const [saving, setSaving] = useState(false)
   const isPending = item.status?.toLowerCase() === 'pending'
 
   useEffect(() => {
@@ -596,6 +603,7 @@ function SlipQuickViewModal({
         const d = r.data as any
         const list: any[] = Array.isArray(d) ? d : (d?.slips ?? d?.Slips ?? [])
         setSlips(list.map(s => ({
+          slipId: s.slipId ?? s.SlipId ?? null,
           imageBase64: s.imageBase64 ?? s.ImageBase64 ?? '',
           uploadedAt: s.uploadedAt ?? s.UploadedAt ?? '',
           first4: s.first4 ?? s.First4 ?? null,
@@ -608,6 +616,62 @@ function SlipQuickViewModal({
   }, [item.id])
 
   const slip = slips[idx]
+
+  useEffect(() => { setEditOpen(false) }, [idx])
+
+  useEffect(() => {
+    setDupIds([])
+    const f4 = slip?.first4?.trim().toUpperCase()
+    const l4 = slip?.last4?.trim().toUpperCase()
+    if (!f4 || !l4 || f4.length !== 4 || l4.length !== 4 || !item.orgId) return
+    fetch(`/api/proxy/admin-api/AdminPaymentRequest/org/${item.orgId}/action/CheckPayInSlipDup/${item.id}/${f4}/${l4}`)
+      .then(r => r.json())
+      .then(data => {
+        const dups = data?.Duplicates ?? data?.duplicates ?? []
+        setDupIds(dups.map((d: { documentId?: string }) => d.documentId).filter(Boolean))
+      })
+      .catch(() => {})
+  }, [idx, slip?.first4, slip?.last4, item.orgId, item.id])
+
+  const handleEditOpen = () => {
+    setEditFirst4(slip?.first4 ?? '')
+    setEditLast4(slip?.last4 ?? '')
+    setEditNote(slip?.note ?? '')
+    setEditOpen(true)
+  }
+
+  const handleEditSave = async () => {
+    if (!slip?.slipId || !item.orgId) return
+    setSaving(true)
+    try {
+      const resp = await fetch(
+        `/api/proxy/admin-api/AdminPaymentRequest/org/${item.orgId}/action/UpdatePayInSlipFirst4Last4/${item.id}/${slip.slipId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            First4: editFirst4.trim().toUpperCase() || null,
+            Last4: editLast4.trim().toUpperCase() || null,
+            Note: editNote.trim() || null,
+          }),
+        }
+      )
+      const data = await resp.json()
+      if ((data?.Status ?? data?.status) === 'OK') {
+        setSlips(prev => prev.map((s, i) =>
+          i === idx ? { ...s, first4: editFirst4.trim().toUpperCase() || null, last4: editLast4.trim().toUpperCase() || null, note: editNote.trim() || null } : s
+        ))
+        setEditOpen(false)
+        setDupIds([])
+      } else {
+        toast.error(data?.Description ?? data?.description ?? 'Save failed')
+      }
+    } catch {
+      toast.error('Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/90" onClick={onClose}>
@@ -627,6 +691,30 @@ function SlipQuickViewModal({
           </button>
         </div>
       </div>
+
+      {/* Dup warning banner */}
+      {dupIds.length > 0 && (
+        <div className="flex-none mx-5 mb-1 rounded-lg bg-red-600/90 px-4 py-2.5 flex items-start gap-2" onClick={e => e.stopPropagation()}>
+          <TriangleAlert className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-white">
+            <span className="font-semibold">{m.slipDupFound} ({dupIds.length})</span>
+            {dupIds.map(docId => (
+              <span key={docId} className="block mt-0.5 opacity-90">
+                {m.slipDupViewRequest}{' '}
+                <a
+                  href={`/business-setup/payment/pay-in-requests/${docId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded underline underline-offset-2"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {docId}
+                </a>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex items-stretch gap-0 min-h-0" onClick={e => e.stopPropagation()}>
         {/* Left metadata panel */}
@@ -666,22 +754,78 @@ function SlipQuickViewModal({
             )}
 
             {/* ── Slip Upload Section — pinned to bottom ────── */}
-            {(slip?.first4 || slip?.last4 || slip?.note) && (
-              <div className="mt-auto pt-3 flex flex-col gap-2">
-                {(slip.first4 || slip.last4) && (
-                  <div className="bg-white/10 rounded-xl px-3 py-3">
-                    <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
-                    <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">{slip.first4} — {slip.last4}</p>
+            <div className="mt-auto pt-3 flex flex-col gap-2">
+              {/* REFERENCE section */}
+              <div className="bg-white/10 rounded-xl px-3 py-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[9px] text-white/50 uppercase tracking-widest">{m.slipRefLabel}</p>
+                  {slip?.slipId ? (
+                    <button
+                      type="button"
+                      onClick={handleEditOpen}
+                      className="p-1 rounded hover:bg-white/20 text-white/60 hover:text-white transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  ) : (
+                    <span className="text-[8px] text-white/30 italic">cannot edit</span>
+                  )}
+                </div>
+                {editOpen ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      maxLength={4}
+                      value={editFirst4}
+                      onChange={e => setEditFirst4(e.target.value.toUpperCase())}
+                      placeholder="First 4"
+                      className="w-full bg-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white placeholder-white/30 outline-none focus:ring-1 focus:ring-yellow-400"
+                    />
+                    <input
+                      maxLength={4}
+                      value={editLast4}
+                      onChange={e => setEditLast4(e.target.value.toUpperCase())}
+                      placeholder="Last 4"
+                      className="w-full bg-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white placeholder-white/30 outline-none focus:ring-1 focus:ring-yellow-400"
+                    />
+                    <textarea
+                      rows={2}
+                      value={editNote}
+                      onChange={e => setEditNote(e.target.value)}
+                      placeholder="Note"
+                      className="w-full bg-white/20 rounded-lg px-2 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:ring-1 focus:ring-yellow-400 resize-none"
+                    />
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={handleEditSave}
+                        className="flex-1 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
+                      >
+                        {saving ? '...' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => setEditOpen(false)}
+                        className="flex-1 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                )}
-                {slip.note && (
-                  <div className="bg-white/10 rounded-xl px-3 py-3">
-                    <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipNoteLabel}</p>
-                    <p className="text-sm text-white font-medium leading-snug">{slip.note}</p>
-                  </div>
+                ) : (
+                  <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">
+                    {slip?.first4 || slip?.last4 ? `${slip.first4} — ${slip.last4}` : <span className="text-white/30 text-xs">—</span>}
+                  </p>
                 )}
               </div>
-            )}
+              {!editOpen && slip?.note && (
+                <div className="bg-white/10 rounded-xl px-3 py-3">
+                  <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipNoteLabel}</p>
+                  <p className="text-sm text-white font-medium leading-snug">{slip.note}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -824,6 +968,7 @@ export default function PayInRequestsPage() {
   const [rejectTarget, setRejectTarget] = useState<PayInRequestItem | null>(null)
   const [slipLinkTarget, setSlipLinkTarget] = useState<PayInRequestItem | null>(null)
   const [slipViewerTarget, setSlipViewerTarget] = useState<PayInRequestItem | null>(null)
+  const [noticeTarget, setNoticeTarget] = useState<string | null>(null)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
@@ -1097,6 +1242,16 @@ export default function PayInRequestsPage() {
                               {item.payInSlipUploadCount}
                             </button>
                           )}
+                          {(item.noticeCount ?? 0) > 0 && (
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); setNoticeTarget(item.id) }}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100 transition-colors"
+                            >
+                              <TriangleAlert className="w-3 h-3" />
+                              {item.noticeCount}
+                            </button>
+                          )}
                         </div>
                       </td>
 
@@ -1201,6 +1356,7 @@ export default function PayInRequestsPage() {
           onApprove={() => { setSlipViewerTarget(null); setApproveTarget(slipViewerTarget) }}
         />
       )}
+      {noticeTarget && <AuditNoticeDrawer rowId={noticeTarget} onClose={() => setNoticeTarget(null)} />}
     </div>
   )
 }

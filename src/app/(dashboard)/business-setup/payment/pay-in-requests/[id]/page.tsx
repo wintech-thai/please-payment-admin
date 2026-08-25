@@ -8,10 +8,12 @@ import { masterRefApi } from '@/lib/api/master-ref.api'
 import type { PayInRequestDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip, TriangleAlert, History } from 'lucide-react'
+import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip, TriangleAlert, History, Pencil } from 'lucide-react'
 import AuditTrailDrawer from '@/components/AuditTrailDrawer'
+import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 
 type SlipItem = {
+  slipId?: string | null
   imageBase64: string
   uploadedAt: string
   first4?: string | null
@@ -233,7 +235,56 @@ function SlipViewerModal({
   const [approveStatusCode, setApproveStatusCode] = useState('')
   const [approveReason, setApproveReason] = useState('')
   const [approveStatuses, setApproveStatuses] = useState<{ code: string; description?: string }[]>([])
-  const slip = slips[idx]
+  const [localSlips, setLocalSlips] = useState<SlipItem[]>(slips)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editFirst4, setEditFirst4] = useState('')
+  const [editLast4, setEditLast4] = useState('')
+  const [editNote, setEditNote] = useState('')
+  const [saving, setSaving] = useState(false)
+  const slip = localSlips[idx]
+
+  useEffect(() => { setLocalSlips(slips) }, [slips])
+  useEffect(() => { setEditOpen(false) }, [idx])
+
+  const handleEditOpen = () => {
+    setEditFirst4(slip?.first4 ?? '')
+    setEditLast4(slip?.last4 ?? '')
+    setEditNote(slip?.note ?? '')
+    setEditOpen(true)
+  }
+
+  const handleEditSave = async () => {
+    if (!slip?.slipId || !orgId) return
+    setSaving(true)
+    try {
+      const resp = await fetch(
+        `/api/proxy/admin-api/AdminPaymentRequest/org/${orgId}/action/UpdatePayInSlipFirst4Last4/${paymentRequestId}/${slip.slipId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            First4: editFirst4.trim().toUpperCase() || null,
+            Last4: editLast4.trim().toUpperCase() || null,
+            Note: editNote.trim() || null,
+          }),
+        }
+      )
+      const data = await resp.json()
+      if ((data?.Status ?? data?.status) === 'OK') {
+        setLocalSlips(prev => prev.map((s, i) =>
+          i === idx ? { ...s, first4: editFirst4.trim().toUpperCase() || null, last4: editLast4.trim().toUpperCase() || null, note: editNote.trim() || null } : s
+        ))
+        setEditOpen(false)
+        setDupIds([])
+      } else {
+        toast.error(data?.Description ?? data?.description ?? 'Save failed')
+      }
+    } catch {
+      toast.error('Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   useEffect(() => {
     masterRefApi.getMasterRefs({ RefType: 'PayInApproveStatus', Limit: 200 })
@@ -344,7 +395,7 @@ function SlipViewerModal({
       <div className="flex-1 flex items-stretch gap-0 min-h-0" onClick={e => e.stopPropagation()}>
 
         {/* Left metadata panel */}
-        {(slip?.first4 || slip?.last4 || slip?.note || destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
+        {(slip?.first4 || slip?.last4 || slip?.note || slip?.slipId || destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
           <div className="flex-none w-52 flex flex-col px-4 py-4 overflow-y-auto">
             <div className="flex flex-col gap-3">
               {(destBankCode || destAccountName || destAccountNo || destPromptPayId) && (
@@ -376,13 +427,71 @@ function SlipViewerModal({
               </div>
             )}
             <div className="mt-auto flex flex-col gap-3 pt-3">
-              {(slip?.first4 || slip?.last4) && (
-                <div className="bg-white/10 rounded-xl px-3 py-3">
-                  <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipRefLabel}</p>
-                  <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">{slip.first4} — {slip.last4}</p>
+              {/* REFERENCE section */}
+              <div className="bg-white/10 rounded-xl px-3 py-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[9px] text-white/50 uppercase tracking-widest">{m.slipRefLabel}</p>
+                  {slip?.slipId ? (
+                    <button
+                      type="button"
+                      onClick={handleEditOpen}
+                      className="p-1 rounded hover:bg-white/20 text-white/60 hover:text-white transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  ) : (
+                    <span className="text-[8px] text-white/30 italic">cannot edit</span>
+                  )}
                 </div>
-              )}
-              {slip?.note && (
+                {editOpen ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      maxLength={4}
+                      value={editFirst4}
+                      onChange={e => setEditFirst4(e.target.value.toUpperCase())}
+                      placeholder="First 4"
+                      className="w-full bg-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white placeholder-white/30 outline-none focus:ring-1 focus:ring-yellow-400"
+                    />
+                    <input
+                      maxLength={4}
+                      value={editLast4}
+                      onChange={e => setEditLast4(e.target.value.toUpperCase())}
+                      placeholder="Last 4"
+                      className="w-full bg-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white placeholder-white/30 outline-none focus:ring-1 focus:ring-yellow-400"
+                    />
+                    <textarea
+                      rows={2}
+                      value={editNote}
+                      onChange={e => setEditNote(e.target.value)}
+                      placeholder="Note"
+                      className="w-full bg-white/20 rounded-lg px-2 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:ring-1 focus:ring-yellow-400 resize-none"
+                    />
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={handleEditSave}
+                        className="flex-1 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
+                      >
+                        {saving ? '...' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => setEditOpen(false)}
+                        className="flex-1 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm font-mono font-bold text-yellow-300 tracking-wider">
+                    {slip?.first4 || slip?.last4 ? `${slip.first4} — ${slip.last4}` : <span className="text-white/30 text-xs">—</span>}
+                  </p>
+                )}
+              </div>
+              {!editOpen && slip?.note && (
                 <div className="bg-white/10 rounded-xl px-3 py-3">
                   <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">{m.slipNoteLabel}</p>
                   <p className="text-sm text-white font-medium leading-snug">{slip.note}</p>
@@ -443,7 +552,12 @@ function SlipViewerModal({
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{m.labelApproveStatus}</label>
               <select
                 value={approveStatusCode}
-                onChange={e => setApproveStatusCode(e.target.value)}
+                onChange={e => {
+                  const code = e.target.value
+                  setApproveStatusCode(code)
+                  const found = approveStatuses.find(s => s.code === code)
+                  setApproveReason(found?.description ?? '')
+                }}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
               >
                 <option value="">{m.approveStatusPlaceholder}</option>
@@ -607,6 +721,7 @@ export default function PayInRequestDetailPage() {
   const [showSlipViewer, setShowSlipViewer] = useState(false)
   const [showSlipLink, setShowSlipLink] = useState(false)
   const [showAuditTrail, setShowAuditTrail] = useState(false)
+  const [showNoticeDrawer, setShowNoticeDrawer] = useState(false)
 
   const loadDetail = async () => {
     setLoading(true)
@@ -624,6 +739,7 @@ export default function PayInRequestDetailPage() {
             const d = (r.data as any)
             const rawList: any[] = Array.isArray(d) ? d : (d?.slips ?? d?.Slips ?? [])
             const list: SlipItem[] = rawList.map(s => ({
+              slipId: s.slipId ?? s.SlipId ?? null,
               imageBase64: s.imageBase64 ?? s.ImageBase64 ?? '',
               uploadedAt: s.uploadedAt ?? s.UploadedAt ?? '',
               first4: s.first4 ?? s.First4 ?? null,
@@ -745,6 +861,7 @@ export default function PayInRequestDetailPage() {
       </div>
 
       {showAuditTrail && <AuditTrailDrawer rowId={id} onClose={() => setShowAuditTrail(false)} />}
+      {showNoticeDrawer && <AuditNoticeDrawer rowId={id} onClose={() => setShowNoticeDrawer(false)} />}
       {showRawJson && detail && <RawJsonModal data={detail} onClose={() => setShowRawJson(false)} />}
 
       {showSlipViewer && slips.length > 0 && (
@@ -797,7 +914,19 @@ export default function PayInRequestDetailPage() {
               </div>
             </InfoRow>
             <InfoRow label={m.fieldStatus}>
-              <StatusBadge status={detail?.status} createdDate={detail?.createdDate} isPeerToPeer={detail?.payinIsPeerToPeer} />
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusBadge status={detail?.status} createdDate={detail?.createdDate} isPeerToPeer={detail?.payinIsPeerToPeer} />
+                {(detail?.noticeCount ?? 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNoticeDrawer(true)}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100 transition-colors"
+                  >
+                    <TriangleAlert className="w-3 h-3" />
+                    {detail?.noticeCount}
+                  </button>
+                )}
+              </div>
             </InfoRow>
             <InfoRow label={m.fieldMerchant}>
               <span className="font-semibold">{detail?.merchantCode ?? '—'}</span>

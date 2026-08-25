@@ -223,7 +223,13 @@ export default function UpdateMerchantPage() {
             </div>
           </div>
 
-          {/* Fee & Limits */}
+          {/* Currency tabs */}
+          <div className="flex-none flex gap-1">
+            <button type="button" className="px-4 py-1.5 text-sm font-semibold rounded-full bg-primary-600 text-white shadow-sm">THB</button>
+            <button type="button" disabled className="px-4 py-1.5 text-sm font-semibold rounded-full text-gray-400 border border-gray-200 cursor-not-allowed" title="Coming Soon">Crypto</button>
+          </div>
+
+          {/* Fee & Limits (THB) */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField label={m.fieldPayInFee} error={errors.payInFee}>

@@ -281,7 +281,7 @@ def handle_webhook():
         reason = params.get('STATUS_REASON')
         update_order_status(ref_id, 'payout_rejected', reason=reason)
 
-    return jsonify({'ok': True}), 200
+    return jsonify({'status': 'ok'}), 200
 ```
 
 ### Node.js (Express)
@@ -302,12 +302,29 @@ app.post('/webhooks/payment', express.json(), (req, res) => {
     updateOrderStatus(refId, 'payout_rejected', null, params.STATUS_REASON)
   }
 
-  res.json({ ok: true })
+  res.json({ status: 'ok' })
 })
 ```
 
+## Response ที่ merchant ต้องตอบกลับ
+
+เมื่อระบบยิง webhook ไปหา merchant แล้ว ฝั่ง merchant **ต้องตอบกลับเป็น JSON ที่มีฟีลด์ `status`** เสมอ เพื่อให้ระบบรู้ว่า merchant รับข้อมูลและประมวลผลสำเร็จจริง ไม่ใช่แค่ได้รับ request เฉย ๆ
+
+```json
+{ "status": "ok" }
+```
+
+ระบบตรวจสอบผลลัพธ์ตามลำดับนี้:
+
+1. **HTTP status ที่ไม่ใช่ `20X`** → ถือว่า **failed** ทั้งหมด (ไม่ต้องดู response body ต่อ)
+2. **ถ้าเป็น `20X`** ระบบจะแกะ response body เป็น JSON แล้วเช็คฟีลด์ `status` ต่อ
+   - ต้องเป็น `success` หรือ `OK` (ไม่สนตัวพิมพ์ใหญ่/เล็ก) จึงจะถือว่า **สำเร็จ**
+   - ถ้า response ไม่ใช่ JSON ที่แกะได้ หรือฟีลด์ `status` ไม่ใช่ `success`/`OK` → ถือว่า **failed** เช่นกัน
+
+หาก failed ไม่ว่ากรณีใดก็ตาม (webhook config ไม่ได้ตั้งค่าไว้, ยิงไม่ถึง merchant, HTTP status ไม่ใช่ 20X, หรือ 20X แต่ response ไม่ผ่านเงื่อนไขข้างต้น) ระบบจะสร้าง **AuditNotice** (warning) ไว้ที่ Payment Request / Payment Transaction รายการนั้น — สังเกตได้จากไอคอน ⚠️ ในคอลัมน์ Status บน Admin Portal และ Merchant Portal กดไอคอนเพื่อดูรายละเอียดข้อผิดพลาด และระบบจะแจ้งกลับไปยัง merchant ด้วย
+
 ## ข้อควรทราบ
 
-- ตอบกลับด้วย HTTP `200` เพื่อยืนยันว่าได้รับ webhook แล้ว
+- ตอบกลับด้วย HTTP `200` และ JSON `{ "status": "ok" }` เพื่อยืนยันว่าได้รับและประมวลผล webhook สำเร็จ (ดูรายละเอียดด้านบน)
 - ระบบยังไม่มี retry policy — หาก webhook ล้มเหลว ข้อมูลจะไม่ถูกส่งซ้ำ
 - ระบบยังไม่มี signature verification — แนะนำให้ตรวจสอบ `PMR_REF_ID1` ว่าตรงกับ order ในระบบก่อนทำรายการ

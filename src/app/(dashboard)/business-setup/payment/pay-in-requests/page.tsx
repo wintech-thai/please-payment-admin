@@ -60,31 +60,34 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
-function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToPeer }: {
+function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToPeer, trailing }: {
   status?: string | null
   createdDate?: string | null
   paymentTxId?: string | null
   statusReason?: string | null
   isPeerToPeer?: boolean | null
+  trailing?: React.ReactNode
 }) {
   const s = status?.toLowerCase()
   if (s === 'match' || s === 'paid') return (
     <div className="flex flex-col gap-0.5 items-start">
-      <div className="inline-flex items-center gap-1">
+      <div className="inline-flex items-center gap-1 flex-wrap">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />{status}
         </span>
         {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
+        {trailing}
       </div>
     </div>
   )
   if (s === 'approved') return (
     <div className="flex flex-col gap-0.5 items-start">
-      <div className="inline-flex items-center gap-1">
+      <div className="inline-flex items-center gap-1 flex-wrap">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />{status}
         </span>
         {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">P2P</span>}
+        {trailing}
       </div>
       {paymentTxId && (
         <a
@@ -105,11 +108,12 @@ function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToP
   )
   if (s === 'rejected') return (
     <div className="flex flex-col gap-0.5 items-start">
-      <div className="inline-flex items-center gap-1">
+      <div className="inline-flex items-center gap-1 flex-wrap">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />{status}
         </span>
         {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-red-50 text-red-700 ring-red-200">P2P</span>}
+        {trailing}
       </div>
       {statusReason && (
         <span className="text-[10px] text-red-500 ml-1 max-w-[160px] truncate" title={statusReason}>{statusReason}</span>
@@ -117,21 +121,23 @@ function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToP
     </div>
   )
   if (s === 'error') return (
-    <div className="inline-flex items-center gap-1">
+    <div className="inline-flex items-center gap-1 flex-wrap">
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-red-200">
         <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />{status}
       </span>
       {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-red-50 text-red-700 ring-red-200">P2P</span>}
+      {trailing}
     </div>
   )
   const age = formatAge(createdDate)
   return (
     <div className="flex flex-col gap-0.5 items-start">
-      <div className="inline-flex items-center gap-1">
+      <div className="inline-flex items-center gap-1 flex-wrap">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />{status ?? 'Pending'}
         </span>
         {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-amber-50 text-amber-700 ring-amber-200">P2P</span>}
+        {trailing}
       </div>
       {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
     </div>
@@ -1224,35 +1230,37 @@ export default function PayInRequestsPage() {
                       </td>
 
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <StatusBadge
-                            status={item.status}
-                            createdDate={item.createdDate}
-                            paymentTxId={item.paymentTxId}
-                            statusReason={item.statusReason}
-                            isPeerToPeer={item.payinIsPeerToPeer}
-                          />
-                          {(item.payInSlipUploadCount ?? 0) > 0 && (
-                            <button
-                              type="button"
-                              onClick={e => { e.stopPropagation(); setSlipViewerTarget(item) }}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100 transition-colors"
-                            >
-                              <Paperclip className="w-3 h-3" />
-                              {item.payInSlipUploadCount}
-                            </button>
-                          )}
-                          {(item.noticeCount ?? 0) > 0 && (
-                            <button
-                              type="button"
-                              onClick={e => { e.stopPropagation(); setNoticeTarget(item.id) }}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100 transition-colors"
-                            >
-                              <TriangleAlert className="w-3 h-3" />
-                              {item.noticeCount}
-                            </button>
-                          )}
-                        </div>
+                        <StatusBadge
+                          status={item.status}
+                          createdDate={item.createdDate}
+                          paymentTxId={item.paymentTxId}
+                          statusReason={item.statusReason}
+                          isPeerToPeer={item.payinIsPeerToPeer}
+                          trailing={
+                            <>
+                              {(item.payInSlipUploadCount ?? 0) > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={e => { e.stopPropagation(); setSlipViewerTarget(item) }}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100 transition-colors"
+                                >
+                                  <Paperclip className="w-3 h-3" />
+                                  {item.payInSlipUploadCount}
+                                </button>
+                              )}
+                              {(item.noticeCount ?? 0) > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={e => { e.stopPropagation(); setNoticeTarget(item.id) }}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100 transition-colors"
+                                >
+                                  <TriangleAlert className="w-3 h-3" />
+                                  {item.noticeCount}
+                                </button>
+                              )}
+                            </>
+                          }
+                        />
                       </td>
 
                       {/* REF */}

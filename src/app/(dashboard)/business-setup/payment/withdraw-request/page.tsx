@@ -760,7 +760,7 @@ function WithdrawRequestPageContent() {
 
                       {/* Status */}
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-start gap-1.5 flex-wrap">
                           <StatusBadge
                             status={item.status}
                             createdDate={item.createdDate}

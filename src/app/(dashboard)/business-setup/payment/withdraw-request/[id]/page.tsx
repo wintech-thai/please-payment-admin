@@ -1002,7 +1002,7 @@ export default function PayOutRequestDetailPage() {
             <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
 
             <InfoRow label={m.fieldStatus}>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-start gap-2 flex-wrap">
                 <StatusBadge status={detail?.status} isPartialyPayout={detail?.isPartialyPayout} />
                 {(detail?.noticeCount ?? 0) > 0 && (
                   <button
@@ -1375,20 +1375,25 @@ export default function PayOutRequestDetailPage() {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialDate ?? 'Date'}</th>
-                    <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialExpire ?? 'Expire Date'}</th>
                     <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialId ?? 'Transaction ID'}</th>
-                    <th className="px-3 py-2.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialAmount ?? 'Amount'}</th>
-                    <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialStatus ?? 'Status'}</th>
+                    <th className="px-3 py-2.5 pr-8 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialAmount ?? 'Amount'}</th>
+                    <th className="px-3 py-2.5 pl-6 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{m.colPartialStatus ?? 'Status'}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {detail.partialPayouts.map((p, i) => (
                     <tr key={p.payinRequestId ?? i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
-                      <td className="px-3 py-2.5 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">{p.txDate ? formatDateTime(p.txDate) : '—'}</td>
-                      <td className="px-3 py-2.5 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">{p.expireDate ? formatDateTime(p.expireDate) : '—'}</td>
+                      <td className="px-3 py-2.5 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span>{p.txDate ? formatDateTime(p.txDate) : '—'}</span>
+                          {p.expireDate && (
+                            <span className="text-[11px] text-gray-400">{m.colPartialExpire ?? 'Expire'}: {formatDateTime(p.expireDate)}</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-3 py-2.5 border-b border-gray-100 text-xs text-gray-500 max-w-[160px] truncate">{p.payinRequestId ?? '—'}</td>
-                      <td className="px-3 py-2.5 border-b border-gray-100 text-right font-semibold tabular-nums text-gray-800">{formatAmount(p.partialAmount)}</td>
-                      <td className="px-3 py-2.5 border-b border-gray-100">
+                      <td className="px-3 py-2.5 pr-8 border-b border-gray-100 text-right font-semibold tabular-nums text-gray-800">{formatAmount(p.partialAmount)}</td>
+                      <td className="px-3 py-2.5 pl-6 border-b border-gray-100">
                         <div className="flex flex-col gap-0.5">
                           <StatusBadge status={p.status} />
                           {p.status?.toLowerCase() === 'pending' && p.txDate && (

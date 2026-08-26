@@ -1099,3 +1099,71 @@ export interface GetAgentEventsPayload {
   FromDate?: string
   ToDate?: string
 }
+
+// ─── Merchant Currency ──────────────────────────────────────────────────────
+
+export type CurrencyCategory = 'FIAT' | 'CRYPTO'
+
+export interface AvailableCurrencyItem {
+  currencyCoode?: string | null
+  currencyName?: string | null
+  category?: string | null
+  decimal?: number | null
+  isNative?: boolean | null
+  symbol?: string | null
+}
+
+export interface MerchantCurrencyItem {
+  id?: string | null
+  orgId?: string | null
+  merchantId?: string | null
+  currency?: string | null
+  currencyName?: string | null
+  currencyCategory?: string | null
+  isDefaultCurrency?: boolean | null
+  status?: string | null
+  walletId?: string | null
+  payinFeePct?: number | null
+  payinMinAmount?: number | null
+  payinMaxAmount?: number | null
+  payinDiscardCent?: boolean | null
+  payinIncludeGlobalBankAccount?: boolean | null
+  payinWhitelistBankAccountNames?: string | null
+  payinRandomDecimal?: boolean | null
+  payinDailyTxAmountLimit?: number | null
+  payinDailyTxCountLimit?: number | null
+  payinExpireMinute?: number | null
+  payoutFeePct?: number | null
+  payoutMinAmount?: number | null
+  payoutMaxAmount?: number | null
+  createdDate?: string | null
+}
+
+export interface AddMerchantCurrencyPayload {
+  MerchantId: string
+  Currency: string
+  PayinFeePct?: number | null
+  PayinMinAmount?: number | null
+  PayinMaxAmount?: number | null
+  PayinDiscardCent?: boolean
+  PayinIncludeGlobalBankAccount?: boolean
+  PayinWhitelistBankAccountNames?: string
+  PayinRandomDecimal?: boolean
+  PayinDailyTxAmountLimit?: number | null
+  PayinDailyTxCountLimit?: number | null
+  PayinExpireMinute?: number | null
+  PayoutFeePct?: number | null
+  PayoutMinAmount?: number | null
+  PayoutMaxAmount?: number | null
+}
+
+export type UpdateMerchantCurrencyPayload = Omit<AddMerchantCurrencyPayload, 'MerchantId' | 'Currency'>
+
+export interface MerchantCurrencyResponse {
+  status?: string | null
+  Status?: string | null
+  description?: string | null
+  Description?: string | null
+  merchantCurrency?: MerchantCurrencyItem | null
+  MerchantCurrency?: MerchantCurrencyItem | null
+}

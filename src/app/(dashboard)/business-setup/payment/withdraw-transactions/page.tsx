@@ -6,10 +6,12 @@ import { paymentTxApi } from '@/lib/api/payment-tx.api'
 import type { PayOutTxItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, TriangleAlert } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ExternalLink, TriangleAlert, Download } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
+import ExportCsvModal from '@/components/ExportCsvModal'
+import type { CsvCell } from '@/lib/csv-export'
 
 const HIGHLIGHTED_KEY = 'payOutTx_highlightedId'
 const FILTER_KEY = 'payOutTx_filter'
@@ -121,6 +123,9 @@ export default function PayOutTransactionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.statusFilter ?? '') : ''
   )
+  const [p2pFilter, setP2pFilter] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.p2pFilter ?? '') : ''
+  )
   const [timeRange, setTimeRange] = useState<TimeRangeValue>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.timeRange ?? { type: 'relative', value: '24h' }) : { type: 'relative', value: '24h' }
   )
@@ -130,6 +135,7 @@ export default function PayOutTransactionsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [loading, setLoading] = useState(false)
   const [noticeTarget, setNoticeTarget] = useState<string | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
@@ -137,14 +143,15 @@ export default function PayOutTransactionsPage() {
     return ''
   })
 
-  const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string) => {
-    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: q, statusFilter: status, timeRange: tr }))
+  const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string, p2p: string) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: q, statusFilter: status, p2pFilter: p2p, timeRange: tr }))
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)
       const payload: Record<string, unknown> = { Page: currentPage, Limit: limit, FromDate: fromDate, ToDate: toDate }
       if (q.trim()) payload.FullTextSearch = q.trim()
       if (status) payload.Status = status
+      if (p2p) payload.IsPeerToPeer = p2p === 'true'
 
       const countPayload = { ...payload }
       delete countPayload.FullTextSearch
@@ -175,17 +182,17 @@ export default function PayOutTransactionsPage() {
     }
   }, [])
 
-  useEffect(() => { load(1, itemsPerPage, timeRange, search, statusFilter) }, [])
+  useEffect(() => { load(1, itemsPerPage, timeRange, search, statusFilter, p2pFilter) }, [])
 
   const handleRefresh = () => {
     setPage(1)
-    load(1, itemsPerPage, timeRange, search, statusFilter)
+    load(1, itemsPerPage, timeRange, search, statusFilter, p2pFilter)
   }
 
   const handleTimeRangeChange = (tr: TimeRangeValue) => {
     setTimeRange(tr)
     setPage(1)
-    load(1, itemsPerPage, tr, search, statusFilter)
+    load(1, itemsPerPage, tr, search, statusFilter, p2pFilter)
   }
 
   const handleRowHighlight = (id: string) => {
@@ -243,7 +250,7 @@ export default function PayOutTransactionsPage() {
           onChange={e => {
             setStatusFilter(e.target.value)
             setPage(1)
-            load(1, itemsPerPage, timeRange, search, e.target.value)
+            load(1, itemsPerPage, timeRange, search, e.target.value, p2pFilter)
           }}
           className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         >
@@ -252,6 +259,20 @@ export default function PayOutTransactionsPage() {
           <option value="Completed">Completed</option>
           <option value="Failed">Failed</option>
           <option value="Error">Error</option>
+        </select>
+
+        <select
+          value={p2pFilter}
+          onChange={e => {
+            setP2pFilter(e.target.value)
+            setPage(1)
+            load(1, itemsPerPage, timeRange, search, statusFilter, e.target.value)
+          }}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        >
+          <option value="">{m.p2pAll}</option>
+          <option value="true">{m.p2pOnly}</option>
+          <option value="false">{m.p2pNone}</option>
         </select>
 
         <AdvancedTimeRangeSelector
@@ -267,6 +288,14 @@ export default function PayOutTransactionsPage() {
           className="p-2 text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"
         >
           <RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} />
+        </button>
+
+        <button
+          onClick={() => setExportOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          {t.common.export.button}
         </button>
       </div>
 
@@ -469,7 +498,7 @@ export default function PayOutTransactionsPage() {
                   const n = Number(e.target.value)
                   setItemsPerPage(n)
                   setPage(1)
-                  load(1, n, timeRange, search, statusFilter)
+                  load(1, n, timeRange, search, statusFilter, p2pFilter)
                 }}
                 className="bg-transparent border-none text-gray-700 focus:ring-0 cursor-pointer font-medium outline-none text-sm"
               >
@@ -480,14 +509,14 @@ export default function PayOutTransactionsPage() {
               <span className="text-xs text-gray-400">{displayTotal === 0 ? '0-0' : `${startRow}-${endRow}`} of {displayTotal}</span>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search, statusFilter) }}
+                  onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search, statusFilter, p2pFilter) }}
                   disabled={page <= 1 || loading}
                   className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={() => { setPage(p => p + 1); load(page + 1, itemsPerPage, timeRange, search, statusFilter) }}
+                  onClick={() => { setPage(p => p + 1); load(page + 1, itemsPerPage, timeRange, search, statusFilter, p2pFilter) }}
                   disabled={page >= totalPages || total === 0 || loading}
                   className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
                 >
@@ -499,6 +528,70 @@ export default function PayOutTransactionsPage() {
         </div>
       </div>
       {noticeTarget && <AuditNoticeDrawer rowId={noticeTarget} onClose={() => setNoticeTarget(null)} />}
+
+      {exportOpen && (
+        <ExportCsvModal<PayOutTxItem>
+          onClose={() => setExportOpen(false)}
+          filenamePrefix="pay-out-transactions"
+          getTimeFilter={getTimeFilter}
+          showP2pFilter
+          statusOptions={[
+            { value: 'Pending', label: 'Pending' },
+            { value: 'Completed', label: 'Completed' },
+            { value: 'Failed', label: 'Failed' },
+            { value: 'Error', label: 'Error' },
+          ]}
+          headers={[
+            'Date/Time', 'Merchant Code', 'Merchant Name', 'Amount', 'Currency', 'Fee Amount', 'Fee %', 'Fee Payer',
+            'Dest Bank Code', 'Dest Account No', 'Dest Account Name', 'Dest PromptPay ID',
+            'Source Bank Code', 'Source Account No', 'Source Account Name', 'Source PromptPay ID',
+            'Is P2P', 'Status', 'Status Reason', 'Ref1', 'Ref2', 'Ref3',
+          ]}
+          mapRow={(item): CsvCell[] => {
+            const isKnown = (v?: string | null) => (v && v.toUpperCase() !== 'UNKNOWN' ? v : null)
+            return [
+              formatDateTime(item.createdDate),
+              item.merchantCode ?? '',
+              item.merchantName ?? '',
+              item.txAmountDecimal ?? item.txAmount ?? '',
+              item.currency ?? '',
+              item.payoutFeeDecimal ?? '',
+              item.payOutFeePct ?? item.payoutFeePct ?? '',
+              item.payoutFeePayer ?? '',
+              item.payInBankCode ?? '',
+              item.payInBankAccountNo ?? '',
+              item.payInBankAccountName ?? '',
+              item.payInPromptPayId ?? '',
+              isKnown(item.payOutBankCode) ?? '',
+              isKnown(item.payOutBankAccountNo) ?? '',
+              isKnown(item.payOutBankAccountName) ?? '',
+              item.payOutPromptPayId ?? '',
+              item.txIsPeerToPeer ? 'Yes' : 'No',
+              item.status ?? '',
+              item.statusReason ?? '',
+              item.refId1 ?? '',
+              item.refId2 ?? '',
+              item.refId3 ?? '',
+            ]
+          }}
+          fetchCount={async params => {
+            const res = await paymentTxApi.getPayOutTransactionCount({
+              FromDate: params.fromDate, ToDate: params.toDate,
+              Status: params.status, IsPeerToPeer: params.isPeerToPeer,
+            })
+            const d = res.data as any
+            return typeof d === 'number' ? d : (d?.count ?? d?.Count ?? 0)
+          }}
+          fetchPage={async (params, page, limit) => {
+            const res = await paymentTxApi.getPayOutTransactions({
+              Page: page, Limit: limit, FromDate: params.fromDate, ToDate: params.toDate,
+              Status: params.status, IsPeerToPeer: params.isPeerToPeer,
+            })
+            const d = res.data as any
+            return Array.isArray(d) ? d : (d?.payOutTransactions ?? d?.PayOutTransactions ?? d?.transactions ?? d?.Transactions ?? [])
+          }}
+        />
+      )}
     </div>
   )
 }

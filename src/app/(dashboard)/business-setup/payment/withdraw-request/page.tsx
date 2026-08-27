@@ -6,12 +6,14 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { PayOutRequestItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, X, Paperclip, MoreHorizontal, Link2, Copy, Check, ExternalLink, TriangleAlert, Pencil } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, X, Paperclip, MoreHorizontal, Link2, Copy, Check, ExternalLink, TriangleAlert, Pencil, Download } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import { getMerchantBase } from '@/lib/merchant-url'
 import QRCode from 'react-qr-code'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
+import ExportCsvModal from '@/components/ExportCsvModal'
+import type { CsvCell } from '@/lib/csv-export'
 
 type SlipItem = { slipId?: string | null; imageBase64: string; uploadedAt: string; note?: string | null; first4?: string | null; last4?: string | null }
 
@@ -429,6 +431,9 @@ function WithdrawRequestPageContent() {
   const [statusFilter, setStatusFilter] = useState<string>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.statusFilter ?? '') : ''
   )
+  const [p2pFilter, setP2pFilter] = useState<string>(() =>
+    typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.p2pFilter ?? '') : ''
+  )
   const [timeRange, setTimeRange] = useState<TimeRangeValue>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.timeRange ?? { type: 'relative', value: '24h' }) : { type: 'relative', value: '24h' }
   )
@@ -441,19 +446,21 @@ function WithdrawRequestPageContent() {
   const [noticeTarget, setNoticeTarget] = useState<string | null>(null)
   const [slipLinkId, setSlipLinkId] = useState<string | null>(null)
   const [openActionId, setOpenActionId] = useState<string | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
   const [highlightedId, setHighlightedId] = useState<string>(() => {
     if (typeof window !== 'undefined') return sessionStorage.getItem(HIGHLIGHTED_KEY) ?? ''
     return ''
   })
 
-  const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string) => {
-    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: q, statusFilter: status, timeRange: tr }))
+  const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string, p2p: string) => {
+    if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: q, statusFilter: status, p2pFilter: p2p, timeRange: tr }))
     setLoading(true)
     try {
       const { fromDate, toDate } = getTimeFilter(tr)
       const payload: Record<string, unknown> = { Page: currentPage, Limit: limit, FromDate: fromDate, ToDate: toDate }
       if (q.trim()) payload.FullTextSearch = q.trim()
       if (status) payload.Status = status
+      if (p2p) payload.IsPeerToPeer = p2p === 'true'
 
       const countPayload = { ...payload }
       delete countPayload.FullTextSearch
@@ -485,7 +492,7 @@ function WithdrawRequestPageContent() {
   }, [m.failedToLoad])
 
   useEffect(() => {
-    load(1, itemsPerPage, timeRange, search, statusFilter)
+    load(1, itemsPerPage, timeRange, search, statusFilter, p2pFilter)
     if (searchParams.get('refresh') === '1') {
       router.replace('/business-setup/payment/withdraw-request')
     }
@@ -493,13 +500,13 @@ function WithdrawRequestPageContent() {
 
   const handleRefresh = () => {
     setPage(1)
-    load(1, itemsPerPage, timeRange, search, statusFilter)
+    load(1, itemsPerPage, timeRange, search, statusFilter, p2pFilter)
   }
 
   const handleTimeRangeChange = (tr: TimeRangeValue) => {
     setTimeRange(tr)
     setPage(1)
-    load(1, itemsPerPage, tr, search, statusFilter)
+    load(1, itemsPerPage, tr, search, statusFilter, p2pFilter)
   }
 
   const handleRowHighlight = (id: string) => {
@@ -564,7 +571,7 @@ function WithdrawRequestPageContent() {
           onChange={e => {
             setStatusFilter(e.target.value)
             setPage(1)
-            load(1, itemsPerPage, timeRange, search, e.target.value)
+            load(1, itemsPerPage, timeRange, search, e.target.value, p2pFilter)
           }}
           className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         >
@@ -572,6 +579,20 @@ function WithdrawRequestPageContent() {
           <option value="Pending">Pending</option>
           <option value="Paid">Paid</option>
           <option value="Rejected">Rejected</option>
+        </select>
+
+        <select
+          value={p2pFilter}
+          onChange={e => {
+            setP2pFilter(e.target.value)
+            setPage(1)
+            load(1, itemsPerPage, timeRange, search, statusFilter, e.target.value)
+          }}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        >
+          <option value="">{m.p2pAll}</option>
+          <option value="true">{m.p2pOnly}</option>
+          <option value="false">{m.p2pNone}</option>
         </select>
 
         <AdvancedTimeRangeSelector
@@ -587,6 +608,14 @@ function WithdrawRequestPageContent() {
           className="p-2 text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"
         >
           <RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} />
+        </button>
+
+        <button
+          onClick={e => { e.stopPropagation(); setExportOpen(true) }}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          {t.common.export.button}
         </button>
       </div>
 
@@ -859,7 +888,7 @@ function WithdrawRequestPageContent() {
                   const n = Number(e.target.value)
                   setItemsPerPage(n)
                   setPage(1)
-                  load(1, n, timeRange, search, statusFilter)
+                  load(1, n, timeRange, search, statusFilter, p2pFilter)
                 }}
                 className="bg-transparent border-none text-gray-700 focus:ring-0 cursor-pointer font-medium outline-none text-sm"
               >
@@ -870,14 +899,14 @@ function WithdrawRequestPageContent() {
               <span className="text-xs text-gray-400">{displayTotal === 0 ? '0-0' : `${startRow}-${endRow}`} of {displayTotal}</span>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search, statusFilter) }}
+                  onClick={() => { setPage(p => p - 1); load(page - 1, itemsPerPage, timeRange, search, statusFilter, p2pFilter) }}
                   disabled={page <= 1 || loading}
                   className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={() => { setPage(p => p + 1); load(page + 1, itemsPerPage, timeRange, search, statusFilter) }}
+                  onClick={() => { setPage(p => p + 1); load(page + 1, itemsPerPage, timeRange, search, statusFilter, p2pFilter) }}
                   disabled={page >= totalPages || total === 0 || loading}
                   className="p-1.5 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30 transition-colors"
                 >
@@ -893,6 +922,77 @@ function WithdrawRequestPageContent() {
       )}
       {slipLinkId && <SlipLinkModal paymentRequestId={slipLinkId} onClose={() => setSlipLinkId(null)} />}
       {noticeTarget && <AuditNoticeDrawer rowId={noticeTarget} onClose={() => setNoticeTarget(null)} />}
+
+      {exportOpen && (
+        <ExportCsvModal<PayOutRequestItem>
+          onClose={() => setExportOpen(false)}
+          filenamePrefix="pay-out-requests"
+          getTimeFilter={getTimeFilter}
+          showP2pFilter
+          statusOptions={[
+            { value: 'Pending', label: 'Pending' },
+            { value: 'Paid', label: 'Paid' },
+            { value: 'Rejected', label: 'Rejected' },
+          ]}
+          headers={[
+            'Date/Time', 'Merchant Code', 'Merchant Name', 'Amount', 'Currency', 'Paid Amount (P2P)',
+            'Fee Amount', 'Fee %', 'Fee Payer',
+            'Dest Bank Code', 'Dest Account No', 'Dest Account Name', 'Dest Account Type', 'Dest PromptPay ID',
+            'Source Bank Code', 'Source Account No', 'Source Account Name', 'Source Account Type', 'Source PromptPay ID',
+            'Is P2P', 'Status', 'Reject Reason', 'Ref1', 'Ref2', 'Ref3',
+          ]}
+          mapRow={(item): CsvCell[] => {
+            const bankCode = item.isPayInBankAccountOverride ? item.payinBankCodeOverride : item.payinBankCode
+            const bankAccountNo = item.isPayInBankAccountOverride ? item.payinBankAccountNoOverride : item.payinBankAccountNo
+            const bankAccountName = item.isPayInBankAccountOverride ? item.payinBankAccountNameOverride : item.payinBankAccountName
+            const accountType = item.isPayInBankAccountOverride ? item.payinAccountTypeOverride : item.payinAccountType
+            const promptPayId = item.isPayInBankAccountOverride ? item.payinPromptPayIdOverride : item.payinPromptPayId
+            return [
+              formatDateTime(item.createdDate),
+              item.merchantCode ?? '',
+              item.merchantName ?? '',
+              item.generatedAmount ?? '',
+              item.currency ?? '',
+              item.isPartialyPayout ? (item.totalPayOutPaidAmountDecimal ?? '') : '',
+              item.payoutFeeDecimal ?? '',
+              item.payoutFeePct ?? '',
+              item.payoutFeePayer ?? '',
+              bankCode ?? '',
+              bankAccountNo ?? '',
+              bankAccountName ?? '',
+              accountType ?? '',
+              promptPayId ?? '',
+              item.payoutBankCode ?? '',
+              item.payoutBankAccountNo ?? '',
+              item.payoutBankAccountName ?? '',
+              item.payoutAccountType ?? '',
+              item.payoutPromptPayId ?? '',
+              item.isPartialyPayout ? 'Yes' : 'No',
+              item.status ?? '',
+              item.rejectReason ?? '',
+              item.refId1 ?? '',
+              item.refId2 ?? '',
+              item.refId3 ?? '',
+            ]
+          }}
+          fetchCount={async params => {
+            const res = await paymentRequestApi.getPayOutRequestCount({
+              FromDate: params.fromDate, ToDate: params.toDate,
+              Status: params.status, IsPeerToPeer: params.isPeerToPeer,
+            })
+            const d = res.data as any
+            return typeof d === 'number' ? d : (d?.count ?? 0)
+          }}
+          fetchPage={async (params, page, limit) => {
+            const res = await paymentRequestApi.getPayOutRequests({
+              Page: page, Limit: limit, FromDate: params.fromDate, ToDate: params.toDate,
+              Status: params.status, IsPeerToPeer: params.isPeerToPeer,
+            })
+            const d = res.data as any
+            return Array.isArray(d) ? d : (d?.paymentRequests ?? d?.PaymentRequests ?? d?.requests ?? [])
+          }}
+        />
+      )}
     </div>
   )
 }

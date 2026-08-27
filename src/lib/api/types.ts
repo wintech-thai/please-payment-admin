@@ -471,6 +471,7 @@ export interface GetPayInRequestsPayload {
   ToDate?: string
   Page?: number
   Limit?: number
+  IsPeerToPeer?: boolean
 }
 
 // ─── Pay-In Transactions ─────────────────────────────────────────────────────
@@ -554,6 +555,7 @@ export interface GetPayInTxPayload {
   ToDate?: string
   Page?: number
   Limit?: number
+  IsPeerToPeer?: boolean
 }
 
 // ─── Pay-Out Transactions ─────────────────────────────────────────────────────
@@ -613,6 +615,7 @@ export interface GetPayOutTxPayload {
   ToDate?: string
   Page?: number
   Limit?: number
+  IsPeerToPeer?: boolean
 }
 
 // ─── Wallet ──────────────────────────────────────────────────────────────────
@@ -910,6 +913,7 @@ export interface GetPayOutRequestsPayload {
   ToDate?: string
   Page?: number
   Limit?: number
+  IsPeerToPeer?: boolean
 }
 
 export interface CreatePayOutRequestPayload {

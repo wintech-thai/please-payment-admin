@@ -58,7 +58,7 @@ export default function CurrencyListPage() {
   const [merchant, setMerchant] = useState<MerchantItem | null>(null)
   const [currencies, setCurrencies] = useState<MerchantCurrencyItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<CurrencyCategory>('FIAT')
+  const [activeTab, setActiveTab] = useState<CurrencyCategory>('CRYPTO')
   const [search, setSearch] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
@@ -153,12 +153,7 @@ export default function CurrencyListPage() {
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="flex-none flex flex-wrap items-center justify-between gap-3 px-7 pt-6 pb-4">
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => setActiveTab('FIAT')}
-              className={clsx('px-4 py-1.5 text-sm font-semibold rounded-full transition-colors', activeTab === 'FIAT' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 border border-gray-200 hover:bg-gray-50')}
-            >
-              {c.tabFiat}
-            </button>
+            {/* Fiat tab hidden for now */}
             <button
               onClick={() => setActiveTab('CRYPTO')}
               className={clsx('px-4 py-1.5 text-sm font-semibold rounded-full transition-colors', activeTab === 'CRYPTO' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 border border-gray-200 hover:bg-gray-50')}

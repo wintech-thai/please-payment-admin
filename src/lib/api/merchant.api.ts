@@ -96,6 +96,6 @@ export const merchantApi = {
   submitPaymentRequest: (merchantId: string, payload: SubmitPaymentRequestPayload) =>
     client.post(`${PMR_BASE}/SubmitPaymentRequestByMerchantId/${merchantId}`, payload),
 
-  submitPaymentRequestP2P: (merchantId: string, payload: { RefId1?: string; RefId2?: string; RefId3?: string; Currency?: string; RequestedAmount: number; QrProvider?: string }) =>
+  submitPaymentRequestP2P: (merchantId: string, payload: { RefId1?: string; RefId2?: string; RefId3?: string; Currency?: string; RequestedAmount: number; QrProvider?: string; PayerName?: string }) =>
     client.post(`${PMR_BASE}/SubmitPaymentRequestByMerchantIdP2P/${merchantId}`, payload),
 }

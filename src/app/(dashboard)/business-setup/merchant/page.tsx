@@ -7,11 +7,12 @@ import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, Building2, ChevronLeft, ChevronRight, Webhook } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, Building2, ChevronLeft, ChevronRight, Webhook, Coins } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import QrPaymentModal from '@/components/QrPaymentModal'
 import QrPaymentP2PModal from '@/components/QrPaymentP2PModal'
+import { isCurrencyFeatureEnabled } from '@/lib/feature-flags'
 
 function StatusBadge({ status }: { status?: string | null }) {
   const lower = status?.toLowerCase()
@@ -104,6 +105,9 @@ function MerchantContent() {
   const [qrMerchant, setQrMerchant] = useState<MerchantItem | null>(null)
   const [qrP2PMerchant, setQrP2PMerchant] = useState<MerchantItem | null>(null)
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [currencyEnabled, setCurrencyEnabled] = useState(false)
+
+  useEffect(() => { setCurrencyEnabled(isCurrencyFeatureEnabled()) }, [])
 
   useEffect(() => {
     if (highlightIdParam) {
@@ -450,6 +454,19 @@ function MerchantContent() {
                               )}
 
                               <div className="border-t border-gray-200 my-1" />
+
+                              {currencyEnabled && (
+                                <>
+                                  <button
+                                    onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/currency`) }}
+                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Coins className="w-4 h-4 flex-shrink-0" />
+                                    {t.currency.menuLabel}
+                                  </button>
+                                  <div className="border-t border-gray-200 my-1" />
+                                </>
+                              )}
 
                               {/* API Keys & Users */}
                               <button

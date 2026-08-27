@@ -737,7 +737,7 @@ export default function PayInTransactionsPage() {
   const startRow = displayTotal === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, displayTotal)
 
-  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colStatus, 'REF', m.colAction]
+  const cols = [m.colDate, m.colMerchant, m.colAmount, m.colFee, m.colBankAccount, m.colPayer, m.colStatus, 'REF', m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -943,6 +943,11 @@ export default function PayInTransactionsPage() {
                             <span className="px-1.5 py-0.5 bg-violet-50 text-violet-700 text-[10px] font-bold rounded-full ring-1 ring-violet-200">P2P</span>
                           )}
                         </div>
+                      </td>
+
+                      {/* Payer */}
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                        <p className="text-sm text-gray-700">{item.payerName ?? '—'}</p>
                       </td>
 
                       {/* Status */}

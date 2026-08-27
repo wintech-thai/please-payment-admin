@@ -392,6 +392,7 @@ export interface SubmitPaymentRequestPayload {
   RequestedAmount: number
   QrProvider?: string
   SelectedPayInBankAccountId?: string
+  PayerName?: string
 }
 
 export interface PaymentRequestResponse {
@@ -431,6 +432,7 @@ export interface PayInRequestItem {
   refId2?: string | null
   refId3?: string | null
   paymentTxId?: string | null
+  payerName?: string | null
   // bank account fields (API uses lowercase 'payin')
   payinBankCode?: string | null
   payinBankAccountNo?: string | null
@@ -512,6 +514,7 @@ export interface PayInTxItem {
   direction?: string | null
   txAmount?: number | null
   txAmountDecimal?: number | null
+  payerName?: string | null
   payInFeePct?: number | null
   payInFee?: number | null
   payInFeeDecimal?: number | null

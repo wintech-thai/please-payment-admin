@@ -25,6 +25,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `RefId1` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
 | `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
 | `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
+| `PayerName` | string | ✅ | ชื่อผู้จ่าย |
 | `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0 และอยู่ใน range ที่ Merchant กำหนด) |
 | `Currency` | string | ✅ | สกุลเงิน — ปัจจุบันรองรับเฉพาะ `THB` |
 | `QrProvider` | string | ✅ | ธนาคารที่ออก QR — `PP` (PromptPay) หรือ `SCB` |
@@ -38,6 +39,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 ```json
 {
   "RefId1": "ORDER-20260701-001",
+  "PayerName": "สมชาย ใจดี",
   "RequestedAmount": 325,
   "Currency": "THB",
   "QrProvider": "PP",
@@ -197,6 +199,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 | `RefId1` | string | ✅ | Reference ID จาก Merchant (ต้องไม่ซ้ำกัน) |
 | `RefId2` | string | ❌ | Reference เพิ่มเติม 2 |
 | `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
+| `PayerName` | string | ✅ | ชื่อผู้จ่าย |
 | `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0 และอยู่ใน range ที่ Merchant กำหนด) |
 | `Currency` | string | ✅ | สกุลเงิน — ปัจจุบันรองรับเฉพาะ `THB` |
 | `QrProvider` | string | ✅ | `PP` หรือ `SCB` (ระบบใช้สำหรับ internal matching) |
@@ -207,6 +210,7 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 ```json
 {
   "RefId1": "P2P-ORDER-20260701-001",
+  "PayerName": "สมชาย ใจดี",
   "RequestedAmount": 1000,
   "Currency": "THB",
   "QrProvider": "PP"

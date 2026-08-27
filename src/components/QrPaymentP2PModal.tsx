@@ -39,6 +39,7 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, orgId, onC
   const [ref1, setRef1] = useState(() => generateRefId())
   const [ref2, setRef2] = useState('')
   const [ref3, setRef3] = useState('')
+  const [payerName, setPayerName] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('username') ?? '' : ''))
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [submitting, setSubmitting] = useState(false)
@@ -52,6 +53,7 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, orgId, onC
   const validate = () => {
     const e: Record<string, string> = {}
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) e.amount = m.qrErrAmount
+    if (!payerName.trim()) e.payerName = m.qrErrPayerName
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -68,6 +70,7 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, orgId, onC
         Currency: 'THB',
         RequestedAmount: Number(amount),
         QrProvider: 'PP',
+        PayerName: payerName.trim(),
       })
       const raw = res.data as any
       const pr: PaymentRequestResponse = raw?.paymentResponse ?? raw?.PaymentResponse ?? raw
@@ -91,6 +94,7 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, orgId, onC
     setRef1(generateRefId())
     setRef2('')
     setRef3('')
+    setPayerName(typeof window !== 'undefined' ? localStorage.getItem('username') ?? '' : '')
     setErrors({})
     setSlipUrl(null)
     setSlipUrlCopied(false)
@@ -137,6 +141,25 @@ export default function QrPaymentP2PModal({ merchantId, merchantName, orgId, onC
                 )}
               />
               {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount}</p>}
+            </div>
+
+            {/* Payer Name */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                {m.qrFieldPayerName} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={payerName}
+                onChange={e => { setPayerName(e.target.value); setErrors(p => ({ ...p, payerName: '' })) }}
+                placeholder={m.qrFieldPayerName}
+                disabled={!!result}
+                className={clsx(
+                  'w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 disabled:bg-gray-50',
+                  errors.payerName ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-primary-300'
+                )}
+              />
+              {errors.payerName && <p className="text-red-500 text-xs mt-1">{errors.payerName}</p>}
             </div>
 
             {/* Ref fields */}

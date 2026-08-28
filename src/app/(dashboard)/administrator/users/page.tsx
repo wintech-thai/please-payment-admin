@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams, usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { userApi } from '@/lib/api/user.api'
 import type { UserItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { Search, ChevronLeft, ChevronRight, Trash2, Key, Ban, CheckCircle, MoreHorizontal, X, Users, Check } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Trash2, Key, Ban, CheckCircle, X, Users, Check, Link2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import RowActionsMenu from '@/components/RowActionsMenu'
 
 function UsersContent() {
   const { t } = useLang()
@@ -28,7 +29,7 @@ function UsersContent() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [selectedRowId, setSelectedRowId] = useState<string | null>(highlightIdParam)
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; userId?: string; userName?: string; bulk?: boolean }>({ open: false })
-  const [resetLinkModal, setResetLinkModal] = useState<{ open: boolean; link?: string; loading?: boolean }>({ open: false })
+  const [resetLinkModal, setResetLinkModal] = useState<{ open: boolean; link?: string; loading?: boolean; mode?: 'reset' | 'invite' }>({ open: false })
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
@@ -105,13 +106,25 @@ function UsersContent() {
   }
 
   const handleGetResetLink = async (userId: string) => {
-    setResetLinkModal({ open: true, loading: true })
+    setResetLinkModal({ open: true, loading: true, mode: 'reset' })
     try {
       const res = await userApi.getForgotPasswordLink(userId)
       const raw = res.data.forgotPasswordUrl ?? res.data.resetLink ?? ''
-      setResetLinkModal({ open: true, link: raw ? processUrl(raw) : '' })
+      setResetLinkModal({ open: true, link: raw ? processUrl(raw) : '', mode: 'reset' })
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t.users.failedToGetResetLink)
+      setResetLinkModal({ open: false })
+    }
+  }
+
+  const handleGetInviteLink = async (userId: string) => {
+    setResetLinkModal({ open: true, loading: true, mode: 'invite' })
+    try {
+      const res = await userApi.getInviteLink(userId)
+      const raw = res.data.registrationUrl ?? ''
+      setResetLinkModal({ open: true, link: raw ? processUrl(raw) : '', mode: 'invite' })
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t.users.failedToGetInviteLink)
       setResetLinkModal({ open: false })
     }
   }
@@ -322,7 +335,7 @@ function UsersContent() {
                         </span>
                       </td>
                       <td className="px-4 py-4 text-center" onClick={e => e.stopPropagation()}>
-                        <RowActions items={[
+                        <RowActionsMenu items={[
                           {
                             label: t.users.disableUser,
                             icon: <Ban className="w-4 h-4" />,
@@ -341,6 +354,12 @@ function UsersContent() {
                             icon: <Key className="w-4 h-4" />,
                             disabled: isPending || !active,
                             onClick: () => handleGetResetLink(user.adminUserId),
+                          },
+                          {
+                            label: t.users.createRegisterLink,
+                            icon: <Link2 className="w-4 h-4" />,
+                            disabled: !isPending,
+                            onClick: () => handleGetInviteLink(user.adminUserId),
                           },
                         ]} />
                       </td>
@@ -419,6 +438,7 @@ function UsersContent() {
         <ResetLinkModal
           link={resetLinkModal.link}
           loading={resetLinkModal.loading}
+          mode={resetLinkModal.mode ?? 'reset'}
           onClose={() => setResetLinkModal({ open: false })}
         />
       )}
@@ -452,9 +472,11 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function ResetLinkModal({ link, loading, onClose }: { link?: string; loading?: boolean; onClose: () => void }) {
+function ResetLinkModal({ link, loading, mode, onClose }: { link?: string; loading?: boolean; mode: 'reset' | 'invite'; onClose: () => void }) {
   const { t } = useLang()
   const [copied, setCopied] = useState(false)
+  const title = mode === 'invite' ? t.users.registerLinkTitle : t.users.resetLinkTitle
+  const subtitle = mode === 'invite' ? t.users.registerLinkSubtitle : t.users.resetLinkSubtitle
   const handleCopy = () => {
     if (!link) return
     navigator.clipboard.writeText(link)
@@ -476,8 +498,8 @@ function ResetLinkModal({ link, loading, onClose }: { link?: string; loading?: b
               </svg>
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">{t.users.resetLinkTitle}</h2>
-              <p className="text-xs text-orange-200 mt-0.5">{t.users.resetLinkSubtitle}</p>
+              <h2 className="text-base font-bold text-white">{title}</h2>
+              <p className="text-xs text-orange-200 mt-0.5">{subtitle}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
@@ -513,50 +535,6 @@ function ResetLinkModal({ link, loading, onClose }: { link?: string; loading?: b
           <button onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">{t.users.close}</button>
         </div>
       </div>
-    </div>
-  )
-}
-
-type ActionItem = { label: string; icon: React.ReactNode; danger?: boolean; disabled?: boolean; onClick: () => void; hidden?: boolean }
-
-function RowActions({ items }: { items: ActionItem[] }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  const visible = items.filter(i => !i.hidden)
-
-  return (
-    <div ref={ref} className="relative flex justify-center">
-      <button onClick={e => { e.stopPropagation(); setOpen(v => !v) }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden">
-          {visible.map((item, i) => (
-            <button
-              key={i}
-              onClick={() => { if (!item.disabled) { item.onClick(); setOpen(false) } }}
-              className={clsx(
-                'w-full flex items-center gap-2.5 px-4 py-2 text-sm text-left transition-colors',
-                item.disabled
-                  ? 'text-gray-300 cursor-not-allowed'
-                  : item.danger
-                    ? 'text-red-600 hover:bg-red-50'
-                    : 'text-gray-700 hover:bg-gray-50'
-              )}
-            >
-              {item.icon}{item.label}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

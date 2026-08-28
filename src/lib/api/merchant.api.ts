@@ -67,6 +67,9 @@ export const merchantApi = {
   deleteOrgUser: (orgCustomId: string, orgUserId: string) =>
     client.delete(`${ORG_BASE}/DeleteOrgUserById/${orgCustomId}/${orgUserId}`),
 
+  getOrgUserForgotPasswordLink: (orgCustomId: string, orgUserId: string) =>
+    client.get<{ forgotPasswordUrl?: string }>(`${ORG_BASE}/GetOrgUserForgotPasswordLink/${orgCustomId}/${orgUserId}`),
+
   // ── Org API Keys ─────────────────────────────────────────────────────────
   getOrgApiKeys: (orgCustomId: string) =>
     client.get<{ apiKeys: OrgApiKeyItem[] }>(`${ORG_BASE}/GetPaymentRequestApiKeys/${orgCustomId}`),
@@ -88,6 +91,12 @@ export const merchantApi = {
 
   deleteOrgApiKey: (orgCustomId: string, keyId: string) =>
     client.post(`${ORG_BASE}/DeletePaymentRequestApiKeyById/${orgCustomId}/${keyId}`, {}),
+
+  updateApiKeyRoles: (orgCustomId: string, keyId: string, roles: string[], keyDescription?: string | null) =>
+    client.post(`${ORG_BASE}/UpdatePaymentRequestApiKeyById/${orgCustomId}/${keyId}`, {
+      Roles: roles,
+      KeyDescription: keyDescription ?? undefined,
+    }),
 
   // ── QR Payment ───────────────────────────────────────────────────────────
   getPayInBankAccountsForMerchant: (merchantId: string) =>

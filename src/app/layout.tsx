@@ -3,6 +3,7 @@ import { cache } from 'react'
 import { Toaster } from 'sonner'
 import { BrandProvider } from '@/context/BrandContext'
 import type { AdminConfig } from '@/lib/api/admin-config.api'
+import { prompt } from './fonts'
 import './globals.css'
 
 const fetchInitialBrandConfig = cache(async (): Promise<AdminConfig | null> => {
@@ -52,7 +53,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const initialConfig = await fetchInitialBrandConfig()
   return (
-    <html lang="th" suppressHydrationWarning>
+    <html lang="th" className={prompt.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
           try {
@@ -77,7 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           closeButton
           toastOptions={{
             style: {
-              fontFamily: "'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+              fontFamily: "var(--font-prompt), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
             },
           }}
         />

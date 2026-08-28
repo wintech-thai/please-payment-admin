@@ -148,6 +148,7 @@ title: Webhooks
     { "Name": "PAYOUT_BANK_ACCOUNT_NO",    "Value": "xxx-xxxxx-x" },
     { "Name": "PAYOUT_BANK_ACCOUNT_NAME",  "Value": "ชื่อบัญชีปลายทาง" },
     { "Name": "PAYOUT_PROMPTPAY_ID",       "Value": null },
+    { "Name": "PAYOUT_PAID_AMOUNT_INCLUSIVE", "Value": "1000.00" },
     { "Name": "PAYOUT_IS_PARTIAL",         "Value": "False" }
   ]
 }
@@ -164,10 +165,11 @@ title: Webhooks
 | `PMR_REF_ID2` | Ref 2 — optional reference ที่ Merchant กำหนด |
 | `PMR_REF_ID3` | Ref 3 — optional reference ที่ Merchant กำหนด |
 | `PMR_ID` | UUID ของ Pay-Out Request ในระบบ Please Payment |
-| `TX_AMOUNT` | จำนวนเงินที่โอนออกจริง |
+| `TX_AMOUNT` | จำนวนเงินที่โอนออกจริงในรอบนี้ (transaction เดียว) |
 | `PAYOUT_REQUEST_AMOUNT` | จำนวนเงินที่ขอโอนตั้งต้น |
 | `PAYOUT_FEE` | ค่าธรรมเนียม |
 | `PAYOUT_BANK_CODE` | รหัสธนาคารปลายทาง |
+| `PAYOUT_PAID_AMOUNT_INCLUSIVE` | ยอดรวมสะสมที่ payout ออกไปแล้วทั้งหมดของ Pay-Out Request นี้ (รวมทุกรอบจนถึงรอบปัจจุบัน) — ต่างจาก `TX_AMOUNT` ที่เป็นยอดของรอบนี้รอบเดียว |
 | `PAYOUT_IS_PARTIAL` | `True` ถ้าเป็น P2P partial payout (ดูด้านล่าง) |
 
 #### PaymentOut.Success กับรายการ P2P
@@ -176,29 +178,29 @@ title: Webhooks
 
 **ตัวอย่าง:** Pay-Out Request 10,000 บาท อาจถูก fulfill จาก P2P Pay-In 3 รอบ:
 
-| รอบ | จำนวนเงิน | PAYOUT_IS_PARTIAL |
-|---|---|---|
-| รอบที่ 1 | 4,000 บาท | `True` |
-| รอบที่ 2 | 3,500 บาท | `True` |
-| รอบที่ 3 | 2,500 บาท | `True` |
+| รอบ | TX_AMOUNT (ยอดรอบนี้) | PAYOUT_PAID_AMOUNT_INCLUSIVE (ยอดสะสม) | PAYOUT_IS_PARTIAL |
+|---|---|---|---|
+| รอบที่ 1 | 4,000 บาท | 4,000 บาท | `True` |
+| รอบที่ 2 | 3,500 บาท | 7,500 บาท | `True` |
+| รอบที่ 3 | 2,500 บาท | 10,000 บาท | `True` |
 
 **สิ่งที่ต้องทำในระบบของ Merchant:**
 
 - ตรวจสอบ `PAYOUT_IS_PARTIAL` ก่อนเสมอ
-- ถ้า `True` — อย่า mark Pay-Out ว่า "สำเร็จ" ทันที ให้รวม `TX_AMOUNT` สะสมจนครบ `PAYOUT_REQUEST_AMOUNT`
+- ถ้า `True` — อย่า mark Pay-Out ว่า "สำเร็จ" ทันที เทียบ `PAYOUT_PAID_AMOUNT_INCLUSIVE` กับ `PAYOUT_REQUEST_AMOUNT` แทนการรวม `TX_AMOUNT` เองทีละรอบ (ระบบสะสมยอดให้แล้วในฟิลด์นี้)
 - ถ้า `False` — Pay-Out สำเร็จในครั้งเดียว สามารถ mark ว่า "สำเร็จ" ได้ทันที
 
 ```python
 # ตัวอย่าง: รับ PaymentOut.Success แบบ P2P
 elif event_type == 'PaymentOut.Success':
-    tx_amount = float(params.get('TX_AMOUNT', 0))
+    paid_inclusive = float(params.get('PAYOUT_PAID_AMOUNT_INCLUSIVE', 0))
+    requested_amount = float(params.get('PAYOUT_REQUEST_AMOUNT', 0))
     is_partial = params.get('PAYOUT_IS_PARTIAL', 'False') == 'True'
     pmr_id = params.get('PMR_ID')
 
     if is_partial:
-        # P2P partial — สะสมยอด อย่าเพิ่ง mark completed
-        add_partial_payout(pmr_id, tx_amount)
-        if get_total_payout(pmr_id) >= get_requested_amount(pmr_id):
+        # P2P partial — เช็คยอดสะสมที่ระบบส่งมาให้ตรง ๆ ไม่ต้องรวมเอง
+        if paid_inclusive >= requested_amount:
             mark_payout_completed(pmr_id)
     else:
         # จ่ายครบรอบเดียว

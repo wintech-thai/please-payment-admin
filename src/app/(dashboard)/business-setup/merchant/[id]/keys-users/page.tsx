@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem, OrgUserItem, OrgApiKeyItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key, Trash2, X } from 'lucide-react'
+import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key, Trash2, X, Pencil } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import RowActionsMenu from '@/components/RowActionsMenu'
@@ -153,7 +153,7 @@ function ConfirmDialog({ title, onConfirm, onCancel, t }: {
   )
 }
 
-function ApiKeysTable({ keys, selectedKeyId, setSelectedKeyId, formatDate, m, onToggle, onDelete }: {
+function ApiKeysTable({ keys, selectedKeyId, setSelectedKeyId, formatDate, m, onToggle, onDelete, onEditRoles }: {
   keys: OrgApiKeyItem[]
   selectedKeyId: string | null
   setSelectedKeyId: React.Dispatch<React.SetStateAction<string | null>>
@@ -161,6 +161,7 @@ function ApiKeysTable({ keys, selectedKeyId, setSelectedKeyId, formatDate, m, on
   m: any
   onToggle: (key: OrgApiKeyItem) => void
   onDelete: (key: OrgApiKeyItem) => void
+  onEditRoles: (key: OrgApiKeyItem) => void
 }) {
   if (keys.length === 0) return <p className="text-sm text-gray-400 text-center py-8">{m.noApiKeysFound}</p>
   return (
@@ -210,25 +211,26 @@ function ApiKeysTable({ keys, selectedKeyId, setSelectedKeyId, formatDate, m, on
                 <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                   <StatusBadge status={key.keyStatus ?? 'Active'} />
                 </td>
-                <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={e => { e.stopPropagation(); onToggle(key) }}
-                      className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
-                        isActive ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100' : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
-                      )}
-                    >
-                      {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                      {isActive ? m.disableApiKey : m.enableApiKey}
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); onDelete(key) }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors text-red-600 bg-red-50 ring-red-200 hover:bg-red-100"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      {m.deleteApiKey}
-                    </button>
-                  </div>
+                <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-center" onClick={e => e.stopPropagation()}>
+                  <RowActionsMenu items={[
+                    {
+                      label: m.editApiKeyRoles,
+                      icon: <Pencil className="w-4 h-4" />,
+                      onClick: () => onEditRoles(key),
+                    },
+                    {
+                      label: isActive ? m.disableApiKey : m.enableApiKey,
+                      icon: isActive ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />,
+                      danger: isActive,
+                      onClick: () => onToggle(key),
+                    },
+                    {
+                      label: m.deleteApiKey,
+                      icon: <Trash2 className="w-4 h-4" />,
+                      danger: true,
+                      onClick: () => onDelete(key),
+                    },
+                  ]} />
                 </td>
               </tr>
             )
@@ -255,6 +257,9 @@ export default function MerchantKeysUsersPage() {
   const [loading, setLoading] = useState(true)
   const [showCreateKeyModal, setShowCreateKeyModal] = useState(false)
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
+  const [editRolesTarget, setEditRolesTarget] = useState<OrgApiKeyItem | null>(null)
+  const [editRoles, setEditRoles] = useState<string[]>([])
+  const [savingRoles, setSavingRoles] = useState(false)
 
   // Reset password link modal
   const [resetLinkModal, setResetLinkModal] = useState<{ open: boolean; link?: string; loading?: boolean }>({ open: false })
@@ -421,6 +426,26 @@ export default function MerchantKeysUsersPage() {
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToCreateApiKey)
+    }
+  }
+
+  const handleOpenEditRoles = (key: OrgApiKeyItem) => {
+    setEditRolesTarget(key)
+    setEditRoles(key.rolesList ? key.rolesList.split(',').map(r => r.trim()).filter(Boolean) : [])
+  }
+
+  const handleSaveEditRoles = async () => {
+    if (!editRolesTarget) return
+    setSavingRoles(true)
+    try {
+      await merchantApi.updateApiKeyRoles(orgCustomId, editRolesTarget.keyId, editRoles, editRolesTarget.keyDescription)
+      toast.success(m.editApiKeyRolesSuccess)
+      setEditRolesTarget(null)
+      await refreshApiKeys()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToEditApiKeyRoles)
+    } finally {
+      setSavingRoles(false)
     }
   }
 
@@ -594,6 +619,57 @@ export default function MerchantKeysUsersPage() {
         </div>
       )}
 
+      {/* Edit API Key Roles Modal */}
+      {editRolesTarget && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setEditRolesTarget(null)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 border-b border-gray-100">
+              <h3 className="text-base font-bold text-gray-900">{m.editApiKeyRoles}</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{editRolesTarget.keyName}</p>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{m.colRoles}</p>
+              <div className="flex flex-col gap-2">
+                {(['PAYIN_REQUEST', 'PAYIN_REQUEST_P2P', 'PAYOUT_REQUEST'] as const).map(role => (
+                  <label key={role} className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editRoles.includes(role)}
+                      onChange={e => {
+                        if (e.target.checked) setEditRoles(prev => [...prev, role])
+                        else setEditRoles(prev => prev.filter(r => r !== role))
+                      }}
+                      className="w-4 h-4 rounded accent-primary-600"
+                    />
+                    <span className="text-sm font-medium text-gray-700">{role}</span>
+                  </label>
+                ))}
+              </div>
+              {editRoles.length === 0 && (
+                <p className="text-xs text-amber-600 mt-2">{m.apiKeyRolesRequired}</p>
+              )}
+              <div className="flex justify-end gap-3 mt-5">
+                <button
+                  type="button"
+                  onClick={() => setEditRolesTarget(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  {t.admin.cancel}
+                </button>
+                <button
+                  type="button"
+                  disabled={editRoles.length === 0 || savingRoles}
+                  onClick={handleSaveEditRoles}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 rounded-lg transition-colors"
+                >
+                  {savingRoles ? t.admin.saving : t.admin.save}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* New API Key Modal */}
       {newApiKey && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -746,6 +822,7 @@ export default function MerchantKeysUsersPage() {
                 },
               })
             }}
+            onEditRoles={handleOpenEditRoles}
           />
         </div>
 

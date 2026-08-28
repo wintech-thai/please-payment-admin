@@ -92,6 +92,12 @@ export const merchantApi = {
   deleteOrgApiKey: (orgCustomId: string, keyId: string) =>
     client.post(`${ORG_BASE}/DeletePaymentRequestApiKeyById/${orgCustomId}/${keyId}`, {}),
 
+  updateApiKeyRoles: (orgCustomId: string, keyId: string, roles: string[], keyDescription?: string | null) =>
+    client.post(`${ORG_BASE}/UpdatePaymentRequestApiKeyById/${orgCustomId}/${keyId}`, {
+      Roles: roles,
+      KeyDescription: keyDescription ?? undefined,
+    }),
+
   // ── QR Payment ───────────────────────────────────────────────────────────
   getPayInBankAccountsForMerchant: (merchantId: string) =>
     client.get(`${BASE}/GetPayInBankAccountsForMerchant/${merchantId}`),

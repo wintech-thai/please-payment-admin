@@ -8,6 +8,7 @@ export type RowActionItem = {
   label: string
   icon: React.ReactNode
   danger?: boolean
+  success?: boolean
   disabled?: boolean
   onClick: () => void
   hidden?: boolean
@@ -74,7 +75,9 @@ export default function RowActionsMenu({ items }: { items: RowActionItem[] }) {
                   ? 'text-gray-300 cursor-not-allowed'
                   : item.danger
                     ? 'text-red-600 hover:bg-red-50'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    : item.success
+                      ? 'text-emerald-600 hover:bg-emerald-50'
+                      : 'text-gray-700 hover:bg-gray-50'
               )}
             >
               {item.icon}{item.label}

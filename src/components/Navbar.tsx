@@ -50,10 +50,12 @@ export default function Navbar() {
   }
 
   const isAdministratorActive = pathname.startsWith('/administrator')
-  const isBusinessSetupActive = pathname.startsWith('/business-setup')
+  const isRiskManagementActive = pathname.startsWith('/risk-management')
+  const isBusinessSetupActive = pathname.startsWith('/business-setup') || isRiskManagementActive
 
   const businessSetupChildren = [
     { href: '/business-setup/master-reference', label: t.nav.masterReference, comingSoon: false },
+    { href: '/risk-management', label: t.nav.riskManagement, comingSoon: false },
     { href: '/business-setup/merchant', label: t.nav.merchant, comingSoon: false },
     { href: '/business-setup/pay-in-bank-account', label: t.nav.bankAccounts, comingSoon: false },
   ]

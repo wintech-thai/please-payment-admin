@@ -67,6 +67,9 @@ export const merchantApi = {
   deleteOrgUser: (orgCustomId: string, orgUserId: string) =>
     client.delete(`${ORG_BASE}/DeleteOrgUserById/${orgCustomId}/${orgUserId}`),
 
+  getOrgUserForgotPasswordLink: (orgCustomId: string, orgUserId: string) =>
+    client.get<{ forgotPasswordUrl?: string }>(`${ORG_BASE}/GetOrgUserForgotPasswordLink/${orgCustomId}/${orgUserId}`),
+
   // ── Org API Keys ─────────────────────────────────────────────────────────
   getOrgApiKeys: (orgCustomId: string) =>
     client.get<{ apiKeys: OrgApiKeyItem[] }>(`${ORG_BASE}/GetPaymentRequestApiKeys/${orgCustomId}`),

@@ -40,6 +40,9 @@ export const userApi = {
   getForgotPasswordLink: (userId: string) =>
     client.get<{ forgotPasswordUrl?: string; resetLink?: string }>(`${BASE}/GetForgotPasswordLink/${userId}`),
 
+  getInviteLink: (userId: string) =>
+    client.get<{ registrationUrl?: string }>(`${BASE}/GetInviteLink/${userId}`),
+
   getRoles: () =>
     client.post<{ roles: { id: string; name: string; description?: string }[] }>(
       '/admin-api/AdminRole/org/global/action/GetRoles',

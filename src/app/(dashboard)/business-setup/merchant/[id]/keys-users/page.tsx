@@ -5,9 +5,11 @@ import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem, OrgUserItem, OrgApiKeyItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key, Trash2 } from 'lucide-react'
+import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key, Trash2, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import RowActionsMenu from '@/components/RowActionsMenu'
+import { getMerchantBase } from '@/lib/merchant-url'
 
 // ── Domain helpers ────────────────────────────────────────────────────────────
 
@@ -16,19 +18,65 @@ function deriveApiDomain(): string {
   return window.location.hostname.replace(/^admin/, 'api')
 }
 
-function deriveMerchantDomain(): string {
-  if (typeof window === 'undefined') return ''
-  return window.location.hostname.replace(/^admin/, 'merchant')
-}
-
 function processPaymentUrl(raw: string): string {
   const apiDomain = deriveApiDomain()
   return raw.replace('<PAYMENT-REQUEST-SERVICE>', apiDomain)
 }
 
 function processRegistrationUrl(raw: string): string {
-  const merchantDomain = deriveMerchantDomain()
-  return raw.replace('<REGISTER_SERVICE_DOMAIN>', merchantDomain)
+  return raw.replace('https://<REGISTER_SERVICE_DOMAIN>', getMerchantBase())
+}
+
+function ResetLinkModal({ link, loading, m, onClose }: { link?: string; loading?: boolean; m: any; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = () => {
+    if (!link) return
+    navigator.clipboard.writeText(link)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-gray-900">{m.resetLinkTitle}</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{m.resetLinkSubtitle}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="px-6 py-5">
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-gray-400">
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">{m.generatingLink}</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 p-3 bg-primary-50 rounded-xl border border-primary-100">
+                <span className="flex-1 text-sm text-primary-800 break-all line-clamp-2 font-mono">{link}</span>
+                <button
+                  onClick={handleCopy}
+                  className={clsx('flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors', copied ? 'bg-green-100 text-green-700' : 'bg-white border border-primary-200 text-primary-600 hover:bg-primary-100')}
+                >
+                  {copied ? m.copied : m.copy}
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-3">{m.resetLinkExpiry}</p>
+            </>
+          )}
+        </div>
+        <div className="flex justify-end px-6 pb-5">
+          <button onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">{m.close}</button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -208,6 +256,9 @@ export default function MerchantKeysUsersPage() {
   const [showCreateKeyModal, setShowCreateKeyModal] = useState(false)
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
 
+  // Reset password link modal
+  const [resetLinkModal, setResetLinkModal] = useState<{ open: boolean; link?: string; loading?: boolean }>({ open: false })
+
   // Invite modal
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteUsername, setInviteUsername] = useState('')
@@ -295,6 +346,18 @@ export default function MerchantKeysUsersPage() {
         }
       },
     })
+  }
+
+  const handleGetResetLink = async (user: OrgUserItem) => {
+    setResetLinkModal({ open: true, loading: true })
+    try {
+      const res = await merchantApi.getOrgUserForgotPasswordLink(orgCustomId, user.orgUserId)
+      const raw = (res.data as any)?.forgotPasswordUrl ?? (res.data as any)?.ForgotPasswordUrl ?? ''
+      setResetLinkModal({ open: true, link: raw ? processRegistrationUrl(raw) : '' })
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToGetResetLink)
+      setResetLinkModal({ open: false })
+    }
   }
 
   // ── Invite user ─────────────────────────────────────────────────────────────
@@ -759,28 +822,29 @@ export default function MerchantKeysUsersPage() {
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={user.userStatus} />
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-left">
-                          {user.userStatus?.toLowerCase() === 'pending' ? (
-                            <button
-                              onClick={e => { e.stopPropagation(); handleDeleteUser(user) }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors text-red-600 bg-red-50 ring-red-200 hover:bg-red-100"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              {m.deleteUser}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={e => { e.stopPropagation(); handleToggleUser(user) }}
-                              className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ring-1 transition-colors',
-                                isActive
-                                  ? 'text-red-600 bg-red-50 ring-red-200 hover:bg-red-100'
-                                  : 'text-emerald-600 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100'
-                              )}
-                            >
-                              {isActive ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                              {isActive ? m.disableUser : m.enableUser}
-                            </button>
-                          )}
+                        <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-center" onClick={e => e.stopPropagation()}>
+                          <RowActionsMenu items={[
+                            {
+                              label: m.resetPasswordLink,
+                              icon: <Key className="w-4 h-4" />,
+                              disabled: !isActive,
+                              onClick: () => handleGetResetLink(user),
+                            },
+                            {
+                              label: isActive ? m.disableUser : m.enableUser,
+                              icon: isActive ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />,
+                              danger: isActive,
+                              hidden: user.userStatus?.toLowerCase() === 'pending',
+                              onClick: () => handleToggleUser(user),
+                            },
+                            {
+                              label: m.deleteUser,
+                              icon: <Trash2 className="w-4 h-4" />,
+                              danger: true,
+                              hidden: user.userStatus?.toLowerCase() !== 'pending',
+                              onClick: () => handleDeleteUser(user),
+                            },
+                          ]} />
                         </td>
                       </tr>
                     )
@@ -792,6 +856,15 @@ export default function MerchantKeysUsersPage() {
         </div>
 
       </div>
+
+      {resetLinkModal.open && (
+        <ResetLinkModal
+          link={resetLinkModal.link}
+          loading={resetLinkModal.loading}
+          m={m}
+          onClose={() => setResetLinkModal({ open: false })}
+        />
+      )}
     </div>
   )
 }

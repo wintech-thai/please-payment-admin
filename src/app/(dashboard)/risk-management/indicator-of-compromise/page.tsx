@@ -107,10 +107,12 @@ function IndicatorOfCompromiseContent() {
     window.history.replaceState(null, '', `${pathname}?${params.toString()}`)
   }, [highlightIdParam, pathname, searchParams])
   const [confirm, setConfirm] = useState<{ title: string; danger?: boolean; onConfirm: () => void } | null>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const load = useCallback(async (currentPage: number, limit: number, tr: TimeRangeValue, q: string, status: string, iocType: string, reputation: string) => {
     if (typeof window !== 'undefined') sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: q, statusFilter: status, iocTypeFilter: iocType, reputationFilter: reputation, timeRange: tr }))
     setLoading(true)
+    setSelectedIds([])
     try {
       const { fromDate, toDate } = getTimeFilter(tr)
       const payload = {
@@ -168,21 +170,31 @@ function IndicatorOfCompromiseContent() {
     })
   }
 
-  const handleDelete = (item: IocItem) => {
+  const handleDeleteSelected = () => {
+    if (selectedIds.length === 0) return
     setConfirm({
-      title: m.confirmDeleteTitle,
+      title: selectedIds.length > 1 ? m.confirmDeleteBulkTitle.replace('{count}', String(selectedIds.length)) : m.confirmDeleteTitle,
       danger: true,
       onConfirm: async () => {
         setConfirm(null)
         try {
-          await iocApi.deleteIocById(item.id)
-          toast.success(m.deleteSuccess)
+          for (const id of selectedIds) await iocApi.deleteIocById(id)
+          toast.success(selectedIds.length > 1 ? m.deleteSuccessBulk.replace('{count}', String(selectedIds.length)) : m.deleteSuccess)
+          setSelectedIds([])
           load(page, itemsPerPage, timeRange, search, statusFilter, iocTypeFilter, reputationFilter)
         } catch (err: unknown) {
           toast.error(err instanceof Error ? err.message : m.failedToDelete)
         }
       },
     })
+  }
+
+  const toggleAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedIds(e.target.checked ? items.map(i => i.id) : [])
+  }
+
+  const toggleOne = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
   }
 
   const totalPages = Math.max(1, Math.ceil(total / itemsPerPage))
@@ -220,13 +232,23 @@ function IndicatorOfCompromiseContent() {
           <h1 className="text-2xl font-bold text-gray-900">{m.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
         </div>
-        <button
-          onClick={() => router.push(`${BASE_PATH}/add`)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {m.addButton}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDeleteSelected}
+            disabled={selectedIds.length === 0}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Trash2 className="w-4 h-4" />
+            {m.deleteIoc}
+          </button>
+          <button
+            onClick={() => router.push(`${BASE_PATH}/add`)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {m.addButton}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -283,10 +305,17 @@ function IndicatorOfCompromiseContent() {
           <table className="w-full text-sm border-separate border-spacing-0 min-w-[1200px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50">
+                <th className="w-10 px-4 py-3 border-b border-gray-200 rounded-tl-xl">
+                  <input
+                    type="checkbox"
+                    checked={items.length > 0 && selectedIds.length === items.length}
+                    onChange={toggleAll}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
+                  />
+                </th>
                 {cols.map((col, i) => (
                   <th key={col} className={clsx(
                     'px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap',
-                    i === 0 && 'rounded-tl-xl',
                     i === cols.length - 1 && 'rounded-tr-xl text-center'
                   )}>
                     {col}
@@ -296,7 +325,7 @@ function IndicatorOfCompromiseContent() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={cols.length} className="px-4 py-16 text-center">
+                <tr><td colSpan={cols.length + 1} className="px-4 py-16 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <svg className="w-8 h-8 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
@@ -306,7 +335,7 @@ function IndicatorOfCompromiseContent() {
                   </div>
                 </td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={cols.length} className="px-4 py-16 text-center">
+                <tr><td colSpan={cols.length + 1} className="px-4 py-16 text-center">
                   <p className="text-sm font-semibold text-gray-500">{m.noDataFound}</p>
                 </td></tr>
               ) : (
@@ -321,6 +350,14 @@ function IndicatorOfCompromiseContent() {
                         isHighlighted ? '!bg-primary-100 border-l-[3px] border-l-primary-500' : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                       )}
                     >
+                      <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={() => toggleOne(item.id)}
+                          className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
+                        />
+                      </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <button
                           onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`${BASE_PATH}/${item.id}`) }}
@@ -369,12 +406,6 @@ function IndicatorOfCompromiseContent() {
                             danger: item.status?.toLowerCase() === 'active',
                             success: item.status?.toLowerCase() !== 'active',
                             onClick: () => handleToggle(item),
-                          },
-                          {
-                            label: m.deleteIoc,
-                            icon: <Trash2 className="w-4 h-4" />,
-                            danger: true,
-                            onClick: () => handleDelete(item),
                           },
                         ]} />
                       </td>

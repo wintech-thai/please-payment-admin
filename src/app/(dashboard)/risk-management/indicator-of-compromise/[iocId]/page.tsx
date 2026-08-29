@@ -232,7 +232,7 @@ export default function IocFormPage() {
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-2 custom-scrollbar">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 max-w-2xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
               {/* IocType */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">{m.fieldIocType}</label>
@@ -247,7 +247,7 @@ export default function IocFormPage() {
               </div>
 
               {/* IocValue */}
-              <div>
+              <div className="lg:col-span-2">
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                   {m.fieldIocValue} <span className="text-red-500">*</span>
                 </label>
@@ -265,7 +265,7 @@ export default function IocFormPage() {
               </div>
 
               {/* Source */}
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 lg:col-span-3">
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">{m.fieldSource}</label>
                 <input
                   value={source}
@@ -294,7 +294,7 @@ export default function IocFormPage() {
               </div>
 
               {/* Tags */}
-              <div>
+              <div className="sm:col-span-2 lg:col-span-3">
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">{m.fieldTags}</label>
                 <div
                   className="w-full min-h-[42px] px-3 py-1.5 flex flex-wrap gap-1.5 border border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent cursor-text"
@@ -320,13 +320,13 @@ export default function IocFormPage() {
               </div>
 
               {/* Note */}
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 lg:col-span-3">
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">{m.fieldNote}</label>
                 <textarea
                   value={note}
                   onChange={e => { setNote(e.target.value); markDirty() }}
                   placeholder={m.fieldNotePlaceholder}
-                  rows={5}
+                  rows={6}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-y"
                 />
               </div>
@@ -337,7 +337,7 @@ export default function IocFormPage() {
           {!isNew && (
             <div className="bg-gray-50 rounded-xl border border-gray-100 px-7 py-6">
               <p className="text-xs text-gray-400 mb-4">{m.readonlyFieldsNote}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-4 max-w-2xl">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{m.fieldSeenCount}</label>
                   <p className="text-sm text-gray-700 tabular-nums">{seenCount}</p>

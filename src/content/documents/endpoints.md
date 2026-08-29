@@ -4,7 +4,7 @@ title: Endpoints
 
 # Endpoints
 
-Please Payment มี 2 endpoint สำหรับ Merchant
+ระบบมี 2 endpoint สำหรับ Merchant
 
 > **orgId** และ **merchantId** จะได้รับจากผู้ให้บริการเมื่อสมัครใช้งาน ไม่ต้องสร้างเอง
 

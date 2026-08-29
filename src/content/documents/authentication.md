@@ -4,7 +4,7 @@ title: การยืนยันตัวตน
 
 # การยืนยันตัวตน
 
-Please Payment ใช้ **HTTP Basic Authentication** ในการยืนยันตัวตน
+ระบบใช้ **HTTP Basic Authentication** ในการยืนยันตัวตน
 
 ## วิธีส่ง API Key
 

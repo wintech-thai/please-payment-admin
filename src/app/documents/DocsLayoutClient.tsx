@@ -35,7 +35,7 @@ export default function DocsLayoutClient({
           </button>
           <Link href="/documents/overview" className="flex items-center gap-2 font-bold text-white text-sm">
             <FileText className="w-4 h-4 text-primary-400" />
-            Please Payment Docs
+            Public API Docs
           </Link>
         </div>
         <div className="flex items-center text-sm">

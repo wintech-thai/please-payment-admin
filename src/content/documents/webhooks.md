@@ -4,7 +4,7 @@ title: Webhooks
 
 # Webhooks
 
-เมื่อการชำระเงินสำเร็จ Please Payment จะส่ง HTTP POST ไปยัง Webhook URL ที่ Merchant กำหนดไว้ เพื่อให้ Merchant อัปเดตข้อมูลในระบบของตนเอง
+เมื่อการชำระเงินสำเร็จ ระบบจะส่ง HTTP POST ไปยัง Webhook URL ที่ Merchant กำหนดไว้ เพื่อให้ Merchant อัปเดตข้อมูลในระบบของตนเอง
 
 ## การตั้งค่า Webhook URL
 
@@ -76,7 +76,7 @@ title: Webhooks
 | `PMR_REF_ID1` | Ref 1 — Reference ID ที่ Merchant ส่งมาตอนสร้าง Payment Request ใช้สำหรับ mapping กับ order ในระบบของ Merchant |
 | `PMR_REF_ID2` | Ref 2 — optional reference ที่ Merchant กำหนด |
 | `PMR_REF_ID3` | Ref 3 — optional reference ที่ Merchant กำหนด |
-| `PMR_ID` | UUID ของ Payment Request ในระบบ Please Payment |
+| `PMR_ID` | UUID ของ Payment Request ในระบบ |
 | `PAYIN_REQUEST_AMOUNT` | จำนวนเงินที่ขอตั้งต้น |
 | `PAYIN_GENERATED_AMOUNT` | จำนวนเงินที่รับจริง (อาจมีเศษสตางค์ต่างกัน) |
 
@@ -164,7 +164,7 @@ title: Webhooks
 | `PMR_REF_ID1` | Ref 1 (auto-generated YYMMDDHHMMSS) |
 | `PMR_REF_ID2` | Ref 2 — optional reference ที่ Merchant กำหนด |
 | `PMR_REF_ID3` | Ref 3 — optional reference ที่ Merchant กำหนด |
-| `PMR_ID` | UUID ของ Pay-Out Request ในระบบ Please Payment |
+| `PMR_ID` | UUID ของ Pay-Out Request ในระบบ |
 | `TX_AMOUNT` | จำนวนเงินที่โอนออกจริงในรอบนี้ (transaction เดียว) |
 | `PAYOUT_REQUEST_AMOUNT` | จำนวนเงินที่ขอโอนตั้งต้น |
 | `PAYOUT_FEE` | ค่าธรรมเนียม |

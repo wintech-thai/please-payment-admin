@@ -7,11 +7,9 @@ import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, QrCode, Building2, ChevronLeft, ChevronRight, Webhook, Coins } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, Building2, ChevronLeft, ChevronRight, Webhook, Coins } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
-import QrPaymentModal from '@/components/QrPaymentModal'
-import QrPaymentP2PModal from '@/components/QrPaymentP2PModal'
 import { isCurrencyFeatureEnabled } from '@/lib/feature-flags'
 
 function StatusBadge({ status }: { status?: string | null }) {
@@ -102,8 +100,6 @@ function MerchantContent() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ type: 'enable' | 'disable'; merchant: MerchantItem } | null>(null)
-  const [qrMerchant, setQrMerchant] = useState<MerchantItem | null>(null)
-  const [qrP2PMerchant, setQrP2PMerchant] = useState<MerchantItem | null>(null)
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [currencyEnabled, setCurrencyEnabled] = useState(false)
 
@@ -199,22 +195,6 @@ function MerchantContent() {
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
-      {qrMerchant && (
-        <QrPaymentModal
-          merchantId={qrMerchant.id}
-          merchantName={qrMerchant.name ?? qrMerchant.code ?? undefined}
-          orgId={qrMerchant.orgId}
-          onClose={() => setQrMerchant(null)}
-        />
-      )}
-      {qrP2PMerchant && (
-        <QrPaymentP2PModal
-          merchantId={qrP2PMerchant.id}
-          merchantName={qrP2PMerchant.name ?? qrP2PMerchant.code ?? undefined}
-          orgId={qrP2PMerchant.orgId}
-          onClose={() => setQrP2PMerchant(null)}
-        />
-      )}
       {confirmDialog && (
         <ConfirmDialog
           title={confirmDialog.type === 'enable' ? m.enableConfirmTitle : m.disableConfirmTitle}
@@ -498,20 +478,6 @@ function MerchantContent() {
                               >
                                 <Building2 className="w-4 h-4 flex-shrink-0" />
                                 {m.bankAccounts}
-                              </button>
-                              <button
-                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); setQrMerchant(merchant) }}
-                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                              >
-                                <QrCode className="w-4 h-4 flex-shrink-0" />
-                                {m.qrPayment}
-                              </button>
-                              <button
-                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); setQrP2PMerchant(merchant) }}
-                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                              >
-                                <QrCode className="w-4 h-4 flex-shrink-0" />
-                                {m.qrPaymentP2P}
                               </button>
                             </div>
                           )}

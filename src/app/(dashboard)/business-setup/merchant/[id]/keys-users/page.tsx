@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem, OrgUserItem, OrgApiKeyItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key, Trash2, X, Pencil } from 'lucide-react'
+import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key, Link2, Trash2, X, Pencil } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import RowActionsMenu from '@/components/RowActionsMenu'
@@ -27,7 +27,7 @@ function processRegistrationUrl(raw: string): string {
   return raw.replace('https://<REGISTER_SERVICE_DOMAIN>', getMerchantBase())
 }
 
-function ResetLinkModal({ link, loading, m, onClose }: { link?: string; loading?: boolean; m: any; onClose: () => void }) {
+function ResetLinkModal({ link, loading, m, onClose, title, subtitle }: { link?: string; loading?: boolean; m: any; onClose: () => void; title?: string; subtitle?: string }) {
   const [copied, setCopied] = useState(false)
   const handleCopy = () => {
     if (!link) return
@@ -40,8 +40,8 @@ function ResetLinkModal({ link, loading, m, onClose }: { link?: string; loading?
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-gray-900">{m.resetLinkTitle}</h3>
-            <p className="text-xs text-gray-500 mt-0.5">{m.resetLinkSubtitle}</p>
+            <h3 className="text-base font-bold text-gray-900">{title ?? m.resetLinkTitle}</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle ?? m.resetLinkSubtitle}</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5" />
@@ -263,6 +263,7 @@ export default function MerchantKeysUsersPage() {
 
   // Reset password link modal
   const [resetLinkModal, setResetLinkModal] = useState<{ open: boolean; link?: string; loading?: boolean }>({ open: false })
+  const [registerLinkModal, setRegisterLinkModal] = useState<{ open: boolean; link?: string; loading?: boolean }>({ open: false })
 
   // Invite modal
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -362,6 +363,18 @@ export default function MerchantKeysUsersPage() {
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToGetResetLink)
       setResetLinkModal({ open: false })
+    }
+  }
+
+  const handleGetRegisterLink = async (user: OrgUserItem) => {
+    setRegisterLinkModal({ open: true, loading: true })
+    try {
+      const res = await merchantApi.getOrgUserInviteLink(orgCustomId, user.orgUserId)
+      const raw = (res.data as any)?.registrationUrl ?? (res.data as any)?.RegistrationUrl ?? ''
+      setRegisterLinkModal({ open: true, link: raw ? processRegistrationUrl(raw) : '' })
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToGetInviteLink)
+      setRegisterLinkModal({ open: false })
     }
   }
 
@@ -908,6 +921,12 @@ export default function MerchantKeysUsersPage() {
                               onClick: () => handleGetResetLink(user),
                             },
                             {
+                              label: m.createRegisterLink,
+                              icon: <Link2 className="w-4 h-4" />,
+                              disabled: user.userStatus?.toLowerCase() !== 'pending',
+                              onClick: () => handleGetRegisterLink(user),
+                            },
+                            {
                               label: isActive ? m.disableUser : m.enableUser,
                               icon: isActive ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />,
                               danger: isActive,
@@ -940,6 +959,17 @@ export default function MerchantKeysUsersPage() {
           loading={resetLinkModal.loading}
           m={m}
           onClose={() => setResetLinkModal({ open: false })}
+        />
+      )}
+
+      {registerLinkModal.open && (
+        <ResetLinkModal
+          link={registerLinkModal.link}
+          loading={registerLinkModal.loading}
+          m={m}
+          title={m.registerLinkTitle}
+          subtitle={m.registerLinkSubtitle}
+          onClose={() => setRegisterLinkModal({ open: false })}
         />
       )}
     </div>

@@ -70,6 +70,9 @@ export const merchantApi = {
   getOrgUserForgotPasswordLink: (orgCustomId: string, orgUserId: string) =>
     client.get<{ forgotPasswordUrl?: string }>(`${ORG_BASE}/GetOrgUserForgotPasswordLink/${orgCustomId}/${orgUserId}`),
 
+  getOrgUserInviteLink: (orgCustomId: string, orgUserId: string) =>
+    client.get<{ registrationUrl?: string }>(`${ORG_BASE}/GetOrgUserInviteLink/${orgCustomId}/${orgUserId}`),
+
   // ── Org API Keys ─────────────────────────────────────────────────────────
   getOrgApiKeys: (orgCustomId: string) =>
     client.get<{ apiKeys: OrgApiKeyItem[] }>(`${ORG_BASE}/GetPaymentRequestApiKeys/${orgCustomId}`),

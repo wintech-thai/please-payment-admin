@@ -6,7 +6,7 @@ updatedAt: "{{BUILD_DATE}}"
 
 # เอกสาร Public API
 
-Please Payment Public API ช่วยให้ร้านค้า (Merchant) เชื่อมต่อระบบชำระเงินเข้ากับแอปพลิเคชันของตนเองได้โดยตรง
+Public API ฉบับนี้ช่วยให้ร้านค้า (Merchant) เชื่อมต่อระบบชำระเงินเข้ากับแอปพลิเคชันของตนเองได้โดยตรง
 
 ## Base URL
 
@@ -25,12 +25,12 @@ Merchant สร้าง Payment Request
         ↓
 ลูกค้า scan QR แล้วโอนเงินผ่านแอปธนาคาร
         ↓
-เงินเข้าบัญชีธนาคารของ Merchant โดยตรง (ไม่ผ่าน Please Payment)
+เงินเข้าบัญชีธนาคารของ Merchant โดยตรง (ไม่ผ่านระบบตัวกลาง)
         ↓
-Please Payment แจ้ง Merchant ผ่าน Webhook (Payment.Success)
+ระบบแจ้ง Merchant ผ่าน Webhook (Payment.Success)
 ```
 
-โมเดลนี้เรียกว่า **Non-Custodial** — Please Payment ไม่เคยถือเงินของ Merchant เลย
+โมเดลนี้เรียกว่า **Non-Custodial** — ระบบไม่เคยถือเงินของ Merchant เลย
 
 ## การเริ่มต้นใช้งาน
 

@@ -18,7 +18,12 @@ export default function DocPage({ params }: { params: { slug: string } }) {
     .replace(/^admin-prod\./, 'api.')
     .replace(/^admin/, 'api')}`
 
-  const doc = getDoc(params.slug, apiUrl)
+  // admin-prod.x → merchant.x (strip -prod), admin-dev.x → merchant-dev.x, admin.x → merchant.x
+  const merchantUrl = isLocalhost ? undefined : `https://${host
+    .replace(/^admin-prod\./, 'merchant.')
+    .replace(/^admin/, 'merchant')}`
+
+  const doc = getDoc(params.slug, apiUrl, merchantUrl)
   if (!doc) notFound()
   return <DocContent doc={doc} />
 }

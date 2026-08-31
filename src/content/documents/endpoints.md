@@ -94,7 +94,9 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `SessionId` | ใช้เชื่อมต่อ WebSocket เพื่อรับสถานะแบบ real-time |
 | `WebsocketPath` | path สำหรับ WebSocket (`/realtime/payment-tx`) |
 | `ExpireAt` | QR Code หมดอายุเมื่อไหร่ |
-| `SlipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ domain ของ merchant portal เองเช่น `https://<merchant-domain>` + `SlipUploadUrl` เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
+| `SlipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ `{{MERCHANT_URL}}` (ดูคำอธิบายด้านล่าง) เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
+
+> **สำคัญ — ต้อง concat กับโดเมนไหน:** `SlipUploadUrl` เป็น relative path เท่านั้น ต้องนำไปต่อกับโดเมน `{{MERCHANT_URL}}` เอง เช่น หาก `SlipUploadUrl` คือ `/payin-slip-upload/org123/xxx/yyy` ก็ให้สร้าง URL เต็มเป็น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
 
 ### การแสดงผล QR และข้อมูลบัญชี
 
@@ -252,6 +254,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 | `SlipUploadUrl` | ✅ | ✅ (สำคัญมาก — ลูกค้าต้องอัปโหลดสลิปเป็นหลักฐาน) |
 
 > **สำคัญ:** สำหรับ P2P — `IsQrAvailable` มักเป็น `false` เพราะบัญชีปลายทางอาจไม่ผูกกับ PromptPay ในกรณีนี้ **ต้องแสดงข้อมูลบัญชี** (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) เพื่อให้ลูกค้ากรอกโอนเงินเองด้วยตัวเอง พร้อมทั้งแสดง `SlipUploadUrl` เพื่อให้อัปโหลดสลิปหลักฐานการโอน
+
+> **สำคัญ — ต้อง concat กับโดเมนไหน:** `SlipUploadUrl` เป็น relative path เช่นเดียวกับ Pay-In ปกติ ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เอง เช่น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (ดูคำอธิบายเต็มในหัวข้อ [Response Fields](#response-fields) ด้านบน)
 
 > **แนะนำ:** นำ `SlipUploadUrl` ไปทำเป็น **QR Code** แสดงควบคู่กับข้อมูลบัญชีปลายทาง — ลูกค้าโอนเงินแล้วสแกน QR เปิดหน้าอัปโหลดสลิปได้เลยโดยไม่ต้องพิมพ์ URL เอง (ดูตัวอย่างหน้าอัปโหลดสลิปด้านบน)
 

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
+import { riskPolicyApi, type RiskPolicyItem } from '@/lib/api/risk-policy.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { ChevronLeft, Mail, Phone, X } from 'lucide-react'
@@ -27,6 +28,7 @@ export default function UpdateMerchantPage() {
   const [payInMax, setPayInMax] = useState<string>('0')
   const [payOutMin, setPayOutMin] = useState<string>('0')
   const [payOutMax, setPayOutMax] = useState<string>('0')
+  const [payoutPartialCountLimitP2P, setPayoutPartialCountLimitP2P] = useState<string>('5')
   const [payinDailyAmountLimit, setPayinDailyAmountLimit] = useState<string>('0')
   const [payinDailyCountLimit, setPayinDailyCountLimit] = useState<string>('0')
   const [discardCent, setDiscardCent] = useState(false)
@@ -34,6 +36,11 @@ export default function UpdateMerchantPage() {
   const [payinExpireMinute, setPayinExpireMinute] = useState<string>('15')
   const [whitelistNames, setWhitelistNames] = useState<string[]>([])
   const [whitelistInput, setWhitelistInput] = useState('')
+  const [riskPolicies, setRiskPolicies] = useState<RiskPolicyItem[]>([])
+  const [riskPolicyId, setRiskPolicyId] = useState('')
+  const [riskPolicyQuery, setRiskPolicyQuery] = useState('')
+  const [riskPolicyDropdownOpen, setRiskPolicyDropdownOpen] = useState(false)
+  const riskPolicyDropdownRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
@@ -88,12 +95,14 @@ export default function UpdateMerchantPage() {
         setPayInMax(merch.payinMaxAmount != null ? String(merch.payinMaxAmount) : '0')
         setPayOutMin(merch.payoutMinAmount != null ? String(merch.payoutMinAmount) : '0')
         setPayOutMax(merch.payoutMaxAmount != null ? String(merch.payoutMaxAmount) : '0')
+        setPayoutPartialCountLimitP2P(merch.payoutPartialCountLimitP2P != null ? String(merch.payoutPartialCountLimitP2P) : '5')
         setPayinDailyAmountLimit(merch.payinDailyTxAmountLimit != null ? String(merch.payinDailyTxAmountLimit) : '0')
         setPayinDailyCountLimit(merch.payinDailyTxCountLimit != null ? String(merch.payinDailyTxCountLimit) : '0')
         setDiscardCent(merch.discardCent ?? false)
         setIncludeGlobalBankAccount(merch.includeGlobalBankAccount ?? true)
         setPayinExpireMinute(merch.payinExpireMinute != null ? String(merch.payinExpireMinute) : '15')
         setWhitelistNames(merch.whitelistBankAccountNamesArr ?? [])
+        setRiskPolicyId(merch.riskPolicyId ?? '')
       })
       .catch(() => {
         toast.error(m.failedToLoadMerchant)
@@ -101,6 +110,30 @@ export default function UpdateMerchantPage() {
       })
       .finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => {
+    riskPolicyApi.getRiskPolicies({ Limit: 200 })
+      .then(res => {
+        const raw = res.data as any
+        setRiskPolicies(Array.isArray(raw) ? raw : [])
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (riskPolicyDropdownRef.current && !riskPolicyDropdownRef.current.contains(e.target as Node)) setRiskPolicyDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const selectedRiskPolicy = riskPolicies.find(p => p.id === riskPolicyId)
+  const filteredRiskPolicies = useMemo(() => {
+    if (!riskPolicyQuery) return riskPolicies
+    const q = riskPolicyQuery.toLowerCase()
+    return riskPolicies.filter(p => p.name?.toLowerCase().includes(q))
+  }, [riskPolicies, riskPolicyQuery])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -122,12 +155,14 @@ export default function UpdateMerchantPage() {
         PayinMaxAmount: payInMax,
         PayoutMinAmount: payOutMin,
         PayoutMaxAmount: payOutMax,
+        PayoutPartialCountLimitP2P: parseInt(payoutPartialCountLimitP2P || '0', 10),
         PayinDailyTxAmountLimit: payinDailyAmountLimit,
         PayinDailyTxCountLimit: payinDailyCountLimit,
         DiscardCent: discardCent,
         IncludeGlobalBankAccount: includeGlobalBankAccount,
         PayinExpireMinute: parseInt(payinExpireMinute),
         WhitelistBankAccountNamesArr: whitelistNames,
+        RiskPolicyId: riskPolicyId || null,
       })
       setIsDirty(false)
       toast.success(m.updatedSuccess)
@@ -220,6 +255,64 @@ export default function UpdateMerchantPage() {
                   />
                 </div>
               </FormField>
+
+              <div className="sm:col-span-2">
+                <FormField label={m.fieldRiskPolicy}>
+                  <div ref={riskPolicyDropdownRef} className="relative">
+                    <div className={clsx(inputCls(false), 'flex items-center gap-2 cursor-text')} onClick={() => setRiskPolicyDropdownOpen(true)}>
+                      {riskPolicyId && selectedRiskPolicy ? (
+                        <>
+                          <span className="flex-1 truncate">{selectedRiskPolicy.name}</span>
+                          <RiskPolicyStatusBadge status={selectedRiskPolicy.status} m={m} />
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); setRiskPolicyId(''); setRiskPolicyQuery(''); markDirty() }}
+                            className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          value={riskPolicyQuery}
+                          onChange={e => { setRiskPolicyQuery(e.target.value); setRiskPolicyDropdownOpen(true) }}
+                          onFocus={() => setRiskPolicyDropdownOpen(true)}
+                          placeholder={m.fieldRiskPolicyPlaceholder}
+                          className="flex-1 outline-none bg-transparent"
+                        />
+                      )}
+                    </div>
+                    {riskPolicyDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                        {filteredRiskPolicies.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-gray-400">{m.noRiskPolicyFound}</div>
+                        ) : (
+                          filteredRiskPolicies.map(p => (
+                            <div
+                              key={p.id}
+                              onMouseDown={e => {
+                                e.preventDefault()
+                                setRiskPolicyId(p.id)
+                                setRiskPolicyQuery('')
+                                setRiskPolicyDropdownOpen(false)
+                                markDirty()
+                              }}
+                              className={clsx(
+                                'flex items-center justify-between gap-2 px-4 py-2.5 text-sm cursor-pointer hover:bg-primary-50 transition-colors',
+                                riskPolicyId === p.id && 'bg-primary-50 text-primary-700 font-medium'
+                              )}
+                            >
+                              <span className="truncate">{p.name}</span>
+                              <RiskPolicyStatusBadge status={p.status} m={m} />
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </FormField>
+              </div>
             </div>
           </div>
 
@@ -375,6 +468,17 @@ export default function UpdateMerchantPage() {
                       className={inputCls(!!errors.payOutMax)}
                     />
                   </FormField>
+                  <FormField label={m.fieldPayoutPartialCountLimitP2P}>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={payoutPartialCountLimitP2P}
+                      onChange={e => { setPayoutPartialCountLimitP2P(e.target.value); markDirty() }}
+                      className={inputCls(false)}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">{m.hintZeroNoLimit}</p>
+                  </FormField>
                 </div>
               </div>
             </div>
@@ -455,6 +559,19 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
       <span className="w-1 h-5 bg-primary-500 rounded-full flex-shrink-0" />
       {children}
     </h2>
+  )
+}
+
+function RiskPolicyStatusBadge({ status, m }: { status?: string | null; m: any }) {
+  const isActive = status?.toLowerCase() === 'active'
+  return (
+    <span className={clsx(
+      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0',
+      isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
+    )}>
+      <span className={clsx('w-1.5 h-1.5 rounded-full', isActive ? 'bg-emerald-500' : 'bg-gray-400')} />
+      {isActive ? m.riskPolicyStatusActive : m.riskPolicyStatusDisabled}
+    </span>
   )
 }
 

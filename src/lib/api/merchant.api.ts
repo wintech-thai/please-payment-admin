@@ -8,6 +8,8 @@ import type {
   OrgApiKeyItem,
   InviteOrgUserPayload,
   SubmitPaymentRequestPayload,
+  OrganizationPolicyData,
+  OrganizationPolicyPayload,
 } from './types'
 
 const BASE = '/admin-api/AdminMerchant/org/global/action'
@@ -72,6 +74,13 @@ export const merchantApi = {
 
   getOrgUserInviteLink: (orgCustomId: string, orgUserId: string) =>
     client.get<{ registrationUrl?: string }>(`${ORG_BASE}/GetOrgUserInviteLink/${orgCustomId}/${orgUserId}`),
+
+  // ── Organization Policy (IP whitelist/blacklist) ────────────────────────────
+  getOrganizationPolicy: (orgCustomId: string) =>
+    client.get<{ organizationPolicy?: OrganizationPolicyData }>(`${ORG_BASE}/GetOrganizationPolicy/${orgCustomId}`),
+
+  setOrganizationPolicy: (orgCustomId: string, payload: OrganizationPolicyPayload) =>
+    client.post<{ organizationPolicy?: OrganizationPolicyData }>(`${ORG_BASE}/SetOrganizationPolicy/${orgCustomId}`, payload),
 
   // ── Org API Keys ─────────────────────────────────────────────────────────
   getOrgApiKeys: (orgCustomId: string) =>

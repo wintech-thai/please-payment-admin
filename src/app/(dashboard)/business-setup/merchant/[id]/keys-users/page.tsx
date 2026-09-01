@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
-import type { MerchantItem, OrgUserItem, OrgApiKeyItem } from '@/lib/api/types'
+import type { MerchantItem, OrgUserItem, OrgApiKeyItem, OrganizationPolicyData } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { ChevronLeft, Plus, Copy, Check, Ban, CheckCircle, Key, Link2, Trash2, X, Pencil } from 'lucide-react'
 import clsx from 'clsx'
@@ -25,6 +25,67 @@ function processPaymentUrl(raw: string): string {
 
 function processRegistrationUrl(raw: string): string {
   return raw.replace('https://<REGISTER_SERVICE_DOMAIN>', getMerchantBase())
+}
+
+// ── IP / CIDR validation ─────────────────────────────────────────────────────
+
+const IPV4_REGEX = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(\/(3[0-2]|[1-2]?\d))?$/
+const IPV6_REGEX = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))(\/(12[0-8]|1[01]\d|\d\d?))?$/
+
+function isValidIpOrCidr(value: string): boolean {
+  const v = value.trim()
+  return IPV4_REGEX.test(v) || IPV6_REGEX.test(v)
+}
+
+function parseCsvList(value?: string | null): string[] {
+  if (!value) return []
+  return value.split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function IpTagInput({ label, hint, value, onChange, disabled }: { label: string; hint?: string; value: string[]; onChange: (next: string[]) => void; disabled?: boolean }) {
+  const [input, setInput] = useState('')
+  const [error, setError] = useState('')
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    const v = input.trim()
+    if (!v) return
+    if (!isValidIpOrCidr(v)) { setError('Invalid IP / CIDR format'); return }
+    if (value.includes(v)) { setInput(''); return }
+    onChange([...value, v])
+    setInput('')
+    setError('')
+  }
+
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">{label}</label>
+      <div className="w-full min-h-[42px] px-3 py-1.5 flex flex-wrap gap-1.5 border border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent">
+        {value.map(ip => (
+          <span key={ip} className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-100 text-gray-700 ring-1 ring-gray-200 rounded-full text-xs font-mono">
+            {ip}
+            {!disabled && (
+              <button type="button" onClick={() => onChange(value.filter(x => x !== ip))} className="hover:text-red-600">
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </span>
+        ))}
+        {!disabled && (
+          <input
+            value={input}
+            onChange={e => { setInput(e.target.value); setError('') }}
+            onKeyDown={handleKeyDown}
+            placeholder="1.2.3.4 or 1.2.3.0/24"
+            className="flex-1 min-w-[140px] text-sm bg-transparent outline-none placeholder-gray-400 font-mono"
+          />
+        )}
+      </div>
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {hint && !error && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+    </div>
+  )
 }
 
 function ResetLinkModal({ link, loading, m, onClose, title, subtitle }: { link?: string; loading?: boolean; m: any; onClose: () => void; title?: string; subtitle?: string }) {
@@ -277,6 +338,9 @@ export default function MerchantKeysUsersPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null)
   const [selectedEndpointIdx, setSelectedEndpointIdx] = useState<number | null>(null)
+  const [endpointTab, setEndpointTab] = useState<'endpoints' | 'whitelist' | 'blacklist'>('endpoints')
+  const [orgPolicy, setOrgPolicy] = useState<OrganizationPolicyData | null>(null)
+  const [savingPolicy, setSavingPolicy] = useState(false)
 
   // New API key modal
   const [newApiKey, setNewApiKey] = useState<string | null>(null)
@@ -298,10 +362,11 @@ export default function MerchantKeysUsersPage() {
 
       const customId: string = raw?.code ?? ''
 
-      const [endpointsRes, usersRes, keysRes] = await Promise.allSettled([
+      const [endpointsRes, usersRes, keysRes, policyRes] = await Promise.allSettled([
         merchantApi.getMerchantPaymentEndpoints(merchantId),
         merchantApi.getOrgUsers(customId),
         merchantApi.getPaymentApiKeys(customId),
+        merchantApi.getOrganizationPolicy(customId),
       ])
 
       if (endpointsRes.status === 'fulfilled') {
@@ -319,6 +384,11 @@ export default function MerchantKeysUsersPage() {
         const data = keysRes.value.data as any
         setApiKeys(Array.isArray(data) ? data : (data?.apiKeys ?? data?.ApiKeys ?? []))
       }
+
+      if (policyRes.status === 'fulfilled') {
+        const data = policyRes.value.data as any
+        setOrgPolicy(data?.organizationPolicy ?? data?.OrganizationPolicy ?? null)
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.failedToLoadMerchant)
       router.push(`/business-setup/merchant?highlight=${merchantId}`)
@@ -328,6 +398,26 @@ export default function MerchantKeysUsersPage() {
   }, [merchantId])
 
   useEffect(() => { loadAll() }, [loadAll])
+
+  const handleUpdatePolicyList = async (field: 'webWhitelistIps' | 'apiWhitelistIps' | 'webBlacklistIps' | 'apiBlacklistIps', next: string[]) => {
+    setSavingPolicy(true)
+    try {
+      const payload = {
+        WebWhitelistIps: parseCsvList(orgPolicy?.webWhitelistIps).join(','),
+        ApiWhitelistIps: parseCsvList(orgPolicy?.apiWhitelistIps).join(','),
+        WebBlacklistIps: parseCsvList(orgPolicy?.webBlacklistIps).join(','),
+        ApiBlacklistIps: parseCsvList(orgPolicy?.apiBlacklistIps).join(','),
+        [field.charAt(0).toUpperCase() + field.slice(1)]: next.join(','),
+      }
+      const res = await merchantApi.setOrganizationPolicy(orgCustomId, payload)
+      const data = res.data as any
+      setOrgPolicy(data?.organizationPolicy ?? data?.OrganizationPolicy ?? null)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.failedToUpdatePolicy)
+    } finally {
+      setSavingPolicy(false)
+    }
+  }
 
   // ── User actions ────────────────────────────────────────────────────────────
   const handleToggleUser = (user: OrgUserItem) => {
@@ -755,33 +845,94 @@ export default function MerchantKeysUsersPage() {
           </div>
         </div>
 
-        {/* Payment Request Endpoints — table */}
+        {/* Payment Request Endpoints / IP Whitelist & Blacklist — tabbed */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{m.sectionEndpoint}</SectionHeader>
-          {paymentEndpoints.length === 0 ? (
-            <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-separate border-spacing-0">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 rounded-tl-xl w-48">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Endpoint</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-24">Copy</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paymentEndpoints.map((ep, idx) => (
-                    <tr key={idx} onClick={() => setSelectedEndpointIdx(prev => prev === idx ? null : idx)} className={clsx('cursor-pointer transition-colors', selectedEndpointIdx === idx ? 'bg-primary-50' : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50')}>
-                      <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-semibold whitespace-nowrap', selectedEndpointIdx === idx ? 'text-primary-700' : 'text-gray-700')}>{ep.name}</td>
-                      <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-mono break-all', selectedEndpointIdx === idx ? 'text-primary-600' : 'text-gray-500')}>{ep.value}</td>
-                      <td className="px-4 py-3 border-b border-gray-100">
-                        <CopyButton text={ep.value} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
-                      </td>
+
+          <div className="flex-none flex gap-1 mb-4">
+            {([
+              ['endpoints', m.tabEndpoints],
+              ['whitelist', m.tabWhitelistIps],
+              ['blacklist', m.tabBlacklistIps],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setEndpointTab(key)}
+                className={clsx(
+                  'px-4 py-1.5 text-sm font-semibold rounded-full transition-colors',
+                  endpointTab === key ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 border border-gray-200 hover:bg-gray-50'
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {endpointTab === 'endpoints' && (
+            paymentEndpoints.length === 0 ? (
+              <p className="text-sm text-gray-400">{m.endpointNotFound}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-separate border-spacing-0">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 rounded-tl-xl w-48">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Endpoint</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-24">Copy</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paymentEndpoints.map((ep, idx) => (
+                      <tr key={idx} onClick={() => setSelectedEndpointIdx(prev => prev === idx ? null : idx)} className={clsx('cursor-pointer transition-colors', selectedEndpointIdx === idx ? 'bg-primary-50' : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50')}>
+                        <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-semibold whitespace-nowrap', selectedEndpointIdx === idx ? 'text-primary-700' : 'text-gray-700')}>{ep.name}</td>
+                        <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-mono break-all', selectedEndpointIdx === idx ? 'text-primary-600' : 'text-gray-500')}>{ep.value}</td>
+                        <td className="px-4 py-3 border-b border-gray-100">
+                          <CopyButton text={ep.value} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+
+          {endpointTab === 'whitelist' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <IpTagInput
+                label={m.labelWebIps}
+                hint={m.hintIpFormat}
+                value={parseCsvList(orgPolicy?.webWhitelistIps)}
+                onChange={next => handleUpdatePolicyList('webWhitelistIps', next)}
+                disabled={savingPolicy}
+              />
+              <IpTagInput
+                label={m.labelApiIps}
+                hint={m.hintIpFormat}
+                value={parseCsvList(orgPolicy?.apiWhitelistIps)}
+                onChange={next => handleUpdatePolicyList('apiWhitelistIps', next)}
+                disabled={savingPolicy}
+              />
+            </div>
+          )}
+
+          {endpointTab === 'blacklist' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <IpTagInput
+                label={m.labelWebIps}
+                hint={m.hintIpFormat}
+                value={parseCsvList(orgPolicy?.webBlacklistIps)}
+                onChange={next => handleUpdatePolicyList('webBlacklistIps', next)}
+                disabled={savingPolicy}
+              />
+              <IpTagInput
+                label={m.labelApiIps}
+                hint={m.hintIpFormat}
+                value={parseCsvList(orgPolicy?.apiBlacklistIps)}
+                onChange={next => handleUpdatePolicyList('apiBlacklistIps', next)}
+                disabled={savingPolicy}
+              />
             </div>
           )}
         </div>

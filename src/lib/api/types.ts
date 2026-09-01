@@ -181,6 +181,8 @@ export interface MerchantItem {
   currentPayinDailyTxAmount?: number | null
   currentPayinDailyTxCount?: number | null
   payinExpireMinute?: number | null
+  riskPolicyId?: string | null
+  payoutPartialCountLimitP2P?: number | null
 }
 
 export interface GetMerchantsPayload {
@@ -235,6 +237,8 @@ export interface UpdateMerchantPayload {
   PayinDailyTxAmountLimit?: number | string
   PayinDailyTxCountLimit?: number | string
   PayinExpireMinute?: number
+  RiskPolicyId?: string | null
+  PayoutPartialCountLimitP2P?: number
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────
@@ -253,6 +257,23 @@ export interface OrgUserItem {
   createdDate?: string | null
   invitedDate?: string | null
   invitedBy?: string | null
+}
+
+export interface OrganizationPolicyData {
+  id?: string | null
+  orgId?: string | null
+  webWhitelistIps?: string | null
+  apiWhitelistIps?: string | null
+  webBlacklistIps?: string | null
+  apiBlacklistIps?: string | null
+  createdDate?: string | null
+}
+
+export interface OrganizationPolicyPayload {
+  WebWhitelistIps?: string
+  ApiWhitelistIps?: string
+  WebBlacklistIps?: string
+  ApiBlacklistIps?: string
 }
 
 export interface OrgApiKeyItem {
@@ -883,6 +904,8 @@ export interface PayOutRequestItem {
   qrCodeImage?: string | null
   qrCode?: string | null
   noticeCount?: number | null
+  payoutPartialCountP2P?: number | null
+  payoutPartialCountLimitP2P?: number | null
 }
 
 export interface PartialPayoutItem {

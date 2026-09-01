@@ -1,13 +1,13 @@
 [
   {
-    "section": "API Reference",
+    "section": { "th": "API Reference", "en": "API Reference", "zh": "API 参考" },
     "items": [
-      { "title": "ภาพรวม", "slug": "overview" },
-      { "title": "การยืนยันตัวตน", "slug": "authentication" },
-      { "title": "Endpoints", "slug": "endpoints" },
-      { "title": "สถานะการชำระเงิน", "slug": "payment-status" },
-      { "title": "Webhooks", "slug": "webhooks" },
-      { "title": "การจัดการ Error", "slug": "error-handling" }
+      { "slug": "overview", "titles": { "th": "ภาพรวม", "en": "Overview", "zh": "概览" } },
+      { "slug": "authentication", "titles": { "th": "การยืนยันตัวตน", "en": "Authentication", "zh": "身份验证" } },
+      { "slug": "endpoints", "titles": { "th": "Endpoints", "en": "Endpoints", "zh": "Endpoints" } },
+      { "slug": "payment-status", "titles": { "th": "สถานะการชำระเงิน", "en": "Payment Status", "zh": "支付状态" } },
+      { "slug": "webhooks", "titles": { "th": "Webhooks", "en": "Webhooks", "zh": "Webhooks" } },
+      { "slug": "error-handling", "titles": { "th": "การจัดการ Error", "en": "Error Handling", "zh": "错误处理" } }
     ]
   }
 ]

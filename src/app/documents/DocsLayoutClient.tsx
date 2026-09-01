@@ -2,10 +2,36 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import clsx from 'clsx'
 import type { NavSection } from '@/lib/docs/markdown'
+import { DOC_LOCALES, DEFAULT_LOCALE, isDocLocale, type DocLocale } from '@/lib/docs/locale'
 import { Menu, X, FileText } from 'lucide-react'
+
+const LOCALE_LABELS: Record<DocLocale, string> = {
+  th: 'ไทย',
+  en: 'English',
+  zh: '中文',
+}
+
+function LangSwitcher({ locale, pathname }: { locale: DocLocale; pathname: string }) {
+  return (
+    <div className="flex items-center gap-1 rounded-lg bg-zinc-800 p-0.5">
+      {DOC_LOCALES.map(code => (
+        <Link
+          key={code}
+          href={code === DEFAULT_LOCALE ? pathname : `${pathname}?lang=${code}`}
+          className={clsx(
+            'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
+            locale === code ? 'bg-primary-600 text-white' : 'text-zinc-400 hover:text-white'
+          )}
+        >
+          {LOCALE_LABELS[code]}
+        </Link>
+      ))}
+    </div>
+  )
+}
 
 export default function DocsLayoutClient({
   children,
@@ -15,6 +41,8 @@ export default function DocsLayoutClient({
   nav: NavSection[]
 }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const locale = isDocLocale(searchParams.get('lang')) ? (searchParams.get('lang') as DocLocale) : DEFAULT_LOCALE
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   function getAdminUrl(path: string) {
@@ -38,8 +66,8 @@ export default function DocsLayoutClient({
             Public API Docs
           </Link>
         </div>
-        <div className="flex items-center text-sm">
-          <span className="text-white font-medium">API Reference</span>
+        <div className="flex items-center gap-3">
+          <LangSwitcher locale={locale} pathname={pathname} />
         </div>
       </header>
 
@@ -61,14 +89,14 @@ export default function DocsLayoutClient({
         >
           <nav className="px-4 py-6">
             {nav.map(section => (
-              <div key={section.section} className="mb-6">
+              <div key={section.section[DEFAULT_LOCALE]} className="mb-6">
                 <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 px-2">
-                  {section.section}
+                  {section.section[locale] ?? section.section[DEFAULT_LOCALE]}
                 </p>
                 <ul className="space-y-0.5">
                   {section.items.map(item => {
-                    const href = `/documents/${item.slug}`
-                    const active = pathname === href
+                    const href = locale === DEFAULT_LOCALE ? `/documents/${item.slug}` : `/documents/${item.slug}?lang=${locale}`
+                    const active = pathname === `/documents/${item.slug}`
                     return (
                       <li key={item.slug}>
                         <Link
@@ -81,7 +109,7 @@ export default function DocsLayoutClient({
                               : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                           )}
                         >
-                          {item.title}
+                          {item.titles[locale] ?? item.titles[DEFAULT_LOCALE]}
                         </Link>
                       </li>
                     )

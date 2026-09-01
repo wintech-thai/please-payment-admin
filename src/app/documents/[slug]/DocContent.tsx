@@ -1,11 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { DocContent } from '@/lib/docs/markdown'
+import type { DocContent, DocLocale } from '@/lib/docs/markdown'
 import clsx from 'clsx'
 
-export default function DocContentComponent({ doc }: { doc: DocContent }) {
+const LABELS: Record<DocLocale, { version: string; updatedAt: string }> = {
+  th: { version: 'เวอร์ชัน', updatedAt: 'อัปเดตล่าสุด' },
+  en: { version: 'Version', updatedAt: 'Last updated' },
+  zh: { version: '版本', updatedAt: '最后更新' },
+}
+
+export default function DocContentComponent({ doc, locale = 'th' }: { doc: DocContent; locale?: DocLocale }) {
   const { meta, html, headings } = doc
+  const labels = LABELS[locale]
   const [activeId, setActiveId] = useState<string>('')
 
   useEffect(() => {
@@ -30,9 +37,9 @@ export default function DocContentComponent({ doc }: { doc: DocContent }) {
         <h1 className="text-3xl font-bold text-white mb-2">{meta.title}</h1>
         {(meta.version || meta.updatedAt) && (
           <p className="text-sm text-zinc-500 mb-8">
-            {meta.version && <span>เวอร์ชัน: {meta.version}</span>}
+            {meta.version && <span>{labels.version}: {meta.version}</span>}
             {meta.version && meta.updatedAt && <span className="mx-2">|</span>}
-            {meta.updatedAt && <span>อัปเดตล่าสุด: {meta.updatedAt}</span>}
+            {meta.updatedAt && <span>{labels.updatedAt}: {meta.updatedAt}</span>}
           </p>
         )}
         <div

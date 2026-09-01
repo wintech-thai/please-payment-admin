@@ -702,6 +702,14 @@ function WithdrawRequestPageContent() {
                             ✓ {formatAmount(item.totalPayOutPaidAmountDecimal)}
                           </p>
                         )}
+                        {item.isPartialyPayout && (
+                          <p
+                            className="text-[10px] text-gray-400 mt-0.5 cursor-help"
+                            title={`${m.partialCountTooltip}: ${item.payoutPartialCountP2P ?? 0} / ${item.payoutPartialCountLimitP2P ?? 0}`}
+                          >
+                            {item.payoutPartialCountP2P ?? 0}/{item.payoutPartialCountLimitP2P ?? 0}
+                          </p>
+                        )}
                       </td>
 
                       {/* Fee */}

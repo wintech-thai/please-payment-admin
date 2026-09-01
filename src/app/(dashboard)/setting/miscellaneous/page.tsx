@@ -1,5 +1,4 @@
 'use client'
-// trigger rebuild
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
@@ -55,18 +54,33 @@ function ClientIpSourceTab() {
   const [errors, setErrors] = useState<{ headerName?: string }>({})
 
   const [resolvedIp, setResolvedIp] = useState<string | null | undefined>(undefined)
+  const [backendResolvedIp, setBackendResolvedIp] = useState<string | null | undefined>(undefined)
+  const [backendNote, setBackendNote] = useState<string | undefined>(undefined)
   const [testing, setTesting] = useState(false)
+
+  const refreshResolvedIps = async () => {
+    const [apiRes, backendRes] = await Promise.allSettled([
+      adminConfigApi.getClientIpSource(),
+      adminConfigApi.getClientIpDebug(),
+    ])
+    if (apiRes.status === 'fulfilled') setResolvedIp(apiRes.value.data?.resolvedIp)
+    if (backendRes.status === 'fulfilled') {
+      setBackendResolvedIp(backendRes.value.resolvedIp)
+      setBackendNote(backendRes.value.note)
+    }
+    return apiRes
+  }
 
   const load = async () => {
     setLoading(true)
     try {
-      const res = await adminConfigApi.getClientIpSource()
-      const raw = res.data
+      const apiRes = await refreshResolvedIps()
+      if (apiRes.status === 'rejected') throw apiRes.reason
+      const raw = apiRes.value.data
       const cfg = raw?.configuration?.clientIpSourceConfig
       setSourceType((cfg?.sourceType as 'Native' | 'Header') ?? 'Native')
       setHeaderName(cfg?.headerName ?? '')
       setHeaderIndex(cfg?.headerIndex != null ? String(cfg.headerIndex) : '0')
-      setResolvedIp(raw?.resolvedIp)
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code
       if (code !== 'NOT_FOUND') {
@@ -82,8 +96,7 @@ function ClientIpSourceTab() {
   const handleTest = async () => {
     setTesting(true)
     try {
-      const res = await adminConfigApi.getClientIpSource()
-      setResolvedIp(res.data?.resolvedIp)
+      await refreshResolvedIps()
     } catch {
       /* keep last known value */
     } finally {
@@ -224,12 +237,8 @@ function ClientIpSourceTab() {
 
         {!editing && (
           <div className="border-t border-gray-100 pt-5">
-            <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{m.currentIpTitle}</p>
-                <p className="text-sm font-semibold text-gray-900 mt-0.5 font-mono">{resolvedIp || '—'}</p>
-                <p className="text-xs text-gray-400 mt-1">{m.currentIpTestHint}</p>
-              </div>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <p className="text-xs text-gray-400">{m.currentIpTestHint}</p>
               <button
                 onClick={handleTest}
                 disabled={testing}
@@ -238,6 +247,18 @@ function ClientIpSourceTab() {
                 <RefreshCw className={clsx('w-4 h-4', testing && 'animate-spin')} />
                 {m.currentIpTestButton}
               </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{m.currentIpBackendTitle}</p>
+                <p className="text-sm font-semibold text-gray-900 mt-0.5 font-mono">{backendResolvedIp || '—'}</p>
+                <p className="text-xs text-gray-400 mt-1">{backendNote || m.currentIpBackendHint}</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{m.currentIpApiTitle}</p>
+                <p className="text-sm font-semibold text-gray-900 mt-0.5 font-mono">{resolvedIp || '—'}</p>
+                <p className="text-xs text-gray-400 mt-1">{m.currentIpApiHint}</p>
+              </div>
             </div>
           </div>
         )}

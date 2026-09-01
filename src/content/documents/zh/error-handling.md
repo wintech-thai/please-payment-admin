@@ -34,6 +34,7 @@ title: 错误处理
 | `401` | API Key 不正确或未提供 |
 | `403` | 无权访问该资源 |
 | `404` | 未找到请求的资源 |
+| `422` | 来源 IP 已被该商户列入黑名单 — 详情请查看 body 中的 `description` |
 | `500` | 服务器内部错误 |
 
 ## Response Body 中的 Status Codes

@@ -47,6 +47,13 @@ export interface ClientIpSourceConfigResponse {
   }
 }
 
+export interface ClientIpDebugResponse {
+  resolvedIp?: string | null
+  note?: string
+  sourceType?: string | null
+  headerName?: string | null
+}
+
 export const adminConfigApi = {
   getBrandConfig: () =>
     client.get<AdminConfig>(
@@ -71,4 +78,12 @@ export const adminConfigApi = {
 
   setClientIpSource: (payload: ClientIpSourceConfigData) =>
     client.post(`${BASE}/SetClientIpSource`, { ClientIpSourceConfig: payload }),
+
+  // Resolved directly by this Admin app's own Next.js pod (not proxied to onix-api) —
+  // lets you tell apart "ingress isn't forwarding the header to the Admin pod" from
+  // "the proxy relay isn't forwarding it on to onix-api".
+  getClientIpDebug: async (): Promise<ClientIpDebugResponse> => {
+    const res = await fetch('/api/debug-client-ip', { cache: 'no-store' })
+    return res.json()
+  },
 }

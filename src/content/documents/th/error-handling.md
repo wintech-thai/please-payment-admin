@@ -34,6 +34,7 @@ API ตอบกลับในรูปแบบเดียวกันเส�
 | `401` | API Key ไม่ถูกต้องหรือไม่ได้ส่งมา |
 | `403` | ไม่มีสิทธิ์เข้าถึง resource นี้ |
 | `404` | ไม่พบ resource ที่ร้องขอ |
+| `422` | IP ต้นทางติด blacklist ของ merchant นี้ — ดู `description` ใน body สำหรับรายละเอียด |
 | `500` | ข้อผิดพลาดภายใน server |
 
 ## Status Codes ใน Response Body

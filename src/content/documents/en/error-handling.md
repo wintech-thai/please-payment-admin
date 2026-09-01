@@ -34,6 +34,7 @@ The API always responds in the same format, whether the request succeeds or fail
 | `401` | The API Key is invalid or was not provided |
 | `403` | No permission to access this resource |
 | `404` | The requested resource was not found |
+| `422` | The source IP is blacklisted for this merchant — see `description` in the body for details |
 | `500` | Internal server error |
 
 ## Status Codes in the Response Body

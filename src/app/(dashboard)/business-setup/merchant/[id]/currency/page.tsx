@@ -7,7 +7,7 @@ import { merchantApi } from '@/lib/api/merchant.api'
 import { currencyApi } from '@/lib/api/currency.api'
 import type { MerchantItem, MerchantCurrencyItem, CurrencyCategory } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Plus, Search, MoreHorizontal, Ban, CheckCircle, Wallet, QrCode } from 'lucide-react'
+import { ChevronLeft, Plus, Search, MoreHorizontal, Ban, CheckCircle, Wallet } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import CurrencyLogo from '@/components/CurrencyLogo'
@@ -289,15 +289,6 @@ export default function CurrencyListPage() {
                               <button onClick={() => setOpenMenuId(null)} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                 <Wallet className="w-4 h-4 flex-shrink-0" />
                                 {c.actionWalletSummary}
-                              </button>
-                              <div className="border-t border-gray-200 my-1" />
-                              <button onClick={() => setOpenMenuId(null)} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                <QrCode className="w-4 h-4 flex-shrink-0" />
-                                {c.actionQrPayment}
-                              </button>
-                              <button onClick={() => setOpenMenuId(null)} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                <QrCode className="w-4 h-4 flex-shrink-0" />
-                                {c.actionQrPaymentP2P}
                               </button>
                             </div>
                           )}

@@ -2,6 +2,10 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 import { marked } from 'marked'
+import { DEFAULT_LOCALE, type DocLocale } from './locale'
+
+export { DOC_LOCALES, DEFAULT_LOCALE, isDocLocale } from './locale'
+export type { DocLocale } from './locale'
 
 const DOCS_DIR = path.join(process.cwd(), 'src/content/documents')
 
@@ -18,12 +22,12 @@ export interface DocContent {
 }
 
 export interface NavItem {
-  title: string
   slug: string
+  titles: Record<DocLocale, string>
 }
 
 export interface NavSection {
-  section: string
+  section: Record<DocLocale, string>
   items: NavItem[]
 }
 
@@ -32,8 +36,10 @@ export function getNav(): NavSection[] {
   return JSON.parse(fs.readFileSync(navPath, 'utf-8'))
 }
 
-export function getDoc(slug: string, apiUrl?: string, merchantUrl?: string): DocContent | null {
-  const filePath = path.join(DOCS_DIR, `${slug}.md`)
+export function getDoc(slug: string, locale: DocLocale = DEFAULT_LOCALE, apiUrl?: string, merchantUrl?: string): DocContent | null {
+  const localizedPath = path.join(DOCS_DIR, locale, `${slug}.md`)
+  const fallbackPath = path.join(DOCS_DIR, DEFAULT_LOCALE, `${slug}.md`)
+  const filePath = fs.existsSync(localizedPath) ? localizedPath : fallbackPath
   if (!fs.existsSync(filePath)) return null
 
   let raw = fs.readFileSync(filePath, 'utf-8')
@@ -56,7 +62,7 @@ export function getDoc(slug: string, apiUrl?: string, merchantUrl?: string): Doc
   renderer.heading = ({ text, depth }) => {
     const id = text
       .toLowerCase()
-      .replace(/[^฀-๿a-z0-9\s]/g, '')
+      .replace(/[^฀-๿一-鿿a-z0-9\s]/g, '')
       .trim()
       .replace(/\s+/g, '-')
     headings.push({ id, text, level: depth })
@@ -79,7 +85,7 @@ export function getDoc(slug: string, apiUrl?: string, merchantUrl?: string): Doc
 
 export function getAllSlugs(): string[] {
   return fs
-    .readdirSync(DOCS_DIR)
+    .readdirSync(path.join(DOCS_DIR, DEFAULT_LOCALE))
     .filter(f => f.endsWith('.md'))
     .map(f => f.replace('.md', ''))
 }

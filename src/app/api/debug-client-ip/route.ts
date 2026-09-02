@@ -10,7 +10,7 @@ interface ClientIpSourceConfig {
   headerIndex?: number
 }
 
-function resolveFromHeaders(request: NextRequest, cfg: ClientIpSourceConfig | null): { resolvedIp: string | null; note?: string } {
+function resolveFromHeaders(request: NextRequest, cfg: ClientIpSourceConfig | null): { resolvedIp: string | null; note?: string; rawHeaderValue?: string | null } {
   if (!cfg || !cfg.sourceType || cfg.sourceType === 'Native') {
     // There is no equivalent of Connection.RemoteIpAddress in a Next.js Route Handler —
     // NextRequest wraps the Fetch API Request, which has no socket/transport concept.
@@ -28,11 +28,13 @@ function resolveFromHeaders(request: NextRequest, cfg: ClientIpSourceConfig | nu
 
   const parts = headerValue.split(',').map(p => p.trim())
   const index = cfg.headerIndex ?? 0
-  if (index < 0 || index >= parts.length) {
-    return { resolvedIp: null, note: `Configured index ${index} is out of range for "${headerValue}"` }
+  // A negative index means "take the last value in the comma-separated list".
+  if (index >= parts.length) {
+    return { resolvedIp: null, note: `Configured index ${index} is out of range for "${headerValue}"`, rawHeaderValue: headerValue }
   }
 
-  return { resolvedIp: parts[index] }
+  const resolved = index < 0 ? parts[parts.length - 1] : parts[index]
+  return { resolvedIp: resolved, rawHeaderValue: headerValue }
 }
 
 // Resolves the client IP the same way onix-api's blacklist logic does, but executed by
@@ -56,6 +58,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     resolvedIp: result.resolvedIp,
     note: result.note,
+    rawHeaderValue: result.rawHeaderValue ?? null,
     sourceType: cfg?.sourceType ?? null,
     headerName: cfg?.headerName ?? null,
   })

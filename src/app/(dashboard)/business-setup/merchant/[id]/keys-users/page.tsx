@@ -42,7 +42,7 @@ function parseCsvList(value?: string | null): string[] {
   return value.split(',').map(s => s.trim()).filter(Boolean)
 }
 
-function IpTagInput({ label, hint, value, onChange, disabled }: { label: string; hint?: string; value: string[]; onChange: (next: string[]) => void; disabled?: boolean }) {
+function IpTagInput({ label, hint, value, onChange, disabled, tone = 'whitelist' }: { label: string; hint?: string; value: string[]; onChange: (next: string[]) => void; disabled?: boolean; tone?: 'whitelist' | 'blacklist' }) {
   const [input, setInput] = useState('')
   const [error, setError] = useState('')
 
@@ -58,15 +58,19 @@ function IpTagInput({ label, hint, value, onChange, disabled }: { label: string;
     setError('')
   }
 
+  const tagClass = tone === 'blacklist'
+    ? 'bg-red-50 text-red-700 ring-1 ring-red-300'
+    : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300'
+
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">{label}</label>
       <div className="w-full min-h-[42px] px-3 py-1.5 flex flex-wrap gap-1.5 border border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent">
         {value.map(ip => (
-          <span key={ip} className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-100 text-gray-700 ring-1 ring-gray-200 rounded-full text-xs font-mono">
+          <span key={ip} className={clsx('inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-semibold', tagClass)}>
             {ip}
             {!disabled && (
-              <button type="button" onClick={() => onChange(value.filter(x => x !== ip))} className="hover:text-red-600">
+              <button type="button" onClick={() => onChange(value.filter(x => x !== ip))} className="hover:text-red-900">
                 <X className="w-3 h-3" />
               </button>
             )}
@@ -925,6 +929,7 @@ export default function MerchantKeysUsersPage() {
                 value={parseCsvList(orgPolicy?.webBlacklistIps)}
                 onChange={next => handleUpdatePolicyList('webBlacklistIps', next)}
                 disabled={savingPolicy}
+                tone="blacklist"
               />
               <IpTagInput
                 label={m.labelApiIps}
@@ -932,6 +937,7 @@ export default function MerchantKeysUsersPage() {
                 value={parseCsvList(orgPolicy?.apiBlacklistIps)}
                 onChange={next => handleUpdatePolicyList('apiBlacklistIps', next)}
                 disabled={savingPolicy}
+                tone="blacklist"
               />
             </div>
           )}

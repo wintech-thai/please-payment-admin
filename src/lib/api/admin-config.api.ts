@@ -41,6 +41,7 @@ export interface ClientIpSourceConfigResponse {
   status?: string
   description?: string
   resolvedIp?: string | null
+  rawHeaderValue?: string | null
   configuration?: {
     configId?: string
     orgId?: string
@@ -54,6 +55,7 @@ export interface ClientIpSourceConfigResponse {
 export interface ClientIpDebugResponse {
   resolvedIp?: string | null
   note?: string
+  rawHeaderValue?: string | null
   sourceType?: string | null
   headerName?: string | null
 }

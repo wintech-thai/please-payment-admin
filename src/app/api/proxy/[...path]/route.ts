@@ -28,6 +28,13 @@ async function handler(request: NextRequest, { params }: { params: { path: strin
     if (v) headers[h] = v
   }
 
+  // Proves to onix-api that this request genuinely came from our own trusted backend
+  // relay (not a spoofed direct call) — lets the blacklist middleware skip its check for
+  // this internal-to-internal traffic. MUTUAL_KEY is a server-only secret env var.
+  if (process.env.MUTUAL_KEY) {
+    headers['X-Forward-Mutual-Key'] = process.env.MUTUAL_KEY
+  }
+
   // Prefer the Authorization header from the incoming request (axios already base64-encoded it).
   // Fall back to cookie value with base64 encoding for SSR or direct calls.
   const incomingAuth = request.headers.get('Authorization')

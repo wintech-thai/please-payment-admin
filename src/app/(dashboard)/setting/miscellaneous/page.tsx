@@ -60,6 +60,7 @@ function ClientIpSourceSection({ scope, title, desc }: { scope: ClientIpScope; t
 
   const [resolvedIp, setResolvedIp] = useState<string | null | undefined>(undefined)
   const [note, setNote] = useState<string | undefined>(undefined)
+  const [rawHeaderValue, setRawHeaderValue] = useState<string | null | undefined>(undefined)
   const [testing, setTesting] = useState(false)
 
   const refreshResolvedIp = async () => {
@@ -67,11 +68,13 @@ function ClientIpSourceSection({ scope, title, desc }: { scope: ClientIpScope; t
       const res = await adminConfigApi.getClientIpDebug()
       setResolvedIp(res.resolvedIp)
       setNote(res.note)
+      setRawHeaderValue(res.rawHeaderValue)
       return null
     }
     const res = await adminConfigApi.getClientIpSource('Api')
     setResolvedIp(res.data?.resolvedIp)
     setNote(undefined)
+    setRawHeaderValue(res.data?.rawHeaderValue)
     return res
   }
 
@@ -215,7 +218,6 @@ function ClientIpSourceSection({ scope, title, desc }: { scope: ClientIpScope; t
                 {editing ? (
                   <input
                     type="number"
-                    min={0}
                     step={1}
                     value={headerIndex}
                     onChange={e => setHeaderIndex(e.target.value)}
@@ -246,10 +248,16 @@ function ClientIpSourceSection({ scope, title, desc }: { scope: ClientIpScope; t
         {!editing && (
           <div className="border-t border-gray-100 pt-5">
             <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{m.currentIpTitle}</p>
                 <p className="text-sm font-semibold text-gray-900 mt-0.5 font-mono">{resolvedIp || '—'}</p>
                 <p className="text-xs text-gray-400 mt-1">{note || m.currentIpTestHint}</p>
+                {rawHeaderValue && (
+                  <p className="text-xs text-gray-500 mt-2 font-mono break-all">
+                    <span className="font-sans text-gray-400">{m.rawHeaderValueLabel}: </span>
+                    {rawHeaderValue}
+                  </p>
+                )}
               </div>
               <button
                 onClick={handleTest}

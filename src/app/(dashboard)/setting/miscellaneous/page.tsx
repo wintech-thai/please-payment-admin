@@ -1,4 +1,5 @@
 'use client'
+// trigger rebuild
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
@@ -253,10 +254,10 @@ function ClientIpSourceSection({ scope, title, desc }: { scope: ClientIpScope; t
                 <p className="text-sm font-semibold text-gray-900 mt-0.5 font-mono">{resolvedIp || '—'}</p>
                 <p className="text-xs text-gray-400 mt-1">{note || m.currentIpTestHint}</p>
                 {rawHeaderValue && (
-                  <p className="text-xs text-gray-500 mt-2 font-mono break-all">
-                    <span className="font-sans text-gray-400">{m.rawHeaderValueLabel}: </span>
-                    {rawHeaderValue}
-                  </p>
+                  <div className="mt-2.5 pt-2.5 border-t border-gray-200">
+                    <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{m.rawHeaderValueLabel}</p>
+                    <p className="text-xs font-mono font-semibold text-gray-900 break-all mt-0.5">{rawHeaderValue}</p>
+                  </div>
                 )}
               </div>
               <button

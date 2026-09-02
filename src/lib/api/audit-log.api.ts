@@ -11,6 +11,7 @@ export interface AuditLogDocument {
   resource: string
   status_code: number
   client_ip: string
+  remote_ip: string
   [key: string]: unknown
 }
 

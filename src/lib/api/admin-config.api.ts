@@ -27,6 +27,10 @@ export interface PresignedUrlResponse {
   url?: string
 }
 
+// "Backend" = the Admin/Merchant Next.js apps, "Api" = onix-api itself. Each side has
+// its own independent Client IP Source config now — they no longer share one setting.
+export type ClientIpScope = 'Backend' | 'Api'
+
 export interface ClientIpSourceConfigData {
   sourceType?: string // Native | Header
   headerName?: string
@@ -73,11 +77,11 @@ export const adminConfigApi = {
   getLogoUploadPresignedUrl: (payload: { mimeType: string }) =>
     client.post<PresignedUrlResponse>(`${BASE}/GetBrandLogoUploadPresignedUrl`, payload),
 
-  getClientIpSource: () =>
-    client.get<ClientIpSourceConfigResponse>(`${BASE}/GetClientIpSource`),
+  getClientIpSource: (scope: ClientIpScope) =>
+    client.get<ClientIpSourceConfigResponse>(`${BASE}/GetClientIpSource/${scope}`),
 
-  setClientIpSource: (payload: ClientIpSourceConfigData) =>
-    client.post(`${BASE}/SetClientIpSource`, { ClientIpSourceConfig: payload }),
+  setClientIpSource: (scope: ClientIpScope, payload: ClientIpSourceConfigData) =>
+    client.post(`${BASE}/SetClientIpSource/${scope}`, { ClientIpSourceConfig: payload }),
 
   // Resolved directly by this Admin app's own Next.js pod (not proxied to onix-api) —
   // lets you tell apart "ingress isn't forwarding the header to the Admin pod" from

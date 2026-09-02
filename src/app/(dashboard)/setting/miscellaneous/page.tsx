@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import clsx from 'clsx'
-import { adminConfigApi } from '@/lib/api/admin-config.api'
+import { adminConfigApi, type ClientIpScope } from '@/lib/api/admin-config.api'
 import { useLang } from '@/context/LanguageContext'
 import { RefreshCw } from 'lucide-react'
 
@@ -33,14 +33,19 @@ export default function MiscellaneousPage() {
         </button>
       </div>
 
-      {tab === 'client-ip' && <ClientIpSourceTab />}
+      {tab === 'client-ip' && (
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-5 pb-2">
+          <ClientIpSourceSection scope="Backend" title={m.scopeBackendTitle} desc={m.scopeBackendDesc} />
+          <ClientIpSourceSection scope="Api" title={m.scopeApiTitle} desc={m.scopeApiDesc} />
+        </div>
+      )}
     </div>
   )
 }
 
 const SOURCE_TYPES = ['Native', 'Header'] as const
 
-function ClientIpSourceTab() {
+function ClientIpSourceSection({ scope, title, desc }: { scope: ClientIpScope; title: string; desc: string }) {
   const { t } = useLang()
   const m = t.misc
 
@@ -54,30 +59,28 @@ function ClientIpSourceTab() {
   const [errors, setErrors] = useState<{ headerName?: string }>({})
 
   const [resolvedIp, setResolvedIp] = useState<string | null | undefined>(undefined)
-  const [backendResolvedIp, setBackendResolvedIp] = useState<string | null | undefined>(undefined)
-  const [backendNote, setBackendNote] = useState<string | undefined>(undefined)
+  const [note, setNote] = useState<string | undefined>(undefined)
   const [testing, setTesting] = useState(false)
 
-  const refreshResolvedIps = async () => {
-    const [apiRes, backendRes] = await Promise.allSettled([
-      adminConfigApi.getClientIpSource(),
-      adminConfigApi.getClientIpDebug(),
-    ])
-    if (apiRes.status === 'fulfilled') setResolvedIp(apiRes.value.data?.resolvedIp)
-    if (backendRes.status === 'fulfilled') {
-      setBackendResolvedIp(backendRes.value.resolvedIp)
-      setBackendNote(backendRes.value.note)
+  const refreshResolvedIp = async () => {
+    if (scope === 'Backend') {
+      const res = await adminConfigApi.getClientIpDebug()
+      setResolvedIp(res.resolvedIp)
+      setNote(res.note)
+      return null
     }
-    return apiRes
+    const res = await adminConfigApi.getClientIpSource('Api')
+    setResolvedIp(res.data?.resolvedIp)
+    setNote(undefined)
+    return res
   }
 
   const load = async () => {
     setLoading(true)
     try {
-      const apiRes = await refreshResolvedIps()
-      if (apiRes.status === 'rejected') throw apiRes.reason
-      const raw = apiRes.value.data
-      const cfg = raw?.configuration?.clientIpSourceConfig
+      const apiRes = await refreshResolvedIp()
+      const cfgRes = apiRes ?? await adminConfigApi.getClientIpSource(scope)
+      const cfg = cfgRes.data?.configuration?.clientIpSourceConfig
       setSourceType((cfg?.sourceType as 'Native' | 'Header') ?? 'Native')
       setHeaderName(cfg?.headerName ?? '')
       setHeaderIndex(cfg?.headerIndex != null ? String(cfg.headerIndex) : '0')
@@ -91,12 +94,12 @@ function ClientIpSourceTab() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTest = async () => {
     setTesting(true)
     try {
-      await refreshResolvedIps()
+      await refreshResolvedIp()
     } catch {
       /* keep last known value */
     } finally {
@@ -117,7 +120,7 @@ function ClientIpSourceTab() {
     }
     setSaving(true)
     try {
-      await adminConfigApi.setClientIpSource({
+      await adminConfigApi.setClientIpSource(scope, {
         SourceType: sourceType,
         HeaderName: sourceType === 'Header' ? headerName.trim() : undefined,
         HeaderIndex: sourceType === 'Header' ? parseInt(headerIndex || '0', 10) : undefined,
@@ -134,16 +137,19 @@ function ClientIpSourceTab() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex items-center justify-center h-40 bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="flex-none px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <p className="text-sm text-gray-500">{m.clientIpDesc}</p>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-bold text-gray-900">{title}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+        </div>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
@@ -157,7 +163,7 @@ function ClientIpSourceTab() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      <div className="p-6 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">{m.fieldSourceType}</label>
@@ -231,14 +237,20 @@ function ClientIpSourceTab() {
             <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
-            <p className="text-xs text-amber-700">{m.sourceTypeNativeWarning}</p>
+            <p className="text-xs text-amber-700">
+              {scope === 'Backend' ? m.sourceTypeNativeWarningBackend : m.sourceTypeNativeWarning}
+            </p>
           </div>
         )}
 
         {!editing && (
           <div className="border-t border-gray-100 pt-5">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <p className="text-xs text-gray-400">{m.currentIpTestHint}</p>
+            <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{m.currentIpTitle}</p>
+                <p className="text-sm font-semibold text-gray-900 mt-0.5 font-mono">{resolvedIp || '—'}</p>
+                <p className="text-xs text-gray-400 mt-1">{note || m.currentIpTestHint}</p>
+              </div>
               <button
                 onClick={handleTest}
                 disabled={testing}
@@ -248,24 +260,12 @@ function ClientIpSourceTab() {
                 {m.currentIpTestButton}
               </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{m.currentIpBackendTitle}</p>
-                <p className="text-sm font-semibold text-gray-900 mt-0.5 font-mono">{backendResolvedIp || '—'}</p>
-                <p className="text-xs text-gray-400 mt-1">{backendNote || m.currentIpBackendHint}</p>
-              </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{m.currentIpApiTitle}</p>
-                <p className="text-sm font-semibold text-gray-900 mt-0.5 font-mono">{resolvedIp || '—'}</p>
-                <p className="text-xs text-gray-400 mt-1">{m.currentIpApiHint}</p>
-              </div>
-            </div>
           </div>
         )}
       </div>
 
       {editing && (
-        <div className="flex-none px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-3">
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-3">
           <button
             onClick={handleCancel}
             disabled={saving}

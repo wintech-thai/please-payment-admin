@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   let cfg: ClientIpSourceConfig | null = null
 
   try {
-    const res = await fetch(`${BACKEND_URL}/admin-api/AdminConfiguration/org/global/action/GetClientIpSource`, {
+    const res = await fetch(`${BACKEND_URL}/admin-api/AdminConfiguration/org/global/action/GetClientIpSource/Backend`, {
       cache: 'no-store',
     })
     const data = await res.json().catch(() => null)

@@ -29,6 +29,7 @@ export default function UpdateMerchantPage() {
   const [payOutMin, setPayOutMin] = useState<string>('0')
   const [payOutMax, setPayOutMax] = useState<string>('0')
   const [payoutPartialCountLimitP2P, setPayoutPartialCountLimitP2P] = useState<string>('5')
+  const [payoutNotMatchActionP2P, setPayoutNotMatchActionP2P] = useState<string>('')
   const [payinDailyAmountLimit, setPayinDailyAmountLimit] = useState<string>('0')
   const [payinDailyCountLimit, setPayinDailyCountLimit] = useState<string>('0')
   const [discardCent, setDiscardCent] = useState(false)
@@ -96,6 +97,7 @@ export default function UpdateMerchantPage() {
         setPayOutMin(merch.payoutMinAmount != null ? String(merch.payoutMinAmount) : '0')
         setPayOutMax(merch.payoutMaxAmount != null ? String(merch.payoutMaxAmount) : '0')
         setPayoutPartialCountLimitP2P(merch.payoutPartialCountLimitP2P != null ? String(merch.payoutPartialCountLimitP2P) : '5')
+        setPayoutNotMatchActionP2P(merch.payoutNotMatchActionP2P ?? '')
         setPayinDailyAmountLimit(merch.payinDailyTxAmountLimit != null ? String(merch.payinDailyTxAmountLimit) : '0')
         setPayinDailyCountLimit(merch.payinDailyTxCountLimit != null ? String(merch.payinDailyTxCountLimit) : '0')
         setDiscardCent(merch.discardCent ?? false)
@@ -156,6 +158,7 @@ export default function UpdateMerchantPage() {
         PayoutMinAmount: payOutMin,
         PayoutMaxAmount: payOutMax,
         PayoutPartialCountLimitP2P: parseInt(payoutPartialCountLimitP2P || '0', 10),
+        PayoutNotMatchActionP2P: payoutNotMatchActionP2P || undefined,
         PayinDailyTxAmountLimit: payinDailyAmountLimit,
         PayinDailyTxCountLimit: payinDailyCountLimit,
         DiscardCent: discardCent,
@@ -478,6 +481,18 @@ export default function UpdateMerchantPage() {
                       className={inputCls(false)}
                     />
                     <p className="text-xs text-gray-400 mt-1">{m.hintZeroNoLimit}</p>
+                  </FormField>
+                  <FormField label={m.fieldPayoutNotMatchActionP2P}>
+                    <select
+                      value={payoutNotMatchActionP2P}
+                      onChange={e => { setPayoutNotMatchActionP2P(e.target.value); markDirty() }}
+                      className={inputCls(false)}
+                    >
+                      <option value="">{m.payoutNotMatchActionNotSet}</option>
+                      <option value="UseNative">{m.payoutNotMatchActionUseNative}</option>
+                      <option value="Reject">{m.payoutNotMatchActionReject}</option>
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">{m.fieldPayoutNotMatchActionP2PHint}</p>
                   </FormField>
                 </div>
               </div>

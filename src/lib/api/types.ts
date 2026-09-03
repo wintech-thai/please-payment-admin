@@ -183,6 +183,7 @@ export interface MerchantItem {
   payinExpireMinute?: number | null
   riskPolicyId?: string | null
   payoutPartialCountLimitP2P?: number | null
+  payoutNotMatchActionP2P?: string | null
 }
 
 export interface GetMerchantsPayload {
@@ -239,6 +240,7 @@ export interface UpdateMerchantPayload {
   PayinExpireMinute?: number
   RiskPolicyId?: string | null
   PayoutPartialCountLimitP2P?: number
+  PayoutNotMatchActionP2P?: string
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────

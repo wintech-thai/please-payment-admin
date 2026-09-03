@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
-import { Search, Plus, ChevronLeft, ChevronRight, Ban, CheckCircle, Trash2 } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight, Ban, CheckCircle, Trash2, Globe } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { iocApi, type IocItem } from '@/lib/api/ioc.api'
@@ -406,6 +406,11 @@ function IndicatorOfCompromiseContent() {
                             danger: item.status?.toLowerCase() === 'active',
                             success: item.status?.toLowerCase() !== 'active',
                             onClick: () => handleToggle(item),
+                          },
+                          {
+                            label: m.reputationCheck,
+                            icon: <Globe className="w-4 h-4" />,
+                            onClick: () => window.open(`https://www.google.com/search?q=${encodeURIComponent(item.iocValue ?? '')}`, '_blank', 'noopener,noreferrer'),
                           },
                         ]} />
                       </td>

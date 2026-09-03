@@ -755,15 +755,18 @@ export default function PayInRequestDetailPage() {
       }
 
       const jobId = raw?.jobId ?? raw?.JobId
-      if (jobId) {
-        setLoadingJob(true)
-        try {
-          const jobRes = await paymentRequestApi.getPaymentRequestJobById(id, jobId)
-          const jobData = jobRes.data as any
-          setJob(jobData?.job ?? jobData?.Job ?? jobData)
-        } catch { /* job section will show no data */ }
-        finally { setLoadingJob(false) }
-      }
+      setLoadingJob(true)
+      try {
+        const jobRes = jobId
+          ? await paymentRequestApi.getPaymentRequestJobById(id, jobId)
+          : await paymentRequestApi.getPaymentRequestJobByRefId(id)
+        const jobData = jobRes.data as any
+        const foundJob = jobData?.job ?? jobData?.Job ?? jobData
+        if (foundJob && (foundJob.id ?? foundJob.Id)) {
+          setJob(foundJob)
+        }
+      } catch { /* job section will show no data */ }
+      finally { setLoadingJob(false) }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to load payment request detail')
     } finally {
@@ -943,9 +946,9 @@ export default function PayInRequestDetailPage() {
                 ? <span className="font-semibold tabular-nums">{formatAmount(detail.generatedAmount)}</span>
                 : '—'}
             </InfoRow>
-            <InfoRow label={m.fieldBank}>{detail?.payinBankCode ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldAccountNo}>{detail?.payinBankAccountNo ?? '—'}</InfoRow>
-            <InfoRow label={m.fieldAccountName}>{detail?.payinBankAccountName ?? '—'}</InfoRow>
+            <InfoRow label={m.fieldBank}>{detail?.payinBankCode || '—'}</InfoRow>
+            <InfoRow label={m.fieldAccountNo}>{detail?.payinBankAccountNo || '—'}</InfoRow>
+            <InfoRow label={m.fieldAccountName}>{detail?.payinBankAccountName || '—'}</InfoRow>
             <InfoRow label={m.fieldAccountType}>
               {detail?.payinAccountType ? (
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1019,7 +1022,7 @@ export default function PayInRequestDetailPage() {
         </div>
 
         {/* Job */}
-        {(detail?.jobId || loadingJob) && (
+        {(detail?.jobId || loadingJob || job) && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
             <SectionHeader>{m.sectionJob}</SectionHeader>
             {loadingJob ? (

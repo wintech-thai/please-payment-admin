@@ -755,14 +755,6 @@ export default function PayInTransactionsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{m.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          disabled
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg opacity-40 cursor-not-allowed"
-        >
-          <Plus className="w-4 h-4" />
-          {m.btnCreateTx}
-        </button>
       </div>
 
       {/* Filters */}

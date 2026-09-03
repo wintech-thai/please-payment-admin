@@ -1277,7 +1277,7 @@ export default function PayInRequestsPage() {
                     >
                       {/* Date + ref */}
                       <td
-                        className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group"
+                        className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group align-top"
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/pay-in-requests/${item.id}`) }}
                       >
                         <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
@@ -1286,12 +1286,12 @@ export default function PayInRequestsPage() {
                         )}
                       </td>
 
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="px-4 py-3 border-b border-gray-100 align-top">
                         <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
                         {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
                       </td>
 
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap align-top">
                         <p className="text-sm font-semibold text-gray-800 tabular-nums">
                           {formatAmount(item.generatedAmount)}
                         </p>
@@ -1299,7 +1299,7 @@ export default function PayInRequestsPage() {
                       </td>
 
                       {/* Fee */}
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap align-top">
                         {item.payInFeePct != null && item.payInFeePct > 0 ? (
                           <>
                             {item.generatedAmount != null && (
@@ -1312,7 +1312,7 @@ export default function PayInRequestsPage() {
                         )}
                       </td>
 
-                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
+                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px] align-top">
                         {item.payinBankCode || item.payinBankAccountNo ? (
                           <p className="text-sm font-semibold text-gray-800">{[item.payinBankCode, item.payinBankAccountNo].filter(Boolean).join(' · ')}</p>
                         ) : (
@@ -1332,11 +1332,11 @@ export default function PayInRequestsPage() {
                         </div>
                       </td>
 
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap align-top">
                         <p className="text-sm text-gray-700">{item.payerName ?? '—'}</p>
                       </td>
 
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="px-4 py-3 border-b border-gray-100 align-top">
                         <StatusBadge
                           status={item.status}
                           createdDate={item.createdDate}
@@ -1371,7 +1371,7 @@ export default function PayInRequestsPage() {
                       </td>
 
                       {/* REF */}
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="px-4 py-3 border-b border-gray-100 align-top">
                         <div className="flex flex-col gap-0.5">
                           {item.refId1 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId1}</span> : null}
                           {item.refId2 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId2}</span> : null}
@@ -1381,7 +1381,7 @@ export default function PayInRequestsPage() {
                       </td>
 
                       {/* Action */}
-                      <td className="px-4 py-3 border-b border-gray-100 text-center">
+                      <td className="px-4 py-3 border-b border-gray-100 text-center align-top">
                         <ActionMenu
                           item={item}
                           onApprove={() => setApproveTarget(item)}

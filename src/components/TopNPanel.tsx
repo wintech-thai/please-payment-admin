@@ -21,9 +21,11 @@ interface Props {
   iconWrapClassName?: string
   variant?: 'default' | 'warning'
   topBarClassName?: string
+  valueFormatter?: (docCount: number) => string
 }
 
-export function TopNPanel({ title, data, activeKey, onSelect, colCountLabel, loading, emptyLabel, accentClassName, icon: Icon, iconWrapClassName, variant = 'default', topBarClassName }: Props) {
+export function TopNPanel({ title, data, activeKey, onSelect, colCountLabel, loading, emptyLabel, accentClassName, icon: Icon, iconWrapClassName, variant = 'default', topBarClassName, valueFormatter }: Props) {
+  const formatValue = valueFormatter || ((n: number) => n.toLocaleString())
   const maxCount = Math.max(1, ...data.map(d => d.doc_count))
   const isWarning = variant === 'warning'
 
@@ -57,7 +59,7 @@ export function TopNPanel({ title, data, activeKey, onSelect, colCountLabel, loa
               <button
                 key={bucket.key}
                 onClick={() => onSelect(bucket.key)}
-                title={`${bucket.key} — ${bucket.doc_count.toLocaleString()} ${colCountLabel}`}
+                title={`${bucket.key} — ${formatValue(bucket.doc_count)} ${colCountLabel}`}
                 className={clsx(
                   'relative flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors overflow-hidden flex-shrink-0',
                   isActive
@@ -70,7 +72,7 @@ export function TopNPanel({ title, data, activeKey, onSelect, colCountLabel, loa
                   style={{ width: `${pct}%` }}
                 />
                 <span className={clsx('relative z-10 truncate font-medium max-w-[65%]', isWarning ? 'text-red-700' : 'text-gray-700')}>{bucket.key || '—'}</span>
-                <span className={clsx('relative z-10 font-mono font-bold flex-shrink-0', isWarning ? 'text-red-900' : 'text-gray-900')}>{bucket.doc_count.toLocaleString()}</span>
+                <span className={clsx('relative z-10 font-mono font-bold flex-shrink-0', isWarning ? 'text-red-900' : 'text-gray-900')}>{formatValue(bucket.doc_count)}</span>
               </button>
             )
           })

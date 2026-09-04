@@ -64,6 +64,34 @@ function StatusBadge({ status, t }: { status?: string | null; t: any }) {
   )
 }
 
+// สีไล่ระดับความเสี่ยง: Trusted (ปลอดภัยสุด) -> Neutral -> Unknown -> Suspicious -> Malicious (อันตรายสุด)
+const REPUTATION_STYLES: Record<string, { dot: string; badge: string }> = {
+  trusted: { dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
+  neutral: { dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600 ring-slate-200' },
+  unknown: { dot: 'bg-sky-400', badge: 'bg-sky-50 text-sky-700 ring-sky-200' },
+  suspicious: { dot: 'bg-amber-500', badge: 'bg-amber-50 text-amber-700 ring-amber-200' },
+  malicious: { dot: 'bg-red-500', badge: 'bg-red-50 text-red-700 ring-red-200' },
+}
+
+function ReputationBadge({ reputation, t }: { reputation?: string | null; t: any }) {
+  if (!reputation) return <span className="text-sm text-gray-400">—</span>
+  const key = reputation.toLowerCase()
+  const style = REPUTATION_STYLES[key] ?? REPUTATION_STYLES.unknown
+  const labelMap: Record<string, string> = {
+    trusted: t.ioc.reputationTrusted,
+    neutral: t.ioc.reputationNeutral,
+    unknown: t.ioc.reputationUnknown,
+    suspicious: t.ioc.reputationSuspicious,
+    malicious: t.ioc.reputationMalicious,
+  }
+  return (
+    <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', style.badge)}>
+      <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', style.dot)} />
+      {labelMap[key] ?? reputation}
+    </span>
+  )
+}
+
 function IndicatorOfCompromiseContent() {
   const { t } = useLang()
   const m = t.ioc
@@ -394,7 +422,7 @@ function IndicatorOfCompromiseContent() {
                           <ScoreBar label={m.scoreConfidenceAbbr} title={m.fieldConfidenceScore} value={item.confidenceScore} />
                         </div>
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">{item.reputation ?? '—'}</td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap"><ReputationBadge reputation={item.reputation} t={t} /></td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={item.status} t={t} />
                       </td>

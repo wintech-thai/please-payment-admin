@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { RefreshCcw, X, ShieldAlert, Code2, Users, Globe, AlertTriangle } from 'lucide-react'
+import { RefreshCcw, X, ShieldAlert, Code2, Users, Globe, AlertTriangle, Timer } from 'lucide-react'
 import clsx from 'clsx'
 import { toast } from 'sonner'
 import { useLang } from '@/context/LanguageContext'
@@ -75,6 +75,7 @@ export default function SystemMonitoringPage() {
   const [ipBuckets, setIpBuckets] = useState<TopNBucket[]>([])
   const [statusBuckets, setStatusBuckets] = useState<TopNBucket[]>([])
   const [bruteforceBuckets, setBruteforceBuckets] = useState<TopNBucket[]>([])
+  const [apiLatencyBuckets, setApiLatencyBuckets] = useState<TopNBucket[]>([])
 
   const [filterApi, setFilterApi] = useState<string | null>(null)
   const [filterUser, setFilterUser] = useState<string | null>(null)
@@ -139,6 +140,7 @@ export default function SystemMonitoringPage() {
         setIpBuckets((aggs.by_ip?.buckets || []).map((b: any) => ({ key: String(b.key), doc_count: b.doc_count })))
         setStatusBuckets((aggs.by_status?.buckets || []).map((b: any) => ({ key: String(b.key), doc_count: b.doc_count })))
         setBruteforceBuckets((aggs.bruteforce?.by_ip?.buckets || []).map((b: any) => ({ key: String(b.key), doc_count: b.doc_count })))
+        setApiLatencyBuckets((aggs.by_api_latency || []).map((b: any) => ({ key: String(b.key), doc_count: Math.round(b.avg_latency_ms) })))
       } else {
         throw new Error(result.message)
       }
@@ -150,6 +152,7 @@ export default function SystemMonitoringPage() {
       setIpBuckets([])
       setStatusBuckets([])
       setBruteforceBuckets([])
+      setApiLatencyBuckets([])
     } finally {
       setIsLoading(false)
     }
@@ -340,6 +343,21 @@ export default function SystemMonitoringPage() {
             topBarClassName="bg-gradient-to-r from-emerald-400 to-teal-500"
           />
         </div>
+
+        {/* Avg latency by API — helps decide which API to tune performance on first */}
+        <TopNPanel
+          title={sm.panelByApiLatency}
+          data={apiLatencyBuckets}
+          activeKey={filterApi}
+          onSelect={key => setFilterApi(prev => prev === key ? null : key)}
+          colCountLabel={sm.colLatencyMs}
+          valueFormatter={n => `${n.toLocaleString()} ${sm.colLatencyMs}`}
+          loading={isLoading}
+          accentClassName="bg-rose-500"
+          icon={Timer}
+          iconWrapClassName="bg-rose-50 text-rose-600"
+          topBarClassName="bg-gradient-to-r from-rose-400 to-pink-500"
+        />
 
         {/* Bruteforce detection */}
         <TopNPanel

@@ -140,7 +140,7 @@ export default function SystemMonitoringPage() {
         setIpBuckets((aggs.by_ip?.buckets || []).map((b: any) => ({ key: String(b.key), doc_count: b.doc_count })))
         setStatusBuckets((aggs.by_status?.buckets || []).map((b: any) => ({ key: String(b.key), doc_count: b.doc_count })))
         setBruteforceBuckets((aggs.bruteforce?.by_ip?.buckets || []).map((b: any) => ({ key: String(b.key), doc_count: b.doc_count })))
-        setApiLatencyBuckets((aggs.by_api_latency || []).map((b: any) => ({ key: String(b.key), doc_count: Math.round(b.avg_latency_ms) })))
+        setApiLatencyBuckets((aggs.by_api_latency || []).map((b: any) => ({ key: String(b.key), doc_count: Math.round(b.avg_latency_ms), sampleCount: b.doc_count })))
       } else {
         throw new Error(result.message)
       }
@@ -351,7 +351,9 @@ export default function SystemMonitoringPage() {
           activeKey={filterApi}
           onSelect={key => setFilterApi(prev => prev === key ? null : key)}
           colCountLabel={sm.colLatencyMs}
-          valueFormatter={n => `${n.toLocaleString()} ${sm.colLatencyMs}`}
+          valueFormatter={n => n.toLocaleString()}
+          sampleCountLabel={sm.colCount}
+          valueLabel={sm.colLatencyMs}
           loading={isLoading}
           accentClassName="bg-rose-500"
           icon={Timer}

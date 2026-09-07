@@ -1,7 +1,6 @@
 import { client } from '@/lib/axios'
 import type {
   CurrencyAccountItem,
-  CryptoCurrencyItem,
   GetCurrencyAccountsPayload,
   AddCurrencyAccountPayload,
   UpdateCurrencyAccountPayload,
@@ -10,9 +9,6 @@ import type {
 const BASE = '/admin-api/AdminCurrencyAccount/org/global/action'
 
 export const cryptoAccountApi = {
-  getAvailableCryptoCurrencies: () =>
-    client.get<{ cryptoCurrencies: CryptoCurrencyItem[] }>(`${BASE}/GetAvailableCryptoCurrencies`),
-
   getCurrencyAccounts: (payload: GetCurrencyAccountsPayload = {}) =>
     client.post<{ currencyAccounts: CurrencyAccountItem[] }>(`${BASE}/GetCurrencyAccounts`, {
       CurrencyCategory: 'CRYPTO',

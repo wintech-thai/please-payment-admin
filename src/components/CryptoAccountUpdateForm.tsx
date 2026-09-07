@@ -5,7 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import { cryptoAccountApi } from '@/lib/api/crypto-account.api'
 import type { CurrencyAccountItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, X, Copy, Check, Coins } from 'lucide-react'
+import { ChevronLeft, X, Copy, Check } from 'lucide-react'
+import CurrencyLogo from '@/components/CurrencyLogo'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
@@ -206,7 +207,7 @@ export function CryptoAccountUpdateForm({ accountType }: { accountType: AccountT
           <p className="text-sm text-gray-500 mt-0.5">{m.editSubtitle}</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-primary-50 rounded-lg">
-          <Coins className="w-4 h-4 text-primary-600" />
+          <CurrencyLogo code={account?.currency} category="CRYPTO" size={20} />
           <div>
             <p className="text-[10px] font-semibold text-primary-400 uppercase tracking-wide">{m.selectedCurrencyLabel}</p>
             <p className="text-sm font-bold text-primary-700 leading-tight">{account?.currency} <span className="font-normal text-primary-500">{account?.currencyName}</span></p>

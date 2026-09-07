@@ -460,14 +460,6 @@ export interface CurrencyAccountItem {
   currentWalletBalanceDecimal?: number | null
 }
 
-export interface CryptoCurrencyItem {
-  code: string
-  name?: string | null
-  defaultNetwork?: string | null
-  defaultDecimal?: number | null
-  isToken?: boolean | null
-}
-
 export interface GetCurrencyAccountsPayload {
   FullTextSearch?: string
   CurrencyCode?: string

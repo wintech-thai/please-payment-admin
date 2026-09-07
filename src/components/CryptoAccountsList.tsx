@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams, usePathname } from 'next/navigation'
 import { cryptoAccountApi } from '@/lib/api/crypto-account.api'
 import type { CurrencyAccountItem } from '@/lib/api/types'
+import CurrencyLogo from '@/components/CurrencyLogo'
 import { toast } from 'sonner'
 import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Webhook, Wallet, Coins, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
@@ -398,14 +399,17 @@ function CryptoAccountsContent({ accountType }: { accountType: AccountType }) {
                         <Link
                           href={`${pathname}/${account.accountId}/update`}
                           onClick={e => e.stopPropagation()}
-                          className="block"
+                          className="flex items-center gap-2.5"
                         >
-                          <span className={clsx('font-semibold text-sm hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}>
-                            {account.currency || '—'}
-                          </span>
-                          {account.currencyName && (
-                            <span className="block text-xs text-gray-400">{account.currencyName}</span>
-                          )}
+                          <CurrencyLogo code={account.currency} category="CRYPTO" size={28} />
+                          <div>
+                            <span className={clsx('font-semibold text-sm hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}>
+                              {account.currency || '—'}
+                            </span>
+                            {account.currencyName && (
+                              <span className="block text-xs text-gray-400">{account.currencyName}</span>
+                            )}
+                          </div>
                         </Link>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">

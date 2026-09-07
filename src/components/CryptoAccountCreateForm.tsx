@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cryptoAccountApi } from '@/lib/api/crypto-account.api'
-import type { CryptoCurrencyItem } from '@/lib/api/types'
+import { currencyApi } from '@/lib/api/currency.api'
+import type { AvailableCurrencyItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Search, Coins, X } from 'lucide-react'
+import { ChevronLeft, Search, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
+import CurrencyLogo from '@/components/CurrencyLogo'
 import { useLang } from '@/context/LanguageContext'
 
 type AccountType = 'PayIn' | 'Transit' | 'PayOut'
@@ -20,15 +22,15 @@ const LIST_PATH: Record<AccountType, string> = {
 }
 
 function CurrencyPickerModal({ currencies, loading, onPick, onClose }: {
-  currencies: CryptoCurrencyItem[]; loading: boolean; onPick: (item: CryptoCurrencyItem) => void; onClose: () => void
+  currencies: AvailableCurrencyItem[]; loading: boolean; onPick: (item: AvailableCurrencyItem) => void; onClose: () => void
 }) {
   const { t } = useLang()
   const m = t.cryptoAccount
   const [search, setSearch] = useState('')
 
   const filtered = currencies.filter(c =>
-    c.code.toLowerCase().includes(search.trim().toLowerCase()) ||
-    (c.name || '').toLowerCase().includes(search.trim().toLowerCase())
+    (c.currencyCoode || '').toLowerCase().includes(search.trim().toLowerCase()) ||
+    (c.currencyName || '').toLowerCase().includes(search.trim().toLowerCase())
   )
 
   return (
@@ -62,16 +64,14 @@ function CurrencyPickerModal({ currencies, loading, onPick, onClose }: {
           ) : (
             filtered.map(c => (
               <button
-                key={c.code}
+                key={c.currencyCoode}
                 onClick={() => onPick(c)}
                 className="w-full flex items-center gap-3 px-6 py-3 hover:bg-gray-50 transition-colors text-left"
               >
-                <div className="w-8 h-8 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center flex-shrink-0">
-                  <Coins className="w-4 h-4" />
-                </div>
+                <CurrencyLogo code={c.currencyCoode} category="CRYPTO" size={32} />
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">{c.code}</p>
-                  <p className="text-xs text-gray-400">{c.name}</p>
+                  <p className="text-sm font-semibold text-gray-800">{c.currencyCoode}</p>
+                  <p className="text-xs text-gray-400">{c.currencyName}</p>
                 </div>
               </button>
             ))
@@ -90,14 +90,14 @@ export function CryptoAccountCreateForm({ accountType }: { accountType: AccountT
   const createTitle = accountType === 'PayIn' ? m.createTitlePayIn : accountType === 'Transit' ? m.createTitleTransit : m.createTitlePayOut
 
   const [currency, setCurrency] = useState<{ code: string; name: string } | null>(null)
-  const [currencies, setCurrencies] = useState<CryptoCurrencyItem[]>([])
+  const [currencies, setCurrencies] = useState<AvailableCurrencyItem[]>([])
   const [loadingCurrencies, setLoadingCurrencies] = useState(true)
 
   useEffect(() => {
-    cryptoAccountApi.getAvailableCryptoCurrencies()
+    currencyApi.getAvailableCryptoCurrencies()
       .then(res => {
         const raw = res.data as any
-        setCurrencies(Array.isArray(raw) ? raw : (raw?.cryptoCurrencies ?? raw?.CryptoCurrencies ?? []))
+        setCurrencies(Array.isArray(raw) ? raw : (raw?.currencies ?? raw?.Currencies ?? []))
       })
       .catch(() => toast.error(m.failedToLoadCurrencies))
       .finally(() => setLoadingCurrencies(false))
@@ -212,9 +212,9 @@ export function CryptoAccountCreateForm({ accountType }: { accountType: AccountT
         currencies={currencies}
         loading={loadingCurrencies}
         onPick={(item) => {
-          setCurrency({ code: item.code, name: item.name || item.code })
-          if (item.defaultNetwork) setWalletNetwork(item.defaultNetwork)
-          if (item.defaultDecimal != null) setCryptoDecimal(String(item.defaultDecimal))
+          const code = item.currencyCoode || ''
+          setCurrency({ code, name: item.currencyName || code })
+          if (item.decimal != null) setCryptoDecimal(String(item.decimal))
         }}
         onClose={() => router.push(listPath)}
       />
@@ -237,7 +237,7 @@ export function CryptoAccountCreateForm({ accountType }: { accountType: AccountT
           <p className="text-sm text-gray-500 mt-0.5">{m.createSubtitle}</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-primary-50 rounded-lg">
-          <Coins className="w-4 h-4 text-primary-600" />
+          <CurrencyLogo code={currency.code} category="CRYPTO" size={20} />
           <div>
             <p className="text-[10px] font-semibold text-primary-400 uppercase tracking-wide">{m.selectedCurrencyLabel}</p>
             <p className="text-sm font-bold text-primary-700 leading-tight">{currency.code} <span className="font-normal text-primary-500">{currency.name}</span></p>

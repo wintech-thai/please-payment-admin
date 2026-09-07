@@ -404,6 +404,128 @@ export interface BankAccountMerchantItem {
   isSelected?: boolean | null
 }
 
+// ─── Crypto Accounts (Currency Accounts) ────────────────────────────────────
+
+export interface CurrencyAccountItem {
+  accountId: string
+  orgId?: string | null
+  currency?: string | null           // e.g. "BTC", "KAS"
+  currencyName?: string | null       // e.g. "Bitcoin", "Kaspa"
+  currencyCategory?: string | null   // "FIAT" | "CRYPTO"
+  accountKycName?: string | null
+  accountKycId?: string | null
+  accountKycEmail?: string | null
+  accountKycPhone?: string | null
+  tags?: string | null
+  accountType?: string | null        // "PayIn" | "Transit" | "PayOut"
+  accountLevel?: string | null       // "Global" | "Selected"
+  status?: string | null
+
+  // Crypto-specific
+  cryptoWalletId?: string | null
+  cryptoWalletNetwork?: string | null
+  cryptoWalletType?: string | null
+  cryptoDerivationPath?: string | null
+  cryptoQrScheme?: string | null
+  cryptoAddressPrefix?: string | null
+  cryptoTokenContract?: string | null
+  cryptoDecimal?: number | null
+  cryptoExtendedPublicKey?: string | null
+  cryptoNextAddressIndex?: number | null
+  cryptoAddressBranch?: number | null
+
+  // Bank (fiat) — reserved for future use
+  bankCode?: string | null
+  bankName?: string | null
+  bankAccountName?: string | null
+  bankAccountNo?: string | null
+  bankPromptPayId?: string | null
+  bankAccountType?: string | null
+  bankIsNativeQrSupport?: boolean | null
+
+  // Policy / limits
+  txMinAmount?: number | null
+  txMaxAmount?: number | null
+  dailyTotalAmountLimit?: number | null
+  dailyTotalCountLimit?: number | null
+  currentTotalLimit?: number | null
+  currentTotalCount?: number | null
+  currentBalance?: number | null
+  isRandomCent?: boolean | null
+  decimalAction?: string | null
+
+  createdDate?: string | null
+  merchantLinkCount?: number | null
+  currentWalletBalance?: number | null
+  currentWalletBalanceDecimal?: number | null
+}
+
+export interface CryptoCurrencyItem {
+  code: string
+  name?: string | null
+  defaultNetwork?: string | null
+  defaultDecimal?: number | null
+  isToken?: boolean | null
+}
+
+export interface GetCurrencyAccountsPayload {
+  FullTextSearch?: string
+  CurrencyCode?: string
+  CurrencyCategory?: string
+  AccountType?: string
+  AccountLevel?: string
+  page?: number
+  limit?: number
+}
+
+export interface AddCurrencyAccountPayload {
+  Currency?: string
+  CurrencyName?: string
+  CurrencyCategory?: string   // "FIAT" | "CRYPTO"
+  AccountType?: string        // "PayIn" | "Transit" | "PayOut"
+  AccountLevel?: string       // "Global" | "Selected"
+  Tags?: string
+
+  CryptoWalletNetwork?: string
+  CryptoWalletType?: string
+  CryptoDerivationPath?: string
+  CryptoQrScheme?: string
+  CryptoAddressPrefix?: string
+  CryptoTokenContract?: string
+  CryptoDecimal?: number
+  CryptoExtendedPublicKey?: string
+  CryptoAddressBranch?: number
+
+  TxMinAmount?: number
+  TxMaxAmount?: number
+  DailyTotalAmountLimit?: number
+  DailyTotalCountLimit?: number
+  IsRandomCent?: boolean
+  DecimalAction?: string
+
+  AccountKycName?: string
+  AccountKycId?: string
+  AccountKycEmail?: string
+  AccountKycPhone?: string
+}
+
+export interface UpdateCurrencyAccountPayload {
+  AccountLevel?: string
+  Tags?: string
+  CryptoDerivationPath?: string
+  CryptoQrScheme?: string
+  CryptoAddressPrefix?: string
+  CryptoTokenContract?: string
+  CryptoDecimal?: number
+  CryptoAddressBranch?: number
+  TxMinAmount?: number
+  TxMaxAmount?: number
+  DailyTotalAmountLimit?: number
+  DailyTotalCountLimit?: number
+  IsRandomCent?: boolean
+  DecimalAction?: string
+}
+
 // ─── QR Payment ──────────────────────────────────────────────────────────────
 
 export interface SubmitPaymentRequestPayload {

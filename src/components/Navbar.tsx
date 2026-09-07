@@ -12,6 +12,7 @@ import ProfileModal from '@/components/ProfileModal'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import { AppVersionDisplay } from '@/components/AppVersionDisplay'
 import { useBrand } from '@/context/BrandContext'
+import { isCurrencyFeatureEnabled } from '@/lib/feature-flags'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -24,10 +25,12 @@ export default function Navbar() {
   const [businessSetupOpen, setBusinessSetupOpen] = useState(false)
   const [modal, setModal] = useState<'profile' | 'changePassword' | null>(null)
   const [username, setUsername] = useState('Admin')
+  const [cryptoEnabled, setCryptoEnabled] = useState(false)
   const businessSetupRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setUsername(localStorage.getItem('username') || 'Admin')
+    setCryptoEnabled(isCurrencyFeatureEnabled())
   }, [])
 
   useEffect(() => {
@@ -57,7 +60,6 @@ export default function Navbar() {
     { href: '/business-setup/master-reference', label: t.nav.masterReference, comingSoon: false },
     { href: '/risk-management', label: t.nav.riskManagement, comingSoon: false },
     { href: '/business-setup/merchant', label: t.nav.merchant, comingSoon: false },
-    { href: '/business-setup/pay-in-bank-account', label: t.nav.bankAccounts, comingSoon: false },
   ]
 
   return (
@@ -130,6 +132,44 @@ export default function Navbar() {
                     <span>{item.label}</span>
                   </Link>
                 ))}
+
+                <div className="my-1 border-t border-gray-100" />
+
+                {/* Bank Accounts link */}
+                <Link
+                  href="/business-setup/pay-in-bank-account"
+                  onClick={() => setBusinessSetupOpen(false)}
+                  className={clsx(
+                    'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
+                    pathname.startsWith('/business-setup/pay-in-bank-account') ||
+                    pathname.startsWith('/business-setup/transit-bank-account') ||
+                    pathname.startsWith('/business-setup/pay-out-bank-account')
+                      ? 'text-primary-700 font-semibold bg-primary-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  )}
+                >
+                  <span>{t.nav.bankAccounts}</span>
+                </Link>
+
+                {/* Crypto Accounts link */}
+                {cryptoEnabled && (
+                  <Link
+                    href="/business-setup/pay-in-crypto-account"
+                    onClick={() => setBusinessSetupOpen(false)}
+                    className={clsx(
+                      'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
+                      pathname.startsWith('/business-setup/pay-in-crypto-account') ||
+                      pathname.startsWith('/business-setup/transit-crypto-account') ||
+                      pathname.startsWith('/business-setup/pay-out-crypto-account')
+                        ? 'text-primary-700 font-semibold bg-primary-50'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    )}
+                  >
+                    <span>{t.nav.cryptoAccounts}</span>
+                  </Link>
+                )}
+
+                <div className="my-1 border-t border-gray-100" />
 
                 {/* Payment link */}
                 <Link
@@ -379,6 +419,44 @@ export default function Navbar() {
                 )}
               </Link>
             ))}
+
+            <div className="my-1.5 border-t border-white/10" />
+
+            {/* Bank Accounts link */}
+            <Link
+              href="/business-setup/pay-in-bank-account"
+              onClick={() => setMobileMenuOpen(false)}
+              className={clsx(
+                'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
+                pathname.startsWith('/business-setup/pay-in-bank-account') ||
+                pathname.startsWith('/business-setup/transit-bank-account') ||
+                pathname.startsWith('/business-setup/pay-out-bank-account')
+                  ? 'bg-white/20 text-white'
+                  : 'text-white hover:bg-white/15'
+              )}
+            >
+              <span>{t.nav.bankAccounts}</span>
+            </Link>
+
+            {/* Crypto Accounts link */}
+            {cryptoEnabled && (
+              <Link
+                href="/business-setup/pay-in-crypto-account"
+                onClick={() => setMobileMenuOpen(false)}
+                className={clsx(
+                  'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
+                  pathname.startsWith('/business-setup/pay-in-crypto-account') ||
+                  pathname.startsWith('/business-setup/transit-crypto-account') ||
+                  pathname.startsWith('/business-setup/pay-out-crypto-account')
+                    ? 'bg-white/20 text-white'
+                    : 'text-white hover:bg-white/15'
+                )}
+              >
+                <span>{t.nav.cryptoAccounts}</span>
+              </Link>
+            )}
+
+            <div className="my-1.5 border-t border-white/10" />
 
             {/* Payment link */}
             <Link

@@ -75,7 +75,10 @@ export default function BrandThemePage() {
     setBrandName(data?.brandConfig?.brandName || 'PLEASE PAYMENT')
     setThemeName((data?.brandConfig?.themeName as ThemeName) || DEFAULT_THEME)
     setLogoFile(null)
-    setLogoPreview(resolveStorageUrl(data?.brandConfig?.logoImageUrl || ''))
+    const resolvedLogoUrl = resolveStorageUrl(data?.brandConfig?.logoImageUrl || '')
+    // logoImageUrl ตอนนี้เป็น static path เดิมตลอด (ไม่มี signature กันซ้ำแบบ presigned URL เก่า)
+    // ต้องแปะ cache-buster เอง ไม่งั้น browser จะแคชรูปเก่า/404 ค้างหลังอัปโหลดโลโก้ใหม่
+    setLogoPreview(resolvedLogoUrl ? `${resolvedLogoUrl}?_t=${Date.now()}` : '')
     setLogoError('')
   }
 

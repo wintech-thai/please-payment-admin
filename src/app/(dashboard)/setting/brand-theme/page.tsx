@@ -145,35 +145,16 @@ export default function BrandThemePage() {
     if (!logoFile && !logoPreview) { toast.error(bt.toastLogoRequired); return }
     setSaving(true)
     try {
-      let logoPath = config?.brandConfig?.logoPath || ''
-
-      // Upload new logo if selected
-      if (logoFile) {
-        const urlRes = await adminConfigApi.getLogoUploadPresignedUrl({ mimeType: logoFile.type })
-        const urlData = urlRes.data as any
-        const rawPresignedUrl: string = urlData?.presignedUrl || ''
-        const objectName: string = urlData?.objectName || ''
-
-        if (!rawPresignedUrl) throw new Error('Could not get upload URL')
-
-        // Replace <STORAGE-API-BASE> placeholder before uploading
-        const actualUrl = resolveStorageUrl(rawPresignedUrl)
-
-        await fetch(actualUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': logoFile.type },
-          body: logoFile,
-        })
-
-        logoPath = objectName
-      }
+      // logoPreview is a data URL ("data:image/png;base64,...") only when a new file was just picked —
+      // otherwise it's a resolved server URL, so we only send LogoBase64 when logoFile is set.
+      const logoBase64 = logoFile ? logoPreview.split(',')[1] || logoPreview : undefined
 
       // API expects PascalCase fields (matching Ruby script reference)
       await adminConfigApi.setBrandConfig({
         BrandConfig: {
           BrandName: brandName.trim(),
-          LogoPath: logoPath,
           ThemeName: themeName,
+          ...(logoBase64 ? { LogoBase64: logoBase64, LogoMimeType: logoFile!.type } : {}),
         },
       } as any)
 

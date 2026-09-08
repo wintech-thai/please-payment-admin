@@ -8,7 +8,6 @@ import type { AdminConfig } from '@/lib/api/admin-config.api'
 import { THEME_LIST, DEFAULT_THEME, applyTheme } from '@/lib/brand-themes'
 import type { ThemeName } from '@/lib/brand-themes'
 import { useBrand } from '@/context/BrandContext'
-import { resolveStorageUrl } from '@/lib/storage'
 import { useLang } from '@/context/LanguageContext'
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024  // 2 MB
@@ -75,10 +74,13 @@ export default function BrandThemePage() {
     setBrandName(data?.brandConfig?.brandName || 'PLEASE PAYMENT')
     setThemeName((data?.brandConfig?.themeName as ThemeName) || DEFAULT_THEME)
     setLogoFile(null)
-    const resolvedLogoUrl = resolveStorageUrl(data?.brandConfig?.logoImageUrl || '')
-    // logoImageUrl ตอนนี้เป็น static path เดิมตลอด (ไม่มี signature กันซ้ำแบบ presigned URL เก่า)
-    // ต้องแปะ cache-buster เอง ไม่งั้น browser จะแคชรูปเก่า/404 ค้างหลังอัปโหลดโลโก้ใหม่
-    setLogoPreview(resolvedLogoUrl ? `${resolvedLogoUrl}?_t=${Date.now()}` : '')
+    // /api/brand-logo fetches the image server-side (reads BACKEND_URL at request time) and
+    // streams the raw bytes back — resolving logoImageUrl into a direct cross-domain URL here
+    // doesn't work reliably because NEXT_PUBLIC_API_URL is baked into the client bundle at
+    // Docker build time and is actually "/api/proxy" in this deployment (meant for JSON API
+    // calls), and that generic proxy always does response.json() on the backend reply, which
+    // corrupts a binary image response into JSON `null`.
+    setLogoPreview(data?.brandConfig?.logoImageUrl ? `/api/brand-logo?_t=${Date.now()}` : '')
     setLogoError('')
   }
 

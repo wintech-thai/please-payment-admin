@@ -8,7 +8,6 @@ import type { AdminConfig } from '@/lib/api/admin-config.api'
 import { THEME_LIST, DEFAULT_THEME, applyTheme } from '@/lib/brand-themes'
 import type { ThemeName } from '@/lib/brand-themes'
 import { useBrand } from '@/context/BrandContext'
-import { resolveStorageUrl } from '@/lib/storage'
 import { useLang } from '@/context/LanguageContext'
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024  // 2 MB
@@ -75,7 +74,13 @@ export default function BrandThemePage() {
     setBrandName(data?.brandConfig?.brandName || 'PLEASE PAYMENT')
     setThemeName((data?.brandConfig?.themeName as ThemeName) || DEFAULT_THEME)
     setLogoFile(null)
-    setLogoPreview(resolveStorageUrl(data?.brandConfig?.logoImageUrl || ''))
+    // /api/brand-logo fetches the image server-side (reads BACKEND_URL at request time) and
+    // streams the raw bytes back — resolving logoImageUrl into a direct cross-domain URL here
+    // doesn't work reliably because NEXT_PUBLIC_API_URL is baked into the client bundle at
+    // Docker build time and is actually "/api/proxy" in this deployment (meant for JSON API
+    // calls), and that generic proxy always does response.json() on the backend reply, which
+    // corrupts a binary image response into JSON `null`.
+    setLogoPreview(data?.brandConfig?.logoImageUrl ? `/api/brand-logo?_t=${Date.now()}` : '')
     setLogoError('')
   }
 
@@ -145,35 +150,16 @@ export default function BrandThemePage() {
     if (!logoFile && !logoPreview) { toast.error(bt.toastLogoRequired); return }
     setSaving(true)
     try {
-      let logoPath = config?.brandConfig?.logoPath || ''
-
-      // Upload new logo if selected
-      if (logoFile) {
-        const urlRes = await adminConfigApi.getLogoUploadPresignedUrl({ mimeType: logoFile.type })
-        const urlData = urlRes.data as any
-        const rawPresignedUrl: string = urlData?.presignedUrl || ''
-        const objectName: string = urlData?.objectName || ''
-
-        if (!rawPresignedUrl) throw new Error('Could not get upload URL')
-
-        // Replace <STORAGE-API-BASE> placeholder before uploading
-        const actualUrl = resolveStorageUrl(rawPresignedUrl)
-
-        await fetch(actualUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': logoFile.type },
-          body: logoFile,
-        })
-
-        logoPath = objectName
-      }
+      // logoPreview is a data URL ("data:image/png;base64,...") only when a new file was just picked —
+      // otherwise it's a resolved server URL, so we only send LogoBase64 when logoFile is set.
+      const logoBase64 = logoFile ? logoPreview.split(',')[1] || logoPreview : undefined
 
       // API expects PascalCase fields (matching Ruby script reference)
       await adminConfigApi.setBrandConfig({
         BrandConfig: {
           BrandName: brandName.trim(),
-          LogoPath: logoPath,
           ThemeName: themeName,
+          ...(logoBase64 ? { LogoBase64: logoBase64, LogoMimeType: logoFile!.type } : {}),
         },
       } as any)
 

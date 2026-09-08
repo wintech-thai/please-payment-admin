@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { applyTheme, DEFAULT_THEME } from '@/lib/brand-themes'
-import { resolveStorageUrl } from '@/lib/storage'
 import type { AdminConfig } from '@/lib/api/admin-config.api'
 import type { ThemeName } from '@/lib/brand-themes'
 
@@ -36,6 +35,15 @@ async function fetchBrandConfig(): Promise<AdminConfig | null> {
   } catch {
     return null
   }
+}
+
+// /api/brand-logo fetches the image server-side (reads BACKEND_URL at request time) and streams
+// the raw bytes back. We can't resolve logoImageUrl into a direct cross-domain URL here because
+// NEXT_PUBLIC_API_URL is baked into the client bundle at Docker build time and is actually
+// "/api/proxy" in this deployment (meant for JSON API calls) — that generic proxy always does
+// response.json() on the backend reply, which corrupts a binary image response into JSON `null`.
+function brandLogoUrl(): string {
+  return `/api/brand-logo?_t=${Date.now()}`
 }
 
 export function isConfigActive(config: AdminConfig | null): boolean {
@@ -147,8 +155,7 @@ interface BrandProviderProps {
 export function BrandProvider({ children, initialConfig = null }: BrandProviderProps) {
   const initActive = isConfigActive(initialConfig)
   const initName = initActive && initialConfig?.brandConfig?.brandName ? initialConfig.brandConfig.brandName : ''
-  const rawInitLogoUrl = initActive && initialConfig?.brandConfig?.logoImageUrl
-    ? initialConfig.brandConfig.logoImageUrl : ''
+  const hasInitLogo = initActive && !!initialConfig?.brandConfig?.logoImageUrl
 
   const [config, setConfig] = useState<AdminConfig | null>(initialConfig)
   const [loading, setLoading] = useState(false)
@@ -161,7 +168,7 @@ export function BrandProvider({ children, initialConfig = null }: BrandProviderP
     if (initialConfig !== null) {
       // Update localStorage cache from server-fetched config
       if (initActive && initialConfig.brandConfig) {
-        const l = rawInitLogoUrl ? resolveStorageUrl(rawInitLogoUrl) : ''
+        const l = hasInitLogo ? brandLogoUrl() : ''
         setCachedLogo(l)
         try { localStorage.setItem(BRAND_DISPLAY_CACHE_KEY, JSON.stringify({ n: initName, l })) } catch {}
       } else {
@@ -190,7 +197,7 @@ export function BrandProvider({ children, initialConfig = null }: BrandProviderP
       const active = isConfigActive(data) && !!data.brandConfig
       if (active) {
         const n = data.brandConfig!.brandName || ''
-        const l = data.brandConfig!.logoImageUrl ? resolveStorageUrl(data.brandConfig!.logoImageUrl) : ''
+        const l = data.brandConfig!.logoImageUrl ? brandLogoUrl() : ''
         setCachedName(n)
         setCachedLogo(l)
         try { localStorage.setItem(BRAND_DISPLAY_CACHE_KEY, JSON.stringify({ n, l })) } catch {}
@@ -208,7 +215,7 @@ export function BrandProvider({ children, initialConfig = null }: BrandProviderP
 
   const active = isConfigActive(config)
   const resolvedLogoUrl = mounted && active && config?.brandConfig?.logoImageUrl
-    ? resolveStorageUrl(config.brandConfig.logoImageUrl)
+    ? brandLogoUrl()
     : ''
   const resolvedBrandName = active && config?.brandConfig?.brandName
     ? config.brandConfig.brandName

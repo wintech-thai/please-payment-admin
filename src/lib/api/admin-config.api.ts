@@ -9,6 +9,8 @@ export interface BrandConfigData {
   logoMimeType?: string
   logoImageUrl?: string
   themeName?: string
+  /** Write-only: raw base64 image content, sent when uploading a new logo. Never comes back in a response. */
+  logoBase64?: string
 }
 
 export interface AdminConfig {
@@ -18,13 +20,6 @@ export interface AdminConfig {
   status?: string   // "Enable" | "Disable"
   createdDate?: string
   brandConfig?: BrandConfigData
-}
-
-export interface PresignedUrlResponse {
-  presignedUrl?: string
-  objectName?: string
-  documentId?: string
-  url?: string
 }
 
 // "Backend" = the Admin/Merchant Next.js apps, "Api" = onix-api itself. Each side has
@@ -75,9 +70,6 @@ export const adminConfigApi = {
 
   disableConfigById: (configId: string) =>
     client.post(`${BASE}/DisableConfigById/${configId}`, {}),
-
-  getLogoUploadPresignedUrl: (payload: { mimeType: string }) =>
-    client.post<PresignedUrlResponse>(`${BASE}/GetBrandLogoUploadPresignedUrl`, payload),
 
   getClientIpSource: (scope: ClientIpScope) =>
     client.get<ClientIpSourceConfigResponse>(`${BASE}/GetClientIpSource/${scope}`),

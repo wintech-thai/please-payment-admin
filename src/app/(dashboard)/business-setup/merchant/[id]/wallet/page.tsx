@@ -555,6 +555,8 @@ export default function MerchantWalletPage() {
                           'inline-flex items-center px-2 py-0.5 rounded text-xs font-bold',
                           isPayIn
                             ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                            : isWithdrawal
+                            ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
                             : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
                         )}>
                           {isPayIn ? wt.typePayIn : (isWithdrawal ? wt.typeWithdrawal : wt.typePayOut)}

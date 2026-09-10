@@ -1963,6 +1963,13 @@ export const translations = {
       slipLinkLoading: 'กำลังสร้างลิงก์...',
       slipLinkError: 'ไม่สามารถสร้างลิงก์ได้',
       slipLinkOpen: 'เปิดหน้าอัปโหลด',
+      // Withdrawal
+      addWithdrawBtn: 'เพิ่ม Withdraw Request',
+      withdrawalBadge: 'Withdraw',
+      createWithdrawTitle: 'เพิ่ม Withdraw Request',
+      createWithdrawSubtitle: 'สร้างคำขอถอนเงินใหม่',
+      toastCreateWithdrawSuccess: 'สร้าง Withdraw Request สำเร็จ',
+      toastCreateWithdrawFailed: 'สร้าง Withdraw Request ไม่สำเร็จ',
     },
     transferRequest: {
       title: 'คำขอ Transfer',
@@ -4661,6 +4668,13 @@ export const translations = {
       slipLinkLoading: 'Generating link...',
       slipLinkError: 'Could not generate link',
       slipLinkOpen: 'Open upload page',
+      // Withdrawal
+      addWithdrawBtn: 'Add Withdraw Request',
+      withdrawalBadge: 'Withdraw',
+      createWithdrawTitle: 'Add Withdraw Request',
+      createWithdrawSubtitle: 'Create a new withdraw request',
+      toastCreateWithdrawSuccess: 'Withdraw request created',
+      toastCreateWithdrawFailed: 'Failed to create withdraw request',
     },
     transferRequest: {
       title: 'Transfer Requests',

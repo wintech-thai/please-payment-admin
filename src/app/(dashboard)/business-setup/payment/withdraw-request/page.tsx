@@ -530,13 +530,22 @@ function WithdrawRequestPageContent() {
           <h1 className="text-2xl font-bold text-gray-900">{m.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{m.subtitle}</p>
         </div>
-        <button
-          onClick={() => router.push('/business-setup/payment/withdraw-request/create')}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-        >
-          <span className="text-lg leading-none">+</span>
-          {m.addBtn}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push('/business-setup/payment/withdraw-request/create-withdrawal')}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            <span className="text-lg leading-none">+</span>
+            {m.addWithdrawBtn}
+          </button>
+          <button
+            onClick={() => router.push('/business-setup/payment/withdraw-request/create')}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            <span className="text-lg leading-none">+</span>
+            {m.addBtn}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -687,7 +696,14 @@ function WithdrawRequestPageContent() {
 
                       {/* Merchant */}
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
+                          {item.payoutIsWithdrawal && (
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-blue-50 text-blue-700 ring-blue-200">
+                              {m.withdrawalBadge}
+                            </span>
+                          )}
+                        </div>
                         {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
                       </td>
 

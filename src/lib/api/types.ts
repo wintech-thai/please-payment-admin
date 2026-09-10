@@ -1022,6 +1022,7 @@ export interface PayOutRequestItem {
   noticeCount?: number | null
   payoutPartialCountP2P?: number | null
   payoutPartialCountLimitP2P?: number | null
+  payoutIsWithdrawal?: boolean | null
 }
 
 export interface PartialPayoutItem {

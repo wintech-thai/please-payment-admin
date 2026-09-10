@@ -366,7 +366,14 @@ export default function PayOutTransactionsPage() {
                       <td className="px-4 py-3 border-b border-gray-100">
                         {item.merchantCode || item.merchantName ? (
                           <>
-                            <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
+                              {item.payoutIsWithdrawal && (
+                                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-blue-50 text-blue-700 ring-blue-200">
+                                  {t.payOutRequest.withdrawalBadge}
+                                </span>
+                              )}
+                            </div>
                             {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
                           </>
                         ) : (

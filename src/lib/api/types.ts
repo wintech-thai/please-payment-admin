@@ -739,6 +739,7 @@ export interface PayOutTxItem {
   rawInputObj?: unknown | null
   jobId?: string | null
   noticeCount?: number | null
+  payoutIsWithdrawal?: boolean | null
 }
 
 export interface PayOutTxDetail extends PayOutTxItem {

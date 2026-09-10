@@ -332,3 +332,52 @@ Creates a request to transfer funds out to a destination account.
   }
 }
 ```
+
+---
+
+## Create a Withdrawal Request
+
+```
+POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitWithdrawalRequest/{merchantId}
+```
+
+Use this endpoint when the **Merchant itself** is withdrawing funds out to its own account — as opposed to a standard Pay-Out, which transfers funds out to the Merchant's *customer*. Internally the system creates the exact same kind of request as a Pay-Out, just flagged as a withdrawal, so it appears separately from ordinary Pay-Outs in reporting.
+
+> **Request body, fee calculation, response shape, and webhooks are all 100% identical to [Create a Pay-Out Request](#create-a-pay-out-request)** — the only difference is the endpoint path (`SubmitWithdrawalRequest` instead of `SubmitPayOutRequest`). Everything documented above for Pay-Out applies here unchanged.
+
+### Request Body
+
+Same as [Create a Pay-Out Request](#create-a-pay-out-request) — `RefId1`, `RefId2`, `RefId3`, `RequestedAmount`, `QrProvider`, and destination account fields (`BankCode`+`BankAccountNo`+`BankAccountName`, or `PromptPayId`+`AccountType`, or `PayinBankAccountId`).
+
+### Sample Request
+
+```json
+{
+  "RefId1": "WITHDRAW-20260701-001",
+  "RequestedAmount": 500,
+  "QrProvider": "PP",
+  "BankCode": "KBANK",
+  "BankAccountNo": "0123456789",
+  "BankAccountName": "Somchai Jaidee",
+  "AccountType": "Native"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "OK",
+  "description": "Success",
+  "data": {
+    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "Type": "PayOut",
+    "Status": "Pending",
+    "RequestedAmount": 500.00,
+    "Currency": "THB",
+    "CreatedAt": "2026-07-01T10:05:00Z"
+  }
+}
+```
+
+> **Webhooks:** No new event type — a Withdrawal Request still fires the same `PaymentOut.Success` / `PaymentOut.Rejected` events documented in [Webhooks](/documents/webhooks), with the same payload fields.

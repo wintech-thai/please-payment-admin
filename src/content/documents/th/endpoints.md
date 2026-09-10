@@ -332,3 +332,52 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
   }
 }
 ```
+
+---
+
+## สร้างคำขอถอนเงิน (Withdrawal)
+
+```
+POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitWithdrawalRequest/{merchantId}
+```
+
+ใช้ endpoint นี้เมื่อ **Merchant เองต้องการถอนเงินออกไปยังบัญชีของตัวเอง** ต่างจาก Pay-Out ทั่วไปที่เป็นการโอนเงินออกไปให้ *ลูกค้า* ของ Merchant — ภายในระบบจะสร้างคำขอชนิดเดียวกับ Pay-Out ทุกประการ เพียงแต่ติด flag ว่าเป็น withdrawal เพื่อให้แยกออกจาก Pay-Out ปกติในรายงานต่าง ๆ
+
+> **Request body, วิธีคิดค่าธรรมเนียม, รูปแบบ Response และ Webhook เหมือนกับ [สร้างคำขอโอนเงินออก (Pay-Out)](#สร้างคำขอโอนเงินออก-pay-out) ทุกอย่าง 100%** — ต่างกันแค่ endpoint path (`SubmitWithdrawalRequest` แทน `SubmitPayOutRequest`) เท่านั้น ส่วนที่อธิบายไว้ด้านบนสำหรับ Pay-Out ใช้กับ endpoint นี้ได้เหมือนกันทุกประการ
+
+### Request Body
+
+เหมือนกับ [สร้างคำขอโอนเงินออก (Pay-Out)](#สร้างคำขอโอนเงินออก-pay-out) — `RefId1`, `RefId2`, `RefId3`, `RequestedAmount`, `QrProvider` และข้อมูลบัญชีปลายทาง (`BankCode`+`BankAccountNo`+`BankAccountName`, หรือ `PromptPayId`+`AccountType`, หรือ `PayinBankAccountId`)
+
+### ตัวอย่าง Request
+
+```json
+{
+  "RefId1": "WITHDRAW-20260701-001",
+  "RequestedAmount": 500,
+  "QrProvider": "PP",
+  "BankCode": "KBANK",
+  "BankAccountNo": "0123456789",
+  "BankAccountName": "สมชาย ใจดี",
+  "AccountType": "Native"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "OK",
+  "description": "Success",
+  "data": {
+    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "Type": "PayOut",
+    "Status": "Pending",
+    "RequestedAmount": 500.00,
+    "Currency": "THB",
+    "CreatedAt": "2026-07-01T10:05:00Z"
+  }
+}
+```
+
+> **Webhook:** ไม่มี event ใหม่ — คำขอถอนเงินยังคงยิง event `PaymentOut.Success` / `PaymentOut.Rejected` เหมือนที่อธิบายไว้ใน [Webhooks](/documents/webhooks) พร้อม payload fields แบบเดียวกันทุกประการ

@@ -686,7 +686,7 @@ export default function MerchantKeysUsersPage() {
             <div className="px-6 py-5">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Select Roles</p>
               <div className="flex flex-col gap-2">
-                {(['PAYIN_REQUEST', 'PAYIN_REQUEST_P2P', 'PAYOUT_REQUEST'] as const).map(role => (
+                {(['PAYIN_REQUEST', 'PAYIN_REQUEST_P2P', 'PAYOUT_REQUEST', 'WITHDRAW_REQUEST'] as const).map(role => (
                   <label key={role} className="flex items-center gap-2.5 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -737,7 +737,7 @@ export default function MerchantKeysUsersPage() {
             <div className="px-6 py-5">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{m.colRoles}</p>
               <div className="flex flex-col gap-2">
-                {(['PAYIN_REQUEST', 'PAYIN_REQUEST_P2P', 'PAYOUT_REQUEST'] as const).map(role => (
+                {(['PAYIN_REQUEST', 'PAYIN_REQUEST_P2P', 'PAYOUT_REQUEST', 'WITHDRAW_REQUEST'] as const).map(role => (
                   <label key={role} className="flex items-center gap-2.5 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -890,7 +890,7 @@ export default function MerchantKeysUsersPage() {
                     {paymentEndpoints.map((ep, idx) => (
                       <tr key={idx} onClick={() => setSelectedEndpointIdx(prev => prev === idx ? null : idx)} className={clsx('cursor-pointer transition-colors', selectedEndpointIdx === idx ? 'bg-primary-50' : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50')}>
                         <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-semibold whitespace-nowrap', selectedEndpointIdx === idx ? 'text-primary-700' : 'text-gray-700')}>{ep.name}</td>
-                        <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-mono break-all', selectedEndpointIdx === idx ? 'text-primary-600' : 'text-gray-500')}>{ep.value}</td>
+                        <td className={clsx('px-4 py-3 border-b border-gray-100 text-xs font-sans break-all', selectedEndpointIdx === idx ? 'text-primary-600' : 'text-gray-500')}>{ep.value}</td>
                         <td className="px-4 py-3 border-b border-gray-100">
                           <CopyButton text={ep.value} label={m.endpointCopy} copiedLabel={m.endpointCopied} />
                         </td>

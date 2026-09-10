@@ -332,3 +332,52 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
   }
 }
 ```
+
+---
+
+## 创建提现请求（Withdrawal）
+
+```
+POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitWithdrawalRequest/{merchantId}
+```
+
+当 **商户本身** 需要将资金提现到自己的账户时使用此接口 —— 区别于普通 Pay-Out（将资金转给商户的*客户*）。系统内部会创建与 Pay-Out 完全相同的请求，只是标记为提现，以便在报表中与普通 Pay-Out 区分开来。
+
+> **Request body、手续费计算方式、Response 格式和 Webhook 都与 [创建付款请求（Pay-Out）](#创建付款请求pay-out) 完全一致** —— 唯一的区别是接口路径（使用 `SubmitWithdrawalRequest` 而非 `SubmitPayOutRequest`）。上文关于 Pay-Out 的所有说明同样适用于此接口。
+
+### Request Body
+
+与 [创建付款请求（Pay-Out）](#创建付款请求pay-out) 相同 —— `RefId1`、`RefId2`、`RefId3`、`RequestedAmount`、`QrProvider`，以及目标账户信息（`BankCode`+`BankAccountNo`+`BankAccountName`，或 `PromptPayId`+`AccountType`，或 `PayinBankAccountId`）。
+
+### 请求示例
+
+```json
+{
+  "RefId1": "WITHDRAW-20260701-001",
+  "RequestedAmount": 500,
+  "QrProvider": "PP",
+  "BankCode": "KBANK",
+  "BankAccountNo": "0123456789",
+  "BankAccountName": "Somchai Jaidee",
+  "AccountType": "Native"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "OK",
+  "description": "Success",
+  "data": {
+    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "Type": "PayOut",
+    "Status": "Pending",
+    "RequestedAmount": 500.00,
+    "Currency": "THB",
+    "CreatedAt": "2026-07-01T10:05:00Z"
+  }
+}
+```
+
+> **Webhook：** 没有新的事件类型 —— 提现请求仍会触发与 [Webhooks](/documents/webhooks) 中说明相同的 `PaymentOut.Success` / `PaymentOut.Rejected` 事件，payload 字段也完全一致。

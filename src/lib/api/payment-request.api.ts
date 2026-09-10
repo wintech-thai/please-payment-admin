@@ -64,6 +64,11 @@ export const paymentRequestApi = {
   createPayOutRequest: (payload: CreatePayOutRequestPayload) =>
     client.post(`${BASE}/CreatePayOutRequest`, payload),
 
+  // CreateWithdrawalRequest ฝั่ง backend รับ payload เดียวกับ CreatePayOutRequest
+  // เลย (แค่บังคับ PayoutIsWithdrawal = true ให้อัตโนมัติ)
+  createWithdrawalRequest: (payload: CreatePayOutRequestPayload) =>
+    client.post(`${BASE}/CreateWithdrawalRequest`, payload),
+
   getPayOutRequests: (payload: GetPayOutRequestsPayload = {}) =>
     client.post<{ paymentRequests: PayOutRequestItem[] }>(`${BASE}/GetPayOutRequests`, payload),
 

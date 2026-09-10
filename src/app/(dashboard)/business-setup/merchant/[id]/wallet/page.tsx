@@ -507,6 +507,7 @@ export default function MerchantWalletPage() {
                   const prevBal = tx.previousBalanceDecimal ?? tx.previousBalance ?? 0
                   const currBal = tx.currentBalanceDecimal ?? tx.currentBalance ?? 0
                   const isPayIn = tx.txType != null ? tx.txType > 0 : currBal >= prevBal
+                  const isWithdrawal = /IsWithdrawal=\[true\]/i.test(tx.tags2 ?? '')
                   const amount = tx.txAmountDecimal ?? tx.txAmount
                   const isSelected = selectedId === (tx.id ?? String(idx))
                   return (
@@ -554,9 +555,11 @@ export default function MerchantWalletPage() {
                           'inline-flex items-center px-2 py-0.5 rounded text-xs font-bold',
                           isPayIn
                             ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                            : isWithdrawal
+                            ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
                             : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
                         )}>
-                          {isPayIn ? wt.typePayIn : wt.typePayOut}
+                          {isPayIn ? wt.typePayIn : (isWithdrawal ? wt.typeWithdrawal : wt.typePayOut)}
                         </span>
                       </td>
                       <td className="py-3 border-b border-gray-100 text-right whitespace-nowrap text-sm tabular-nums text-gray-600" style={{ paddingLeft: '0.75rem', paddingRight: '1.5rem' }}>

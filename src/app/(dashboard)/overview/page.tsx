@@ -15,7 +15,7 @@ import { useLang } from '@/context/LanguageContext'
 
 const CHART_COLORS = ['#c0530f','#059669','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1','#14b8a6']
 
-type BreakdownTab = 'payIn' | 'payOut' | 'payInFee' | 'payOutFee'
+type BreakdownTab = 'payIn' | 'payOut' | 'payInFee' | 'payOutFee' | 'withdrawal' | 'withdrawalFee'
 
 // same as payment pages
 function getTimeFilter(tr: TimeRangeValue): { FromDate: string; ToDate: string } {
@@ -156,9 +156,11 @@ export default function OverviewPage() {
 
   const totalPayIn    = useMemo(() => sumAmount(data?.merchantsPayInSummary), [data])
   const totalPayOut   = useMemo(() => sumAmount(data?.merchantsPayOutSummary), [data])
+  const totalWithdrawal = useMemo(() => sumAmount(data?.merchantsWithdrawalSummary), [data])
   const totalPayInFee = useMemo(() => sumFee(data?.merchantsPayInSummary), [data])
   const totalPayOutFee = useMemo(() => sumFee(data?.merchantsPayOutSummary), [data])
-  const totalFee = totalPayInFee + totalPayOutFee
+  const totalWithdrawalFee = useMemo(() => sumFee(data?.merchantsWithdrawalSummary), [data])
+  const totalFee = totalPayInFee + totalPayOutFee + totalWithdrawalFee
 
   const barData = useMemo(() => {
     if (!data?.merchantsBalances?.length) return []
@@ -179,8 +181,10 @@ export default function OverviewPage() {
   }, [data, m.others])
 
   const breakdownRows = useMemo((): { name: string; value: number }[] => {
-    const src    = tab === 'payIn' || tab === 'payInFee' ? data?.merchantsPayInSummary : data?.merchantsPayOutSummary
-    const getVal = (x: MerchantSummaryItem) => tab === 'payInFee' || tab === 'payOutFee' ? (x.feeAmount ?? 0) : (x.txAmount ?? 0)
+    const src    = tab === 'payIn' || tab === 'payInFee' ? data?.merchantsPayInSummary
+      : tab === 'withdrawal' || tab === 'withdrawalFee' ? data?.merchantsWithdrawalSummary
+      : data?.merchantsPayOutSummary
+    const getVal = (x: MerchantSummaryItem) => tab === 'payInFee' || tab === 'payOutFee' || tab === 'withdrawalFee' ? (x.feeAmount ?? 0) : (x.txAmount ?? 0)
     return (src ?? []).map(x => ({ name: itemLabel(x), value: getVal(x) })).sort((a, b) => b.value - a.value)
   }, [data, tab])
 
@@ -252,12 +256,14 @@ export default function OverviewPage() {
               <SummaryCard label={m.disabledMerchants} value={fmtInt(statusCount(data?.merchantCountByStatus, 'disabled'))} icon={XCircle}     gradient="bg-gradient-to-br from-slate-500 to-slate-700" />
             </div>
 
-            {/* Pay-In / Pay-Out 4 cards */}
+            {/* Pay-In / Pay-Out / Withdraw cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <SummaryCard label={m.totalPayIn}     value={fmt(totalPayIn)}     icon={ArrowUpRight}   gradient="bg-gradient-to-br from-emerald-400 to-emerald-600" />
               <SummaryCard label={m.totalPayOut}    value={fmt(totalPayOut)}    icon={ArrowDownRight} gradient="bg-gradient-to-br from-rose-500 to-rose-700" />
+              <SummaryCard label={m.totalWithdrawal} value={fmt(totalWithdrawal)} icon={ArrowDownRight} gradient="bg-gradient-to-br from-blue-500 to-blue-700" />
               <SummaryCard label={m.totalPayInFee}  value={fmt(totalPayInFee)}  icon={TrendingUp}     gradient="bg-gradient-to-br from-violet-500 to-violet-700" />
               <SummaryCard label={m.totalPayOutFee} value={fmt(totalPayOutFee)} icon={TrendingDown}   gradient="bg-gradient-to-br from-amber-400 to-orange-600" />
+              <SummaryCard label={m.totalWithdrawalFee} value={fmt(totalWithdrawalFee)} icon={TrendingDown} gradient="bg-gradient-to-br from-blue-400 to-blue-600" />
             </div>
 
             {/* Charts */}
@@ -324,8 +330,10 @@ export default function OverviewPage() {
                 {([
                   { key: 'payIn',    label: m.tabPayIn },
                   { key: 'payOut',   label: m.tabPayOut },
+                  { key: 'withdrawal', label: m.tabWithdrawal },
                   { key: 'payInFee', label: m.tabPayInFee },
                   { key: 'payOutFee',label: m.tabPayOutFee },
+                  { key: 'withdrawalFee', label: m.tabWithdrawalFee },
                 ] as { key: BreakdownTab; label: string }[]).map(({ key, label: tl }) => (
                   <button key={key} onClick={() => setTab(key)}
                     className={clsx('pb-3 px-1 mr-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap',
@@ -342,17 +350,25 @@ export default function OverviewPage() {
                   </div>
                 ) : breakdownRows.map((row, i) => {
                   const pct = maxBreakdown > 0 ? (row.value / maxBreakdown) * 100 : 0
-                  const isIncome = tab === 'payIn' || tab === 'payInFee'
+                  const rowColor = tab === 'payIn' || tab === 'payInFee' ? 'emerald' : tab === 'withdrawal' || tab === 'withdrawalFee' ? 'blue' : 'rose'
                   return (
                     <div key={i} className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors">
                       <span className="w-5 text-xs text-gray-400 flex-shrink-0 text-right">{i + 1}</span>
                       <span className="w-28 text-xs font-medium text-gray-700 truncate flex-shrink-0">{row.name}</span>
                       <div className="flex-1 flex items-center gap-3">
                         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={clsx('h-full rounded-full', isIncome ? 'bg-emerald-400' : 'bg-rose-400')}
+                          <div className={clsx('h-full rounded-full', {
+                            'bg-emerald-400': rowColor === 'emerald',
+                            'bg-rose-400': rowColor === 'rose',
+                            'bg-blue-400': rowColor === 'blue',
+                          })}
                             style={{ width: `${pct}%` }} />
                         </div>
-                        <span className={clsx('text-sm font-semibold tabular-nums w-28 text-right flex-shrink-0', isIncome ? 'text-emerald-700' : 'text-rose-600')}>
+                        <span className={clsx('text-sm font-semibold tabular-nums w-28 text-right flex-shrink-0', {
+                          'text-emerald-700': rowColor === 'emerald',
+                          'text-rose-600': rowColor === 'rose',
+                          'text-blue-600': rowColor === 'blue',
+                        })}>
                           {fmt(row.value)}
                         </span>
                       </div>

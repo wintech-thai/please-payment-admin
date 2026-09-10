@@ -839,6 +839,7 @@ export interface MerchantSummaryResponse {
   merchantsBalances?: MerchantSummaryItem[] | null
   merchantsPayInSummary?: MerchantSummaryItem[] | null
   merchantsPayOutSummary?: MerchantSummaryItem[] | null
+  merchantsWithdrawalSummary?: MerchantSummaryItem[] | null
 }
 
 export interface DailyRevenueItem {

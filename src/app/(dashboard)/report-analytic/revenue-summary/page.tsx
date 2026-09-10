@@ -14,7 +14,7 @@ import type { RevenueSummaryResponse, DailyRevenueItem, DailyMerchantRevenueItem
 import { toast } from 'sonner'
 import { useLang } from '@/context/LanguageContext'
 
-const PIE_COLORS = ['#059669', '#f59e0b']
+const PIE_COLORS = ['#059669', '#f59e0b', '#d946ef']
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100]
 const HIGHLIGHTED_KEY = 'revenueSummary_highlightedKey'
 
@@ -150,64 +150,81 @@ export default function RevenueSummaryPage() {
 
   const totalPayInFee  = data?.totalPayInFee  ?? 0
   const totalPayOutFee = data?.totalPayOutFee ?? 0
-  const totalFeeIncome = totalPayInFee + totalPayOutFee
+  const totalWithdrawalFee = data?.totalWithdrawalFee ?? 0
+  const totalFeeIncome = totalPayInFee + totalPayOutFee + totalWithdrawalFee
   const totalPayIn     = data?.totalPayInAmount  ?? 0
   const totalPayOut    = data?.totalPayOutAmount ?? 0
+  const totalWithdrawal = data?.totalWithdrawalAmount ?? 0
   const totalPayInCount  = payInCount
   const totalPayOutCount = payOutCount
+  const totalWithdrawalCount = data?.totalWithdrawalCount ?? null
 
   const pieData = useMemo(() => {
     if (!totalFeeIncome) return []
     return [
       { name: m.payInFeeLabel,  value: totalPayInFee,  total: totalFeeIncome },
       { name: m.payOutFeeLabel, value: totalPayOutFee, total: totalFeeIncome },
+      { name: m.withdrawalFeeLabel, value: totalWithdrawalFee, total: totalFeeIncome },
     ]
-  }, [totalPayInFee, totalPayOutFee, totalFeeIncome, m.payInFeeLabel, m.payOutFeeLabel])
+  }, [totalPayInFee, totalPayOutFee, totalWithdrawalFee, totalFeeIncome, m.payInFeeLabel, m.payOutFeeLabel, m.withdrawalFeeLabel])
 
   const allMerchantCodes = useMemo(() => {
     const codes = new Set<string>()
     ;(data?.payInByMerchant ?? []).forEach(x => { if (x.merchantCode) codes.add(x.merchantCode) })
     ;(data?.payOutByMerchant ?? []).forEach(x => { if (x.merchantCode) codes.add(x.merchantCode) })
+    ;(data?.withdrawalByMerchant ?? []).forEach(x => { if (x.merchantCode) codes.add(x.merchantCode) })
     return Array.from(codes).sort()
   }, [data])
 
   const feeByMerchantData = useMemo(() => {
-    const map = new Map<string, { payInFee: number; payOutFee: number }>()
+    const map = new Map<string, { payInFee: number; payOutFee: number; withdrawalFee: number }>()
     ;(data?.payInByMerchant ?? []).forEach(x => {
       if (!x.merchantCode) return
-      const e = map.get(x.merchantCode) ?? { payInFee: 0, payOutFee: 0 }
+      const e = map.get(x.merchantCode) ?? { payInFee: 0, payOutFee: 0, withdrawalFee: 0 }
       e.payInFee += x.feeAmount ?? 0
       map.set(x.merchantCode, e)
     })
     ;(data?.payOutByMerchant ?? []).forEach(x => {
       if (!x.merchantCode) return
-      const e = map.get(x.merchantCode) ?? { payInFee: 0, payOutFee: 0 }
+      const e = map.get(x.merchantCode) ?? { payInFee: 0, payOutFee: 0, withdrawalFee: 0 }
       e.payOutFee += x.feeAmount ?? 0
       map.set(x.merchantCode, e)
     })
+    ;(data?.withdrawalByMerchant ?? []).forEach(x => {
+      if (!x.merchantCode) return
+      const e = map.get(x.merchantCode) ?? { payInFee: 0, payOutFee: 0, withdrawalFee: 0 }
+      e.withdrawalFee += x.feeAmount ?? 0
+      map.set(x.merchantCode, e)
+    })
     return Array.from(map.entries())
-      .map(([name, d]) => ({ name, payInFee: d.payInFee, payOutFee: d.payOutFee, total: d.payInFee + d.payOutFee }))
+      .map(([name, d]) => ({ name, payInFee: d.payInFee, payOutFee: d.payOutFee, withdrawalFee: d.withdrawalFee, total: d.payInFee + d.payOutFee + d.withdrawalFee }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 10)
   }, [data])
 
   const amountByMerchantData = useMemo(() => {
-    const map = new Map<string, { payIn: number; payOut: number }>()
+    const map = new Map<string, { payIn: number; payOut: number; withdrawal: number }>()
     ;(data?.payInByMerchant ?? []).forEach(x => {
       if (!x.merchantCode) return
-      const e = map.get(x.merchantCode) ?? { payIn: 0, payOut: 0 }
+      const e = map.get(x.merchantCode) ?? { payIn: 0, payOut: 0, withdrawal: 0 }
       e.payIn += x.txAmount ?? 0
       map.set(x.merchantCode, e)
     })
     ;(data?.payOutByMerchant ?? []).forEach(x => {
       if (!x.merchantCode) return
-      const e = map.get(x.merchantCode) ?? { payIn: 0, payOut: 0 }
+      const e = map.get(x.merchantCode) ?? { payIn: 0, payOut: 0, withdrawal: 0 }
       e.payOut += x.txAmount ?? 0
       map.set(x.merchantCode, e)
     })
+    ;(data?.withdrawalByMerchant ?? []).forEach(x => {
+      if (!x.merchantCode) return
+      const e = map.get(x.merchantCode) ?? { payIn: 0, payOut: 0, withdrawal: 0 }
+      e.withdrawal += x.txAmount ?? 0
+      map.set(x.merchantCode, e)
+    })
     return Array.from(map.entries())
-      .map(([name, d]) => ({ name, payIn: d.payIn, payOut: d.payOut }))
-      .sort((a, b) => (b.payIn + b.payOut) - (a.payIn + a.payOut))
+      .map(([name, d]) => ({ name, payIn: d.payIn, payOut: d.payOut, withdrawal: d.withdrawal }))
+      .sort((a, b) => (b.payIn + b.payOut + b.withdrawal) - (a.payIn + a.payOut + a.withdrawal))
       .slice(0, 10)
   }, [data])
 
@@ -219,6 +236,7 @@ export default function RevenueSummaryPage() {
         date: new Date(x.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
         payInFee:  x.payInFee  ?? 0,
         payOutFee: x.payOutFee ?? 0,
+        withdrawalFee: x.withdrawalFee ?? 0,
       }))
   }, [data])
 
@@ -234,7 +252,8 @@ export default function RevenueSummaryPage() {
         payOutAmt: x.payOutAmount ?? 0,
         payInFee:  x.payInFee     ?? 0,
         payOutFee: x.payOutFee    ?? 0,
-        totalFee:  (x.payInFee ?? 0) + (x.payOutFee ?? 0),
+        withdrawalFee: x.withdrawalFee ?? 0,
+        totalFee:  (x.payInFee ?? 0) + (x.payOutFee ?? 0) + (x.withdrawalFee ?? 0),
       }))
     return merchantFilter === '__all__' ? rows : rows.filter(r => r.merchant === merchantFilter)
   }, [data, merchantFilter])
@@ -255,7 +274,7 @@ export default function RevenueSummaryPage() {
   ]
 
   const handleExportCsv = () => {
-    const headers = [m.colDate, m.colMerchant, m.colPayInAmount, m.colPayOutAmount, m.colPayInFee, m.colPayOutFee, m.colTotalFee]
+    const headers = [m.colDate, m.colMerchant, m.colPayInAmount, m.colPayOutAmount, m.colPayInFee, m.colPayOutFee, m.colWithdrawalFee, m.colTotalFee]
     const rows = pagedRows.map(r => [
       r.date,
       r.merchant,
@@ -263,6 +282,7 @@ export default function RevenueSummaryPage() {
       r.payOutAmt.toFixed(2),
       r.payInFee.toFixed(2),
       r.payOutFee.toFixed(2),
+      r.withdrawalFee.toFixed(2),
       r.totalFee.toFixed(2),
     ])
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
@@ -330,13 +350,15 @@ export default function RevenueSummaryPage() {
         ) : (
           <>
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {([
                 { label: m.cardTotalFeeIncome, value: fmt(totalFeeIncome), icon: DollarSign,     gradient: 'bg-gradient-to-br from-primary-500 to-primary-700', count: null },
                 { label: m.cardPayInFee,        value: fmt(totalPayInFee),  icon: TrendingUp,    gradient: 'bg-gradient-to-br from-emerald-400 to-emerald-600', count: totalPayInCount },
                 { label: m.cardPayOutFee,       value: fmt(totalPayOutFee), icon: TrendingDown,  gradient: 'bg-gradient-to-br from-amber-400 to-orange-500',    count: totalPayOutCount },
+                { label: m.cardWithdrawalFee,   value: fmt(totalWithdrawalFee), icon: TrendingDown, gradient: 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-700', count: totalWithdrawalCount },
                 { label: m.cardTotalPayIn,      value: fmt(totalPayIn),     icon: ArrowUpRight,  gradient: 'bg-gradient-to-br from-blue-500 to-blue-700',       count: totalPayInCount },
                 { label: m.cardTotalPayOut,     value: fmt(totalPayOut),    icon: ArrowDownRight, gradient: 'bg-gradient-to-br from-rose-500 to-rose-700',      count: totalPayOutCount },
+                { label: m.cardTotalWithdrawal, value: fmt(totalWithdrawal), icon: ArrowDownRight, gradient: 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-700', count: totalWithdrawalCount },
               ] as const).map((s, i) => (
                 <div key={i} className={clsx('rounded-2xl p-5 shadow-md', s.gradient)}>
                   <div className="flex items-start justify-between">
@@ -402,7 +424,8 @@ export default function RevenueSummaryPage() {
                         <Tooltip content={<StackedBarTooltip />} cursor={{ fill: '#f9fafb' }} />
                         <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 11, marginTop: 8 }} />
                         <Bar dataKey="payInFee"  name={m.payInFeeLabel}  stackId="a" fill="#059669" radius={[0, 0, 0, 0]} maxBarSize={36} />
-                        <Bar dataKey="payOutFee" name={m.payOutFeeLabel} stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                        <Bar dataKey="payOutFee" name={m.payOutFeeLabel} stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} maxBarSize={36} />
+                        <Bar dataKey="withdrawalFee" name={m.withdrawalFeeLabel} stackId="a" fill="#d946ef" radius={[4, 4, 0, 0]} maxBarSize={36} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -440,7 +463,8 @@ export default function RevenueSummaryPage() {
                       <Tooltip content={<StackedBarTooltip />} cursor={{ fill: '#f9fafb' }} />
                       <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 11, marginTop: 8 }} />
                       <Bar dataKey="payInFee"  name={m.payInFeeLabel}  stackId="d" fill="#059669" radius={[0, 0, 0, 0]} maxBarSize={32} />
-                      <Bar dataKey="payOutFee" name={m.payOutFeeLabel} stackId="d" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                      <Bar dataKey="payOutFee" name={m.payOutFeeLabel} stackId="d" fill="#f59e0b" radius={[0, 0, 0, 0]} maxBarSize={32} />
+                      <Bar dataKey="withdrawalFee" name={m.withdrawalFeeLabel} stackId="d" fill="#d946ef" radius={[4, 4, 0, 0]} maxBarSize={32} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -470,6 +494,7 @@ export default function RevenueSummaryPage() {
                       <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 11, marginTop: 8 }} />
                       <Bar dataKey="payIn"  name={m.payInAmountLabel}  fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={20} />
                       <Bar dataKey="payOut" name={m.payOutAmountLabel} fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                      <Bar dataKey="withdrawal" name={m.withdrawalAmountLabel} fill="#d946ef" radius={[4, 4, 0, 0]} maxBarSize={20} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -505,7 +530,7 @@ export default function RevenueSummaryPage() {
               <div className="overflow-auto custom-scrollbar">
                 <table className="w-full text-sm table-fixed min-w-[760px]">
                   <colgroup>
-                    <col className="w-[12%]" /><col className="w-[18%]" /><col className="w-[14%]" /><col className="w-[14%]" /><col className="w-[14%]" /><col className="w-[14%]" /><col className="w-[14%]" />
+                    <col className="w-[11%]" /><col className="w-[15%]" /><col className="w-[12%]" /><col className="w-[12%]" /><col className="w-[12%]" /><col className="w-[12%]" /><col className="w-[13%]" /><col className="w-[13%]" />
                   </colgroup>
                   <thead>
                     <tr className="border-b border-gray-100">
@@ -515,12 +540,13 @@ export default function RevenueSummaryPage() {
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colPayOutAmount}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colPayInFee}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colPayOutFee}</th>
+                      <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colWithdrawalFee}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">{m.colTotalFee}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pagedRows.length === 0 ? (
-                      <tr><td colSpan={7} className="py-12 text-center text-sm text-gray-400">{m.noData}</td></tr>
+                      <tr><td colSpan={8} className="py-12 text-center text-sm text-gray-400">{m.noData}</td></tr>
                     ) : pagedRows.map((r, i) => {
                       const rowKey = `${r.date}-${r.merchant}-${i}`
                       const isHighlighted = highlightedKey === rowKey
@@ -545,6 +571,7 @@ export default function RevenueSummaryPage() {
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-orange-600 border-b border-gray-100">{fmt(r.payOutAmt)}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-emerald-700 border-b border-gray-100">{fmt(r.payInFee)}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-amber-600 border-b border-gray-100">{fmt(r.payOutFee)}</td>
+                          <td className="py-3 px-3 text-sm tabular-nums text-right text-fuchsia-600 border-b border-gray-100">{fmt(r.withdrawalFee)}</td>
                           <td className="py-3 px-5 text-sm tabular-nums text-right font-semibold text-gray-900 border-b border-gray-100">{fmt(r.totalFee)}</td>
                         </tr>
                       )
@@ -558,6 +585,7 @@ export default function RevenueSummaryPage() {
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-orange-600">{fmt(pagedRows.reduce((s, r) => s + r.payOutAmt, 0))}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-emerald-700">{fmt(pagedRows.reduce((s, r) => s + r.payInFee, 0))}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-amber-600">{fmt(pagedRows.reduce((s, r) => s + r.payOutFee, 0))}</td>
+                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-fuchsia-600">{fmt(pagedRows.reduce((s, r) => s + r.withdrawalFee, 0))}</td>
                         <td className="py-3 px-5 text-sm tabular-nums text-right font-bold text-gray-900">{fmt(pagedRows.reduce((s, r) => s + r.totalFee, 0))}</td>
                       </tr>
                     </tfoot>

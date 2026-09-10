@@ -778,6 +778,7 @@ export interface PointTxItem {
   merchantId?: string | null
   createdDate?: string | null
   tags?: string | null
+  tags2?: string | null
   description?: string | null
   txAmount?: number | null
   txAmountDecimal?: number | null
@@ -844,6 +845,7 @@ export interface DailyRevenueItem {
   date?: string | null
   payInFee?: number | null
   payOutFee?: number | null
+  withdrawalFee?: number | null
 }
 
 export interface DailyMerchantRevenueItem {
@@ -853,6 +855,8 @@ export interface DailyMerchantRevenueItem {
   payOutAmount?: number | null
   payInFee?: number | null
   payOutFee?: number | null
+  withdrawalAmount?: number | null
+  withdrawalFee?: number | null
 }
 
 export interface RevenueSummaryResponse {
@@ -862,8 +866,12 @@ export interface RevenueSummaryResponse {
   totalPayOutFee?: number | null
   totalPayInCount?: number | null
   totalPayOutCount?: number | null
+  totalWithdrawalAmount?: number | null
+  totalWithdrawalFee?: number | null
+  totalWithdrawalCount?: number | null
   payInByMerchant?: MerchantSummaryItem[] | null
   payOutByMerchant?: MerchantSummaryItem[] | null
+  withdrawalByMerchant?: MerchantSummaryItem[] | null
   dailyRevenue?: DailyRevenueItem[] | null
   dailyMerchantRevenue?: DailyMerchantRevenueItem[] | null
 }

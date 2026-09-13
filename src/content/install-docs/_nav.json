@@ -1,0 +1,11 @@
+[
+  {
+    "section": { "th": "การติดตั้ง", "en": "Installation", "zh": "安装" },
+    "items": [
+      { "slug": "overview", "titles": { "th": "ภาพรวม", "en": "Overview", "zh": "概览" } },
+      { "slug": "prepare-vm", "titles": { "th": "1. เตรียมเครื่อง VM (GCP)", "en": "1. Prepare a VM (GCP)", "zh": "1. 准备虚拟机 (GCP)" } },
+      { "slug": "install-k3s", "titles": { "th": "2. ติดตั้ง K3s + ArgoCD", "en": "2. Install K3s + ArgoCD", "zh": "2. 安装 K3s + ArgoCD" } },
+      { "slug": "domain-dns", "titles": { "th": "3. ตั้งค่า Domain และ DNS", "en": "3. Domain & DNS Setup", "zh": "3. 域名与 DNS 设置" } }
+    ]
+  }
+]

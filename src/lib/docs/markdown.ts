@@ -7,7 +7,13 @@ import { DEFAULT_LOCALE, type DocLocale } from './locale'
 export { DOC_LOCALES, DEFAULT_LOCALE, isDocLocale } from './locale'
 export type { DocLocale } from './locale'
 
-const DOCS_DIR = path.join(process.cwd(), 'src/content/documents')
+const CONTENT_ROOT = path.join(process.cwd(), 'src/content')
+
+export type DocSet = 'documents' | 'install-docs'
+
+function docsDir(docSet: DocSet): string {
+  return path.join(CONTENT_ROOT, docSet)
+}
 
 export interface DocMeta {
   title: string
@@ -31,12 +37,19 @@ export interface NavSection {
   items: NavItem[]
 }
 
-export function getNav(): NavSection[] {
-  const navPath = path.join(DOCS_DIR, '_nav.json')
+export function getNav(docSet: DocSet = 'documents'): NavSection[] {
+  const navPath = path.join(docsDir(docSet), '_nav.json')
   return JSON.parse(fs.readFileSync(navPath, 'utf-8'))
 }
 
-export function getDoc(slug: string, locale: DocLocale = DEFAULT_LOCALE, apiUrl?: string, merchantUrl?: string): DocContent | null {
+export function getDoc(
+  slug: string,
+  locale: DocLocale = DEFAULT_LOCALE,
+  apiUrl?: string,
+  merchantUrl?: string,
+  docSet: DocSet = 'documents'
+): DocContent | null {
+  const DOCS_DIR = docsDir(docSet)
   const localizedPath = path.join(DOCS_DIR, locale, `${slug}.md`)
   const fallbackPath = path.join(DOCS_DIR, DEFAULT_LOCALE, `${slug}.md`)
   const filePath = fs.existsSync(localizedPath) ? localizedPath : fallbackPath
@@ -83,9 +96,9 @@ export function getDoc(slug: string, locale: DocLocale = DEFAULT_LOCALE, apiUrl?
   }
 }
 
-export function getAllSlugs(): string[] {
+export function getAllSlugs(docSet: DocSet = 'documents'): string[] {
   return fs
-    .readdirSync(path.join(DOCS_DIR, DEFAULT_LOCALE))
+    .readdirSync(path.join(docsDir(docSet), DEFAULT_LOCALE))
     .filter(f => f.endsWith('.md'))
     .map(f => f.replace('.md', ''))
 }

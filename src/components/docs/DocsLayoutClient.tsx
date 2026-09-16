@@ -36,19 +36,20 @@ function LangSwitcher({ locale, pathname }: { locale: DocLocale; pathname: strin
 export default function DocsLayoutClient({
   children,
   nav,
+  title = 'Public API Docs',
+  homeHref = '/documents/overview',
+  basePath = '/documents',
 }: {
   children: React.ReactNode
   nav: NavSection[]
+  title?: string
+  homeHref?: string
+  basePath?: string
 }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const locale = isDocLocale(searchParams.get('lang')) ? (searchParams.get('lang') as DocLocale) : DEFAULT_LOCALE
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  function getAdminUrl(path: string) {
-    if (typeof window === 'undefined') return path
-    return window.location.origin + path
-  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
@@ -61,9 +62,9 @@ export default function DocsLayoutClient({
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <Link href="/documents/overview" className="flex items-center gap-2 font-bold text-white text-sm">
+          <Link href={homeHref} className="flex items-center gap-2 font-bold text-white text-sm">
             <FileText className="w-4 h-4 text-primary-400" />
-            Public API Docs
+            {title}
           </Link>
         </div>
         <div className="flex items-center gap-3">
@@ -95,8 +96,8 @@ export default function DocsLayoutClient({
                 </p>
                 <ul className="space-y-0.5">
                   {section.items.map(item => {
-                    const href = locale === DEFAULT_LOCALE ? `/documents/${item.slug}` : `/documents/${item.slug}?lang=${locale}`
-                    const active = pathname === `/documents/${item.slug}`
+                    const href = locale === DEFAULT_LOCALE ? `${basePath}/${item.slug}` : `${basePath}/${item.slug}?lang=${locale}`
+                    const active = pathname === `${basePath}/${item.slug}`
                     return (
                       <li key={item.slug}>
                         <Link

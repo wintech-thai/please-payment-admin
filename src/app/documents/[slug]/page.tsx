@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getDoc, isDocLocale, DEFAULT_LOCALE } from '@/lib/docs/markdown'
-import DocContent from './DocContent'
+import DocContent from '@/components/docs/DocContent'
 
 export const dynamic = 'force-dynamic'
 

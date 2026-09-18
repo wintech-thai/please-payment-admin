@@ -30,15 +30,7 @@ export default function RiskManagementSidebar() {
         </svg>
       ),
     },
-    {
-      href: '/risk-management/risk-events',
-      label: t.nav.riskEvents,
-      icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-    },
+    // Risk Events hidden for now (x071 item 7 — not ready to expose)
   ]
 
   return (

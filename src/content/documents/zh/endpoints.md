@@ -280,9 +280,9 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 | `RefId3` | string | ❌ | 附加参考字段 3 |
 | `RequestedAmount` | number | ✅ | 金额（必须大于 0） |
 | `QrProvider` | string | ✅ | 必须为 `PP`（Pay-Out 仅支持 PromptPay） |
-| `BankCode` | string | ❌ | 目标银行代码，例如 `SCB`、`KBANK`、`BAY` |
-| `BankAccountNo` | string | ❌ | 目标账号 |
-| `BankAccountName` | string | ❌ | 目标账户名称 |
+| `BankCode` | string | ✅ | 目标银行代码，例如 `SCB`、`KBANK`、`BAY` |
+| `BankAccountNo` | string | ✅ | 目标账号 |
+| `BankAccountName` | string | ✅ | 目标账户名称 |
 | `PromptPayId` | string | ❌ | 目标 PromptPay 号码 |
 | `AccountType` | string | ❌ | 账户类型：`Native` 或 `PromptPay` |
 

@@ -877,6 +877,49 @@ export interface RevenueSummaryResponse {
   dailyMerchantRevenue?: DailyMerchantRevenueItem[] | null
 }
 
+// ─── Bank Summary ────────────────────────────────────────────────────────────
+
+export interface DailyBankSummaryItem {
+  date?: string | null
+  bankCode?: string | null
+  accountNumber?: string | null
+  merchantCode?: string | null
+  payInAmount?: number | null
+  payOutAmount?: number | null
+  withdrawalAmount?: number | null
+  payInCount?: number | null
+  payOutCount?: number | null
+  withdrawalCount?: number | null
+}
+
+export interface BankSummaryResponse {
+  totalPayInAmount?: number | null
+  totalPayOutAmount?: number | null
+  totalWithdrawalAmount?: number | null
+  totalPayInCount?: number | null
+  totalPayOutCount?: number | null
+  totalWithdrawalCount?: number | null
+  dailyBankSummary?: DailyBankSummaryItem[] | null
+}
+
+// ─── Payer Summary ───────────────────────────────────────────────────────────
+
+export interface PayerSummaryItem {
+  payerName?: string | null
+  merchantCode?: string | null
+  transactionCount?: number | null
+  totalAmount?: number | null
+  firstSeenDate?: string | null
+  lastSeenDate?: string | null
+}
+
+export interface PayerSummaryResponse {
+  totalPayers?: number | null
+  totalAmount?: number | null
+  totalTransactionCount?: number | null
+  payers?: PayerSummaryItem[] | null
+}
+
 // ─── Pay-In Slip (Payment Document) ─────────────────────────────────────────
 
 export interface PayInSlipItem {

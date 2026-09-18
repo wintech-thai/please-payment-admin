@@ -2,15 +2,30 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || ''
 
+// Same header-forwarding contract as src/app/api/auth/refresh/route.ts —
+// this fetch talks to the backend directly (bypassing the /api/proxy relay), so it has
+// to forward the visitor IP headers itself or the backend only sees this pod's own IP
+// (breaks IP blacklist/whitelist enforcement and audit logging for Login).
+const FORWARD_HEADERS = ['cf-connecting-ip', 'x-forwarded-for', 'x-forwarded-host']
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    for (const h of FORWARD_HEADERS) {
+      const v = request.headers.get(h)
+      if (v) headers[h] = v
+    }
+    if (process.env.MUTUAL_KEY) {
+      headers['X-Forward-Mutual-Key'] = process.env.MUTUAL_KEY
+    }
 
     const response = await fetch(
       `${BACKEND_URL}/admin-api/AuthAdmin/org/global/action/Login`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ UserName: body.username, Password: body.password }),
       }
     )

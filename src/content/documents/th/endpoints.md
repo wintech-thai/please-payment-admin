@@ -280,13 +280,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 | `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0) |
 | `QrProvider` | string | ✅ | ต้องเป็น `PP` (PromptPay เท่านั้น สำหรับ Pay-Out) |
-| `BankCode` | string | ✅ | รหัสธนาคารปลายทาง เช่น `SCB`, `KBANK`, `BAY` |
+| `BankCode` | string | ✅ | รหัสธนาคารปลายทาง เช่น `SCB`, `KBANK`, `BAY` — ดู[รหัสธนาคารที่รองรับทั้งหมด](/documents/bank-codes) |
 | `BankAccountNo` | string | ✅ | เลขบัญชีปลายทาง |
 | `BankAccountName` | string | ✅ | ชื่อบัญชีปลายทาง |
 | `PromptPayId` | string | ❌ | หมายเลข PromptPay ปลายทาง |
 | `AccountType` | string | ❌ | ประเภทบัญชี: `Native` หรือ `PromptPay` |
 
-> ข้อมูลบัญชีปลายทาง: ส่ง `PayinBankAccountId` (ID จากระบบ) หรือ ส่ง `BankCode`+`BankAccountNo`+`BankAccountName` หรือ `PromptPayId`+`AccountType` อย่างใดอย่างหนึ่ง
+> ข้อมูลบัญชีปลายทาง: ต้องส่ง `BankCode`+`BankAccountNo`+`BankAccountName` เข้ามาเสมอทุกครั้ง (ดู[รหัสธนาคารที่รองรับ](/documents/bank-codes)) แม้จะโอนผ่าน PromptPay ก็ตาม — ถ้าทราบหมายเลข PromptPay ของปลายทางด้วย สามารถส่ง `PromptPayId`+`AccountType` เพิ่มเติมได้ หรือจะส่ง `PayinBankAccountId` (ID จากระบบ) แทนทั้งหมดนี้ก็ได้เช่นกัน
 
 > **แนะนำ:** หากทราบหมายเลข PromptPay ของบัญชีปลายทาง แนะนำให้ส่ง `PromptPayId` มาด้วย เนื่องจากการโอนผ่าน PromptPay จะช่วยให้ระบบประมวลผลได้เร็วขึ้น และผู้รับได้รับเงินได้รวดเร็วยิ่งขึ้น
 
@@ -343,11 +343,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitWithdrawalRequest/{
 
 ใช้ endpoint นี้เมื่อ **Merchant เองต้องการถอนเงินออกไปยังบัญชีของตัวเอง** ต่างจาก Pay-Out ทั่วไปที่เป็นการโอนเงินออกไปให้ *ลูกค้า* ของ Merchant — ภายในระบบจะสร้างคำขอชนิดเดียวกับ Pay-Out ทุกประการ เพียงแต่ติด flag ว่าเป็น withdrawal เพื่อให้แยกออกจาก Pay-Out ปกติในรายงานต่าง ๆ
 
-> **Request body, วิธีคิดค่าธรรมเนียม, รูปแบบ Response และ Webhook เหมือนกับ [สร้างคำขอโอนเงินออก (Pay-Out)](#สร้างคำขอโอนเงินออก-pay-out) ทุกอย่าง 100%** — ต่างกันแค่ endpoint path (`SubmitWithdrawalRequest` แทน `SubmitPayOutRequest`) เท่านั้น ส่วนที่อธิบายไว้ด้านบนสำหรับ Pay-Out ใช้กับ endpoint นี้ได้เหมือนกันทุกประการ
+> **Request body, วิธีคิดค่าธรรมเนียม, รูปแบบ Response และ Webhook เหมือนกับ [สร้างคำขอโอนเงินออก (Pay-Out)](#สร้างคำขอโอนเงินออก-payout) ทุกอย่าง 100%** — ต่างกันแค่ endpoint path (`SubmitWithdrawalRequest` แทน `SubmitPayOutRequest`) เท่านั้น ส่วนที่อธิบายไว้ด้านบนสำหรับ Pay-Out ใช้กับ endpoint นี้ได้เหมือนกันทุกประการ
 
 ### Request Body
 
-เหมือนกับ [สร้างคำขอโอนเงินออก (Pay-Out)](#สร้างคำขอโอนเงินออก-pay-out) — `RefId1`, `RefId2`, `RefId3`, `RequestedAmount`, `QrProvider` และข้อมูลบัญชีปลายทาง (`BankCode`+`BankAccountNo`+`BankAccountName`, หรือ `PromptPayId`+`AccountType`, หรือ `PayinBankAccountId`)
+เหมือนกับ [สร้างคำขอโอนเงินออก (Pay-Out)](#สร้างคำขอโอนเงินออก-payout) — `RefId1`, `RefId2`, `RefId3`, `RequestedAmount`, `QrProvider` และข้อมูลบัญชีปลายทาง (`BankCode`+`BankAccountNo`+`BankAccountName`, หรือ `PromptPayId`+`AccountType`, หรือ `PayinBankAccountId`)
 
 ### ตัวอย่าง Request
 

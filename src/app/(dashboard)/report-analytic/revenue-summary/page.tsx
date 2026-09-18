@@ -250,6 +250,7 @@ export default function RevenueSummaryPage() {
         merchant: x.merchantCode,
         payInAmt:  x.payInAmount  ?? 0,
         payOutAmt: x.payOutAmount ?? 0,
+        withdrawalAmt: x.withdrawalAmount ?? 0,
         payInFee:  x.payInFee     ?? 0,
         payOutFee: x.payOutFee    ?? 0,
         withdrawalFee: x.withdrawalFee ?? 0,
@@ -274,12 +275,13 @@ export default function RevenueSummaryPage() {
   ]
 
   const handleExportCsv = () => {
-    const headers = [m.colDate, m.colMerchant, m.colPayInAmount, m.colPayOutAmount, m.colPayInFee, m.colPayOutFee, m.colWithdrawalFee, m.colTotalFee]
+    const headers = [m.colDate, m.colMerchant, m.colPayInAmount, m.colPayOutAmount, m.colWithdrawalAmount, m.colPayInFee, m.colPayOutFee, m.colWithdrawalFee, m.colTotalFee]
     const rows = pagedRows.map(r => [
       r.date,
       r.merchant,
       r.payInAmt.toFixed(2),
       r.payOutAmt.toFixed(2),
+      r.withdrawalAmt.toFixed(2),
       r.payInFee.toFixed(2),
       r.payOutFee.toFixed(2),
       r.withdrawalFee.toFixed(2),
@@ -530,7 +532,7 @@ export default function RevenueSummaryPage() {
               <div className="overflow-auto custom-scrollbar">
                 <table className="w-full text-sm table-fixed min-w-[760px]">
                   <colgroup>
-                    <col className="w-[11%]" /><col className="w-[15%]" /><col className="w-[12%]" /><col className="w-[12%]" /><col className="w-[12%]" /><col className="w-[12%]" /><col className="w-[13%]" /><col className="w-[13%]" />
+                    <col className="w-[10%]" /><col className="w-[13%]" /><col className="w-[11%]" /><col className="w-[11%]" /><col className="w-[11%]" /><col className="w-[11%]" /><col className="w-[11%]" /><col className="w-[11%]" /><col className="w-[11%]" />
                   </colgroup>
                   <thead>
                     <tr className="border-b border-gray-100">
@@ -538,6 +540,7 @@ export default function RevenueSummaryPage() {
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colMerchant}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colPayInAmount}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colPayOutAmount}</th>
+                      <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colWithdrawalAmount}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colPayInFee}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colPayOutFee}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colWithdrawalFee}</th>
@@ -546,7 +549,7 @@ export default function RevenueSummaryPage() {
                   </thead>
                   <tbody>
                     {pagedRows.length === 0 ? (
-                      <tr><td colSpan={8} className="py-12 text-center text-sm text-gray-400">{m.noData}</td></tr>
+                      <tr><td colSpan={9} className="py-12 text-center text-sm text-gray-400">{m.noData}</td></tr>
                     ) : pagedRows.map((r, i) => {
                       const rowKey = `${r.date}-${r.merchant}-${i}`
                       const isHighlighted = highlightedKey === rowKey
@@ -569,6 +572,7 @@ export default function RevenueSummaryPage() {
                           <td className="py-3 px-3 text-sm font-medium text-gray-800 truncate border-b border-gray-100">{r.merchant}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-blue-700 border-b border-gray-100">{fmt(r.payInAmt)}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-orange-600 border-b border-gray-100">{fmt(r.payOutAmt)}</td>
+                          <td className="py-3 px-3 text-sm tabular-nums text-right text-purple-600 border-b border-gray-100">{fmt(r.withdrawalAmt)}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-emerald-700 border-b border-gray-100">{fmt(r.payInFee)}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-amber-600 border-b border-gray-100">{fmt(r.payOutFee)}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-fuchsia-600 border-b border-gray-100">{fmt(r.withdrawalFee)}</td>
@@ -583,6 +587,7 @@ export default function RevenueSummaryPage() {
                         <td colSpan={2} className="py-3 px-5 text-xs font-bold text-gray-600 uppercase tracking-wide">{m.colTotal}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-blue-700">{fmt(pagedRows.reduce((s, r) => s + r.payInAmt, 0))}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-orange-600">{fmt(pagedRows.reduce((s, r) => s + r.payOutAmt, 0))}</td>
+                        <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-purple-600">{fmt(pagedRows.reduce((s, r) => s + r.withdrawalAmt, 0))}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-emerald-700">{fmt(pagedRows.reduce((s, r) => s + r.payInFee, 0))}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-amber-600">{fmt(pagedRows.reduce((s, r) => s + r.payOutFee, 0))}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-fuchsia-600">{fmt(pagedRows.reduce((s, r) => s + r.withdrawalFee, 0))}</td>

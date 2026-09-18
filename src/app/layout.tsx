@@ -31,7 +31,7 @@ const fetchInitialBrandConfig = cache(async (): Promise<AdminConfig | null> => {
     }
 
     const res = await fetch(
-      `${backendUrl}/admin-api/AdminConfiguration/org/global/action/GetBrandConfig`,
+      `${backendUrl}/public-api/PublicBranding/action/GetBrandConfig`,
       {
         method: 'GET',
         headers: forwardHeaders,

@@ -280,13 +280,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 | `RefId3` | string | ❌ | 附加参考字段 3 |
 | `RequestedAmount` | number | ✅ | 金额（必须大于 0） |
 | `QrProvider` | string | ✅ | 必须为 `PP`（Pay-Out 仅支持 PromptPay） |
-| `BankCode` | string | ✅ | 目标银行代码，例如 `SCB`、`KBANK`、`BAY` |
+| `BankCode` | string | ✅ | 目标银行代码，例如 `SCB`、`KBANK`、`BAY` —— 查看[所有支持的代码](/documents/bank-codes) |
 | `BankAccountNo` | string | ✅ | 目标账号 |
 | `BankAccountName` | string | ✅ | 目标账户名称 |
 | `PromptPayId` | string | ❌ | 目标 PromptPay 号码 |
 | `AccountType` | string | ❌ | 账户类型：`Native` 或 `PromptPay` |
 
-> 目标账户信息：可发送 `PayinBankAccountId`（系统中的 ID），或发送 `BankCode`+`BankAccountNo`+`BankAccountName`，或 `PromptPayId`+`AccountType` 其中一种
+> 目标账户信息：必须始终发送 `BankCode`+`BankAccountNo`+`BankAccountName`（见[支持的银行代码](/documents/bank-codes)），即使通过 PromptPay 转账也是如此 —— 如果同时知道目标的 PromptPay 号码，可以额外发送 `PromptPayId`+`AccountType`；也可以用 `PayinBankAccountId`（系统中的 ID）代替以上全部信息
 
 > **建议：** 若已知目标账户的 PromptPay 号码，建议一并发送 `PromptPayId` —— 通过 PromptPay 转账可让系统处理更快，收款方也能更快收到款项
 
@@ -343,11 +343,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitWithdrawalRequest/{
 
 当 **商户本身** 需要将资金提现到自己的账户时使用此接口 —— 区别于普通 Pay-Out（将资金转给商户的*客户*）。系统内部会创建与 Pay-Out 完全相同的请求，只是标记为提现，以便在报表中与普通 Pay-Out 区分开来。
 
-> **Request body、手续费计算方式、Response 格式和 Webhook 都与 [创建付款请求（Pay-Out）](#创建付款请求pay-out) 完全一致** —— 唯一的区别是接口路径（使用 `SubmitWithdrawalRequest` 而非 `SubmitPayOutRequest`）。上文关于 Pay-Out 的所有说明同样适用于此接口。
+> **Request body、手续费计算方式、Response 格式和 Webhook 都与 [创建付款请求（Pay-Out）](#创建付款请求payout) 完全一致** —— 唯一的区别是接口路径（使用 `SubmitWithdrawalRequest` 而非 `SubmitPayOutRequest`）。上文关于 Pay-Out 的所有说明同样适用于此接口。
 
 ### Request Body
 
-与 [创建付款请求（Pay-Out）](#创建付款请求pay-out) 相同 —— `RefId1`、`RefId2`、`RefId3`、`RequestedAmount`、`QrProvider`，以及目标账户信息（`BankCode`+`BankAccountNo`+`BankAccountName`，或 `PromptPayId`+`AccountType`，或 `PayinBankAccountId`）。
+与 [创建付款请求（Pay-Out）](#创建付款请求payout) 相同 —— `RefId1`、`RefId2`、`RefId3`、`RequestedAmount`、`QrProvider`，以及目标账户信息（`BankCode`+`BankAccountNo`+`BankAccountName`，或 `PromptPayId`+`AccountType`，或 `PayinBankAccountId`）。
 
 ### 请求示例
 

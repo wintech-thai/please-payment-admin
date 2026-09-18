@@ -280,13 +280,13 @@ Creates a request to transfer funds out to a destination account.
 | `RefId3` | string | ❌ | Additional reference 3 |
 | `RequestedAmount` | number | ✅ | Amount (must be greater than 0) |
 | `QrProvider` | string | ✅ | Must be `PP` (PromptPay only, for Pay-Out) |
-| `BankCode` | string | ✅ | Destination bank code, e.g. `SCB`, `KBANK`, `BAY` |
+| `BankCode` | string | ✅ | Destination bank code, e.g. `SCB`, `KBANK`, `BAY` — see [all supported codes](/documents/bank-codes) |
 | `BankAccountNo` | string | ✅ | Destination account number |
 | `BankAccountName` | string | ✅ | Destination account name |
 | `PromptPayId` | string | ❌ | Destination PromptPay number |
 | `AccountType` | string | ❌ | Account type: `Native` or `PromptPay` |
 
-> Destination account details: send either `PayinBankAccountId` (an ID from the system), or `BankCode`+`BankAccountNo`+`BankAccountName`, or `PromptPayId`+`AccountType`
+> Destination account details: `BankCode`+`BankAccountNo`+`BankAccountName` must always be sent (see [Supported Bank Codes](/documents/bank-codes)), even when paying out via PromptPay — if you also know the destination's PromptPay number, you may additionally send `PromptPayId`+`AccountType`, or send `PayinBankAccountId` (an ID from the system) instead of all of the above
 
 > **Recommended:** If you know the destination account's PromptPay number, it's recommended to send `PromptPayId` — transferring via PromptPay lets the system process faster, and the recipient receives funds more quickly
 
@@ -343,11 +343,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitWithdrawalRequest/{
 
 Use this endpoint when the **Merchant itself** is withdrawing funds out to its own account — as opposed to a standard Pay-Out, which transfers funds out to the Merchant's *customer*. Internally the system creates the exact same kind of request as a Pay-Out, just flagged as a withdrawal, so it appears separately from ordinary Pay-Outs in reporting.
 
-> **Request body, fee calculation, response shape, and webhooks are all 100% identical to [Create a Pay-Out Request](#create-a-pay-out-request)** — the only difference is the endpoint path (`SubmitWithdrawalRequest` instead of `SubmitPayOutRequest`). Everything documented above for Pay-Out applies here unchanged.
+> **Request body, fee calculation, response shape, and webhooks are all 100% identical to [Create a Pay-Out Request](#create-a-payout-request)** — the only difference is the endpoint path (`SubmitWithdrawalRequest` instead of `SubmitPayOutRequest`). Everything documented above for Pay-Out applies here unchanged.
 
 ### Request Body
 
-Same as [Create a Pay-Out Request](#create-a-pay-out-request) — `RefId1`, `RefId2`, `RefId3`, `RequestedAmount`, `QrProvider`, and destination account fields (`BankCode`+`BankAccountNo`+`BankAccountName`, or `PromptPayId`+`AccountType`, or `PayinBankAccountId`).
+Same as [Create a Pay-Out Request](#create-a-payout-request) — `RefId1`, `RefId2`, `RefId3`, `RequestedAmount`, `QrProvider`, and destination account fields (`BankCode`+`BankAccountNo`+`BankAccountName`, or `PromptPayId`+`AccountType`, or `PayinBankAccountId`).
 
 ### Sample Request
 

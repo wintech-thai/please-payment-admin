@@ -4,9 +4,9 @@ title: Supported Bank Codes
 
 # Supported Bank Codes
 
-The `BankCode` field used in `SubmitPayOutRequest` (and when configuring a bank account) accepts a fixed set of short codes — **not** the official 3-digit codes issued by the Bank of Thailand (BOT). The table below maps the two so you can cross-reference them.
+The `BankCode` field used in [`SubmitPayOutRequest`](/documents/endpoints#create-a-payout-request) and `SubmitWithdrawalRequest` (and when configuring a bank account) accepts a fixed set of short codes — **not** the official 3-digit codes issued by the Bank of Thailand (BOT). The table below maps the two so you can cross-reference them.
 
-> **Note:** For PromptPay-based payouts, use `QrProvider: PP` instead — no `BankCode` is required in that case.
+> **Note:** `BankCode`, `BankAccountNo`, and `BankAccountName` must always be sent — **even when paying out via PromptPay**. `PromptPayId` is additional information, not a replacement for the bank account details.
 
 | Bank Code | BOT Code | Bank Name (EN) | Bank Name (TH) |
 |---|---|---|---|

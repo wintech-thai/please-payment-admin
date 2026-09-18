@@ -180,7 +180,12 @@ export default function AuditTrailDrawer({ rowId, onClose }: Props) {
                   const { diffOld, diffNew } = computeDiff(t.oldValue, t.newValue)
                   return (
                     <tr key={t.id ?? i} className="hover:bg-gray-50/60 transition-colors">
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDateTime(t.createdDate)}</td>
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                        <div>{formatDateTime(t.createdDate)}</div>
+                        {t.ipAddress2 && (
+                          <div className="text-[10px] text-gray-400 mt-0.5">{t.ipAddress2}</div>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className="block font-semibold text-gray-700 cursor-help"

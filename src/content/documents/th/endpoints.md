@@ -280,9 +280,9 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 | `RefId3` | string | ❌ | Reference เพิ่มเติม 3 |
 | `RequestedAmount` | number | ✅ | จำนวนเงิน (ต้องมากกว่า 0) |
 | `QrProvider` | string | ✅ | ต้องเป็น `PP` (PromptPay เท่านั้น สำหรับ Pay-Out) |
-| `BankCode` | string | ❌ | รหัสธนาคารปลายทาง เช่น `SCB`, `KBANK`, `BAY` |
-| `BankAccountNo` | string | ❌ | เลขบัญชีปลายทาง |
-| `BankAccountName` | string | ❌ | ชื่อบัญชีปลายทาง |
+| `BankCode` | string | ✅ | รหัสธนาคารปลายทาง เช่น `SCB`, `KBANK`, `BAY` |
+| `BankAccountNo` | string | ✅ | เลขบัญชีปลายทาง |
+| `BankAccountName` | string | ✅ | ชื่อบัญชีปลายทาง |
 | `PromptPayId` | string | ❌ | หมายเลข PromptPay ปลายทาง |
 | `AccountType` | string | ❌ | ประเภทบัญชี: `Native` หรือ `PromptPay` |
 

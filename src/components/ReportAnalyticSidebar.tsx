@@ -11,7 +11,7 @@ export default function ReportAnalyticSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
-  const menuItems = [
+  const businessItems = [
     {
       href: '/report-analytic/revenue-summary',
       label: t.revenueSummary.title,
@@ -31,11 +31,42 @@ export default function ReportAnalyticSidebar() {
       ),
     },
     {
+      href: '/report-analytic/bank-summary',
+      label: t.bankSummary.title,
+      icon: (
+        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M4 10h16M4 10l8-6 8 6M6 10v11m4-11v11m4-11v11m4-11v11" />
+        </svg>
+      ),
+    },
+    {
+      href: '/report-analytic/payer-summary',
+      label: t.payerSummary.title,
+      icon: (
+        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
+    },
+  ]
+
+  const operationItems = [
+    {
       href: '/report-analytic/system-monitoring',
       label: t.systemMonitoring.navLabel,
       icon: (
         <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      href: null,
+      label: t.nav.resourceMonitoring,
+      comingSoon: true,
+      icon: (
+        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.611L5 14.5" />
         </svg>
       ),
     },
@@ -71,9 +102,69 @@ export default function ReportAnalyticSidebar() {
       )}
       {collapsed && <div className="pt-5 pb-3" />}
 
-      {/* Nav items */}
+      {/* Business reports */}
+      {!collapsed && (
+        <p className="px-4 pb-1 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
+          {t.nav.reportSectionBusiness}
+        </p>
+      )}
       <nav className="flex flex-col gap-1 px-2">
-        {menuItems.map((item) => {
+        {businessItems.map((item) => {
+          const isActive = pathname.startsWith(item.href)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              title={collapsed ? item.label : undefined}
+              className={clsx(
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                collapsed && 'justify-center px-2',
+                isActive
+                  ? 'bg-white/20 text-white'
+                  : 'text-white/75 hover:bg-white/15 hover:text-white'
+              )}
+            >
+              {item.icon}
+              {!collapsed && <span className="leading-tight">{item.label}</span>}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Divider between business and operation reports */}
+      <div className={clsx('my-3 border-t border-white/10', collapsed ? 'mx-2' : 'mx-4')} />
+
+      {/* Operation reports */}
+      {!collapsed && (
+        <p className="px-4 pb-1 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
+          {t.nav.reportSectionOperation}
+        </p>
+      )}
+      <nav className="flex flex-col gap-1 px-2">
+        {operationItems.map((item) => {
+          if (item.comingSoon || !item.href) {
+            return (
+              <div
+                key={item.label}
+                title={collapsed ? `${item.label} (${t.nav.comingSoon})` : undefined}
+                className={clsx(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium cursor-not-allowed opacity-40',
+                  collapsed && 'justify-center px-2',
+                  'text-white/75'
+                )}
+              >
+                {item.icon}
+                {!collapsed && (
+                  <span className="leading-tight flex items-center gap-2">
+                    {item.label}
+                    <span className="text-[9px] font-semibold uppercase tracking-wide bg-white/15 text-white/70 px-1.5 py-0.5 rounded-full">
+                      {t.nav.comingSoon}
+                    </span>
+                  </span>
+                )}
+              </div>
+            )
+          }
           const isActive = pathname.startsWith(item.href)
           return (
             <Link

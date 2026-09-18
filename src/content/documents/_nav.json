@@ -7,7 +7,8 @@
       { "slug": "endpoints", "titles": { "th": "Endpoints", "en": "Endpoints", "zh": "Endpoints" } },
       { "slug": "payment-status", "titles": { "th": "สถานะการชำระเงิน", "en": "Payment Status", "zh": "支付状态" } },
       { "slug": "webhooks", "titles": { "th": "Webhooks", "en": "Webhooks", "zh": "Webhooks" } },
-      { "slug": "error-handling", "titles": { "th": "การจัดการ Error", "en": "Error Handling", "zh": "错误处理" } }
+      { "slug": "error-handling", "titles": { "th": "การจัดการ Error", "en": "Error Handling", "zh": "错误处理" } },
+      { "slug": "bank-codes", "titles": { "th": "รหัสธนาคารที่รองรับ", "en": "Supported Bank Codes", "zh": "支持的银行代码" } }
     ]
   }
 ]

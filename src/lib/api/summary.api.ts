@@ -22,6 +22,22 @@ export interface GetExpenseSummaryPayload {
   toDate?: string
 }
 
+export interface GetBankSummaryPayload {
+  fromDate?: string
+  toDate?: string
+  bankCode?: string
+  accountNumber?: string
+  merchantCode?: string
+  includeP2P?: boolean
+}
+
+export interface GetPayerSummaryPayload {
+  fromDate?: string
+  toDate?: string
+  merchantCode?: string
+  payerName?: string
+}
+
 export const summaryApi = {
   getMerchantSummary: (payload: GetMerchantSummaryPayload = {}) =>
     client.post(`${BASE}/GetMerchantSummary`, payload),
@@ -31,4 +47,10 @@ export const summaryApi = {
 
   getExpenseSummary: (payload: GetExpenseSummaryPayload = {}) =>
     client.post(`${BASE}/GetExpenseSummary`, payload),
+
+  getBankSummary: (payload: GetBankSummaryPayload = {}) =>
+    client.post(`${BASE}/GetBankSummary`, payload),
+
+  getPayerSummary: (payload: GetPayerSummaryPayload = {}) =>
+    client.post(`${BASE}/GetPayerSummary`, payload),
 }

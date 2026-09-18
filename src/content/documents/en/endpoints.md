@@ -280,9 +280,9 @@ Creates a request to transfer funds out to a destination account.
 | `RefId3` | string | ❌ | Additional reference 3 |
 | `RequestedAmount` | number | ✅ | Amount (must be greater than 0) |
 | `QrProvider` | string | ✅ | Must be `PP` (PromptPay only, for Pay-Out) |
-| `BankCode` | string | ❌ | Destination bank code, e.g. `SCB`, `KBANK`, `BAY` |
-| `BankAccountNo` | string | ❌ | Destination account number |
-| `BankAccountName` | string | ❌ | Destination account name |
+| `BankCode` | string | ✅ | Destination bank code, e.g. `SCB`, `KBANK`, `BAY` |
+| `BankAccountNo` | string | ✅ | Destination account number |
+| `BankAccountName` | string | ✅ | Destination account name |
 | `PromptPayId` | string | ❌ | Destination PromptPay number |
 | `AccountType` | string | ❌ | Account type: `Native` or `PromptPay` |
 

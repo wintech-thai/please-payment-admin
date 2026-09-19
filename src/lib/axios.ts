@@ -157,6 +157,18 @@ client.interceptors.request.use(
 // Response interceptor — validate status field
 client.interceptors.response.use(
   (response: AxiosResponse) => {
+    // GetIpPolicyStatus / GetAdminWebIpPolicyStatus intentionally return statuses like
+    // IP_BLACKLISTED / IP_NOT_WHITELISTED as their actual successful payload (that IS the
+    // answer to "is this IP blocked?") — not a failure. Never reject them as an API error,
+    // or callers checking the block status (BlacklistContext, /access-blocked) silently
+    // fail open instead of seeing the real (blocked) answer.
+    if (
+      typeof response.config?.url === 'string' &&
+      (response.config.url.includes('GetIpPolicyStatus') || response.config.url.includes('GetAdminWebIpPolicyStatus'))
+    ) {
+      return response
+    }
+
     const data = response.data
     if (!data) return response
 

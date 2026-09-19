@@ -2,9 +2,45 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const AUTH_ONLY_PUBLIC_PATHS = ['/login']
-const ALWAYS_PUBLIC_PATHS = ['/admin-signup-confirm', '/forgot-password', '/user-invite-confirm', '/documents']
+const ALWAYS_PUBLIC_PATHS = ['/admin-signup-confirm', '/forgot-password', '/user-invite-confirm', '/documents', '/access-blocked']
 
-export function middleware(request: NextRequest) {
+const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || ''
+const FORWARD_HEADERS = ['cf-connecting-ip', 'x-forwarded-for', 'x-forwarded-host']
+
+// Admin's Web IP whitelist/blacklist must gate the whole site — including the login
+// page itself — not just post-login dashboard content (that's handled separately by
+// BlacklistContext/BlacklistBanner as defense-in-depth for an already-open session).
+// Calls a dedicated [AllowAnonymous] onix-api endpoint since a visitor hitting this
+// has no auth token yet. Fails open (returns false) on any error/timeout — an infra
+// hiccup in this check must never lock every visitor out of the whole site.
+async function isWebIpBlocked(request: NextRequest): Promise<boolean> {
+  const headers: Record<string, string> = {}
+  for (const h of FORWARD_HEADERS) {
+    const v = request.headers.get(h)
+    if (v) headers[h] = v
+  }
+  if (process.env.MUTUAL_KEY) {
+    headers['X-Forward-Mutual-Key'] = process.env.MUTUAL_KEY
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 3000)
+  try {
+    const res = await fetch(
+      `${BACKEND_URL}/public-api/PublicOrganization/action/GetAdminWebIpPolicyStatus`,
+      { headers, signal: controller.signal }
+    )
+    if (!res.ok) return false
+    const data = (await res.json()) as Record<string, unknown>
+    return Boolean(data.isBlacklisted ?? data.IsBlacklisted)
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('accessToken')?.value
 
@@ -20,6 +56,10 @@ export function middleware(request: NextRequest) {
   // Always accessible regardless of auth state
   if (ALWAYS_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
     return NextResponse.next()
+  }
+
+  if (await isWebIpBlocked(request)) {
+    return NextResponse.redirect(new URL('/access-blocked', request.url))
   }
 
   const isAuthOnlyPublic = AUTH_ONLY_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))

@@ -4,7 +4,7 @@ title: 支持的银行代码
 
 # 支持的银行代码
 
-[`SubmitPayOutRequest`](/documents/endpoints#创建付款请求payout) 和 `SubmitWithdrawalRequest`（以及配置银行账户时）中使用的 `BankCode` 字段仅接受下表中的一组固定简写代码 —— **不是**泰国银行（BOT）官方的 3 位数代码。下表将两者对照列出。
+[`SubmitPayOutRequest`](/documents/endpoints#创建付款请求payout) 和 [`SubmitWithdrawalRequest`](/documents/endpoints#创建提现请求withdrawal)（以及配置银行账户时）中使用的 `BankCode` 字段仅接受下表中的一组固定简写代码 —— **不是**泰国银行（BOT）官方的 3 位数代码。下表将两者对照列出。
 
 > **注意：** 必须始终发送 `BankCode`、`BankAccountNo`、`BankAccountName` —— **即使通过 PromptPay 转账也是如此**。`PromptPayId` 只是附加信息，不能替代银行账户信息。
 

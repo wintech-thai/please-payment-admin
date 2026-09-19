@@ -66,13 +66,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const isWebBlockExempt = WEB_BLOCK_EXEMPT_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
-
-  if (!isWebBlockExempt && (await isWebIpBlocked(request))) {
-    return NextResponse.redirect(new URL('/access-blocked', request.url))
-  }
-
   const isAuthOnlyPublic = AUTH_ONLY_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+
+  // Only gate anonymous visitors here — a session that's already logged in gets the
+  // same Web policy re-checked client-side on every navigation by BlacklistContext/
+  // BlacklistBanner instead, which renders inside the normal dashboard shell (Navbar
+  // intact) rather than bouncing to the bare /access-blocked page. Checking again here
+  // for an authenticated request would just show the wrong (navbar-less) blocked page.
+  if (!token) {
+    const isWebBlockExempt = WEB_BLOCK_EXEMPT_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+    if (!isWebBlockExempt && (await isWebIpBlocked(request))) {
+      return NextResponse.redirect(new URL('/access-blocked', request.url))
+    }
+  }
 
   if (!token && !isAuthOnlyPublic) {
     return NextResponse.redirect(new URL('/login', request.url))

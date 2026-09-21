@@ -295,7 +295,7 @@ export default function ResourceMonitoringPage() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6 bg-gray-100">
-      <div className="max-w-[1400px] mx-auto space-y-5">
+      <div className="space-y-5">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl px-6 py-5 flex items-center justify-between text-white">
           <div>

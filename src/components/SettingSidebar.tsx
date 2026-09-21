@@ -94,6 +94,16 @@ const menuItems: MenuItem[] = [
       </svg>
     ),
   },
+  {
+    type: 'flat',
+    href: '/setting/shell-terminal',
+    labelKey: 'sidebarShellTerminal',
+    icon: (
+      <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 3-3 3m4.5 0h3M4.5 4.5h15a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 18V6a1.5 1.5 0 011.5-1.5z" />
+      </svg>
+    ),
+  },
 ]
 
 export default function SettingSidebar() {

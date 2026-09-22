@@ -125,6 +125,7 @@ export default function BankSummaryPage() {
         date: new Date(x.date as string).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }),
         bankCode: x.bankCode ?? '-',
         accountNumber: x.accountNumber ?? '-',
+        accountName: x.accountName ?? '-',
         merchant: x.merchantCode ?? '-',
         inAmt: x.payInAmount ?? 0,
         outAmt: x.payOutAmount ?? 0,
@@ -149,9 +150,9 @@ export default function BankSummaryPage() {
   ]
 
   const handleExportCsv = () => {
-    const headers = [m.colDate, m.colBankCode, m.colAccountNumber, m.colMerchant, m.colInAmount, m.colOutAmount, m.colWithdrawalAmount]
+    const headers = [m.colDate, m.colBankCode, m.colAccountNumber, m.colAccountName, m.colMerchant, m.colInAmount, m.colOutAmount, m.colWithdrawalAmount]
     const rows = pagedRows.map(r => [
-      r.date, r.bankCode, r.accountNumber, r.merchant,
+      r.date, r.bankCode, r.accountNumber, r.accountName, r.merchant,
       r.inAmt.toFixed(2), r.outAmt.toFixed(2), r.withdrawAmt.toFixed(2),
     ])
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
@@ -273,15 +274,16 @@ export default function BankSummaryPage() {
               </div>
 
               <div className="overflow-auto custom-scrollbar">
-                <table className="w-full text-sm table-fixed min-w-[720px]">
+                <table className="w-full text-sm table-fixed min-w-[820px]">
                   <colgroup>
-                    <col className="w-[13%]" /><col className="w-[13%]" /><col className="w-[17%]" /><col className="w-[15%]" /><col className="w-[14%]" /><col className="w-[14%]" /><col className="w-[14%]" />
+                    <col className="w-[11%]" /><col className="w-[11%]" /><col className="w-[15%]" /><col className="w-[15%]" /><col className="w-[13%]" /><col className="w-[12%]" /><col className="w-[12%]" /><col className="w-[11%]" />
                   </colgroup>
                   <thead>
                     <tr className="border-b border-gray-100">
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">{m.colDate}</th>
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colBankCode}</th>
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colAccountNumber}</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colAccountName}</th>
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colMerchant}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colInAmount}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-3">{m.colOutAmount}</th>
@@ -290,7 +292,7 @@ export default function BankSummaryPage() {
                   </thead>
                   <tbody>
                     {pagedRows.length === 0 ? (
-                      <tr><td colSpan={7} className="py-12 text-center text-sm text-gray-400">{m.noData}</td></tr>
+                      <tr><td colSpan={8} className="py-12 text-center text-sm text-gray-400">{m.noData}</td></tr>
                     ) : pagedRows.map((r, i) => {
                       const rowKey = `${r.date}-${r.bankCode}-${r.accountNumber}-${i}`
                       const isHighlighted = highlightedKey === rowKey
@@ -312,6 +314,7 @@ export default function BankSummaryPage() {
                           <td className="py-3 px-5 text-xs text-gray-500 whitespace-nowrap border-b border-gray-100">{r.date}</td>
                           <td className="py-3 px-3 text-sm font-medium text-gray-800 border-b border-gray-100">{r.bankCode}</td>
                           <td className="py-3 px-3 text-sm text-gray-600 truncate border-b border-gray-100">{r.accountNumber}</td>
+                          <td className="py-3 px-3 text-sm text-gray-600 truncate border-b border-gray-100">{r.accountName}</td>
                           <td className="py-3 px-3 text-sm text-gray-600 truncate border-b border-gray-100">{r.merchant}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-blue-700 border-b border-gray-100">{fmt(r.inAmt)}</td>
                           <td className="py-3 px-3 text-sm tabular-nums text-right text-orange-600 border-b border-gray-100">{fmt(r.outAmt)}</td>
@@ -323,7 +326,7 @@ export default function BankSummaryPage() {
                   {pagedRows.length > 0 && (
                     <tfoot className="bg-white border-t-2 border-gray-200">
                       <tr>
-                        <td colSpan={4} className="py-3 px-5 text-xs font-bold text-gray-600 uppercase tracking-wide">{m.colTotal}</td>
+                        <td colSpan={5} className="py-3 px-5 text-xs font-bold text-gray-600 uppercase tracking-wide">{m.colTotal}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-blue-700">{fmt(pagedRows.reduce((s, r) => s + r.inAmt, 0))}</td>
                         <td className="py-3 px-3 text-sm tabular-nums text-right font-bold text-orange-600">{fmt(pagedRows.reduce((s, r) => s + r.outAmt, 0))}</td>
                         <td className="py-3 px-5 text-sm tabular-nums text-right font-bold text-fuchsia-600">{fmt(pagedRows.reduce((s, r) => s + r.withdrawAmt, 0))}</td>

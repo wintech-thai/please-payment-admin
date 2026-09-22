@@ -94,7 +94,7 @@ function handleTerminalProxy(clientWs: WebSocket, token: string, req: IncomingMe
   }
 
   const backendWsBase = BACKEND_URL.replace(/^http/, 'ws')
-  const terminalUrl = `${backendWsBase}/admin-api/AdminTerminal/org/global/action/Connect`
+  const terminalUrl = `${backendWsBase}/admin-api/AdminTerminal/org/global/action/TerminalConnect`
   const encodedToken = Buffer.from(token).toString('base64')
 
   // Same header-forwarding contract as the rest of this app's server-side

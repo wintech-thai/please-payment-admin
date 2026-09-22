@@ -883,6 +883,7 @@ export interface DailyBankSummaryItem {
   date?: string | null
   bankCode?: string | null
   accountNumber?: string | null
+  accountName?: string | null
   merchantCode?: string | null
   payInAmount?: number | null
   payOutAmount?: number | null

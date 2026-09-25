@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import clsx from 'clsx'
-import { FileText, Wrench } from 'lucide-react'
+import { FileText, Wrench, BookOpen } from 'lucide-react'
 import { DOC_LOCALES, DEFAULT_LOCALE, isDocLocale, type DocLocale } from '@/lib/docs/locale'
 
 const LOCALE_LABELS: Record<DocLocale, string> = {
@@ -11,7 +11,16 @@ const LOCALE_LABELS: Record<DocLocale, string> = {
 
 const CONTENT: Record<
   DocLocale,
-  { heading: string; sub: string; api: string; apiDesc: string; install: string; installDesc: string }
+  {
+    heading: string
+    sub: string
+    api: string
+    apiDesc: string
+    install: string
+    installDesc: string
+    merchant: string
+    merchantDesc: string
+  }
 > = {
   th: {
     heading: 'เอกสาร Please Payment',
@@ -20,6 +29,8 @@ const CONTENT: Record<
     apiDesc: 'เอกสารสำหรับนักพัฒนาที่เชื่อมต่อ API',
     install: 'คู่มือการติดตั้ง',
     installDesc: 'วิธีติดตั้ง Please Payment บนเครื่อง server ของคุณเอง',
+    merchant: 'คู่มือการใช้งาน Merchant',
+    merchantDesc: 'วิธีใช้งานระบบ Please Payment สำหรับร้านค้า ทีละหน้าจอ',
   },
   en: {
     heading: 'Please Payment Documentation',
@@ -28,6 +39,8 @@ const CONTENT: Record<
     apiDesc: 'Documentation for developers integrating the API',
     install: 'Installation Guide',
     installDesc: 'How to install Please Payment on your own server',
+    merchant: 'Merchant User Guide',
+    merchantDesc: 'How to use the Please Payment merchant portal, screen by screen',
   },
   zh: {
     heading: 'Please Payment 文档',
@@ -36,6 +49,8 @@ const CONTENT: Record<
     apiDesc: '面向对接 API 的开发者文档',
     install: '安装指南',
     installDesc: '如何在您自己的服务器上安装 Please Payment',
+    merchant: '商户使用手册',
+    merchantDesc: '逐页说明如何使用 Please Payment 商户后台',
   },
 }
 
@@ -83,6 +98,14 @@ export default function DocsIndexPage({ searchParams }: { searchParams: { lang?:
               <Wrench className="w-6 h-6 text-primary-400 mb-3" />
               <h2 className="text-white font-semibold mb-1">{t.install}</h2>
               <p className="text-sm text-zinc-500">{t.installDesc}</p>
+            </Link>
+            <Link
+              href={withLocale('/documents/merchant/overview')}
+              className="group block sm:col-span-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6 hover:border-primary-500 hover:bg-zinc-800/60 transition-colors"
+            >
+              <BookOpen className="w-6 h-6 text-primary-400 mb-3" />
+              <h2 className="text-white font-semibold mb-1">{t.merchant}</h2>
+              <p className="text-sm text-zinc-500">{t.merchantDesc}</p>
             </Link>
           </div>
         </div>

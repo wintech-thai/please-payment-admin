@@ -1,0 +1,44 @@
+[
+  {
+    "section": { "th": "เริ่มต้นใช้งาน", "en": "Getting Started", "zh": "入门指南" },
+    "items": [
+      { "slug": "overview", "titles": { "th": "ภาพรวมระบบ (Overview)", "en": "Overview", "zh": "概览" } },
+      { "slug": "merchant-info", "titles": { "th": "ข้อมูลร้านค้า (Merchant Info)", "en": "Merchant Info", "zh": "商户信息" } }
+    ]
+  },
+  {
+    "section": { "th": "การรับเงิน (Pay-In)", "en": "Receiving Money (Pay-In)", "zh": "收款 (Pay-In)" },
+    "items": [
+      { "slug": "pay-in-requests", "titles": { "th": "สร้างคำขอรับเงิน (Pay-In Requests)", "en": "Pay-In Requests", "zh": "收款请求" } },
+      { "slug": "pay-in-transactions", "titles": { "th": "ประวัติรายการรับเงิน (Pay-In Transactions)", "en": "Pay-In Transactions", "zh": "收款交易记录" } }
+    ]
+  },
+  {
+    "section": { "th": "การถอนเงิน (Pay-Out)", "en": "Withdrawing Money (Pay-Out)", "zh": "付款 (Pay-Out)" },
+    "items": [
+      { "slug": "pay-out-requests", "titles": { "th": "คำขอถอนเงิน (Pay-Out Requests)", "en": "Pay-Out Requests", "zh": "付款请求" } },
+      { "slug": "pay-out-transactions", "titles": { "th": "ประวัติรายการถอนเงิน (Pay-Out Transactions)", "en": "Pay-Out Transactions", "zh": "付款交易记录" } }
+    ]
+  },
+  {
+    "section": { "th": "รายงาน", "en": "Reports", "zh": "报表" },
+    "items": [
+      { "slug": "report-analytic", "titles": { "th": "รายงานและสรุปข้อมูล (Report & Analytic)", "en": "Report & Analytic", "zh": "报表与分析" } }
+    ]
+  },
+  {
+    "section": { "th": "การจัดการระบบ (Administration)", "en": "Administration", "zh": "系统管理" },
+    "items": [
+      { "slug": "custom-roles", "titles": { "th": "กำหนดสิทธิ์การใช้งาน (Custom Roles)", "en": "Custom Roles", "zh": "自定义角色" } },
+      { "slug": "api-keys", "titles": { "th": "API Keys", "en": "API Keys", "zh": "API 密钥" } },
+      { "slug": "users", "titles": { "th": "จัดการผู้ใช้งาน (Users)", "en": "Users", "zh": "用户管理" } },
+      { "slug": "audit-log", "titles": { "th": "ประวัติการใช้งาน (Audit Log)", "en": "Audit Log", "zh": "操作日志" } }
+    ]
+  },
+  {
+    "section": { "th": "ฝ่ายสนับสนุน", "en": "Support", "zh": "支持" },
+    "items": [
+      { "slug": "support-case", "titles": { "th": "แจ้งปัญหา/ขอความช่วยเหลือ (Support Case)", "en": "Support Case", "zh": "支持工单" } }
+    ]
+  }
+]

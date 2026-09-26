@@ -84,7 +84,7 @@ export default function DocsLayoutClient({
         {/* Left sidebar */}
         <aside
           className={clsx(
-            'fixed md:sticky top-14 z-40 md:z-auto h-[calc(100vh-3.5rem)] w-64 bg-zinc-900 border-r border-zinc-800 overflow-y-auto flex-shrink-0 transition-transform duration-200',
+            'fixed md:sticky top-14 z-40 md:z-auto h-[calc(100vh-3.5rem)] w-64 bg-zinc-900 border-r border-zinc-800 overflow-y-auto docs-scrollbar flex-shrink-0 transition-transform duration-200',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
           )}
         >

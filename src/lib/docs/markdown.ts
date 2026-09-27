@@ -9,7 +9,7 @@ export type { DocLocale } from './locale'
 
 const CONTENT_ROOT = path.join(process.cwd(), 'src/content')
 
-export type DocSet = 'documents' | 'install-docs'
+export type DocSet = 'documents' | 'install-docs' | 'merchant-docs' | 'video-tutorials'
 
 function docsDir(docSet: DocSet): string {
   return path.join(CONTENT_ROOT, docSet)
@@ -19,6 +19,9 @@ export interface DocMeta {
   title: string
   version?: string
   updatedAt?: string
+  summary?: string
+  keywords?: string[]
+  videoUrl?: string
 }
 
 export interface DocContent {
@@ -79,7 +82,12 @@ export function getDoc(
       .trim()
       .replace(/\s+/g, '-')
     headings.push({ id, text, level: depth })
-    return `<h${depth} id="${id}">${text}</h${depth}>`
+    // Anchor button lets a reader copy a direct link to this section (handled
+    // client-side in DocContent via event delegation on data-copy-link).
+    const anchor = (depth === 2 || depth === 3)
+      ? `<button type="button" class="doc-copy-link" data-copy-link="${id}" aria-label="Copy link to this section">#</button>`
+      : ''
+    return `<h${depth} id="${id}" class="group/heading">${text}${anchor}</h${depth}>`
   }
 
   marked.use({ renderer })
@@ -90,6 +98,13 @@ export function getDoc(
       title: data.title ?? slug,
       version: data.version,
       updatedAt: data.updatedAt,
+      summary: data.summary,
+      videoUrl: data.videoUrl,
+      keywords: Array.isArray(data.keywords)
+        ? data.keywords
+        : typeof data.keywords === 'string'
+          ? data.keywords.split(',').map((k: string) => k.trim()).filter(Boolean)
+          : undefined,
     },
     html,
     headings,

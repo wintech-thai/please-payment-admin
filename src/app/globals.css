@@ -134,6 +134,22 @@ body {
   background: #f06b1e;
 }
 
+/* Thin scrollbar for the dark-themed docs pages (zinc background) */
+.docs-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.docs-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.docs-scrollbar::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 9999px;
+}
+.docs-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
 /* JSON syntax highlight (light background) */
 .json-key    { color: #1d4ed8; font-weight: 600; }
 .json-string { color: #15803d; }
@@ -216,5 +232,36 @@ body {
   }
   .prose-docs .warning-box li {
     @apply text-red-300;
+  }
+
+  .prose-docs .tip-box {
+    @apply border border-primary-500/40 bg-primary-950/30 rounded-xl px-5 py-4 my-6;
+  }
+  .prose-docs .tip-box .tip-title {
+    @apply flex items-center gap-2 text-primary-400 font-bold text-sm uppercase tracking-wide mb-3;
+  }
+  .prose-docs .tip-box ul {
+    @apply mb-0;
+  }
+  .prose-docs .tip-box li {
+    @apply text-primary-200;
+  }
+
+  .prose-docs .screenshot-placeholder {
+    @apply flex flex-col items-center justify-center gap-2 border-2 border-dashed border-zinc-700 bg-zinc-900/60 rounded-xl px-6 py-12 my-6 text-center;
+  }
+  .prose-docs .screenshot-placeholder .placeholder-label {
+    @apply text-xs font-semibold text-zinc-500 uppercase tracking-wide;
+  }
+  .prose-docs .screenshot-placeholder .placeholder-desc {
+    @apply text-sm text-zinc-400 max-w-md;
+  }
+
+  h2.group\/heading,
+  h3.group\/heading {
+    @apply relative pr-8;
+  }
+  .doc-copy-link {
+    @apply absolute right-0 top-1 opacity-0 group-hover/heading:opacity-100 text-zinc-600 hover:text-primary-400 text-sm font-normal transition-opacity cursor-pointer select-none;
   }
 }

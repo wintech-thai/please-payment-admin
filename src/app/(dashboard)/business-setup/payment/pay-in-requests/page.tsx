@@ -65,12 +65,29 @@ function formatDateTime(d?: string | null) {
   } catch { return d }
 }
 
-function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToPeer, trailing }: {
+function PayoutPeerLink({ payoutId }: { payoutId: string }) {
+  return (
+    <a
+      href={`/business-setup/payment/withdraw-request/${payoutId}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+      className="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-800 hover:underline ml-1"
+      title="Payout Request (P2P)"
+    >
+      <span className="truncate max-w-[130px]">{payoutId}</span>
+      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+    </a>
+  )
+}
+
+function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToPeer, payoutId, trailing }: {
   status?: string | null
   createdDate?: string | null
   paymentTxId?: string | null
   statusReason?: string | null
   isPeerToPeer?: boolean | null
+  payoutId?: string | null
   trailing?: React.ReactNode
 }) {
   const s = status?.toLowerCase()
@@ -106,6 +123,7 @@ function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToP
           <ExternalLink className="w-3 h-3 flex-shrink-0" />
         </a>
       )}
+      {payoutId && <PayoutPeerLink payoutId={payoutId} />}
       {statusReason && (
         <span className="text-[10px] text-emerald-600 ml-1 max-w-[160px] truncate" title={statusReason}>{statusReason}</span>
       )}
@@ -144,6 +162,7 @@ function StatusBadge({ status, createdDate, paymentTxId, statusReason, isPeerToP
         {isPeerToPeer && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-amber-50 text-amber-700 ring-amber-200">P2P</span>}
         {trailing}
       </div>
+      {payoutId && <PayoutPeerLink payoutId={payoutId} />}
       {age && <span className="text-[10px] text-gray-400 ml-1">{age}</span>}
     </div>
   )
@@ -1343,6 +1362,7 @@ export default function PayInRequestsPage() {
                           paymentTxId={item.paymentTxId}
                           statusReason={item.statusReason}
                           isPeerToPeer={item.payinIsPeerToPeer}
+                          payoutId={item.payinPeer2PeerPayoutId}
                           trailing={
                             <>
                               {(item.payInSlipUploadCount ?? 0) > 0 && (

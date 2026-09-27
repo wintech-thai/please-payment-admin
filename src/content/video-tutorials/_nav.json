@@ -1,0 +1,8 @@
+[
+  {
+    "section": { "th": "Admin", "en": "Admin", "zh": "Admin" },
+    "items": [
+      { "slug": "admin-overview", "titles": { "th": "ภาพรวมหน้า Admin", "en": "Admin Overview", "zh": "Admin 概览" } }
+    ]
+  }
+]

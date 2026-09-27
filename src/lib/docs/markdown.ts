@@ -9,7 +9,7 @@ export type { DocLocale } from './locale'
 
 const CONTENT_ROOT = path.join(process.cwd(), 'src/content')
 
-export type DocSet = 'documents' | 'install-docs' | 'merchant-docs'
+export type DocSet = 'documents' | 'install-docs' | 'merchant-docs' | 'video-tutorials'
 
 function docsDir(docSet: DocSet): string {
   return path.join(CONTENT_ROOT, docSet)
@@ -21,6 +21,7 @@ export interface DocMeta {
   updatedAt?: string
   summary?: string
   keywords?: string[]
+  videoUrl?: string
 }
 
 export interface DocContent {
@@ -98,6 +99,7 @@ export function getDoc(
       version: data.version,
       updatedAt: data.updatedAt,
       summary: data.summary,
+      videoUrl: data.videoUrl,
       keywords: Array.isArray(data.keywords)
         ? data.keywords
         : typeof data.keywords === 'string'

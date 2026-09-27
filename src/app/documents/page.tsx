@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import clsx from 'clsx'
-import { FileText, Wrench, BookOpen } from 'lucide-react'
+import { FileText, Wrench, BookOpen, PlayCircle } from 'lucide-react'
 import { DOC_LOCALES, DEFAULT_LOCALE, isDocLocale, type DocLocale } from '@/lib/docs/locale'
 
 const LOCALE_LABELS: Record<DocLocale, string> = {
@@ -20,6 +20,8 @@ const CONTENT: Record<
     installDesc: string
     merchant: string
     merchantDesc: string
+    video: string
+    videoDesc: string
   }
 > = {
   th: {
@@ -31,6 +33,8 @@ const CONTENT: Record<
     installDesc: 'วิธีติดตั้ง Please Payment บนเครื่อง server ของคุณเอง',
     merchant: 'คู่มือการใช้งาน Merchant',
     merchantDesc: 'วิธีใช้งานระบบ Please Payment สำหรับร้านค้า ทีละหน้าจอ',
+    video: 'วิดีโอสอนการใช้งาน',
+    videoDesc: 'คลิปวิดีโอสอนใช้งานทีละหัวข้อ',
   },
   en: {
     heading: 'Please Payment Documentation',
@@ -41,6 +45,8 @@ const CONTENT: Record<
     installDesc: 'How to install Please Payment on your own server',
     merchant: 'Merchant User Guide',
     merchantDesc: 'How to use the Please Payment merchant portal, screen by screen',
+    video: 'Video Tutorials',
+    videoDesc: 'Short video walkthroughs, one topic at a time',
   },
   zh: {
     heading: 'Please Payment 文档',
@@ -51,6 +57,8 @@ const CONTENT: Record<
     installDesc: '如何在您自己的服务器上安装 Please Payment',
     merchant: '商户使用手册',
     merchantDesc: '逐页说明如何使用 Please Payment 商户后台',
+    video: '视频教程',
+    videoDesc: '按主题划分的简短教学视频',
   },
 }
 
@@ -106,6 +114,14 @@ export default function DocsIndexPage({ searchParams }: { searchParams: { lang?:
               <BookOpen className="w-6 h-6 text-primary-400 mb-3" />
               <h2 className="text-white font-semibold mb-1">{t.merchant}</h2>
               <p className="text-sm text-zinc-500">{t.merchantDesc}</p>
+            </Link>
+            <Link
+              href={withLocale('/documents/video-tutorials/admin-overview')}
+              className="group block rounded-xl border border-zinc-800 bg-zinc-900 p-6 hover:border-primary-500 hover:bg-zinc-800/60 transition-colors"
+            >
+              <PlayCircle className="w-6 h-6 text-primary-400 mb-3" />
+              <h2 className="text-white font-semibold mb-1">{t.video}</h2>
+              <p className="text-sm text-zinc-500">{t.videoDesc}</p>
             </Link>
           </div>
         </div>

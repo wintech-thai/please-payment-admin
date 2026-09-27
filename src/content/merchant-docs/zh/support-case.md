@@ -1,13 +1,13 @@
 ---
 title: 问题反馈/寻求帮助 (Support Case)
-summary: 遇到问题或有疑问时联系 Please Payment 团队的渠道，并可实时追踪处理进度。
+summary: 遇到问题或有疑问时联系管理员的渠道，并可实时追踪处理进度。
 keywords: support case, 问题反馈, support, ticket, priority, 优先级
 updatedAt: "{{BUILD_DATE}}"
 ---
 
 # 问题反馈/寻求帮助 (Support Case)
 
-当您在使用过程中遇到问题，或有需要 Please Payment 团队协助的疑问时，此页面就是提交问题和追踪处理进度的主要渠道——就像开一张工单 (ticket)，直接在网页上与支持团队沟通。
+当您在使用过程中遇到问题，或有需要管理员协助的疑问时，此页面就是提交问题和追踪处理进度的主要渠道——就像开一张工单 (ticket)，直接在网页上与支持团队沟通。
 
 ## 页面截图
 

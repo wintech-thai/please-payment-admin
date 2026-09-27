@@ -1,13 +1,13 @@
 ---
 title: 用户管理 (Users)
-summary: 邀请团队成员共同使用 Please Payment 系统，并根据各自的职责设置相应权限。
+summary: 邀请团队成员共同使用系统，并根据各自的职责设置相应权限。
 keywords: users, 用户管理, invite, 邀请用户, reset password, custom role
 updatedAt: "{{BUILD_DATE}}"
 ---
 
 # 用户管理 (Users)
 
-此页面用于管理**您团队中哪些人可以登录 Please Payment 系统**，以及每个人在系统中能做什么——从邀请新成员、设置权限，到在必要时帮忙重置密码。
+此页面用于管理**您团队中哪些人可以登录系统**，以及每个人在系统中能做什么——从邀请新成员、设置权限，到在必要时帮忙重置密码。
 
 ## 页面截图
 

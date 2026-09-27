@@ -51,7 +51,7 @@ export default function VideoDocContent({ doc, locale = 'th' }: { doc: DocConten
   return (
     <div className="flex">
       {/* Content */}
-      <article className="flex-1 min-w-0 px-8 py-10 max-w-3xl">
+      <article className="flex-1 min-w-0 px-8 py-10">
         <h1 className="text-3xl font-bold text-white mb-2">{meta.title}</h1>
         {(meta.version || meta.updatedAt) && (
           <p className="text-sm text-zinc-500 mb-2">

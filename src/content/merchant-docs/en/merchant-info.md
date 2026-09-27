@@ -7,13 +7,13 @@ updatedAt: "{{BUILD_DATE}}"
 
 # Merchant Info
 
-This page is your store's "ID card" in Please Payment — it brings together everything that describes how your store is configured, from fees and daily limits to the URLs your development team needs to integrate with the API.
+This page is your store's "ID card" — it brings together everything that describes how your store is configured, from fees and daily limits to the URLs your development team needs to integrate with the API.
 
 <div class="warning-box">
   <p class="warning-title">Good to know before you start</p>
   <ul>
     <li>Every field on this page is <strong>view-only (read-only)</strong> — there's no edit or save button anywhere on this page.</li>
-    <li>To change a fee, limit, or any other setting shown here, contact the Please Payment team or your system administrator.</li>
+    <li>To change a fee, limit, or any other setting shown here, contact your system administrator.</li>
   </ul>
 </div>
 
@@ -81,7 +81,7 @@ A Webhook is the mechanism the system uses to automatically "notify" your system
 <div class="warning-box">
   <p class="warning-title">Good to know</p>
   <ul>
-    <li>This page is for <strong>viewing Webhooks only</strong> — there's no button to create or edit a Webhook in the Merchant system. To add or change a Webhook, contact the Please Payment team.</li>
+    <li>This page is for <strong>viewing Webhooks only</strong> — there's no button to create or edit a Webhook in the Merchant system. To add or change a Webhook, contact your system administrator.</li>
   </ul>
 </div>
 

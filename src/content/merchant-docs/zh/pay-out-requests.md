@@ -67,7 +67,7 @@ P2P 类型的记录会在此区块下方额外显示 "Partial Payouts" 表格（
 <div class="tip-box">
   <p class="tip-title">小贴士</p>
   <ul>
-    <li>提现请求的审批由 Please Payment 团队在后台完成，此页面没有审批按钮。</li>
+    <li>提现请求的审批由管理员在后台完成，此页面没有审批按钮。</li>
   </ul>
 </div>
 

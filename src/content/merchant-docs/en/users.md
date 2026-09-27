@@ -1,13 +1,13 @@
 ---
 title: Users
-summary: Invite your teammates to use Please Payment together, and set permissions for each person based on their role.
+summary: Invite your teammates to use the system together, and set permissions for each person based on their role.
 keywords: users, invite, reset password, custom role
 updatedAt: "{{BUILD_DATE}}"
 ---
 
 # Users
 
-This page manages **who on your team can log in to Please Payment** and what each person can do once they're in — from inviting new members and setting permissions, to helping reset a password when needed.
+This page manages **who on your team can log in** and what each person can do once they're in — from inviting new members and setting permissions, to helping reset a password when needed.
 
 ## Screenshot
 

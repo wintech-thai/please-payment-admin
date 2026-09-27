@@ -2,7 +2,7 @@
 title: ภาพรวมหน้า Admin
 summary: วิดีโอสอนพาชมหน้า Overview ของฝั่ง Admin — สรุปยอดธุรกรรมของทุกร้านค้าในองค์กร พร้อมกราฟและตัวกรองช่วงเวลา
 keywords: video, tutorial, admin, overview, สอนการใช้งาน, วิดีโอสอน
-videoUrl: "https://customer-c3liglnw3agnd0u2.cloudflarestream.com/a85f23b99a79e746e3af75bdbc1db6be/manifest/video.m3u8?clientBandwidthHint=8"
+videoUrl: "https://customer-c3liglnw3agnd0u2.cloudflarestream.com/a85f23b99a79e746e3af75bdbc1db6be/manifest/video.m3u8"
 updatedAt: "{{BUILD_DATE}}"
 ---
 
@@ -12,14 +12,4 @@ updatedAt: "{{BUILD_DATE}}"
 
 ## วิดีโอนี้พูดถึงอะไรบ้าง
 
-- วิธีเลือกช่วงเวลาที่ต้องการดูข้อมูล (1 วัน, 7 วัน, 30 วัน หรือกำหนดเดือนเอง) และวิธีรีเฟรชข้อมูล
-- ความหมายของการ์ดสรุปแต่ละใบ — ยอดรับเงิน ยอดจ่ายเงิน ยอดถอนเงิน ค่าธรรมเนียม และจำนวนร้านค้าตามสถานะ (Active/Inactive)
-- วิธีอ่านกราฟแท่งเปรียบเทียบยอดธุรกรรมรายวัน และกราฟวงกลมแยกสัดส่วนตามร้านค้า
-- วิธีสลับดูข้อมูลแยกประเภท เช่น ยอดรับเงิน ยอดจ่ายเงิน ค่าธรรมเนียม และยอดถอนเงิน ผ่านแท็บย่อยในหน้าเดียวกัน
-
-<div class="tip-box">
-  <p class="tip-title">เกร็ดน่ารู้</p>
-  <ul>
-    <li>วิดีโอชุดนี้เป็นชุดแรกที่เราทำ (Proof of Concept) — อนาคตจะทยอยเพิ่มวิดีโอสอนหัวข้ออื่น ๆ เข้ามาในเมนูด้านซ้ายเรื่อย ๆ</li>
-  </ul>
-</div>
+วิดีโอนี้พาชมภาพรวมเมนูและหน้าจอต่าง ๆ ของระบบ Admin

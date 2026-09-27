@@ -7,7 +7,7 @@ updatedAt: "{{BUILD_DATE}}"
 
 # Overview
 
-This is the first page you land on every time you log in to Please Payment. It's designed so you can glance at it once and immediately know how your store is doing — how much came in, how much went out, how much you paid in fees, and how much you currently have left in the system — without having to click through several pages.
+This is the first page you land on every time you log in. It's designed so you can glance at it once and immediately know how your store is doing — how much came in, how much went out, how much you paid in fees, and how much you currently have left in the system — without having to click through several pages.
 
 ## What is this page
 

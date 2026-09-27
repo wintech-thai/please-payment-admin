@@ -7,13 +7,13 @@ updatedAt: "{{BUILD_DATE}}"
 
 # 商户信息 (Merchant Info)
 
-这个页面就是您店铺在 Please Payment 系统里的"身份证"——汇总了店铺各项配置信息，从手续费、每日最高限额，到您的开发团队对接 API 需要用到的 URL，都能在这里找到。
+这个页面就是您店铺在系统里的"身份证"——汇总了店铺各项配置信息，从手续费、每日最高限额，到您的开发团队对接 API 需要用到的 URL，都能在这里找到。
 
 <div class="warning-box">
   <p class="warning-title">开始前请注意</p>
   <ul>
     <li>此页面所有字段均为<strong>只读信息 (read-only)</strong>，页面上没有任何编辑/保存按钮。</li>
-    <li>如需变更手续费、限额或页面中显示的任何设置，请联系 Please Payment 团队或您的系统管理员。</li>
+    <li>如需变更手续费、限额或页面中显示的任何设置，请联系您的系统管理员。</li>
   </ul>
 </div>
 
@@ -81,7 +81,7 @@ Webhook 是系统用来自动向您的系统"推送通知"的机制——例如�
 <div class="warning-box">
   <p class="warning-title">请注意</p>
   <ul>
-    <li>此页面<strong>仅用于查看 Webhook 列表</strong>，Merchant 系统中没有新增/编辑 Webhook 的按钮。如需新增或修改 Webhook，请联系 Please Payment 团队。</li>
+    <li>此页面<strong>仅用于查看 Webhook 列表</strong>，Merchant 系统中没有新增/编辑 Webhook 的按钮。如需新增或修改 Webhook，请联系您的系统管理员。</li>
   </ul>
 </div>
 

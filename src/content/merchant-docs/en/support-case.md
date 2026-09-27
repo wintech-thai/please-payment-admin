@@ -1,13 +1,13 @@
 ---
 title: Support Case
-summary: Your channel for contacting the Please Payment support team when you run into a problem or have a question, with real-time status tracking.
+summary: Your channel for contacting the admin/support team when you run into a problem or have a question, with real-time status tracking.
 keywords: support case, support, ticket, priority
 updatedAt: "{{BUILD_DATE}}"
 ---
 
 # Support Case
 
-When you run into a problem, or have a question you need the Please Payment team's help with, this page is the main channel for reporting it and tracking progress — like opening a ticket and chatting directly with the support team through the web page.
+When you run into a problem, or have a question you need the admin team's help with, this page is the main channel for reporting it and tracking progress — like opening a ticket and chatting directly with the support team through the web page.
 
 ## Screenshot
 

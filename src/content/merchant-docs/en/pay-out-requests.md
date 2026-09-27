@@ -67,7 +67,7 @@ The request's detail page shows a QR Code for reference when transferring the mo
 <div class="tip-box">
   <p class="tip-title">Good to know</p>
   <ul>
-    <li>Approving a Pay-Out Request is handled by the Please Payment team on the backend — there's no approve button on this page.</li>
+    <li>Approving a Pay-Out Request is handled by the admin on the backend — there's no approve button on this page.</li>
   </ul>
 </div>
 

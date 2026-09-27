@@ -123,7 +123,7 @@ function DocsSidebar({
               key={section.section[DEFAULT_LOCALE]}
               className={clsx('mb-6', i > 0 && 'pt-5 mt-1 border-t border-zinc-800/80')}
             >
-              <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.15em] mb-3 px-2 select-none pointer-events-none">
+              <p className="text-xs font-bold text-primary-500 uppercase tracking-[0.1em] mb-3 px-2 select-none pointer-events-none">
                 {section.section[locale] ?? section.section[DEFAULT_LOCALE]}
               </p>
               <ul className="space-y-0.5">

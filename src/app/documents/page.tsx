@@ -109,7 +109,7 @@ export default function DocsIndexPage({ searchParams }: { searchParams: { lang?:
             </Link>
             <Link
               href={withLocale('/documents/merchant/overview')}
-              className="group block sm:col-span-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6 hover:border-primary-500 hover:bg-zinc-800/60 transition-colors"
+              className="group block rounded-xl border border-zinc-800 bg-zinc-900 p-6 hover:border-primary-500 hover:bg-zinc-800/60 transition-colors"
             >
               <BookOpen className="w-6 h-6 text-primary-400 mb-3" />
               <h2 className="text-white font-semibold mb-1">{t.merchant}</h2>

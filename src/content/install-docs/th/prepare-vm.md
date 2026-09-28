@@ -1,43 +1,77 @@
 ---
-title: "1. เตรียมเครื่อง VM (GCP)"
+title: 2. เตรียม VM
 updatedAt: "{{BUILD_DATE}}"
 ---
 
-# เตรียมเครื่อง VM
+ขั้นตอนนี้ใช้เตรียม VM ให้พร้อมสำหรับติดตั้ง Please Payment เมื่อทำเสร็จ จะมี Ubuntu VM ที่มีทรัพยากรเพียงพอ, มี Static Public IP และเข้าถึงผ่าน SSH ได้อย่างปลอดภัย ตัวอย่างในหน้านี้ใช้ Google Cloud Platform แต่ใช้หลักการเดียวกันได้กับ cloud provider อื่นหรือเครื่อง on-premises
 
-ตัวอย่างนี้ใช้ **Google Cloud Platform (GCP)** แต่จริงๆ ใช้ Cloud provider เจ้าไหนก็ได้ ขอแค่ SSH เข้าเครื่องได้และเปิด public IP ได้
+## 2.1 VM ที่ต้องเตรียม
 
-## 1. สร้าง Compute Engine VM
+เตรียม VM หนึ่งเครื่องสำหรับรันบริการทั้งหมดของ Please Payment ได้แก่ application, PostgreSQL, Redis, Argo CD, monitoring และ logs
 
-1. เปิด **Compute Engine > VM instances > Create Instance**
-2. ตั้งชื่อเครื่อง เช่น `please-payment-demo`
-3. **Region/Zone**: เลือกใกล้ผู้ใช้งาน (ตัวอย่างใช้ Singapore — `asia-southeast1`)
-4. **Machine type**: อย่างน้อย **4 vCPU / 16 GB RAM** (สเปกเล็กกว่านี้ทดสอบแล้วไม่พอสำหรับรัน k3s + ArgoCD + Prometheus + please-payment ทั้งชุด)
-5. **Boot disk**: Ubuntu 24.04 LTS หรือ 26.04 LTS, ขนาด **300 GB**
-6. **Networking**: ต้องมี **Public IP** (ค่า default ของ GCP จะสร้างให้อยู่แล้ว เช็คให้แน่ใจว่าไม่ได้ปิดไว้)
+## 2.2 สเปก VM ที่แนะนำ
 
-## 2. ตั้งค่า Firewall
+| รายการ | ข้อกำหนดที่แนะนำ |
+| --- | --- |
+| Operating system | Ubuntu LTS รุ่นปัจจุบันที่รองรับ K3s |
+| CPU | **อย่างน้อย 8 vCPU** |
+| Memory | **อย่างน้อย 32 GiB** |
+| Disk | **อย่างน้อย 300 GiB SSD** |
+| IP | Static public IPv4 |
 
-k3s ใช้ ingress-nginx แบบ `hostPort` (ผูกกับ port ของเครื่องโดยตรง ไม่ผ่าน Cloud Load Balancer) ดังนั้นต้องเปิด port 80/443 ที่ระดับ Cloud firewall เอง:
+Disk ใช้เก็บข้อมูล PostgreSQL, Redis, container images, metrics และ logs จึงควรใช้ SSD และจองขนาดให้เพียงพอตั้งแต่เริ่มต้น
 
-1. สร้าง **Firewall rule** ใหม่ (VPC network > Firewall):
-   - Direction: Ingress
-   - Targets: Specified target tags (เช่น `please-payment-demo`)
-   - Source IP ranges: `0.0.0.0/0`
-   - Protocols/ports: `tcp:80,443` (เพิ่ม `tcp:22` ด้วยถ้ายังไม่มี rule สำหรับ SSH)
-2. กลับไปที่ VM instance ที่สร้างไว้ → ใส่ **Network tag** ให้ตรงกับ tag ที่ตั้งใน firewall rule (เช่น `please-payment-demo`)
+## 2.3 ตัวอย่าง: สร้าง VM บน GCP
 
-> ดูรายละเอียดเพิ่มเติมเรื่อง Network tags/Firewall ได้ที่ [เอกสาร GCP Firewall rules](https://cloud.google.com/firewall/docs/firewalls)
+1. เปิด **Compute Engine → VM instances → Create instance**
+2. เลือก region และ zone ที่ต้องการใช้งาน
+3. เลือก Ubuntu LTS เป็น operating system
+4. เลือก machine type `e2-standard-8` หรือขนาดเทียบเท่า สำหรับ 8 vCPU และ RAM 32 GiB
+5. ตั้ง boot disk เป็น SSD ขนาด 300 GiB
+6. สร้าง Static external IPv4 แล้วผูกกับ VM เพื่อให้ IP ไม่เปลี่ยนเมื่อ stop หรือ start เครื่อง
+7. เพิ่ม network tag เช่น `please-payment` เพื่อใช้กับ firewall rules ในหัวข้อถัดไป
 
-## 3. เตรียมเครื่องก่อนติดตั้ง
+## 2.4 ตั้งค่า network และ firewall
 
-SSH เข้าเครื่องที่สร้างไว้ แล้วรัน:
+สร้าง firewall rules สำหรับ network tag ของ VM ตามตารางนี้:
+
+| Port | อนุญาตจาก | ใช้สำหรับ |
+| --- | --- | --- |
+| TCP 22 | IP ผู้ดูแล `/32` | SSH ติดตั้งและดูแลระบบ |
+| TCP 80 | `0.0.0.0/0` | HTTP ingress และ Let's Encrypt HTTP-01 |
+| TCP 443 | `0.0.0.0/0` | HTTPS สำหรับ Admin, Merchant และ API |
+
+ใช้ IP ผู้ดูแลปัจจุบันเป็น source ของ TCP 22 และเปิด TCP 80/443 สำหรับผู้ใช้งานระบบ
+
+## 2.5 ตรวจว่า VM พร้อม
+
+SSH เข้า VM แล้วรันคำสั่งนี้เพื่อยืนยันว่า OS, CPU, memory และ disk ตรงตามสเปกก่อนเริ่มติดตั้ง:
 
 ```bash
-sudo apt update
-sudo apt install -y git vim
+lsb_release -a
+nproc
+free -h
+sudo mkdir -p /data
+lsblk -f
+findmnt -T /data || true
+df -hT /data
 ```
 
-เครื่อง Ubuntu ใหม่มักไม่มี `git` ติดตั้งมาให้ตั้งแต่แรก ต้องลงเองก่อนจะ clone repo ในขั้นตอนถัดไป
+K3s ใน template กำหนด local storage path เป็น `/data`. หากใช้ disk แยก ให้ mount disk นั้นที่ `/data` ก่อนรัน script 00; หากยังไม่ได้ mount, `/data` จะใช้ filesystem ของ root disk. ตรวจ `lsblk -f`, `findmnt -T /data` และ `df -hT /data` ว่าแสดง filesystem และพื้นที่ของ disk ที่ตั้งใจใช้ อย่าตรวจเฉพาะ `/` เมื่อวางแผนใช้ disk แยก
 
-ขั้นตอนต่อไป: [ติดตั้ง K3s + ArgoCD](/documents/install/install-k3s)
+ผลที่คาดหวังคือ SSH ใช้งานได้, Ubuntu พร้อมใช้งาน, มีอย่างน้อย 8 vCPU, RAM 32 GiB และ filesystem ที่ `/data` มีพื้นที่ตามแผน
+
+<figure class="install-evidence">
+<img src="/docs/images/install/step-2.5-vm-ready.png" alt="ผลตรวจ VM ทดสอบ: 8 vCPU, EBS 300 GiB และ /data ใช้ root filesystem" />
+<figcaption>ผลจาก VM ทดสอบ: 8 vCPU และ EBS 300 GiB; `free -h` แสดง RAM รวมประมาณ 30 GiB และ `/data` อยู่บน root filesystem เพราะไม่ได้แยก disk เพิ่ม</figcaption>
+</figure>
+
+## 2.6 Checklist
+
+- ⬜ สร้าง Ubuntu VM ที่มี 8 vCPU, RAM 32 GiB และ SSD 300 GiB ตามขนาดแนะนำ
+- ⬜ ผูก Static public IP แล้ว
+- ⬜ จำกัด SSH เฉพาะ IP ผู้ดูแล
+- ⬜ เปิด TCP 80/443 แล้ว
+- ⬜ SSH เข้า VM และตรวจ OS, CPU, memory และ filesystem ที่ `/data` แล้ว; mount disk แยกก่อนติดตั้งหากใช้
+
+ขั้นตอนถัดไป: [3. ติดตั้งระบบ](./install-k3s)

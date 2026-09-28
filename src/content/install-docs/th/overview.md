@@ -3,25 +3,42 @@ title: ภาพรวม
 updatedAt: "{{BUILD_DATE}}"
 ---
 
-# คู่มือการติดตั้ง Please Payment
+# คู่มือติดตั้ง Please Payment บน Infrastructure ของคุณ
 
-เอกสารชุดนี้อธิบาย **วิธีติดตั้ง** Please Payment บนเครื่อง server ของคุณเอง โดยใช้ K3s (Kubernetes แบบเบา) และ ArgoCD สำหรับ deploy อัตโนมัติ
+คู่มือนี้อธิบายการเตรียม VM และการเริ่มระบบจาก repository [`please-payment-k3s-demo`](https://github.com/wintech-thai/please-payment-k3s-demo) โดยเรียงจากเตรียม source code ไปจนถึงตรวจรับระบบ
 
-> เอกสารนี้ครอบคลุมเฉพาะขั้นตอนการติดตั้ง ไม่รวมวิธีการใช้งานระบบ (ดูวิธีใช้งาน API ได้ที่ [API Reference](/documents/overview))
+## ลำดับการติดตั้ง
 
-## สิ่งที่ต้องเตรียม
+1. [เตรียม source code](./prepare-source-code) — ตั้ง repository และตรวจสิทธิ์เข้าถึง source ที่ระบบต้องใช้
+2. [เตรียม VM](./prepare-vm) — เตรียม Ubuntu, disk, public IP และ firewall
+3. [ติดตั้งระบบ](./install-k3s) — รัน scripts ตามลำดับและตรวจ K3s/Argo CD
+4. [ตั้งค่า Domain & DNS](./domain-dns) — กำหนด DNS และตรวจการเชื่อมต่อ
+5. [ตรวจรับและดูแลระบบ](./misc) — เข้าเครื่องมือ ตรวจ workload, jobs และ credentials
 
-- บัญชี Cloud provider ที่รองรับ SSH เข้าเครื่องได้ (ตัวอย่างในเอกสารนี้ใช้ Google Cloud Platform)
-- โดเมนของคุณเอง (สำหรับชี้ไปที่หน้า admin และ merchant)
-- ความรู้พื้นฐานเรื่อง Linux command line
+## สิ่งที่ต้องเตรียมก่อนเริ่ม
 
-## ขั้นตอนโดยสรุป
+| รายการ | ข้อกำหนด |
+| --- | --- |
+| Template | Clone `please-payment-k3s-demo` จาก GitHub |
+| Source repositories | สิทธิ์อ่าน repositories ที่ระบุใน bootstrap และ Argo CD applications; template อ้างถึง repository แยกสำหรับ application/control-plane |
+| VM | Ubuntu LTS, แนะนำ 8 vCPU / 32 GiB RAM / 300 GiB SSD |
+| Network | Static public IPv4, TCP 22 จำกัดเฉพาะผู้ดูแล, TCP 80/443 เปิดรับจากอินเทอร์เน็ต |
+| Domain | Hostnames สำหรับ Admin, Merchant และ API (`domain1`–`domain3`) |
+| Secrets | ค่าเริ่มต้นจาก secret-init Job และ Discord Incoming Webhook สำหรับ `discord-alm` |
 
-1. [เตรียมเครื่อง VM](/documents/install/prepare-vm) — สร้างเครื่องเปล่าบน Cloud
-2. [ติดตั้ง K3s + ArgoCD](/documents/install/install-k3s) — ลงตัว cluster และระบบ deploy อัตโนมัติ
-3. [ตั้งค่า Domain และ DNS](/documents/install/domain-dns) — ชี้โดเมนของคุณมาที่เครื่อง
+เก็บ password, token, private key และ webhook ไว้นอก Git เสมอ
 
-## รูปแบบการติดตั้งที่รองรับ
+## ส่วนประกอบใน template
 
-- **K3s** (แนะนำ) — สำหรับทดลองใช้งานจริงบนเครื่องเดียว
-- **Docker Compose** — *(เร็วๆ นี้)*
+![ผังส่วนประกอบหลักของระบบ](/install-guide/please-payment-architecture.svg)
+
+template ประกอบด้วย K3s, ingress-nginx, cert-manager, External Secrets Operator, Argo CD, แอปพลิเคชันหลัก, PostgreSQL/Redis, monitoring, logs และ Discord alerts. รายการ applications มี `discord-alm` ซึ่งใช้ `DISCORD_WEBHOOK`
+
+## ผลลัพธ์ที่คาดหวัง
+
+- Node ของ K3s เป็น `Ready` และ Argo CD สร้าง Applications ตาม manifests ที่ sync ได้
+- Workloads และ PVC แสดงสถานะพร้อมตามที่ระบบต้องการ
+- Admin, Merchant และ API เข้าถึงได้เมื่อ DNS, ingress และ origin TLS ถูกตั้งค่าครบ
+- Metrics, logs และ alerts พร้อมตรวจรับตามขั้นตอนในคู่มือ
+
+เริ่มที่ [1. เตรียม source code](./prepare-source-code)

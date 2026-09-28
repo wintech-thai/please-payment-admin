@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="470" viewBox="0 0 1120 470" role="img" aria-labelledby="title desc">
+  <title id="title">เส้นทาง DNS และ TLS ที่เลือกใช้</title>
+  <desc id="desc">เปรียบเทียบ Cloudflare Proxied กับ DNS only และตำแหน่งที่ TLS certificate ถูกใช้</desc>
+  <rect width="1120" height="470" rx="20" fill="#111318"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="28" y="28" width="1064" height="190" rx="16" fill="#181a20" stroke="#3b3e49"/>
+    <text x="56" y="68" fill="#f0f2f7" font-size="21" font-weight="700">Cloudflare Proxied</text>
+    <rect x="56" y="92" width="184" height="70" rx="12" fill="#20232c" stroke="#576078"/>
+    <text x="148" y="122" fill="#e4e7ee" text-anchor="middle" font-size="16" font-weight="600">ผู้เข้าชม</text>
+    <text x="148" y="145" fill="#aeb4c2" text-anchor="middle" font-size="13">HTTPS</text>
+    <path d="M252 127h68" stroke="#f7934c" stroke-width="3"/><path d="m312 119 12 8-12 8" fill="none" stroke="#f7934c" stroke-width="3"/>
+    <rect x="334" y="92" width="210" height="70" rx="12" fill="#20232c" stroke="#576078"/>
+    <text x="439" y="122" fill="#e4e7ee" text-anchor="middle" font-size="16" font-weight="600">Cloudflare Proxy</text>
+    <text x="439" y="145" fill="#aeb4c2" text-anchor="middle" font-size="13">Proxy เปิดหลัง cert พร้อม</text>
+    <path d="M556 127h68" stroke="#f7934c" stroke-width="3"/><path d="m616 119 12 8-12 8" fill="none" stroke="#f7934c" stroke-width="3"/>
+    <rect x="638" y="92" width="210" height="70" rx="12" fill="#20232c" stroke="#576078"/>
+    <text x="743" y="122" fill="#e4e7ee" text-anchor="middle" font-size="16" font-weight="600">VM / Ingress</text>
+    <text x="743" y="145" fill="#aeb4c2" text-anchor="middle" font-size="13">HTTPS + origin cert</text>
+    <path d="M860 127h68" stroke="#f7934c" stroke-width="3"/><path d="m920 119 12 8-12 8" fill="none" stroke="#f7934c" stroke-width="3"/>
+    <rect x="942" y="92" width="120" height="70" rx="12" fill="#20232c" stroke="#576078"/>
+    <text x="1002" y="122" fill="#e4e7ee" text-anchor="middle" font-size="15" font-weight="600">Please</text>
+    <text x="1002" y="145" fill="#aeb4c2" text-anchor="middle" font-size="13">Payment</text>
+    <text x="56" y="192" fill="#aeb4c2" font-size="14">เริ่มออก certificate โดยตั้ง DNS only ชั่วคราว → รอ Ready → เปิด Proxy และเลือก Full (strict)</text>
+
+    <rect x="28" y="238" width="1064" height="190" rx="16" fill="#181a20" stroke="#3b3e49"/>
+    <text x="56" y="278" fill="#f0f2f7" font-size="21" font-weight="700">DNS only หรือ DNS provider อื่น</text>
+    <rect x="56" y="302" width="184" height="70" rx="12" fill="#20232c" stroke="#576078"/>
+    <text x="148" y="332" fill="#e4e7ee" text-anchor="middle" font-size="16" font-weight="600">ผู้เข้าชม</text>
+    <text x="148" y="355" fill="#aeb4c2" text-anchor="middle" font-size="13">HTTPS</text>
+    <path d="M252 337h68" stroke="#f7934c" stroke-width="3"/><path d="m312 329 12 8-12 8" fill="none" stroke="#f7934c" stroke-width="3"/>
+    <rect x="334" y="302" width="210" height="70" rx="12" fill="#20232c" stroke="#576078"/>
+    <text x="439" y="332" fill="#e4e7ee" text-anchor="middle" font-size="16" font-weight="600">DNS provider</text>
+    <text x="439" y="355" fill="#aeb4c2" text-anchor="middle" font-size="13">ชี้ A record ไปที่ VM</text>
+    <path d="M556 337h68" stroke="#f7934c" stroke-width="3"/><path d="m616 329 12 8-12 8" fill="none" stroke="#f7934c" stroke-width="3"/>
+    <rect x="638" y="302" width="210" height="70" rx="12" fill="#20232c" stroke="#576078"/>
+    <text x="743" y="332" fill="#e4e7ee" text-anchor="middle" font-size="16" font-weight="600">VM / Ingress</text>
+    <text x="743" y="355" fill="#aeb4c2" text-anchor="middle" font-size="13">HTTPS + Let's Encrypt</text>
+    <path d="M860 337h68" stroke="#f7934c" stroke-width="3"/><path d="m920 329 12 8-12 8" fill="none" stroke="#f7934c" stroke-width="3"/>
+    <rect x="942" y="302" width="120" height="70" rx="12" fill="#20232c" stroke="#576078"/>
+    <text x="1002" y="332" fill="#e4e7ee" text-anchor="middle" font-size="15" font-weight="600">Please</text>
+    <text x="1002" y="355" fill="#aeb4c2" text-anchor="middle" font-size="13">Payment</text>
+    <text x="56" y="402" fill="#aeb4c2" font-size="14">เปิด port 80/443 ให้ HTTP-01 ผ่าน และออก certificate ที่ Ingress ก่อนทดสอบ HTTPS</text>
+  </g>
+</svg>

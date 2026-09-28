@@ -13,6 +13,9 @@ const LABELS: Record<DocLocale, { version: string; updatedAt: string; copied: st
 
 export default function DocContentComponent({ doc, locale = 'th' }: { doc: DocContent; locale?: DocLocale }) {
   const { meta, html, headings } = doc
+  const responsiveHtml = html
+    .replace(/<table(?=[\s>])([^>]*)>/g, '<div class="table-scroll"><table$1>')
+    .replace(/<\/table>/g, '</table></div>')
   const labels = LABELS[locale]
   const [activeId, setActiveId] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string>('')
@@ -44,9 +47,9 @@ export default function DocContentComponent({ doc, locale = 'th' }: { doc: DocCo
   const tocHeadings = headings.filter(h => h.level === 2 || h.level === 3)
 
   return (
-    <div className="flex">
+    <div className="flex w-full min-w-0">
       {/* Content */}
-      <article className="flex-1 min-w-0 px-8 py-10">
+      <article className="w-full flex-1 min-w-0 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <h1 className="text-3xl font-bold text-white mb-2">{meta.title}</h1>
         {(meta.version || meta.updatedAt) && (
           <p className="text-sm text-zinc-500 mb-2">
@@ -61,7 +64,7 @@ export default function DocContentComponent({ doc, locale = 'th' }: { doc: DocCo
         <div
           className="prose-docs"
           onClick={handleContentClick}
-          dangerouslySetInnerHTML={{ __html: html }}
+          dangerouslySetInnerHTML={{ __html: responsiveHtml }}
         />
       </article>
 

@@ -113,6 +113,8 @@
 }
 
 body {
+  width: 100%;
+  min-width: 320px;
   margin: 0;
   padding: 0;
   font-family: var(--font-prompt), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -185,7 +187,8 @@ body {
 
   /* API Docs markdown styles */
   .prose-docs {
-    @apply text-zinc-300 leading-relaxed;
+    @apply min-w-0 max-w-full text-zinc-300 leading-relaxed;
+    overflow-wrap: anywhere;
   }
   .prose-docs h1 { @apply text-2xl font-bold text-white mt-8 mb-4; }
   .prose-docs h2 { @apply text-xl font-bold text-white mt-10 mb-3 pt-6 border-t border-zinc-800; }
@@ -206,8 +209,51 @@ body {
   .prose-docs pre code {
     @apply text-zinc-200 text-sm font-mono bg-transparent p-0;
   }
+  .prose-docs .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .prose-docs .table-scroll,
+  pre,
+  div[class*="overflow-x-auto"]:has(table),
+  div[class*="overflow-auto"]:has(table) {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-primary-500)) rgb(161 161 170 / 0.2);
+  }
+  .prose-docs .table-scroll::-webkit-scrollbar,
+  pre::-webkit-scrollbar,
+  div[class*="overflow-x-auto"]:has(table)::-webkit-scrollbar,
+  div[class*="overflow-auto"]:has(table)::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .prose-docs .table-scroll::-webkit-scrollbar-track,
+  pre::-webkit-scrollbar-track,
+  div[class*="overflow-x-auto"]:has(table)::-webkit-scrollbar-track,
+  div[class*="overflow-auto"]:has(table)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .prose-docs .table-scroll::-webkit-scrollbar-thumb,
+  pre::-webkit-scrollbar-thumb,
+  div[class*="overflow-x-auto"]:has(table)::-webkit-scrollbar-thumb,
+  div[class*="overflow-auto"]:has(table)::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-primary-500) / 0.8);
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+  }
+  .prose-docs .table-scroll::-webkit-scrollbar-thumb:hover,
+  pre::-webkit-scrollbar-thumb:hover,
+  div[class*="overflow-x-auto"]:has(table)::-webkit-scrollbar-thumb:hover,
+  div[class*="overflow-auto"]:has(table)::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-primary-600));
+    background-clip: padding-box;
+  }
   .prose-docs table {
-    @apply w-full border-collapse mb-6 text-sm;
+    @apply w-full border-collapse text-sm;
+    min-width: 680px;
   }
   .prose-docs thead tr { @apply bg-zinc-800; }
   .prose-docs th {
@@ -215,11 +261,15 @@ body {
   }
   .prose-docs td {
     @apply px-4 py-3 border border-zinc-700 text-zinc-300;
+    overflow-wrap: anywhere;
   }
   .prose-docs tbody tr:nth-child(even) { @apply bg-zinc-900/50; }
   .prose-docs hr { @apply border-zinc-700 my-8; }
   .prose-docs img { @apply rounded-xl border border-zinc-700 my-6 max-w-full; }
   .prose-docs figcaption { @apply text-xs text-zinc-500 text-center mt-2; }
+  .prose-docs .install-evidence { @apply my-8 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 p-3 sm:p-4; }
+  .prose-docs .install-evidence img { @apply my-0 w-full rounded-xl border-0; }
+  .prose-docs .install-evidence figcaption { @apply mb-0 px-2 pt-3; }
 
   .prose-docs .warning-box {
     @apply border border-red-500/40 bg-red-950/40 rounded-xl px-5 py-4 my-6;
@@ -263,5 +313,19 @@ body {
   }
   .doc-copy-link {
     @apply absolute right-0 top-1 opacity-0 group-hover/heading:opacity-100 text-zinc-600 hover:text-primary-400 text-sm font-normal transition-opacity cursor-pointer select-none;
+  }
+
+  .prose-docs .install-screenshot-placeholder {
+    @apply my-8 rounded-2xl border border-primary-500/30 bg-gradient-to-br from-zinc-900 to-zinc-950 p-4 sm:p-5;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.035);
+  }
+  .prose-docs .install-screenshot-placeholder > p {
+    @apply mb-2 text-sm text-zinc-300;
+  }
+  .prose-docs .install-screenshot-placeholder > p:first-child {
+    @apply mb-3 text-base font-semibold text-primary-300;
+  }
+  .prose-docs .install-screenshot-placeholder .screenshot-empty-space {
+    @apply mt-4 flex min-h-40 items-center justify-center rounded-xl border border-dashed border-zinc-600 bg-zinc-950/70 px-4 py-8 text-center text-sm text-zinc-500;
   }
 }

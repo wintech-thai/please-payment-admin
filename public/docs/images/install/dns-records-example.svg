@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="300" viewBox="0 0 1040 300" role="img" aria-labelledby="title desc">
+  <title id="title">ตัวอย่าง DNS records สำหรับ Please Payment</title>
+  <desc id="desc">ตัวอย่าง A records สำหรับ admin, merchant และ api โดยใช้ IP สาธารณะแบบ placeholder</desc>
+  <rect width="1040" height="300" rx="18" fill="#111318"/>
+  <rect x="24" y="24" width="992" height="252" rx="12" fill="#181a20" stroke="#363942"/>
+  <rect x="24" y="24" width="992" height="58" rx="12" fill="#24262d"/>
+  <path d="M24 70h992v12H24z" fill="#24262d"/>
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#aeb4c2" font-weight="600">
+    <text x="52" y="60">TYPE</text><text x="180" y="60">NAME</text><text x="400" y="60">CONTENT</text><text x="755" y="60">PROXY STATUS</text>
+  </g>
+  <g stroke="#333640" stroke-width="1"><path d="M40 145h960M40 207h960"/></g>
+  <g font-family="Cascadia Mono, Consolas, monospace" font-size="17" fill="#e4e7ee">
+    <text x="52" y="123">A</text><text x="180" y="123">admin</text><text x="400" y="123">&lt;VM_STATIC_PUBLIC_IP&gt;</text><text x="755" y="123">Proxied / DNS only</text>
+    <text x="52" y="185">A</text><text x="180" y="185">merchant</text><text x="400" y="185">&lt;VM_STATIC_PUBLIC_IP&gt;</text><text x="755" y="185">same mode</text>
+    <text x="52" y="247">A</text><text x="180" y="247">api</text><text x="400" y="247">&lt;VM_STATIC_PUBLIC_IP&gt;</text><text x="755" y="247">same mode</text>
+  </g>
+</svg>

@@ -82,4 +82,4 @@ Admin, Merchant และ Argo CD ควรตอบหน้า login หรื
 - ⬜ หากใช้ Proxied ตั้ง Cloudflare SSL/TLS เป็น Full (strict) หลัง origin TLS พร้อม; หากใช้ DNS only ให้ยืนยัน certificate ที่ origin โดยตรง
 - ⬜ Admin, Merchant, API และ Argo CD endpoints ตอบตามที่คาด
 
-ขั้นตอนถัดไป: [5. ตรวจรับและดูแลระบบ](./misc)
+ขั้นตอนถัดไป: [5. ตรวจสอบหลังติดตั้ง](./misc)

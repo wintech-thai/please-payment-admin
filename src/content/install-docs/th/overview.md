@@ -13,7 +13,7 @@ updatedAt: "{{BUILD_DATE}}"
 2. [เตรียม VM](./prepare-vm) — เตรียม Ubuntu, disk, public IP และ firewall
 3. [ติดตั้งระบบ](./install-k3s) — รัน scripts ตามลำดับและตรวจ K3s/Argo CD
 4. [ตั้งค่า Domain & DNS](./domain-dns) — กำหนด DNS และตรวจการเชื่อมต่อ
-5. [ตรวจรับและดูแลระบบ](./misc) — เข้าเครื่องมือ ตรวจ workload, jobs และ credentials
+5. [ตรวจสอบหลังติดตั้ง](./misc) — เข้าเครื่องมือ ตรวจ workload, jobs และ credentials
 
 ## สิ่งที่ต้องเตรียมก่อนเริ่ม
 

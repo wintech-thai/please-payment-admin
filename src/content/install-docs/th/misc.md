@@ -1,5 +1,5 @@
 ---
-title: 5. ตรวจรับและดูแลระบบ
+title: 5. ตรวจสอบหลังติดตั้ง
 updatedAt: "{{BUILD_DATE}}"
 ---
 
@@ -20,7 +20,7 @@ kubectl logs -n please-payment-production \
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-5.1-admin-seed.png" alt="ตัวอย่าง log ยืนยันการสร้าง admin โดยปิดบัง seed password" />
-<figcaption>ตัวอย่าง log ก่อนเข้าสู่ระบบ: ซ่อน seed password ไว้เสมอ และอย่าบันทึกรหัสผ่านจริงลงในภาพ</figcaption>
+<figcaption>ภาพที่ 5.1 Log ยืนยันการสร้างบัญชี Admin</figcaption>
 </figure>
 
 หากไม่พบข้อความ ให้ตรวจ pod และ log ล่าสุดใน terminal ส่วนตัว:
@@ -50,7 +50,7 @@ kubectl get applications -n argocd
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-5-2-argocd.png" alt="ตัวอย่างผล kubectl get applications ที่ทุก application เป็น Synced และ Healthy" />
-<figcaption>ตัวอย่างผลตรวจ: applications หลักเป็น <code>Synced</code> และ <code>Healthy</code></figcaption>
+<figcaption>ภาพที่ 5.2 สถานะ Applications ใน Argo CD</figcaption>
 </figure>
 
 ## 5.3 ดู CPU และ memory
@@ -72,7 +72,7 @@ kubectl get pods -n monitoring
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-5-3-grafana.png" alt="ตัวอย่างผลตรวจ pods ของ Grafana และ Prometheus components ในสถานะ Running" />
-<figcaption>ตัวอย่างผลตรวจ: Grafana และส่วนประกอบ metrics อยู่ในสถานะ <code>Running</code></figcaption>
+<figcaption>ภาพที่ 5.3 สถานะ Grafana และ Metrics</figcaption>
 </figure>
 
 ## 5.4 ดู logs
@@ -85,7 +85,7 @@ kubectl get pods -n loki-log
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-5-4-loki.png" alt="ตัวอย่างผลตรวจ pods ของ Loki, Grafana และ Promtail ในสถานะ Running" />
-<figcaption>ตัวอย่างผลตรวจ: Loki, Grafana และ Promtail อยู่ในสถานะ <code>Running</code></figcaption>
+<figcaption>ภาพที่ 5.4 สถานะ Loki และ Log Collection</figcaption>
 </figure>
 
 ## 5.5 ตรวจสุขภาพระบบ
@@ -133,7 +133,7 @@ template มี `discord-alm` application และ Alertmanager routing config.
 kubectl get pods -n discord-alm
 ```
 
-## 5.8 Checklist การตรวจรับ
+## 5.8 Checklist ตรวจสอบหลังติดตั้ง
 
 - ⬜ เข้า Admin ได้และเปลี่ยน seed password แล้ว
 - ⬜ เข้า Argo CD ได้และเก็บ credentials อย่างปลอดภัย

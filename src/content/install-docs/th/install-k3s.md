@@ -39,7 +39,7 @@ ls -1 *.bash
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-1-script-list.png" alt="ผลลัพธ์คำสั่งที่แสดง installation scripts ทั้งห้าไฟล์" />
-<figcaption>ตัวอย่างผลลัพธ์: repository มี scripts สำหรับติดตั้งครบ</figcaption>
+<figcaption>ภาพที่ 3.1 รายการสคริปต์ติดตั้ง</figcaption>
 </figure>
 
 ## 3.2 ติดตั้ง K3s ด้วย script 00
@@ -68,7 +68,7 @@ kubectl get nodes
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-2-k3s-ready.png" alt="ผลลัพธ์ kubectl get nodes ที่แสดงสถานะ Ready" />
-<figcaption>ตัวอย่างผลลัพธ์: K3s node อยู่ในสถานะ <code>Ready</code></figcaption>
+<figcaption>ภาพที่ 3.2 สถานะ K3s หลังติดตั้ง</figcaption>
 </figure>
 
 ## 3.3 เตรียม secret และรัน script 01
@@ -118,7 +118,7 @@ kubectl get secrets -n default
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-3-initial-secrets.png" alt="ผลลัพธ์ secret-init สำเร็จและรายชื่อ secrets" />
-<figcaption>ตัวอย่างผลลัพธ์: Job <code>secret-init</code> สำเร็จ โดยแสดงเฉพาะชื่อ secret ไม่แสดงค่า</figcaption>
+<figcaption>ภาพที่ 3.3 ผลการสร้าง Secret</figcaption>
 </figure>
 
 ## 3.4 ติดตั้งส่วนประกอบพื้นฐานด้วย script 02
@@ -140,7 +140,7 @@ kubectl get pods -A
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-4-addons.png" alt="ผลลัพธ์ pods ของ Argo CD ingress cert-manager และ external-secrets" />
-<figcaption>ตัวอย่างผลลัพธ์: addons หลักอยู่ในสถานะ <code>Running</code> หรือ <code>Completed</code></figcaption>
+<figcaption>ภาพที่ 3.4 สถานะ Addons</figcaption>
 </figure>
 
 ## 3.5 เริ่ม sync applications ด้วย script 04
@@ -162,7 +162,7 @@ kubectl get applications -n argocd
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-5-applications.png" alt="ผลลัพธ์ Argo CD applications เป็น Synced และ Healthy" />
-<figcaption>ตัวอย่างผลลัพธ์: applications หลักเป็น <code>Synced</code> และ <code>Healthy</code></figcaption>
+<figcaption>ภาพที่ 3.5 สถานะ Applications ใน Argo CD</figcaption>
 </figure>
 
 ## 3.6 ติดตั้ง metrics และ Discord alerts ด้วย script 03
@@ -194,7 +194,7 @@ kubectl get pods -n discord-alm
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-6-monitoring.png" alt="ผลลัพธ์ Helm และ pods ของ monitoring กับ Discord alerts" />
-<figcaption>ตัวอย่างผลลัพธ์: Helm พร้อมใช้ และ monitoring workloads เริ่มทำงาน</figcaption>
+<figcaption>ภาพที่ 3.6 สถานะ Monitoring</figcaption>
 </figure>
 
 ## 3.7 ตรวจ workload และ storage
@@ -206,11 +206,11 @@ kubectl get pods -A
 kubectl get pvc -A
 ```
 
-pod หลักไม่ควรค้างที่ `Pending`, `ImagePullBackOff` หรือ `CrashLoopBackOff` ส่วน PVC ที่ต้องใช้ควรเป็น `Bound` เมื่อผ่านแล้ว ไปที่ [4. ตั้งค่า Domain & DNS](./domain-dns) เพื่อตรวจ DNS และ TLS จากนั้นใช้หน้า [5. ตรวจรับและดูแลระบบ](./misc) ตรวจ Admin, Argo CD, metrics และ jobs
+pod หลักไม่ควรค้างที่ `Pending`, `ImagePullBackOff` หรือ `CrashLoopBackOff` ส่วน PVC ที่ต้องใช้ควรเป็น `Bound` เมื่อผ่านแล้ว ไปที่ [4. ตั้งค่า Domain & DNS](./domain-dns) เพื่อตรวจ DNS และ TLS จากนั้นใช้หน้า [5. ตรวจสอบหลังติดตั้ง](./misc) ตรวจ Admin, Argo CD, metrics และ jobs
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-7-workloads-storage.png" alt="ผลลัพธ์ pods และ persistent volume claims ของระบบ" />
-<figcaption>ตัวอย่างผลลัพธ์: workloads พร้อมและ PVC ที่ต้องใช้เป็น <code>Bound</code></figcaption>
+<figcaption>ภาพที่ 3.7 สถานะ Workloads และ Storage</figcaption>
 </figure>
 
 ## Checklist

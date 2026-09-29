@@ -7,7 +7,7 @@
       { "slug": "prepare-vm", "titles": { "th": "2. เตรียม VM", "en": "2. Prepare VM", "zh": "2. 准备 VM" } },
       { "slug": "install-k3s", "titles": { "th": "3. ติดตั้งระบบ", "en": "3. Install platform", "zh": "3. 安装平台" } },
       { "slug": "domain-dns", "titles": { "th": "4. ตั้งค่า Domain & DNS", "en": "4. Domain & DNS", "zh": "4. 域名与 DNS" } },
-      { "slug": "misc", "titles": { "th": "5. ตรวจรับและดูแลระบบ", "en": "5. Verify & operate", "zh": "5. 验收与运维" } }
+      { "slug": "misc", "titles": { "th": "5. ตรวจสอบหลังติดตั้ง", "en": "5. Post-install checks", "zh": "5. 安装后检查" } }
     ]
   }
 ]

@@ -63,7 +63,7 @@ K3s ใน template กำหนด local storage path เป็น `/data`. ห
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-2.5-vm-ready.png" alt="ผลตรวจ VM ทดสอบ: 8 vCPU, EBS 300 GiB และ /data ใช้ root filesystem" />
-<figcaption>ผลจาก VM ทดสอบ: 8 vCPU และ EBS 300 GiB; `free -h` แสดง RAM รวมประมาณ 30 GiB และ `/data` อยู่บน root filesystem เพราะไม่ได้แยก disk เพิ่ม</figcaption>
+<figcaption>ภาพที่ 2.5 ผลตรวจความพร้อมของ VM</figcaption>
 </figure>
 
 ## 2.6 Checklist

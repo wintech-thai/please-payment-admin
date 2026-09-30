@@ -17,7 +17,7 @@ domain3: api.example.com
 
 | Hostname | ใช้สำหรับ |
 | --- | --- |
-| `admin.<domain>` | Please Payment Admin |
+| `admin.<domain>` | Admin |
 | `merchant.<domain>` | Merchant portal |
 | `api.<domain>` | Public API |
 
@@ -69,10 +69,11 @@ kubectl get certificate,certificaterequest,challenge,order -A
 curl -sSIL --max-time 20 https://admin.example.com
 curl -sSIL --max-time 20 https://merchant.example.com
 curl -sSIL --max-time 20 https://api.example.com
-curl -sSIL --max-time 20 https://admin.example.com/tool/argocd
 ```
 
-Admin, Merchant และ Argo CD ควรตอบหน้า login หรือ redirect ตามปกติ. API root อาจตอบ `404` ได้หากไม่มี route `/` แต่การเชื่อมต่อ TLS ต้องสำเร็จ
+Admin และ Merchant ควรตอบหน้า login หรือ redirect ตามปกติ. API root อาจตอบ `404` ได้หากไม่มี route `/` แต่การเชื่อมต่อ TLS ต้องสำเร็จ
+
+เครื่องมือใน `/tools` ให้เข้าผ่าน Static public IPv4 ของ VM โดยใช้ HTTPS เช่น `https://<ip-address>/tools/argocd`, `https://<ip-address>/tools/grafana-k8s` และ `https://<ip-address>/tools/grafana-loki` ตามหน้า [5. ตรวจสอบหลังติดตั้ง](./misc)
 
 ## 4.6 Checklist
 
@@ -80,6 +81,7 @@ Admin, Merchant และ Argo CD ควรตอบหน้า login หรื
 - ⬜ DNS records ทั้งสามชี้ Static public IP ที่ถูกต้อง
 - ⬜ มี certificate และ TLS secret สำหรับทุก hostname; ตรวจ `Ready=True`
 - ⬜ หากใช้ Proxied ตั้ง Cloudflare SSL/TLS เป็น Full (strict) หลัง origin TLS พร้อม; หากใช้ DNS only ให้ยืนยัน certificate ที่ origin โดยตรง
-- ⬜ Admin, Merchant, API และ Argo CD endpoints ตอบตามที่คาด
+- ⬜ Admin, Merchant และ API endpoints ตอบตามที่คาด
+- ⬜ เข้าเครื่องมือใน `/tools` ผ่าน `https://<ip-address>` ได้
 
 ขั้นตอนถัดไป: [5. ตรวจสอบหลังติดตั้ง](./misc)

@@ -52,10 +52,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const active = s === 'active' || s.startsWith('enable')
   const title = active && config?.brandConfig?.brandName
     ? config.brandConfig.brandName
-    : 'PLEASE-PAYMENT Admin'
+    : 'Admin'
   return {
     title,
-    description: 'Please Payment Administration Dashboard',
+    description: 'Administration Dashboard',
     icons: {
       icon: '/img/please-payment.svg',
       shortcut: '/img/please-payment.svg',

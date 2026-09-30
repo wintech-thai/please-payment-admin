@@ -3,11 +3,11 @@ title: 2. เตรียม VM
 updatedAt: "{{BUILD_DATE}}"
 ---
 
-ขั้นตอนนี้ใช้เตรียม VM ให้พร้อมสำหรับติดตั้ง Please Payment เมื่อทำเสร็จ จะมี Ubuntu VM ที่มีทรัพยากรเพียงพอ, มี Static Public IP และเข้าถึงผ่าน SSH ได้อย่างปลอดภัย ตัวอย่างในหน้านี้ใช้ Google Cloud Platform แต่ใช้หลักการเดียวกันได้กับ cloud provider อื่นหรือเครื่อง on-premises
+ขั้นตอนนี้ใช้เตรียม VM ให้พร้อมสำหรับติดตั้งโปรแกรม เมื่อทำเสร็จ จะมี Ubuntu VM ที่มีทรัพยากรเพียงพอ, มี Static Public IP และเข้าถึงผ่าน SSH ได้อย่างปลอดภัย ตัวอย่างในหน้านี้ใช้ Google Cloud Platform แต่ใช้หลักการเดียวกันได้กับ cloud provider อื่นหรือเครื่อง on-premises
 
 ## 2.1 VM ที่ต้องเตรียม
 
-เตรียม VM หนึ่งเครื่องสำหรับรันบริการทั้งหมดของ Please Payment ได้แก่ application, PostgreSQL, Redis, Argo CD, monitoring และ logs
+เตรียม VM หนึ่งเครื่องสำหรับรันบริการทั้งหมด ได้แก่ application, PostgreSQL, Redis, Argo CD, monitoring และ logs
 
 ## 2.2 สเปก VM ที่แนะนำ
 
@@ -29,7 +29,7 @@ Disk ใช้เก็บข้อมูล PostgreSQL, Redis, container images
 4. เลือก machine type `e2-standard-8` หรือขนาดเทียบเท่า สำหรับ 8 vCPU และ RAM 32 GiB
 5. ตั้ง boot disk เป็น SSD ขนาด 300 GiB
 6. สร้าง Static external IPv4 แล้วผูกกับ VM เพื่อให้ IP ไม่เปลี่ยนเมื่อ stop หรือ start เครื่อง
-7. เพิ่ม network tag เช่น `please-payment` เพื่อใช้กับ firewall rules ในหัวข้อถัดไป
+7. เพิ่ม network tag เช่น `application-server` เพื่อใช้กับ firewall rules ในหัวข้อถัดไป
 
 ## 2.4 ตั้งค่า network และ firewall
 

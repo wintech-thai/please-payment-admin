@@ -3,7 +3,7 @@ title: 3. ติดตั้งระบบ
 updatedAt: "{{BUILD_DATE}}"
 ---
 
-หน้านี้อธิบายการติดตั้ง Please Payment บน VM ตั้งแต่สร้าง K3s cluster จนตรวจ applications และ storage โดยรัน script ตามลำดับใน VM เครื่องเดียวกัน:
+หน้านี้อธิบายการติดตั้งโปรแกรมบน VM ตั้งแต่สร้าง K3s cluster จนตรวจ applications และ storage โดยรัน script ตามลำดับใน VM เครื่องเดียวกัน:
 
 > **ลำดับ:** `00-install-k3s.bash` → `01-initial-secrets.bash` → `02-initial-addons.bash` → `04-boot-strap.bash` → `03-install-monitoring.bash`
 > รัน script `03` หลัง `04` เพราะ monitoring ต้องอ่าน secret ที่สร้างไว้และตั้งค่า alert หลัง Argo CD เริ่ม sync ระบบแล้ว

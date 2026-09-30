@@ -3,7 +3,7 @@ import { getNav } from '@/lib/docs/markdown'
 import DocsLayoutClient from '@/components/docs/DocsLayoutClient'
 
 export const metadata: Metadata = {
-  title: 'วิดีโอสอนการใช้งาน Please Payment',
+  title: 'วิดีโอสอนการใช้งาน',
 }
 
 export default function VideoTutorialsLayout({ children }: { children: React.ReactNode }) {

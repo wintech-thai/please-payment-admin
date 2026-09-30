@@ -5,7 +5,7 @@ updatedAt: "{{BUILD_DATE}}"
 
 ทำหน้านี้หลัง workloads พร้อมและตั้ง DNS แล้ว. HTTPS ต้องมี origin certificate ที่ใช้งานได้ตามหน้า 4. ตรวจ Admin และเปลี่ยน seed password ก่อนตรวจเครื่องมือดูแล
 
-## 5.1 เข้า Please Payment Admin ครั้งแรก
+## 5.1 เข้า Admin ครั้งแรก
 
 API สร้างบัญชี `admin` ระหว่าง database migration และเขียน seed password ลง startup log. อ่าน log ใน terminal ส่วนตัวเท่านั้น:
 
@@ -33,7 +33,9 @@ kubectl logs -n please-payment-production deploy/please-payment-prod-onix-api \
 
 ## 5.2 เข้า Argo CD
 
-เปิด `https://admin.example.com/tool/argocd` บัญชีเริ่มต้นคือ `admin`. รันคำสั่งนี้ใน terminal ส่วนตัวเพื่ออ่าน initial password:
+เครื่องมือดูแลระบบทุกตัวใน `/tools` ต้องเข้าผ่าน `https://<ip-address>` โดยแทน `<ip-address>` ด้วย Static public IPv4 ของ VM เช่น `https://203.0.113.10/tools/argocd`
+
+เปิด `https://<ip-address>/tools/argocd` บัญชีเริ่มต้นคือ `admin`. รันคำสั่งนี้ใน terminal ส่วนตัวเพื่ออ่าน initial password:
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret \
@@ -55,7 +57,7 @@ kubectl get applications -n argocd
 
 ## 5.3 ดู CPU และ memory
 
-เปิด `https://admin.example.com/tool/grafana-k8s` เพื่อดู metrics ของ node และ pods. หากต้องใช้ credentials เริ่มต้น ให้อ่านใน terminal ส่วนตัวเท่านั้น:
+เปิด `https://<ip-address>/tools/grafana-k8s` เพื่อดู metrics ของ node และ pods. หากต้องใช้ credentials เริ่มต้น ให้อ่านใน terminal ส่วนตัวเท่านั้น:
 
 ```bash
 kubectl get secret initial-secret -n default \
@@ -77,7 +79,7 @@ kubectl get pods -n monitoring
 
 ## 5.4 ดู logs
 
-เปิด Grafana Loki ที่ `https://admin.example.com/tool/grafana-loki` เพื่อค้นหาและดู log. หากยังเข้าไม่ได้ ให้ตรวจ pod และ service ใน namespace `loki-log` ก่อน
+เปิด Grafana Loki ที่ `https://<ip-address>/tools/grafana-loki` เพื่อค้นหาและดู log. หากยังเข้าไม่ได้ ให้ตรวจ pod และ service ใน namespace `loki-log` ก่อน
 
 ```bash
 kubectl get pods -n loki-log

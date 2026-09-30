@@ -3,7 +3,7 @@ title: ภาพรวม
 updatedAt: "{{BUILD_DATE}}"
 ---
 
-# คู่มือติดตั้ง Please Payment บน Infrastructure ของคุณ
+# คู่มือติดตั้งโปรแกรมบนเซิร์ฟเวอร์ของคุณ
 
 คู่มือนี้อธิบายการเตรียม VM และการเริ่มระบบจาก repository [`please-payment-k3s-demo`](https://github.com/wintech-thai/please-payment-k3s-demo) โดยเรียงจากเตรียม source code ไปจนถึงตรวจรับระบบ
 

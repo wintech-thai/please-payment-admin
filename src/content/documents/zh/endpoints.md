@@ -54,25 +54,26 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "SessionId": "session-abc123",
-    "Type": "PayIn",
-    "Status": "Pending",
-    "RequestedAmount": 325.00,
-    "GeneratedAmount": 325.52,
-    "Currency": "THB",
-    "QrCode": "00020101021...",
-    "QrCodeImage": "data:image/png;base64,...",
-    "PaymentUrl": "https://...",
-    "WebsocketPath": "/realtime/payment-tx",
-    "CreatedAt": "2026-07-01T10:00:00Z",
-    "ExpireAt": "2026-07-01T10:15:00Z",
-    "PayInBankCode": "SCB",
-    "PayInBankAccountNo": "xxx-xxxxx-x",
-    "PayInBankAccountName": "公司名称",
-    "PayInPromptPayId": null,
-    "SlipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+  "paymentResponse": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "sessionId": "session-abc123",
+    "type": "PayIn",
+    "status": "Pending",
+    "requestedAmount": 325.00,
+    "generatedAmount": 325.52,
+    "currency": "THB",
+    "qrCode": "00020101021...",
+    "qrCodeImage": "data:image/png;base64,...",
+    "paymentUrl": "https://...",
+    "websocketPath": "/realtime/payment-tx",
+    "createdAt": "2026-07-01T10:00:00Z",
+    "expireAt": "2026-07-01T10:15:00Z",
+    "isQrAvailable": true,
+    "payInBankCode": "SCB",
+    "payInBankAccountNo": "xxx-xxxxx-x",
+    "payInBankAccountName": "公司名称",
+    "payInPromptPayId": null,
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
   }
 }
 ```
@@ -81,35 +82,35 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 
 | Field | 说明 |
 |---|---|
-| `Id` | Payment Request 的 UUID —— 请保存以便查询 |
-| `Status` | 当前状态（参见[支付状态](/documents/payment-status)） |
-| `RequestedAmount` | 请求的金额 |
-| `GeneratedAmount` | 实际应支付的金额（可能包含随机小数以便匹配） |
-| `IsQrAvailable` | `true` 表示 QR Code 已就绪，可供客户扫描；`false` 表示目标账户不支持 QR（例如未绑定 PromptPay）—— 详见下文 |
-| `QrCodeImage` | Base64 格式的 QR Code 图片 —— 可直接在 App 中显示（当 `IsQrAvailable` 为 `false` 时为空） |
-| `PayInBankCode` | 目标银行代码 |
-| `PayInBankAccountNo` | 目标账号 |
-| `PayInBankAccountName` | 目标账户名称 |
-| `PayInPromptPayId` | 目标 PromptPay 号码（如有） |
-| `SessionId` | 用于通过 WebSocket 连接以接收实时状态 |
-| `WebsocketPath` | WebSocket 的路径（`/realtime/payment-tx`） |
-| `ExpireAt` | QR Code 的过期时间 |
-| `SlipUploadUrl` | 回单上传页面的相对路径 —— 不含域名前缀，需自行拼接 `{{MERCHANT_URL}}`（详见下文说明）以生成完整 URL，再提供给客户打开回单上传页面，无需登录 |
+| `id` | Payment Request 的 UUID —— 请保存以便查询 |
+| `status` | 当前状态（参见[支付状态](/documents/payment-status)） |
+| `requestedAmount` | 请求的金额 |
+| `generatedAmount` | 实际应支付的金额（可能包含随机小数以便匹配） |
+| `isQrAvailable` | `true` 表示 QR Code 已就绪，可供客户扫描；`false` 表示目标账户不支持 QR（例如未绑定 PromptPay）—— 详见下文 |
+| `qrCodeImage` | Base64 格式的 QR Code 图片 —— 可直接在 App 中显示（当 `isQrAvailable` 为 `false` 时为空） |
+| `payInBankCode` | 目标银行代码 |
+| `payInBankAccountNo` | 目标账号 |
+| `payInBankAccountName` | 目标账户名称 |
+| `payInPromptPayId` | 目标 PromptPay 号码（如有） |
+| `sessionId` | 用于通过 WebSocket 连接以接收实时状态 |
+| `websocketPath` | WebSocket 的路径（`/realtime/payment-tx`） |
+| `expireAt` | QR Code 的过期时间 |
+| `slipUploadUrl` | 回单上传页面的相对路径 —— 不含域名前缀，需自行拼接 `{{MERCHANT_URL}}`（详见下文说明）以生成完整 URL，再提供给客户打开回单上传页面，无需登录 |
 
-> **重要 —— 应拼接哪个域名：** `SlipUploadUrl` 仅为相对路径，需自行拼接 `{{MERCHANT_URL}}` 域名。例如若 `SlipUploadUrl` 为 `/payin-slip-upload/org123/xxx/yyy`，则完整 URL 应为 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 仅为相对路径，需自行拼接 `{{MERCHANT_URL}}` 域名。例如若 `slipUploadUrl` 为 `/payin-slip-upload/org123/xxx/yyy`，则完整 URL 应为 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
 
 ### QR 与账户信息的展示方式
 
-**展示前应始终先检查 `IsQrAvailable`：**
+**展示前应始终先检查 `isQrAvailable`：**
 
 | 场景 | 展示方式 |
 |---|---|
-| `IsQrAvailable = true` | 照常展示 `QrCodeImage` 中的 QR Code 供客户扫描 |
-| `IsQrAvailable = false` | 没有 QR Code —— 展示账户信息（`PayInBankCode`、`PayInBankAccountNo`、`PayInBankAccountName`、`PayInPromptPayId`）供客户自行填写转账信息 |
+| `isQrAvailable = true` | 照常展示 `qrCodeImage` 中的 QR Code 供客户扫描 |
+| `isQrAvailable = false` | 没有 QR Code —— 展示账户信息（`payInBankCode`、`payInBankAccountNo`、`payInBankAccountName`、`payInPromptPayId`）供客户自行填写转账信息 |
 
-> **提示：** 建议始终将账户信息（`PayInBankCode`、`PayInBankAccountNo`、`PayInBankAccountName`、`PayInPromptPayId`）与 QR Code 一并展示 —— 部分客户即使有 QR Code 也可能希望手动转账
+> **提示：** 建议始终将账户信息（`payInBankCode`、`payInBankAccountNo`、`payInBankAccountName`、`payInPromptPayId`）与 QR Code 一并展示 —— 部分客户即使有 QR Code 也可能希望手动转账
 
-> **建议：** 将 `SlipUploadUrl` 生成为 **QR Code** 并展示在支付页面中 —— 客户用手机摄像头扫描后即可直接打开回单上传页面，无需手动输入 URL。适用于**普通 Pay-In** 和 **Pay-In P2P**
+> **建议：** 将 `slipUploadUrl` 生成为 **QR Code** 并展示在支付页面中 —— 客户用手机摄像头扫描后即可直接打开回单上传页面，无需手动输入 URL。适用于**普通 Pay-In** 和 **Pay-In P2P**
 
 ### 回单上传页面
 
@@ -225,20 +226,21 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "Type": "PayIn",
-    "Status": "Pending",
-    "RequestedAmount": 1000.00,
-    "GeneratedAmount": 1000.00,
-    "Currency": "THB",
-    "QrCode": null,
-    "QrCodeImage": "",
-    "PayInBankCode": "KBANK",
-    "PayInBankAccountNo": "012-3-45678-9",
-    "PayInBankAccountName": "收款方账户名称",
-    "PayInPromptPayId": "0812345678",
-    "SlipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+  "paymentResponse": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "type": "PayIn",
+    "status": "Pending",
+    "requestedAmount": 1000.00,
+    "generatedAmount": 1000.00,
+    "currency": "THB",
+    "qrCode": null,
+    "qrCodeImage": "",
+    "isQrAvailable": false,
+    "payInBankCode": "KBANK",
+    "payInBankAccountNo": "012-3-45678-9",
+    "payInBankAccountName": "收款方账户名称",
+    "payInPromptPayId": "0812345678",
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
   }
 }
 ```
@@ -247,17 +249,17 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 
 | | 普通 Pay-In | Pay-In P2P |
 |---|---|---|
-| `IsQrAvailable` | `true`（多数情况） | `false`（多数情况）—— P2P 账户通常未绑定 PromptPay |
-| `QrCodeImage` | QR Code 图片 | 当 `IsQrAvailable = false` 时为空（`""`） |
-| `PayInBankAccountName` | 商户账户 | 收款方账户（来自匹配的 Pay-Out Request） |
+| `isQrAvailable` | `true`（多数情况） | `false`（多数情况）—— P2P 账户通常未绑定 PromptPay |
+| `qrCodeImage` | QR Code 图片 | 当 `isQrAvailable = false` 时为空（`""`） |
+| `payInBankAccountName` | 商户账户 | 收款方账户（来自匹配的 Pay-Out Request） |
 | 转账方式 | 扫描 QR Code | 直接转账至 response 中指定的账户（需自行填写账户信息） |
-| `SlipUploadUrl` | ✅ | ✅（非常重要 —— 客户必须上传回单作为凭证） |
+| `slipUploadUrl` | ✅ | ✅（非常重要 —— 客户必须上传回单作为凭证） |
 
-> **重要：** 对于 P2P —— `IsQrAvailable` 通常为 `false`，因为目标账户可能未绑定 PromptPay。此时**必须展示账户信息**（`PayInBankCode`、`PayInBankAccountNo`、`PayInBankAccountName`、`PayInPromptPayId`），以便客户自行填写转账，同时展示 `SlipUploadUrl` 以便上传转账凭证。
+> **重要：** 对于 P2P —— `isQrAvailable` 通常为 `false`，因为目标账户可能未绑定 PromptPay。此时**必须展示账户信息**（`payInBankCode`、`payInBankAccountNo`、`payInBankAccountName`、`payInPromptPayId`），以便客户自行填写转账，同时展示 `slipUploadUrl` 以便上传转账凭证。
 
-> **重要 —— 应拼接哪个域名：** `SlipUploadUrl` 与普通 Pay-In 一样为相对路径，需自行拼接 `{{MERCHANT_URL}}`，例如 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`（完整说明参见上文 [Response Fields](#response-fields)）
+> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 与普通 Pay-In 一样为相对路径，需自行拼接 `{{MERCHANT_URL}}`，例如 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`（完整说明参见上文 [Response Fields](#response-fields)）
 
-> **建议：** 将 `SlipUploadUrl` 生成为 **QR Code**，与目标账户信息一并展示 —— 客户转账后扫描 QR 即可直接打开回单上传页面，无需手动输入 URL（示例参见上方回单上传页面）
+> **建议：** 将 `slipUploadUrl` 生成为 **QR Code**，与目标账户信息一并展示 —— 客户转账后扫描 QR 即可直接打开回单上传页面，无需手动输入 URL（示例参见上方回单上传页面）
 
 > **错误 `ERROR_NO_P2P_ACCOUNT_MATCH`：** 若系统中没有待处理的 Pay-Out Request，将返回此错误 —— 表示当前没有可匹配的交易。
 
@@ -322,13 +324,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
-    "Type": "PayOut",
-    "Status": "Pending",
-    "RequestedAmount": 500.00,
-    "Currency": "THB",
-    "CreatedAt": "2026-07-01T10:05:00Z"
+  "paymentResponse": {
+    "id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "type": "PayOut",
+    "status": "Pending",
+    "requestedAmount": 500.00,
+    "currency": "THB",
+    "createdAt": "2026-07-01T10:05:00Z"
   }
 }
 ```
@@ -369,13 +371,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitWithdrawalRequest/{
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
-    "Type": "PayOut",
-    "Status": "Pending",
-    "RequestedAmount": 500.00,
-    "Currency": "THB",
-    "CreatedAt": "2026-07-01T10:05:00Z"
+  "paymentResponse": {
+    "id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "type": "PayOut",
+    "status": "Pending",
+    "requestedAmount": 500.00,
+    "currency": "THB",
+    "createdAt": "2026-07-01T10:05:00Z"
   }
 }
 ```

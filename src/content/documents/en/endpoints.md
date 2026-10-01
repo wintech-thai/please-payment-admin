@@ -54,25 +54,26 @@ Creates a Payment Request and returns a QR Code for the customer to scan and tra
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "SessionId": "session-abc123",
-    "Type": "PayIn",
-    "Status": "Pending",
-    "RequestedAmount": 325.00,
-    "GeneratedAmount": 325.52,
-    "Currency": "THB",
-    "QrCode": "00020101021...",
-    "QrCodeImage": "data:image/png;base64,...",
-    "PaymentUrl": "https://...",
-    "WebsocketPath": "/realtime/payment-tx",
-    "CreatedAt": "2026-07-01T10:00:00Z",
-    "ExpireAt": "2026-07-01T10:15:00Z",
-    "PayInBankCode": "SCB",
-    "PayInBankAccountNo": "xxx-xxxxx-x",
-    "PayInBankAccountName": "Company Name",
-    "PayInPromptPayId": null,
-    "SlipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+  "paymentResponse": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "sessionId": "session-abc123",
+    "type": "PayIn",
+    "status": "Pending",
+    "requestedAmount": 325.00,
+    "generatedAmount": 325.52,
+    "currency": "THB",
+    "qrCode": "00020101021...",
+    "qrCodeImage": "data:image/png;base64,...",
+    "paymentUrl": "https://...",
+    "websocketPath": "/realtime/payment-tx",
+    "createdAt": "2026-07-01T10:00:00Z",
+    "expireAt": "2026-07-01T10:15:00Z",
+    "isQrAvailable": true,
+    "payInBankCode": "SCB",
+    "payInBankAccountNo": "xxx-xxxxx-x",
+    "payInBankAccountName": "Company Name",
+    "payInPromptPayId": null,
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
   }
 }
 ```
@@ -81,35 +82,35 @@ Creates a Payment Request and returns a QR Code for the customer to scan and tra
 
 | Field | Description |
 |---|---|
-| `Id` | UUID of the Payment Request — keep it for reference |
-| `Status` | Current status (see [Payment Status](/documents/payment-status)) |
-| `RequestedAmount` | The amount requested |
-| `GeneratedAmount` | The actual amount to be paid (may include a randomized fraction of a baht for matching) |
-| `IsQrAvailable` | `true` if a QR Code is ready for the customer to scan, `false` if the destination account doesn't support QR (e.g. not linked to PromptPay) — see details below |
-| `QrCodeImage` | The QR Code image as Base64 — can be displayed directly in your app (empty when `IsQrAvailable` is `false`) |
-| `PayInBankCode` | Destination bank code |
-| `PayInBankAccountNo` | Destination account number |
-| `PayInBankAccountName` | Destination account name |
-| `PayInPromptPayId` | Destination PromptPay number (if any) |
-| `SessionId` | Used to connect via WebSocket to receive real-time status |
-| `WebsocketPath` | The WebSocket path (`/realtime/payment-tx`) |
-| `ExpireAt` | When the QR Code expires |
-| `SlipUploadUrl` | Relative path to the slip upload page — has no domain prefix, must be concatenated with `{{MERCHANT_URL}}` (see explanation below) to form the full URL, then given to the customer to open the slip upload page without needing to log in |
+| `id` | UUID of the Payment Request — keep it for reference |
+| `status` | Current status (see [Payment Status](/documents/payment-status)) |
+| `requestedAmount` | The amount requested |
+| `generatedAmount` | The actual amount to be paid (may include a randomized fraction of a baht for matching) |
+| `isQrAvailable` | `true` if a QR Code is ready for the customer to scan, `false` if the destination account doesn't support QR (e.g. not linked to PromptPay) — see details below |
+| `qrCodeImage` | The QR Code image as Base64 — can be displayed directly in your app (empty when `isQrAvailable` is `false`) |
+| `payInBankCode` | Destination bank code |
+| `payInBankAccountNo` | Destination account number |
+| `payInBankAccountName` | Destination account name |
+| `payInPromptPayId` | Destination PromptPay number (if any) |
+| `sessionId` | Used to connect via WebSocket to receive real-time status |
+| `websocketPath` | The WebSocket path (`/realtime/payment-tx`) |
+| `expireAt` | When the QR Code expires |
+| `slipUploadUrl` | Relative path to the slip upload page — has no domain prefix, must be concatenated with `{{MERCHANT_URL}}` (see explanation below) to form the full URL, then given to the customer to open the slip upload page without needing to log in |
 
-> **Important — which domain to concatenate:** `SlipUploadUrl` is a relative path only. You must concatenate it with the `{{MERCHANT_URL}}` domain yourself. For example, if `SlipUploadUrl` is `/payin-slip-upload/org123/xxx/yyy`, form the full URL as `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+> **Important — which domain to concatenate:** `slipUploadUrl` is a relative path only. You must concatenate it with the `{{MERCHANT_URL}}` domain yourself. For example, if `slipUploadUrl` is `/payin-slip-upload/org123/xxx/yyy`, form the full URL as `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
 
 ### Displaying the QR and Account Info
 
-**Always check `IsQrAvailable` before rendering:**
+**Always check `isQrAvailable` before rendering:**
 
 | Scenario | How to display |
 |---|---|
-| `IsQrAvailable = true` | Show the QR Code from `QrCodeImage` for the customer to scan as usual |
-| `IsQrAvailable = false` | No QR Code — show the account details (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) so the customer can enter the transfer manually |
+| `isQrAvailable = true` | Show the QR Code from `qrCodeImage` for the customer to scan as usual |
+| `isQrAvailable = false` | No QR Code — show the account details (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) so the customer can enter the transfer manually |
 
-> **Note:** It's recommended to always show the account details (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) alongside the QR Code — some customers may prefer to transfer manually even when a QR is available
+> **Note:** It's recommended to always show the account details (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) alongside the QR Code — some customers may prefer to transfer manually even when a QR is available
 
-> **Recommended:** Turn `SlipUploadUrl` into a **QR Code** displayed on your payment page — the customer scans it with their phone camera and opens the slip upload page directly, without typing the URL. Works for both **standard Pay-In** and **Pay-In P2P**
+> **Recommended:** Turn `slipUploadUrl` into a **QR Code** displayed on your payment page — the customer scans it with their phone camera and opens the slip upload page directly, without typing the URL. Works for both **standard Pay-In** and **Pay-In P2P**
 
 ### Slip Upload Page
 
@@ -225,20 +226,21 @@ Creates a **Peer-to-Peer (P2P)** Pay-In Request — the system automatically mat
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "Type": "PayIn",
-    "Status": "Pending",
-    "RequestedAmount": 1000.00,
-    "GeneratedAmount": 1000.00,
-    "Currency": "THB",
-    "QrCode": null,
-    "QrCodeImage": "",
-    "PayInBankCode": "KBANK",
-    "PayInBankAccountNo": "012-3-45678-9",
-    "PayInBankAccountName": "Recipient Account Name",
-    "PayInPromptPayId": "0812345678",
-    "SlipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+  "paymentResponse": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "type": "PayIn",
+    "status": "Pending",
+    "requestedAmount": 1000.00,
+    "generatedAmount": 1000.00,
+    "currency": "THB",
+    "qrCode": null,
+    "qrCodeImage": "",
+    "isQrAvailable": false,
+    "payInBankCode": "KBANK",
+    "payInBankAccountNo": "012-3-45678-9",
+    "payInBankAccountName": "Recipient Account Name",
+    "payInPromptPayId": "0812345678",
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
   }
 }
 ```
@@ -247,17 +249,17 @@ Creates a **Peer-to-Peer (P2P)** Pay-In Request — the system automatically mat
 
 | | Standard Pay-In | Pay-In P2P |
 |---|---|---|
-| `IsQrAvailable` | `true` (usually) | `false` (usually) — P2P accounts are often not linked to PromptPay |
-| `QrCodeImage` | QR Code image | Empty (`""`) when `IsQrAvailable = false` |
-| `PayInBankAccountName` | Merchant's account | The recipient's account (from the matched Pay-Out Request) |
+| `isQrAvailable` | `true` (usually) | `false` (usually) — P2P accounts are often not linked to PromptPay |
+| `qrCodeImage` | QR Code image | Empty (`""`) when `isQrAvailable = false` |
+| `payInBankAccountName` | Merchant's account | The recipient's account (from the matched Pay-Out Request) |
 | Transfer method | Scan the QR Code | Transfer directly to the account specified in the response (enter account details manually) |
-| `SlipUploadUrl` | ✅ | ✅ (very important — the customer must upload a slip as proof) |
+| `slipUploadUrl` | ✅ | ✅ (very important — the customer must upload a slip as proof) |
 
-> **Important:** For P2P — `IsQrAvailable` is usually `false` because the destination account may not be linked to PromptPay. In this case **you must display the account details** (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) so the customer can enter the transfer manually, and also show `SlipUploadUrl` so they can upload proof of transfer.
+> **Important:** For P2P — `isQrAvailable` is usually `false` because the destination account may not be linked to PromptPay. In this case **you must display the account details** (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) so the customer can enter the transfer manually, and also show `slipUploadUrl` so they can upload proof of transfer.
 
-> **Important — which domain to concatenate:** `SlipUploadUrl` is a relative path, same as standard Pay-In. You must concatenate it with `{{MERCHANT_URL}}` yourself, e.g. `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (see the full explanation in [Response Fields](#response-fields) above)
+> **Important — which domain to concatenate:** `slipUploadUrl` is a relative path, same as standard Pay-In. You must concatenate it with `{{MERCHANT_URL}}` yourself, e.g. `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (see the full explanation in [Response Fields](#response-fields) above)
 
-> **Recommended:** Turn `SlipUploadUrl` into a **QR Code** shown alongside the destination account details — the customer transfers funds, then scans the QR to open the slip upload page directly without typing the URL (see the slip upload page example above)
+> **Recommended:** Turn `slipUploadUrl` into a **QR Code** shown alongside the destination account details — the customer transfers funds, then scans the QR to open the slip upload page directly without typing the URL (see the slip upload page example above)
 
 > **Error `ERROR_NO_P2P_ACCOUNT_MATCH`:** If there is no pending Pay-Out Request in the system, you'll receive this error — meaning there's currently no matching transaction available.
 
@@ -322,13 +324,13 @@ Creates a request to transfer funds out to a destination account.
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
-    "Type": "PayOut",
-    "Status": "Pending",
-    "RequestedAmount": 500.00,
-    "Currency": "THB",
-    "CreatedAt": "2026-07-01T10:05:00Z"
+  "paymentResponse": {
+    "id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "type": "PayOut",
+    "status": "Pending",
+    "requestedAmount": 500.00,
+    "currency": "THB",
+    "createdAt": "2026-07-01T10:05:00Z"
   }
 }
 ```
@@ -369,13 +371,13 @@ Same as [Create a Pay-Out Request](#create-a-payout-request) — `RefId1`, `RefI
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
-    "Type": "PayOut",
-    "Status": "Pending",
-    "RequestedAmount": 500.00,
-    "Currency": "THB",
-    "CreatedAt": "2026-07-01T10:05:00Z"
+  "paymentResponse": {
+    "id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "type": "PayOut",
+    "status": "Pending",
+    "requestedAmount": 500.00,
+    "currency": "THB",
+    "createdAt": "2026-07-01T10:05:00Z"
   }
 }
 ```

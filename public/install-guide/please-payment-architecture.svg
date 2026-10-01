@@ -12,7 +12,7 @@
   <text x="64" y="108" class="body">ติดตั้งทุกส่วนบน VM เดียวผ่าน K3s และ Argo CD</text>
   <rect x="64" y="150" width="1152" height="564" rx="24" class="box" filter="url(#shadow)"/>
   <rect x="96" y="182" width="1088" height="72" rx="14" class="accent"/>
-  <text x="128" y="226" class="label">Ubuntu VM · 8 vCPU · 32 GiB RAM · 300 GiB SSD (recommended)</text>
+  <text x="128" y="226" class="label">Ubuntu VM · 8 vCPU · 16 GiB RAM · 200 GiB SSD (recommended)</text>
   <rect x="96" y="282" width="1088" height="394" rx="18" fill="#101827" stroke="#263449" stroke-width="1.5"/>
   <text x="128" y="324" class="label">K3s Kubernetes</text>
   <text x="128" y="350" class="small">single-node platform</text>

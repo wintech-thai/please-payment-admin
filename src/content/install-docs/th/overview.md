@@ -19,9 +19,9 @@ updatedAt: "{{BUILD_DATE}}"
 
 | รายการ | ข้อกำหนด |
 | --- | --- |
-| Template | Clone `please-payment-k3s-demo` จาก GitHub |
+| Template | Clone [please-payment-k3s-demo](https://github.com/wintech-thai/please-payment-k3s-demo) จาก GitHub |
 | Source repositories | สิทธิ์อ่าน repositories ที่ระบุใน bootstrap และ Argo CD applications; template อ้างถึง repository แยกสำหรับ application/control-plane |
-| VM | Ubuntu LTS, แนะนำ 8 vCPU / 32 GiB RAM / 300 GiB SSD |
+| VM | Ubuntu LTS, แนะนำ 8 vCPU / 16 GiB RAM / 200 GiB SSD |
 | Network | Static public IPv4, TCP 22 จำกัดเฉพาะผู้ดูแล, TCP 80/443 เปิดรับจากอินเทอร์เน็ต |
 | Domain | Hostnames สำหรับ Admin, Merchant และ API (`domain1`–`domain3`) |
 | Secrets | ค่าเริ่มต้นจาก secret-init Job และ Discord Incoming Webhook สำหรับ `discord-alm` |

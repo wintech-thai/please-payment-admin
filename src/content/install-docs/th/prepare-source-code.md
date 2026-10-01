@@ -7,7 +7,7 @@ updatedAt: "{{BUILD_DATE}}"
 
 ## 1.1 สร้าง repository สำหรับการติดตั้ง
 
-สร้าง repository ใหม่ใน Git hosting ของคุณ แล้วนำ `please-payment-k3s-demo` มาใช้เป็น template ของ repository นี้ เพื่อให้ปรับค่าได้โดยไม่แก้ template ต้นทาง
+สร้าง repository ใหม่ใน Git hosting ของคุณ แล้วนำ [please-payment-k3s-demo](https://github.com/wintech-thai/please-payment-k3s-demo) มาใช้เป็น template ของ repository นี้ เพื่อให้ปรับค่าได้โดยไม่แก้ template ต้นทาง
 
 ## 1.2 ตรวจ source repositories
 

@@ -3,7 +3,7 @@ import { getNav } from '@/lib/docs/markdown'
 import DocsLayoutClient from '@/components/docs/DocsLayoutClient'
 
 export const metadata: Metadata = {
-  title: 'คู่มือการใช้งาน Please Payment (Merchant)',
+  title: 'คู่มือการใช้งาน Merchant',
 }
 
 export default function MerchantDocsLayout({ children }: { children: React.ReactNode }) {

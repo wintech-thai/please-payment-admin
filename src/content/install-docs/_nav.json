@@ -1,11 +1,13 @@
 [
   {
-    "section": { "th": "การติดตั้ง", "en": "Installation", "zh": "安装" },
+    "section": { "th": "", "en": "", "zh": "" },
     "items": [
       { "slug": "overview", "titles": { "th": "ภาพรวม", "en": "Overview", "zh": "概览" } },
-      { "slug": "prepare-vm", "titles": { "th": "1. เตรียมเครื่อง VM (GCP)", "en": "1. Prepare a VM (GCP)", "zh": "1. 准备虚拟机 (GCP)" } },
-      { "slug": "install-k3s", "titles": { "th": "2. ติดตั้ง K3s + ArgoCD", "en": "2. Install K3s + ArgoCD", "zh": "2. 安装 K3s + ArgoCD" } },
-      { "slug": "domain-dns", "titles": { "th": "3. ตั้งค่า Domain และ DNS", "en": "3. Domain & DNS Setup", "zh": "3. 域名与 DNS 设置" } }
+      { "slug": "prepare-source-code", "titles": { "th": "1. เตรียม source code", "en": "1. Prepare source code", "zh": "1. 准备源代码" } },
+      { "slug": "prepare-vm", "titles": { "th": "2. เตรียม VM", "en": "2. Prepare VM", "zh": "2. 准备 VM" } },
+      { "slug": "install-k3s", "titles": { "th": "3. ติดตั้งระบบ", "en": "3. Install platform", "zh": "3. 安装平台" } },
+      { "slug": "domain-dns", "titles": { "th": "4. ตั้งค่า Domain & DNS", "en": "4. Domain & DNS", "zh": "4. 域名与 DNS" } },
+      { "slug": "misc", "titles": { "th": "5. ตรวจสอบหลังติดตั้ง", "en": "5. Post-install checks", "zh": "5. 安装后检查" } }
     ]
   }
 ]

@@ -1,0 +1,41 @@
+---
+title: 1. เตรียม source code
+updatedAt: "{{BUILD_DATE}}"
+---
+
+ขั้นตอนนี้เตรียม source code สำหรับใช้รัน scripts และให้ Argo CD โหลด manifests
+
+## 1.1 สร้าง repository สำหรับการติดตั้ง
+
+สร้าง repository ใหม่ใน Git hosting ของคุณ แล้วนำ [please-payment-k3s-demo](https://github.com/wintech-thai/please-payment-k3s-demo) มาใช้เป็น template ของ repository นี้ เพื่อให้ปรับค่าได้โดยไม่แก้ template ต้นทาง
+
+## 1.2 ตรวจ source repositories
+
+ก่อนเริ่ม ให้ตรวจว่า repository ที่สร้างในข้อ 1.1 พร้อมให้ VM และ Argo CD อ่านได้ เพราะหลังรัน bootstrap Argo CD จะอ่าน manifests จาก repository นี้
+
+## 1.3 ตั้งค่าที่จำเป็นก่อนติดตั้ง
+
+แก้เฉพาะค่า source code ที่เกี่ยวกับการติดตั้งนี้ตามลำดับที่ scripts ใช้:
+
+| Script | เปิดไฟล์ | สิ่งที่ต้องทำ |
+| --- | --- | --- |
+| `04-boot-strap.bash` | `04-boot-strap.bash` | ตั้ง `DATA_PLANE_REMOTE_REPO` ให้เป็น URL ของ repository ที่สร้างในข้อ 1.1 |
+| `04-boot-strap.bash` | `99-deployments/applications/*.yaml` | เปลี่ยน `repoURL` ที่อ้างถึง template ให้ชี้ไป repository เดียวกัน |
+| `04-boot-strap.bash` | `99-deployments/manifests/please-payment/values.yaml` | ตั้ง `domain1`, `domain2` และ `domain3` เป็น hostname ของ Admin, Merchant และ API |
+| `04-boot-strap.bash` | `99-deployments/manifests/cert-manager/templates/cluster-issuer-dns.yaml` | เปลี่ยน `email` เป็นอีเมลที่ใช้รับแจ้งเตือนการต่ออายุ certificate |
+
+ตรวจว่า hostname ใน `99-deployments/manifests/please-payment/templates/please-payment-cert.yaml` อ้างถึงค่า `domain1`–`domain3` จาก `values.yaml` แล้วจึง push source code ที่แก้ไขไปยัง repository ของคุณก่อนรัน bootstrap
+
+## 1.4 ค่า secret บน VM
+
+อย่าใส่ secret ใน repository. ก่อนรัน `01-initial-secrets.bash` ให้เตรียมไฟล์ `.env` บน VM ตามหน้า [3. ติดตั้งระบบ](./install-k3s) โดยตั้ง `DISCORD_WEBHOOK` ให้ ExternalSecret ของ `discord-alm`
+
+## Checklist
+
+- ⬜ สร้าง repository ใหม่และนำ template ไปไว้แล้ว
+- ⬜ ตรวจว่า VM และ Argo CD อ่าน repository นี้ได้
+- ⬜ ตั้ง `domain1`–`domain3` และอีเมลใน ClusterIssuer แล้ว
+- ⬜ เปลี่ยน repository URL ใน bootstrap และ Application manifests แล้ว
+- ⬜ push source code ที่แก้ไขไปยัง repository ก่อนติดตั้ง
+
+ขั้นตอนถัดไป: [2. เตรียม VM](./prepare-vm)

@@ -178,7 +178,7 @@ export default function DocsLayoutClient({
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-zinc-950 text-zinc-100 flex flex-col">
       {/* Top nav */}
       <header className="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-800 flex items-center px-4 h-14">
         <Suspense fallback={<DocsHeaderFallback title={title} homeHref={homeHref} />}>

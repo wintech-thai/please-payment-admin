@@ -2,7 +2,19 @@
   {
     "section": { "th": "Admin", "en": "Admin", "zh": "Admin" },
     "items": [
-      { "slug": "admin-overview", "titles": { "th": "ภาพรวมหน้า Admin", "en": "Admin Overview", "zh": "Admin 概览" } }
+      { "slug": "admin-overview", "titles": { "th": "ภาพรวมหน้า Admin", "en": "Admin Overview", "zh": "Admin 概览" } },
+      { "slug": "admin-merchant", "titles": { "th": "ร้านค้า", "en": "Merchant", "zh": "Merchant" } },
+      { "slug": "admin-payin-bank-account", "titles": { "th": "บัญชีธนาคารสำหรับ Pay-In", "en": "Pay-In Bank Account", "zh": "Pay-In 银行账户" } },
+      { "slug": "admin-line-agent", "titles": { "th": "LINE Agent", "en": "LINE Agent", "zh": "LINE Agent" } },
+      { "slug": "admin-payin-request", "titles": { "th": "คำขอ Pay-In", "en": "Pay-In Request", "zh": "Pay-In 请求" } },
+      { "slug": "admin-payout-request", "titles": { "th": "คำขอ Pay-Out", "en": "Pay-Out Request", "zh": "Pay-Out 请求" } },
+      { "slug": "admin-payin-request-p2p", "titles": { "th": "คำขอ Pay-In (P2P)", "en": "Pay-In Request (P2P)", "zh": "Pay-In 请求（P2P）" } }
+    ]
+  },
+  {
+    "section": { "th": "Developers", "en": "Developers", "zh": "Developers" },
+    "items": [
+      { "slug": "api-connection", "titles": { "th": "การเชื่อมต่อ API", "en": "API Connection", "zh": "API 连接" } }
     ]
   }
 ]

@@ -3,7 +3,7 @@ import { getNav } from '@/lib/docs/markdown'
 import DocsLayoutClient from '@/components/docs/DocsLayoutClient'
 
 export const metadata: Metadata = {
-  title: 'คู่มือการติดตั้ง Please Payment',
+  title: 'คู่มือการติดตั้งโปรแกรม',
 }
 
 export default function InstallDocsLayout({ children }: { children: React.ReactNode }) {

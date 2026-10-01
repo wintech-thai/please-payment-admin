@@ -54,25 +54,26 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "SessionId": "session-abc123",
-    "Type": "PayIn",
-    "Status": "Pending",
-    "RequestedAmount": 325.00,
-    "GeneratedAmount": 325.52,
-    "Currency": "THB",
-    "QrCode": "00020101021...",
-    "QrCodeImage": "data:image/png;base64,...",
-    "PaymentUrl": "https://...",
-    "WebsocketPath": "/realtime/payment-tx",
-    "CreatedAt": "2026-07-01T10:00:00Z",
-    "ExpireAt": "2026-07-01T10:15:00Z",
-    "PayInBankCode": "SCB",
-    "PayInBankAccountNo": "xxx-xxxxx-x",
-    "PayInBankAccountName": "ชื่อบริษัท",
-    "PayInPromptPayId": null,
-    "SlipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+  "paymentResponse": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "sessionId": "session-abc123",
+    "type": "PayIn",
+    "status": "Pending",
+    "requestedAmount": 325.00,
+    "generatedAmount": 325.52,
+    "currency": "THB",
+    "qrCode": "00020101021...",
+    "qrCodeImage": "data:image/png;base64,...",
+    "paymentUrl": "https://...",
+    "websocketPath": "/realtime/payment-tx",
+    "createdAt": "2026-07-01T10:00:00Z",
+    "expireAt": "2026-07-01T10:15:00Z",
+    "isQrAvailable": true,
+    "payInBankCode": "SCB",
+    "payInBankAccountNo": "xxx-xxxxx-x",
+    "payInBankAccountName": "ชื่อบริษัท",
+    "payInPromptPayId": null,
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
   }
 }
 ```
@@ -81,35 +82,35 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 
 | Field | คำอธิบาย |
 |---|---|
-| `Id` | UUID ของ Payment Request — เก็บไว้สำหรับ reference |
-| `Status` | สถานะปัจจุบัน (ดู [สถานะการชำระเงิน](/documents/payment-status)) |
-| `RequestedAmount` | จำนวนเงินที่ขอ |
-| `GeneratedAmount` | จำนวนเงินที่ใช้จริง (อาจมีเศษสตางค์ random เพื่อ matching) |
-| `IsQrAvailable` | `true` หาก QR Code พร้อมให้ลูกค้า scan, `false` หากบัญชีปลายทางไม่รองรับ QR (เช่น ไม่ได้ผูกกับ PromptPay) — ดูรายละเอียดด้านล่าง |
-| `QrCodeImage` | รูป QR Code เป็น Base64 — นำไปแสดงในแอปได้เลย (ว่างเปล่าหาก `IsQrAvailable` เป็น `false`) |
-| `PayInBankCode` | รหัสธนาคารปลายทาง |
-| `PayInBankAccountNo` | เลขบัญชีปลายทาง |
-| `PayInBankAccountName` | ชื่อบัญชีปลายทาง |
-| `PayInPromptPayId` | หมายเลข PromptPay ปลายทาง (ถ้ามี) |
-| `SessionId` | ใช้เชื่อมต่อ WebSocket เพื่อรับสถานะแบบ real-time |
-| `WebsocketPath` | path สำหรับ WebSocket (`/realtime/payment-tx`) |
-| `ExpireAt` | QR Code หมดอายุเมื่อไหร่ |
-| `SlipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ `{{MERCHANT_URL}}` (ดูคำอธิบายด้านล่าง) เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
+| `id` | UUID ของ Payment Request — เก็บไว้สำหรับ reference |
+| `status` | สถานะปัจจุบัน (ดู [สถานะการชำระเงิน](/documents/payment-status)) |
+| `requestedAmount` | จำนวนเงินที่ขอ |
+| `generatedAmount` | จำนวนเงินที่ใช้จริง (อาจมีเศษสตางค์ random เพื่อ matching) |
+| `isQrAvailable` | `true` หาก QR Code พร้อมให้ลูกค้า scan, `false` หากบัญชีปลายทางไม่รองรับ QR (เช่น ไม่ได้ผูกกับ PromptPay) — ดูรายละเอียดด้านล่าง |
+| `qrCodeImage` | รูป QR Code เป็น Base64 — นำไปแสดงในแอปได้เลย (ว่างเปล่าหาก `isQrAvailable` เป็น `false`) |
+| `payInBankCode` | รหัสธนาคารปลายทาง |
+| `payInBankAccountNo` | เลขบัญชีปลายทาง |
+| `payInBankAccountName` | ชื่อบัญชีปลายทาง |
+| `payInPromptPayId` | หมายเลข PromptPay ปลายทาง (ถ้ามี) |
+| `sessionId` | ใช้เชื่อมต่อ WebSocket เพื่อรับสถานะแบบ real-time |
+| `websocketPath` | path สำหรับ WebSocket (`/realtime/payment-tx`) |
+| `expireAt` | QR Code หมดอายุเมื่อไหร่ |
+| `slipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ `{{MERCHANT_URL}}` (ดูคำอธิบายด้านล่าง) เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
 
-> **สำคัญ — ต้อง concat กับโดเมนไหน:** `SlipUploadUrl` เป็น relative path เท่านั้น ต้องนำไปต่อกับโดเมน `{{MERCHANT_URL}}` เอง เช่น หาก `SlipUploadUrl` คือ `/payin-slip-upload/org123/xxx/yyy` ก็ให้สร้าง URL เต็มเป็น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` เป็น relative path เท่านั้น ต้องนำไปต่อกับโดเมน `{{MERCHANT_URL}}` เอง เช่น หาก `slipUploadUrl` คือ `/payin-slip-upload/org123/xxx/yyy` ก็ให้สร้าง URL เต็มเป็น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
 
 ### การแสดงผล QR และข้อมูลบัญชี
 
-**ควรตรวจสอบ `IsQrAvailable` ก่อนแสดงผลเสมอ:**
+**ควรตรวจสอบ `isQrAvailable` ก่อนแสดงผลเสมอ:**
 
 | สถานการณ์ | วิธีแสดงผล |
 |---|---|
-| `IsQrAvailable = true` | แสดง QR Code จาก `QrCodeImage` ให้ลูกค้า scan ตามปกติ |
-| `IsQrAvailable = false` | ไม่มี QR Code — แสดงข้อมูลบัญชี (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) เพื่อให้ลูกค้ากรอกข้อมูลโอนเงินเอง |
+| `isQrAvailable = true` | แสดง QR Code จาก `qrCodeImage` ให้ลูกค้า scan ตามปกติ |
+| `isQrAvailable = false` | ไม่มี QR Code — แสดงข้อมูลบัญชี (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) เพื่อให้ลูกค้ากรอกข้อมูลโอนเงินเอง |
 
-> **หมายเหตุ:** แนะนำให้แสดงข้อมูลบัญชี (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) ควบคู่กับ QR Code เสมอ — ลูกค้าบางรายอาจต้องการโอนด้วยตัวเองแม้มี QR
+> **หมายเหตุ:** แนะนำให้แสดงข้อมูลบัญชี (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) ควบคู่กับ QR Code เสมอ — ลูกค้าบางรายอาจต้องการโอนด้วยตัวเองแม้มี QR
 
-> **แนะนำ:** นำ `SlipUploadUrl` ไปทำเป็น **QR Code** แสดงในหน้าชำระเงินของคุณ — ลูกค้าสแกน QR ด้วยกล้องมือถือแล้วเปิดหน้าอัปโหลดสลิปได้เลย ไม่ต้องพิมพ์ URL เอง ใช้ได้ทั้ง **Pay-In ปกติ** และ **Pay-In P2P**
+> **แนะนำ:** นำ `slipUploadUrl` ไปทำเป็น **QR Code** แสดงในหน้าชำระเงินของคุณ — ลูกค้าสแกน QR ด้วยกล้องมือถือแล้วเปิดหน้าอัปโหลดสลิปได้เลย ไม่ต้องพิมพ์ URL เอง ใช้ได้ทั้ง **Pay-In ปกติ** และ **Pay-In P2P**
 
 ### หน้าอัปโหลดสลิป
 
@@ -225,20 +226,21 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "Type": "PayIn",
-    "Status": "Pending",
-    "RequestedAmount": 1000.00,
-    "GeneratedAmount": 1000.00,
-    "Currency": "THB",
-    "QrCode": null,
-    "QrCodeImage": "",
-    "PayInBankCode": "KBANK",
-    "PayInBankAccountNo": "012-3-45678-9",
-    "PayInBankAccountName": "ชื่อผู้รับปลายทาง",
-    "PayInPromptPayId": "0812345678",
-    "SlipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+  "paymentResponse": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "type": "PayIn",
+    "status": "Pending",
+    "requestedAmount": 1000.00,
+    "generatedAmount": 1000.00,
+    "currency": "THB",
+    "qrCode": null,
+    "qrCodeImage": "",
+    "isQrAvailable": false,
+    "payInBankCode": "KBANK",
+    "payInBankAccountNo": "012-3-45678-9",
+    "payInBankAccountName": "ชื่อผู้รับปลายทาง",
+    "payInPromptPayId": "0812345678",
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
   }
 }
 ```
@@ -247,17 +249,17 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 
 | | Pay-In ปกติ | Pay-In P2P |
 |---|---|---|
-| `IsQrAvailable` | `true` (ส่วนใหญ่) | `false` (ส่วนใหญ่) — บัญชี P2P มักไม่ผูกกับ PromptPay |
-| `QrCodeImage` | รูป QR Code | ว่างเปล่า (`""`) เมื่อ `IsQrAvailable = false` |
-| `PayInBankAccountName` | บัญชี Merchant | บัญชีของผู้รับปลายทาง (จาก Pay-Out Request ที่จับคู่) |
+| `isQrAvailable` | `true` (ส่วนใหญ่) | `false` (ส่วนใหญ่) — บัญชี P2P มักไม่ผูกกับ PromptPay |
+| `qrCodeImage` | รูป QR Code | ว่างเปล่า (`""`) เมื่อ `isQrAvailable = false` |
+| `payInBankAccountName` | บัญชี Merchant | บัญชีของผู้รับปลายทาง (จาก Pay-Out Request ที่จับคู่) |
 | การโอนเงิน | สแกน QR Code | โอนตรงไปยังบัญชีที่ระบุใน response (กรอกข้อมูลบัญชีเอง) |
-| `SlipUploadUrl` | ✅ | ✅ (สำคัญมาก — ลูกค้าต้องอัปโหลดสลิปเป็นหลักฐาน) |
+| `slipUploadUrl` | ✅ | ✅ (สำคัญมาก — ลูกค้าต้องอัปโหลดสลิปเป็นหลักฐาน) |
 
-> **สำคัญ:** สำหรับ P2P — `IsQrAvailable` มักเป็น `false` เพราะบัญชีปลายทางอาจไม่ผูกกับ PromptPay ในกรณีนี้ **ต้องแสดงข้อมูลบัญชี** (`PayInBankCode`, `PayInBankAccountNo`, `PayInBankAccountName`, `PayInPromptPayId`) เพื่อให้ลูกค้ากรอกโอนเงินเองด้วยตัวเอง พร้อมทั้งแสดง `SlipUploadUrl` เพื่อให้อัปโหลดสลิปหลักฐานการโอน
+> **สำคัญ:** สำหรับ P2P — `isQrAvailable` มักเป็น `false` เพราะบัญชีปลายทางอาจไม่ผูกกับ PromptPay ในกรณีนี้ **ต้องแสดงข้อมูลบัญชี** (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) เพื่อให้ลูกค้ากรอกโอนเงินเองด้วยตัวเอง พร้อมทั้งแสดง `slipUploadUrl` เพื่อให้อัปโหลดสลิปหลักฐานการโอน
 
-> **สำคัญ — ต้อง concat กับโดเมนไหน:** `SlipUploadUrl` เป็น relative path เช่นเดียวกับ Pay-In ปกติ ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เอง เช่น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (ดูคำอธิบายเต็มในหัวข้อ [Response Fields](#response-fields) ด้านบน)
+> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` เป็น relative path เช่นเดียวกับ Pay-In ปกติ ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เอง เช่น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (ดูคำอธิบายเต็มในหัวข้อ [Response Fields](#response-fields) ด้านบน)
 
-> **แนะนำ:** นำ `SlipUploadUrl` ไปทำเป็น **QR Code** แสดงควบคู่กับข้อมูลบัญชีปลายทาง — ลูกค้าโอนเงินแล้วสแกน QR เปิดหน้าอัปโหลดสลิปได้เลยโดยไม่ต้องพิมพ์ URL เอง (ดูตัวอย่างหน้าอัปโหลดสลิปด้านบน)
+> **แนะนำ:** นำ `slipUploadUrl` ไปทำเป็น **QR Code** แสดงควบคู่กับข้อมูลบัญชีปลายทาง — ลูกค้าโอนเงินแล้วสแกน QR เปิดหน้าอัปโหลดสลิปได้เลยโดยไม่ต้องพิมพ์ URL เอง (ดูตัวอย่างหน้าอัปโหลดสลิปด้านบน)
 
 > **Error `ERROR_NO_P2P_ACCOUNT_MATCH`:** หากไม่มี Pay-Out Request ที่รอดำเนินการอยู่ในระบบ จะได้รับ error นี้ — แปลว่าในขณะนั้นไม่มีรายการที่สามารถจับคู่ได้
 
@@ -322,13 +324,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayOutRequest/{merc
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
-    "Type": "PayOut",
-    "Status": "Pending",
-    "RequestedAmount": 500.00,
-    "Currency": "THB",
-    "CreatedAt": "2026-07-01T10:05:00Z"
+  "paymentResponse": {
+    "id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "type": "PayOut",
+    "status": "Pending",
+    "requestedAmount": 500.00,
+    "currency": "THB",
+    "createdAt": "2026-07-01T10:05:00Z"
   }
 }
 ```
@@ -369,13 +371,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitWithdrawalRequest/{
 {
   "status": "OK",
   "description": "Success",
-  "data": {
-    "Id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
-    "Type": "PayOut",
-    "Status": "Pending",
-    "RequestedAmount": 500.00,
-    "Currency": "THB",
-    "CreatedAt": "2026-07-01T10:05:00Z"
+  "paymentResponse": {
+    "id": "7bc95f12-3a21-4f89-c4ed-1d852a77bfc8",
+    "type": "PayOut",
+    "status": "Pending",
+    "requestedAmount": 500.00,
+    "currency": "THB",
+    "createdAt": "2026-07-01T10:05:00Z"
   }
 }
 ```

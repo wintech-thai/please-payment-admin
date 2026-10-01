@@ -3,7 +3,7 @@
     "section": { "th": "Admin", "en": "Admin", "zh": "Admin" },
     "items": [
       { "slug": "admin-overview", "titles": { "th": "ภาพรวมหน้า Admin", "en": "Admin Overview", "zh": "Admin 概览" } },
-      { "slug": "admin-merchant", "titles": { "th": "Merchant", "en": "Merchant", "zh": "Merchant" } },
+      { "slug": "admin-merchant", "titles": { "th": "ร้านค้า", "en": "Merchant", "zh": "Merchant" } },
       { "slug": "admin-payin-bank-account", "titles": { "th": "บัญชีธนาคารสำหรับ Pay-In", "en": "Pay-In Bank Account", "zh": "Pay-In 银行账户" } },
       { "slug": "admin-line-agent", "titles": { "th": "LINE Agent", "en": "LINE Agent", "zh": "LINE Agent" } },
       { "slug": "admin-payin-request", "titles": { "th": "คำขอ Pay-In", "en": "Pay-In Request", "zh": "Pay-In 请求" } },

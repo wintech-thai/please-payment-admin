@@ -9,6 +9,8 @@ import { toast } from 'sonner'
 import { Search, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 type CaseStatus = 'New' | 'Open' | 'In Progress' | 'Waiting for Customer' | 'Resolved' | 'Closed' | 'Cancelled'
 
@@ -45,11 +47,9 @@ function normalize(raw: any): SupportCaseItem {
   }
 }
 
-function formatDate(d?: string | null) {
+function formatDate(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
-  try {
-    return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-  } catch { return d }
+  return formatDateTimeTz(d, timezone, false)
 }
 
 function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string } {
@@ -86,6 +86,7 @@ const FILTER_KEY = 'support_case_filter'
 
 function SupportCaseListContent() {
   const { lang } = useLang()
+  const { timezone } = useFormatDate()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -348,14 +349,14 @@ function SupportCaseListContent() {
                       {/* Created */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm text-gray-500">{formatDate(c.createdDate)}</span>
+                          <span className="text-sm text-gray-500">{formatDate(c.createdDate, timezone)}</span>
                           {createdAge && <span className="text-xs text-gray-400">{createdAge}</span>}
                         </div>
                       </td>
                       {/* Updated */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm text-gray-500">{formatDate(c.updatedDate)}</span>
+                          <span className="text-sm text-gray-500">{formatDate(c.updatedDate, timezone)}</span>
                           {updatedAge && <span className="text-xs text-gray-400">{updatedAge}</span>}
                         </div>
                       </td>

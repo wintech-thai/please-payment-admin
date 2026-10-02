@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock, ExternalLink, X, Copy, Check, ChevronRight, Link2, Paperclip, TriangleAlert, History, Pencil } from 'lucide-react'
 import AuditTrailDrawer from '@/components/AuditTrailDrawer'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 type SlipItem = {
   slipId?: string | null
@@ -108,13 +110,10 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
   )
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone)
   } catch { return d }
 }
 
@@ -228,6 +227,7 @@ function SlipViewerModal({
 }) {
   const { t } = useLang()
   const m = t.payInRequest
+  const { fmtDateTime } = useFormatDate()
   const [idx, setIdx] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
   const [approving, setApproving] = useState(false)
@@ -344,7 +344,7 @@ function SlipViewerModal({
           </span>
           {slip?.uploadedAt && (
             <span className="text-white/60 text-xs">
-              {new Date(slip.uploadedAt).toLocaleString('th-TH')}
+              {fmtDateTime(slip.uploadedAt)}
             </span>
           )}
         </div>
@@ -710,6 +710,7 @@ export default function PayInRequestDetailPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+  const { timezone } = useFormatDate()
 
   const [detail, setDetail] = useState<PayInRequestDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -910,9 +911,9 @@ export default function PayInRequestDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <InfoRow label={m.fieldCreated}>
               <div className="flex items-center gap-3 flex-wrap">
-                <span>{formatDateTime(detail?.createdDate)}</span>
+                <span>{formatDateTime(detail?.createdDate, timezone)}</span>
                 {detail?.expireDate && (
-                  <span className="text-xs text-gray-400">{m.fieldExpireDate}: {formatDateTime(detail?.expireDate)}</span>
+                  <span className="text-xs text-gray-400">{m.fieldExpireDate}: {formatDateTime(detail?.expireDate, timezone)}</span>
                 )}
               </div>
             </InfoRow>

@@ -7,6 +7,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import {
   queryPrometheus, queryRangePrometheus, getLabelValues,
@@ -126,16 +127,13 @@ function fmtBytes(v: number) {
   if (v >= 1024) return `${(v / 1024).toFixed(1)} KiB`
   return `${v.toFixed(0)} B`
 }
-function fmtHHmm(ts: number) {
-  return new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-}
-
 interface ChartTooltipPayloadItem { dataKey: string; value: number | string; color: string }
-function ChartTooltip({ active, payload, label, fmt, scrollRef }: {
+function ChartTooltip({ active, payload, label, fmt, fmtTime, scrollRef }: {
   active?: boolean
   payload?: ChartTooltipPayloadItem[]
   label?: number
   fmt: (v: number) => string
+  fmtTime: (value: number, withSeconds?: boolean) => string
   /** Lets the parent scroll this popup via the mouse wheel without the cursor ever entering it
    *  (recharts repositions the popup to follow the cursor, so moving the mouse INTO it to drag
    *  a scrollbar keeps re-targeting a different data point along the way). */
@@ -146,7 +144,7 @@ function ChartTooltip({ active, payload, label, fmt, scrollRef }: {
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden text-[11px]" style={{ minWidth: 200 }}>
       <div className="bg-gray-50 px-3 py-1.5 font-mono text-gray-500 border-b border-gray-100">
-        {fmtHHmm(label ?? 0)}
+        {fmtTime(label ?? 0, false)}
       </div>
       <div ref={scrollRef} className="max-h-[200px] overflow-y-auto">
         <table className="w-full">
@@ -195,6 +193,7 @@ function ResourceSection({
   /** sessionStorage key for this section's row-highlight persistence. */
   storageKey: string
 }) {
+  const { fmtTime } = useFormatDate()
   const totalUsage = rows.reduce((s, r) => s + r.usage, 0)
   const totalRequest = rows.reduce((s, r) => s + r.request, 0)
   const totalLimit = rows.reduce((s, r) => s + r.limit, 0)
@@ -255,9 +254,9 @@ function ResourceSection({
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={seriesData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="ts" tickFormatter={fmtHHmm} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+              <XAxis dataKey="ts" tickFormatter={(ts) => fmtTime(ts, false)} tick={{ fontSize: 10, fill: '#94a3b8' }} />
               <YAxis tickFormatter={(v) => fmt(v)} tick={{ fontSize: 10, fill: '#94a3b8' }} width={70} />
-              <Tooltip content={<ChartTooltip fmt={fmt} scrollRef={tooltipScrollRef} />} wrapperStyle={{ zIndex: 50 }} />
+              <Tooltip content={<ChartTooltip fmt={fmt} fmtTime={fmtTime} scrollRef={tooltipScrollRef} />} wrapperStyle={{ zIndex: 50 }} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               {totalRequest > 0 && namespace !== ALL_NS && (
                 <ReferenceLine y={totalRequest} stroke="#eab308" strokeDasharray="4 4" />

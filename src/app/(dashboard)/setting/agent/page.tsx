@@ -9,6 +9,7 @@ import { Search, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight, Key, C
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import QRCode from 'react-qr-code'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 type LineApiStatus = { ok?: boolean; podStatus?: string; login?: string; agentId?: string; raw?: string }
 
@@ -213,6 +214,7 @@ function ConfirmActionModal({ title, desc, onConfirm, onCancel, loading, t }: {
 function AgentListContent() {
   const { t } = useLang()
   const m = t.agent
+  const { fmtDateTime } = useFormatDate()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -469,7 +471,7 @@ function AgentListContent() {
 
   const formatDate = (d?: string | null) => {
     if (!d) return '—'
-    try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }
+    try { return fmtDateTime(d, false) }
     catch { return d }
   }
 

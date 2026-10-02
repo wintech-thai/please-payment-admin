@@ -10,6 +10,8 @@ import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check } from 'lucide-react'
 import QRCode from 'react-qr-code'
 import clsx from 'clsx'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 interface AccountOption {
   bankAccountId: string
@@ -25,13 +27,10 @@ function formatAmount(n?: number | null): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone)
   } catch { return d }
 }
 
@@ -178,6 +177,7 @@ export default function TransferRequestDetailPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+  const { timezone } = useFormatDate()
 
   const [detail, setDetail] = useState<TransferRequestDetail | null>(null)
   const [sourceAccounts, setSourceAccounts] = useState<AccountOption[]>([])
@@ -400,7 +400,7 @@ export default function TransferRequestDetailPage() {
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 max-w-4xl">
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-            <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
+            <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate, timezone)}</InfoRow>
 
             <InfoRow label={m.fieldStatus}>
               <StatusBadge status={detail?.status} />

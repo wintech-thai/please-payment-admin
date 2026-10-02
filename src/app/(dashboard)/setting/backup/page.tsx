@@ -8,6 +8,7 @@ import { Search, ChevronLeft, ChevronRight, RefreshCw, Settings, Eye, EyeOff, Mo
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string } {
   if (tr.type === 'absolute' && tr.start && tr.end) {
@@ -277,6 +278,7 @@ const FILTER_KEY = 'backup_filters'
 function BackupContent() {
   const { t } = useLang()
   const m = t.backup
+  const { fmtDateTime } = useFormatDate()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -435,7 +437,7 @@ function BackupContent() {
   const formatDate = (d?: string | null) => {
     if (!d) return '—'
     try {
-      return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      return fmtDateTime(d)
     } catch { return d }
   }
 
@@ -545,7 +547,7 @@ function BackupContent() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-700 truncate">{f.filename}</p>
                           <p className="text-[10px] text-gray-400 mt-0.5">
-                            {f.lastModified ? new Date(f.lastModified).toLocaleString('th-TH') : ''}{' '}
+                            {f.lastModified ? fmtDateTime(f.lastModified) : ''}{' '}
                             {f.size ? `· ${(f.size / 1024 / 1024).toFixed(1)} MB` : ''}
                           </p>
                         </div>

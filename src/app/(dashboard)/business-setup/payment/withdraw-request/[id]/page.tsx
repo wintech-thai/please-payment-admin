@@ -8,6 +8,8 @@ import { masterRefApi, type MasterRefItem } from '@/lib/api/master-ref.api'
 import type { PayOutRequestDetail, PaymentTxJob, PaymentTxJobParameter } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
 import { getMerchantBase } from '@/lib/merchant-url'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight, ChevronDown, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check, Link2, Paperclip, ExternalLink, History, Loader2, TriangleAlert, Pencil } from 'lucide-react'
 import AuditTrailDrawer from '@/components/AuditTrailDrawer'
@@ -34,13 +36,10 @@ function formatAmount(n?: number | null): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d?: string | null, timezone?: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone ?? 'Asia/Bangkok')
   } catch { return d }
 }
 
@@ -295,6 +294,7 @@ function SlipViewerModal({
 }) {
   const { t } = useLang()
   const m = t.payOutRequest
+  const { fmtDateTime } = useFormatDate()
   const [idx, setIdx] = useState(0)
   const [dupIds, setDupIds] = useState<string[]>([])
   const [localSlips, setLocalSlips] = useState<SlipItem[]>(slips)
@@ -370,7 +370,7 @@ function SlipViewerModal({
         <div className="flex items-center gap-3">
           <span className="text-white text-sm font-semibold">{m.slipViewerTitle} ({idx + 1} / {slips.length})</span>
           {slip?.uploadedAt && (
-            <span className="text-white/60 text-xs">{new Date(slip.uploadedAt).toLocaleString('th-TH')}</span>
+            <span className="text-white/60 text-xs">{fmtDateTime(slip.uploadedAt)}</span>
           )}
         </div>
         <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors">
@@ -684,6 +684,7 @@ export default function PayOutRequestDetailPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+  const { timezone } = useFormatDate()
 
   // Data
   const [detail, setDetail] = useState<PayOutRequestDetail | null>(null)
@@ -1007,7 +1008,7 @@ export default function PayOutRequestDetailPage() {
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 max-w-4xl">
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-            <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
+            <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate, timezone)}</InfoRow>
 
             <InfoRow label={m.fieldStatus}>
               <div className="flex items-start gap-2 flex-wrap">
@@ -1409,9 +1410,9 @@ export default function PayOutRequestDetailPage() {
                     >
                       <td className="px-3 py-2.5 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span>{p.txDate ? formatDateTime(p.txDate) : '—'}</span>
+                          <span>{p.txDate ? formatDateTime(p.txDate, timezone) : '—'}</span>
                           {p.expireDate && (
-                            <span className="text-[11px] text-gray-400">{m.colPartialExpire ?? 'Expire'}: {formatDateTime(p.expireDate)}</span>
+                            <span className="text-[11px] text-gray-400">{m.colPartialExpire ?? 'Expire'}: {formatDateTime(p.expireDate, timezone)}</span>
                           )}
                         </div>
                       </td>

@@ -9,6 +9,8 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
 import { useLang } from '@/context/LanguageContext'
 import { iocApi } from '@/lib/api/ioc.api'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime } from '@/lib/datetime'
 
 const LIST_PATH = '/risk-management/indicator-of-compromise'
 const REPUTATIONS = ['Unknown', 'Neutral', 'Trusted', 'Suspicious', 'Malicious'] as const
@@ -40,15 +42,16 @@ function ScoreSlider({ label, value, onChange, disabled }: { label: string; valu
   )
 }
 
-function formatDate(d?: string | null) {
+function formatDate(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
-  try { return new Date(d).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }
+  try { return formatDateTime(d, timezone, false) }
   catch { return d }
 }
 
 export default function IocFormPage() {
   const { t } = useLang()
   const m = t.ioc
+  const { timezone } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const iocId = params.iocId as string
@@ -344,11 +347,11 @@ export default function IocFormPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{m.fieldFirstSeenDate}</label>
-                  <p className="text-sm text-gray-700">{formatDate(firstSeenDate)}</p>
+                  <p className="text-sm text-gray-700">{formatDate(firstSeenDate, timezone)}</p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{m.fieldLastSeenDate}</label>
-                  <p className="text-sm text-gray-700">{formatDate(lastSeenDate)}</p>
+                  <p className="text-sm text-gray-700">{formatDate(lastSeenDate, timezone)}</p>
                 </div>
               </div>
             </div>

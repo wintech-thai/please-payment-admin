@@ -8,6 +8,8 @@ import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { financialDocApi, type FinancialDocItem } from '@/lib/api/financial-doc.api'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDate as fmtDateTz, formatDateTime as fmtDateTimeTz } from '@/lib/datetime'
 
 function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string } {
   if (tr.type === 'absolute' && tr.start && tr.end) {
@@ -57,21 +59,22 @@ function DeleteModal({ name, onConfirm, onCancel, deleting }: {
   )
 }
 
-function formatDate(d?: string | null) {
+function formatDate(d?: string | null, timezone?: string) {
   if (!d) return '—'
-  try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) }
+  try { return fmtDateTz(d, timezone!) }
   catch { return d }
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d?: string | null, timezone?: string) {
   if (!d) return '—'
-  try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
+  try { return fmtDateTimeTz(d, timezone!) }
   catch { return d }
 }
 
 function FinancialDocListContent() {
   const { t } = useLang()
   const m = t.financialDoc
+  const { timezone } = useFormatDate()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -291,7 +294,7 @@ function FinancialDocListContent() {
                           onClick={e => { e.stopPropagation(); router.push(`/business-setup/financial-settlement/financial-document/${item.id}/update`) }}
                           className={clsx('text-sm font-semibold hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
-                          {formatDateTime(item.createdDate)}
+                          {formatDateTime(item.createdDate, timezone)}
                         </button>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">
@@ -308,10 +311,10 @@ function FinancialDocListContent() {
                           : <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(item.fromDate)}
+                        {formatDate(item.fromDate, timezone)}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(item.toDate)}
+                        {formatDate(item.toDate, timezone)}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap" onClick={e => e.stopPropagation()}>
                         <button

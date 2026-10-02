@@ -12,6 +12,8 @@ import { useLang } from '@/context/LanguageContext'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import { AgentEventHistogram } from '@/components/AgentEventHistogram'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime, formatTime } from '@/lib/datetime'
 
 interface HeartbeatData {
   CPU?: string | null
@@ -69,19 +71,16 @@ function MetricBar({ label, value, unit = '%', color = 'bg-primary-500' }: {
   )
 }
 
-function formatDate(d?: string | null) {
+function formatDate(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleDateString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTime(d, timezone)
   } catch { return d }
 }
 
-function formatChartTime(d: string) {
+function formatChartTime(d: string, timezone: string) {
   try {
-    return new Date(d).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+    return formatTime(d, timezone, false)
   } catch { return d }
 }
 
@@ -107,6 +106,7 @@ const DEFAULT_TIME_RANGE: TimeRangeValue = { type: 'relative', value: '24h', lab
 export default function AgentOverviewPage() {
   const { t } = useLang()
   const m = t.agent
+  const { timezone } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const agentId = params.id as string
@@ -296,7 +296,7 @@ export default function AgentOverviewPage() {
                   : <WifiOff className="w-4 h-4 text-gray-400" />
                 }
                 <span className="text-sm font-semibold text-gray-700">{m.overviewLastHeartbeat}</span>
-                <span className="text-sm text-gray-500">{formatDate(heartbeatDate)}</span>
+                <span className="text-sm text-gray-500">{formatDate(heartbeatDate, timezone)}</span>
               </div>
               <span className={clsx(
                 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1',
@@ -343,14 +343,14 @@ export default function AgentOverviewPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis
                         dataKey="time"
-                        tickFormatter={formatChartTime}
+                        tickFormatter={v => formatChartTime(v, timezone)}
                         tick={{ fontSize: 10, fill: '#9ca3af' }}
                         interval="preserveStartEnd"
                       />
                       <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={v => `${v}%`} />
                       <Tooltip
                         formatter={(v: any) => [`${v}%`, m.overviewBattery]}
-                        labelFormatter={(l: any) => formatDate(String(l))}
+                        labelFormatter={(l: any) => formatDate(String(l), timezone)}
                         contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
                       />
                       <Area

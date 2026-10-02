@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Search, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 
 const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
@@ -79,6 +80,7 @@ const FILTER_KEY = 'noti_event_filter'
 function NotiEventListContent() {
   const { t } = useLang()
   const m = t.notiEvent
+  const { fmtDateTime } = useFormatDate()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -175,13 +177,6 @@ function NotiEventListContent() {
 
   const getEventId = (item: any): string =>
     item?.jobId ?? item?.eventId ?? item?.id ?? item?.notiEventId ?? item?.Id ?? ''
-
-  const formatDate = (d?: string | null) => {
-    if (!d) return '—'
-    try {
-      return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    } catch { return d }
-  }
 
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
@@ -333,7 +328,7 @@ function NotiEventListContent() {
                           onClick={() => router.push(`/setting/notification-events/${id}`)}
                           className={clsx('text-sm font-bold hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
-                          {formatDate(item.createdDate ?? item.CreatedDate ?? item.eventDate ?? item.EventDate)}
+                          {fmtDateTime(item.createdDate ?? item.CreatedDate ?? item.eventDate ?? item.EventDate)}
                         </button>
                       </td>
                       {/* Event Name */}

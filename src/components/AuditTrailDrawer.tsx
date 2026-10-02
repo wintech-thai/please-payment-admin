@@ -3,15 +3,12 @@
 import { useState, useEffect } from 'react'
 import { X, History, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react'
 import { auditTrailApi, type AuditTrack } from '@/lib/api/audit-trail.api'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
-  try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
-  } catch { return d }
+  return formatDateTimeTz(d, timezone)
 }
 
 function ActionBadge({ action }: { action?: string | null }) {
@@ -114,6 +111,7 @@ interface Props {
 }
 
 export default function AuditTrailDrawer({ rowId, onClose }: Props) {
+  const { timezone } = useFormatDate()
   const [tracks, setTracks] = useState<AuditTrack[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -181,7 +179,7 @@ export default function AuditTrailDrawer({ rowId, onClose }: Props) {
                   return (
                     <tr key={t.id ?? i} className="hover:bg-gray-50/60 transition-colors">
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                        <div>{formatDateTime(t.createdDate)}</div>
+                        <div>{formatDateTime(t.createdDate, timezone)}</div>
                         {t.ipAddress2 && (
                           <div className="text-[10px] text-gray-400 mt-0.5">{t.ipAddress2}</div>
                         )}

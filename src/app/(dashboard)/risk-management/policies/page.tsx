@@ -8,15 +8,17 @@ import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { riskPolicyApi, type RiskPolicyItem } from '@/lib/api/risk-policy.api'
 import RowActionsMenu from '@/components/RowActionsMenu'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime } from '@/lib/datetime'
 
 const BASE_PATH = '/risk-management/policies'
 const FILTER_KEY = 'riskPolicy_filter'
 const HIGHLIGHTED_KEY = 'riskPolicy_highlightedId'
 
-function formatDate(d?: string | null) {
+function formatDate(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return formatDateTime(d, timezone, false)
   } catch { return d }
 }
 
@@ -36,6 +38,7 @@ function StatusBadge({ status, t }: { status?: string | null; t: any }) {
 function PoliciesContent() {
   const { t } = useLang()
   const m = t.riskPolicy
+  const { timezone } = useFormatDate()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -311,7 +314,7 @@ function PoliciesContent() {
                           </div>
                         ) : <span className="text-sm text-gray-400">—</span>}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">{formatDate(item.createdDate)}</td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">{formatDate(item.createdDate, timezone)}</td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <StatusBadge status={item.status} t={t} />
                       </td>

@@ -1,6 +1,8 @@
 'use client'
 
 import clsx from 'clsx'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatShortDate, formatTime, formatDateTime } from '@/lib/datetime'
 
 interface AgentEventHistogramProps {
   data: any[]           // [{ time: string, Heartbeat: 10, PaymentTx: 5 }, ...]
@@ -26,24 +28,17 @@ function getEventColor(name: string): string {
   return PALETTE[Math.abs(h) % PALETTE.length]
 }
 
-function fmtLabel(iso: string, interval: 'minute' | 'hour' | 'day'): string {
-  try {
-    const d = new Date(iso)
-    if (interval === 'day') return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short' })
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-  } catch { return iso }
+function fmtLabel(iso: string, interval: 'minute' | 'hour' | 'day', timezone: string): string {
+  if (interval === 'day') return formatShortDate(iso, timezone)
+  return formatTime(iso, timezone, false)
 }
 
-function fmtTooltipTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString('en-US', {
-      day: 'numeric', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', hour12: false,
-    })
-  } catch { return iso }
+function fmtTooltipTime(iso: string, timezone: string): string {
+  return formatDateTime(iso, timezone, false)
 }
 
 export function AgentEventHistogram({ data, eventTypes, total, interval, height = 160 }: AgentEventHistogramProps) {
+  const { timezone } = useFormatDate()
   const axisLabelStep = Math.max(Math.floor(data.length / 10), 1)
 
   const maxCount = Math.max(...data.map(d => {
@@ -145,7 +140,7 @@ export function AgentEventHistogram({ data, eventTypes, total, interval, height 
                 {showLabel && (
                   <div className="absolute top-full mt-1.5 left-0 flex flex-col items-start whitespace-nowrap z-20 pointer-events-none">
                     <div className="w-[1px] h-1.5 bg-gray-300" />
-                    <span className="text-[10px] font-mono text-gray-400 mt-0.5">{fmtLabel(bucket.time, interval)}</span>
+                    <span className="text-[10px] font-mono text-gray-400 mt-0.5">{fmtLabel(bucket.time, interval, timezone)}</span>
                   </div>
                 )}
 
@@ -157,7 +152,7 @@ export function AgentEventHistogram({ data, eventTypes, total, interval, height 
                   )}>
                     <div className="bg-white border border-primary-100 rounded-xl shadow-[0_8px_30px_rgba(37,99,235,0.15)] p-3 min-w-[180px]">
                       <div className="text-[10px] text-primary-600 font-mono text-center border-b border-primary-100 pb-2 mb-2 bg-primary-50 -mx-3 -mt-3 px-3 pt-2 rounded-t-xl">
-                        {fmtTooltipTime(bucket.time)}
+                        {fmtTooltipTime(bucket.time, timezone)}
                       </div>
                       <div className="space-y-1.5">
                         {eventTypes.filter(et => (bucket[et] ?? 0) > 0).map(et => (

@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { ChevronLeft, Plus, Copy, Check, Key, Ban, CheckCircle, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 function deriveApiDomain(): string {
   if (typeof window === 'undefined') return ''
@@ -96,6 +97,7 @@ function ConfirmDialog({ title, onConfirm, onCancel, t }: {
 export default function AgentEndpointKeysPage() {
   const { t } = useLang()
   const m = t.agent
+  const { fmtDate } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const agentId = params.id as string
@@ -201,12 +203,6 @@ export default function AgentEndpointKeysPage() {
         }
       },
     })
-  }
-
-  const formatDate = (d?: string | null) => {
-    if (!d) return '—'
-    try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) }
-    catch { return d }
   }
 
   if (loading) {
@@ -401,7 +397,7 @@ export default function AgentEndpointKeysPage() {
                           ) : '—'}
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(key.keyCreatedDate)}
+                          {fmtDate(key.keyCreatedDate)}
                         </td>
                         <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                           <StatusBadge status={key.keyStatus ?? 'Active'} />

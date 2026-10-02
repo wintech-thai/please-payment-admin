@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
   'payment.success': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
@@ -122,6 +123,7 @@ function JobStatusBadge({ status }: { status?: string | null }) {
 export default function NotiEventDetailPage() {
   const { t } = useLang()
   const m = t.notiEvent
+  const { fmtDateTime } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const eventId = params.id as string
@@ -145,13 +147,6 @@ export default function NotiEventDetailPage() {
     }
     load()
   }, [eventId])
-
-  const formatDate = (d?: string | null) => {
-    if (!d) return '—'
-    try {
-      return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    } catch { return d }
-  }
 
   const getJobMessages = (): string[] => {
     if (!data) return []
@@ -231,7 +226,7 @@ export default function NotiEventDetailPage() {
           <SectionHeader>{m.detailTitle}</SectionHeader>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
             <InfoRow label={m.eventDate}>
-              <span className="font-semibold text-gray-900">{formatDate(data?.createdDate ?? data?.CreatedDate ?? data?.eventDate)}</span>
+              <span className="font-semibold text-gray-900">{fmtDateTime(data?.createdDate ?? data?.CreatedDate ?? data?.eventDate)}</span>
             </InfoRow>
             <InfoRow label={m.eventName}>
               <span className="text-gray-500">{data?.name ?? data?.Name ?? data?.eventName ?? '—'}</span>

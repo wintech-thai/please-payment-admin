@@ -9,6 +9,8 @@ import { useLang } from '@/context/LanguageContext'
 import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, XCircle, Clock, ImageIcon, Save, ShieldCheck, X, Copy, Check } from 'lucide-react'
 import clsx from 'clsx'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 function buildStorageUrl(rawUrl: string): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
@@ -18,13 +20,10 @@ function buildStorageUrl(rawUrl: string): string {
   return rawUrl.replace('<STORAGE-API-BASE>', storageBase)
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone)
   } catch { return d }
 }
 
@@ -184,6 +183,7 @@ export default function PayInSlipDetailPage() {
   const id = params.id as string
   const { t } = useLang()
   const m = t.payInSlip
+  const { timezone } = useFormatDate()
 
   const [detail, setDetail] = useState<PayInSlipDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -503,7 +503,7 @@ export default function PayInSlipDetailPage() {
                     {detail?.merchantName && <p className="text-xs text-gray-400 mt-0.5">{detail.merchantName}</p>}
                   </InfoRow>
                   <InfoRow label={m.colCreatedDate}>
-                    {formatDateTime(detail?.createdDate)}
+                    {formatDateTime(detail?.createdDate, timezone)}
                   </InfoRow>
                   {detail?.rejectReason && (
                     <InfoRow label={m.labelRejectReason}>

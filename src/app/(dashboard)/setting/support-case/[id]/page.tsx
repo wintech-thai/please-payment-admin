@@ -10,6 +10,8 @@ import { ChevronLeft } from 'lucide-react'
 import clsx from 'clsx'
 import RichTextEditor, { type ReplyTarget } from '@/components/RichTextEditor'
 import RichContent from '@/components/RichContent'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 const STATUS_COLORS: Record<string, string> = {
   'New': 'bg-blue-50 text-blue-700 ring-blue-200',
@@ -48,14 +50,9 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
   )
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
-  try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    })
-  } catch { return d }
+  return formatDateTimeTz(d, timezone, false)
 }
 
 
@@ -89,6 +86,7 @@ function normalizeComment(raw: any): SupportCaseCommentItem {
 
 export default function SupportCaseDetailPage() {
   const { lang } = useLang()
+  const { timezone } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
@@ -287,15 +285,15 @@ export default function SupportCaseDetailPage() {
                 {caseData.createdBy ?? '—'}
               </InfoRow>
               <InfoRow label={lang === 'th' ? 'วันที่สร้าง' : 'Created'}>
-                {formatDateTime(caseData.createdDate)}
+                {formatDateTime(caseData.createdDate, timezone)}
               </InfoRow>
               <InfoRow label={lang === 'th' ? 'อัปเดตล่าสุด' : 'Last Updated'}>
-                {formatDateTime(caseData.updatedDate)}
+                {formatDateTime(caseData.updatedDate, timezone)}
               </InfoRow>
               {isClosed && caseData.closedDate && (
                 <>
                   <InfoRow label={lang === 'th' ? 'ปิดโดย' : 'Closed By'}>{caseData.closedBy ?? '—'}</InfoRow>
-                  <InfoRow label={lang === 'th' ? 'วันที่ปิด' : 'Closed Date'}>{formatDateTime(caseData.closedDate)}</InfoRow>
+                  <InfoRow label={lang === 'th' ? 'วันที่ปิด' : 'Closed Date'}>{formatDateTime(caseData.closedDate, timezone)}</InfoRow>
                 </>
               )}
             </div>
@@ -377,7 +375,7 @@ export default function SupportCaseDetailPage() {
                         <span className={clsx('px-1.5 py-0.5 rounded text-[10px] font-bold uppercase', isAdmin ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-500')}>
                           {c.authorType}
                         </span>
-                        <span>{formatDateTime(c.createdDate)}</span>
+                        <span>{formatDateTime(c.createdDate, timezone)}</span>
                         {!isClosed && (
                           <button
                             onClick={() => setReplyTo({ id: c.id ?? '', author: authorLabel, content: c.content ?? '' })}

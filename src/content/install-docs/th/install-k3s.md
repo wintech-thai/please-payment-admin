@@ -19,13 +19,13 @@ SSH เข้า VM ด้วยผู้ใช้ที่มีสิทธิ
 
 ```bash
 sudo apt update
-sudo apt install -y git curl ca-certificates openssl
+sudo apt install -y git curl ca-certificates openssl nano dnsutils
 ```
 
-ดาวน์โหลด repository ที่เตรียมไว้ในหน้า 1 แล้วเข้าโฟลเดอร์นั้น:
+ดาวน์โหลด repository ที่เตรียมไว้ในหน้า 1 แล้วเข้าโฟลเดอร์นั้น ก่อนรันให้แทน URL ตัวอย่างด้วย URL repository ของคุณ และเปลี่ยนชื่อโฟลเดอร์ในคำสั่ง `cd` ให้ตรงกับชื่อ repository:
 
 ```bash
-git clone https://github.com/<your-org>/please-payment-production.git
+git clone https://github.com/YOUR_ORG/please-payment-production.git
 cd please-payment-production
 ```
 
@@ -83,13 +83,25 @@ printf 'DUMMY=demo\nMUTUAL_KEY=%s\n' "$(openssl rand -hex 32)" > .env
 chmod 600 .env
 ```
 
-เปิดไฟล์ใน editor แล้วเพิ่มบรรทัด `DISCORD_WEBHOOK` โดยใส่ URL จริงในไฟล์เท่านั้น ไม่ใส่ URL ในคำสั่ง terminal:
+เตรียม Discord Webhook สำหรับรับ alerts ตามขั้นตอนนี้:
+
+- เปิด Discord server ที่คุณมีสิทธิ์จัดการ Webhooks แล้วไปที่ **Server Settings → Integrations → Webhooks → Create Webhook**
+- เลือก text channel สำหรับรับ alerts แล้วคัดลอก **Webhook URL** ดู [คู่มือสร้าง Webhook ของ Discord](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
+- เปิด `.env` ด้วยคำสั่งด้านล่าง แล้วเพิ่มบรรทัด `DISCORD_WEBHOOK` โดยใส่ URL จริงในไฟล์เท่านั้น
 
 ```bash
 nano .env
 ```
 
-ให้ไฟล์มี keys `DUMMY`, `MUTUAL_KEY` และ `DISCORD_WEBHOOK` ไฟล์นี้มีความลับ อย่า commit หรือส่งให้ผู้อื่น โดย permission `600` จำกัดการอ่านไว้ที่ผู้ใช้ปัจจุบัน
+ไฟล์ควรมีรูปแบบดังนี้ โดยคง `MUTUAL_KEY` ที่คำสั่งสร้างให้ และแทน Webhook URL ตัวอย่างด้วยค่าที่คัดลอกมา:
+
+```dotenv
+DUMMY=demo
+MUTUAL_KEY=<ค่าที่สร้างไว้>
+DISCORD_WEBHOOK=https://discord.com/api/webhooks/<webhook-id>/<webhook-token>
+```
+
+ไฟล์นี้มีความลับ อย่า commit หรือส่งให้ผู้อื่น โดย permission `600` จำกัดการอ่านไว้ที่ผู้ใช้ปัจจุบัน Script 01 จะนำค่าจากไฟล์นี้ไปสร้าง `initial-secret-preset`
 
 เมื่อ `.env` พร้อมแล้ว รัน script 01 เพื่อสร้าง `initial-secret` และ `initial-secret-preset`:
 
@@ -130,13 +142,28 @@ chmod +x 02-initial-addons.bash
 ./02-initial-addons.bash
 ```
 
-รอให้ Kubernetes สร้าง pod แล้วตรวจสถานะ:
+ตรวจว่า Kubernetes สร้าง Deployments ของ addons ครบแล้ว ช่วงแรก Helm charts อาจยังติดตั้งอยู่ หากยังไม่พบ Deployment ของ namespace ใด ให้รอแล้วรันคำสั่งนี้อีกครั้ง:
+
+```bash
+kubectl get deployments -A
+```
+
+เมื่อมี Deployments ของ `argocd`, `ingress-nginx`, `cert-manager` และ `external-secrets` ครบแล้ว รอให้ทุก Deployment ในสี่ namespace นี้เป็น `Available` ก่อน bootstrap:
+
+```bash
+kubectl wait --for=condition=Available deployment --all -n argocd --timeout=10m
+kubectl wait --for=condition=Available deployment --all -n ingress-nginx --timeout=10m
+kubectl wait --for=condition=Available deployment --all -n cert-manager --timeout=10m
+kubectl wait --for=condition=Available deployment --all -n external-secrets --timeout=10m
+```
+
+จากนั้นตรวจความพร้อมของ pods:
 
 ```bash
 kubectl get pods -A
 ```
 
-ตรวจว่า pod (หน่วยที่รันบริการใน cluster) ใน namespace (กลุ่มแยกทรัพยากร) `argocd`, `ingress-nginx`, `cert-manager` และ `external-secrets` เริ่มเป็น `Running` หรือ `Completed` ตามชนิดงาน
+Pods ของบริการในสี่ namespace นี้ต้องเป็น `Running` และคอลัมน์ `READY` ต้องครบ เช่น `1/1` หรือ `2/2` ส่วน pods ของ Jobs ที่จบแล้วเป็น `Completed` ได้ หากคำสั่งรอหมดเวลา ให้ตรวจสถานะก่อนทำข้อ 3.5
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-4-addons.png" alt="ผลลัพธ์ pods ของ Argo CD ingress cert-manager และ external-secrets" />
@@ -152,13 +179,17 @@ chmod +x 04-boot-strap.bash
 ./04-boot-strap.bash
 ```
 
-ตรวจรายการและสถานะ applications:
+หาก repository ของคุณเป็น **private** ให้เปิด `https://<ip-address>/tools/argocd` ด้วย Public IP ของ VM อ่าน initial password ตาม [ข้อ 5.2](./misc#52-เข้า-argo-cd) แล้วไปที่ **Settings → Repositories → Connect Repo** เลือก HTTPS ใส่ URL repository, username และ credentials แบบอ่านอย่างเดียว จากนั้นกดเชื่อมต่อและตรวจสถานะ `Successful` ใช้ URL เดียวกับ `DATA_PLANE_REMOTE_REPO` และ `repoURL` ที่ตั้งในหน้า 1 เก็บ credentials ใน Argo CD ไม่ใส่ลง source code
+
+ตรวจรายการและสถานะ applications หลัง bootstrap และเชื่อม repository แล้ว:
 
 ```bash
 kubectl get applications -n argocd
 ```
 
-รอให้ applications หลักเปลี่ยนเป็น `Synced` และ `Healthy` สถานะนี้หมายถึง manifest ตรงกับ repository และ workload ผ่าน health check ของ Argo CD อย่าดูเฉพาะ bootstrap application; ตรวจ application ของส่วนประกอบทั้งหมดที่อยู่ใน repository
+ก่อนทำหน้า 4 ให้ตรวจว่า Argo CD อ่าน repository ได้ และ applications เริ่ม sync โดยไม่มี error เรื่อง repository หรือ manifests ตรวจรายการทั้งหมด ไม่ดูเฉพาะ bootstrap application
+
+Certificate อาจยังรอ DNS และทำให้บาง Application เป็น `Progressing` ได้ในขั้นนี้ ให้ทำข้อ 3.6–3.7 แล้วตั้ง DNS ในหน้า 4 ก่อนตรวจ `Ready=True` และ `Synced/Healthy` ครบอีกครั้งตามหน้า 5 ภาพด้านล่างเป็นตัวอย่างสถานะเมื่อระบบพร้อมทั้งหมดแล้ว
 
 <figure class="install-evidence">
 <img src="/docs/images/install/step-3-5-applications.png" alt="ผลลัพธ์ Argo CD applications เป็น Synced และ Healthy" />
@@ -219,8 +250,9 @@ pod หลักไม่ควรค้างที่ `Pending`, `ImagePullBac
 - ⬜ รัน `00-install-k3s.bash` และ node เป็น `Ready`
 - ⬜ ตั้ง `KUBECONFIG=$HOME/k3s.yaml` สำหรับ SSH session แล้ว
 - ⬜ รัน `01-initial-secrets.bash` และ Job `secret-init` สำเร็จแล้ว
-- ⬜ รัน `02-initial-addons.bash` และ addons pods เริ่มทำงานแล้ว
+- ⬜ รัน `02-initial-addons.bash` และ addons Deployments เป็น `Available` แล้ว
 - ⬜ รัน `04-boot-strap.bash` และ Argo CD applications เริ่ม sync แล้ว
+- ⬜ หากใช้ private repository เชื่อม credentials แบบอ่านอย่างเดียวใน Argo CD แล้ว
 - ⬜ ตั้ง `DISCORD_WEBHOOK` ใน `.env` สำหรับ ExternalSecret ของ Discord alerts
 - ⬜ ติดตั้ง Helm แล้วรัน `03-install-monitoring.bash` หลัง bootstrap
 - ⬜ ตรวจ pod ของ `discord-alm` และทดสอบการส่ง alert ตามนโยบายแล้ว

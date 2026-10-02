@@ -105,13 +105,13 @@ findmnt -T /data
 df -hT /data
 ```
 
-ผลที่ควรได้หลังแก้ส่วนที่ template ยังขาด:
+ผลที่ควรได้หลัง workloads พร้อม และตั้ง DNS กับ certificate ตามหน้า 4 แล้ว:
 
 - node เป็น `Ready`
 - Applications หลักเป็น `Synced` และ `Healthy`
 - pods สำคัญอยู่ใน `Running` หรือ `Completed` ตามชนิดงาน
 - PVC เป็น `Bound`
-- certificate ทุก hostname เป็น `Ready=True` หลังติดตั้ง certificate manifests ที่รองรับแล้ว
+- certificate สำหรับ hostnames ที่ใช้งานเป็น `Ready=True`
 - `/data` ใช้ filesystem และพื้นที่ตามแผน
 
 ## 5.6 ตรวจ scheduled jobs
@@ -129,7 +129,7 @@ kubectl describe cronjob payment-cleanup -n please-payment-production
 
 ## 5.7 Discord alerts
 
-template มี `discord-alm` application และ Alertmanager routing config. การส่งจริงขึ้นกับ `DISCORD_WEBHOOK` ใน initial secret; หลังตั้งค่าแล้วให้ทดสอบการแจ้งเตือนตามนโยบายของระบบ
+template มี `discord-alm` application และ Alertmanager routing config. การส่งจริงขึ้นกับ `DISCORD_WEBHOOK` ใน `initial-secret-preset` ที่สร้างในข้อ 3.3; หลังตั้งค่าแล้วให้ทดสอบการแจ้งเตือนตามนโยบายของระบบ
 
 ```bash
 kubectl get pods -n discord-alm

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { X, FileJson, Table as TableIcon, Search, Copy, Check, Calendar, Globe, Hash, Type } from 'lucide-react'
+import { X, FileJson, Table as TableIcon, Search, Copy, Check, Calendar, Globe, Hash, Type, ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
 import type { LokiLogEntry } from '@/lib/api/loki.api'
 
@@ -20,6 +20,13 @@ interface LokiLogFlyoutProps {
   log: LokiLogEntry | null
   onClose: () => void
   dict: FlyoutDict
+  /** 1-based position of `log` within the currently displayed list, and the
+   *  list's total count — powers the "N of total" + prev/next controls so
+   *  you can step through logs without closing the panel each time. */
+  currentIndex?: number
+  totalCount?: number
+  onPrev?: () => void
+  onNext?: () => void
 }
 
 function getFieldIcon(field: string) {
@@ -47,7 +54,7 @@ function tryParseJson(line: string): object | null {
   }
 }
 
-export function LokiLogFlyout({ log, onClose, dict }: LokiLogFlyoutProps) {
+export function LokiLogFlyout({ log, onClose, dict, currentIndex, totalCount, onPrev, onNext }: LokiLogFlyoutProps) {
   const [drawerTab, setDrawerTab] = useState<'table' | 'json'>('table')
   const [searchInput, setSearchInput] = useState('')
   const [isCopied, setIsCopied] = useState(false)
@@ -113,10 +120,34 @@ export function LokiLogFlyout({ log, onClose, dict }: LokiLogFlyoutProps) {
   }
 
   return (
-    <div className="absolute inset-y-0 right-0 w-full sm:w-162.5 bg-slate-950 border-l border-slate-800 shadow-[-20px_0_60px_rgba(0,0,0,0.7)] z-50 flex flex-col animate-in slide-in-from-right duration-300 font-sans">
+    <>
+      {/* Fixed to the viewport (not the scrolling page) so the panel stays put
+          and doesn't need the whole page scrolled up to see its top — same
+          pattern as AuditTrailDrawer. */}
+      <div className="fixed inset-0 z-[99] bg-black/20" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 z-[100] w-full sm:w-[650px] bg-slate-950 border-l border-slate-800 shadow-2xl flex flex-col font-sans">
       <div className="flex-none px-6 py-4 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h3 className="text-sm font-bold text-white uppercase tracking-widest opacity-80">{dict.title}</h3>
+          {currentIndex !== undefined && totalCount !== undefined && (
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+              <button
+                onClick={onPrev}
+                disabled={currentIndex <= 0}
+                className="p-1 rounded hover:bg-slate-800 hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span>{currentIndex + 1} of {totalCount}</span>
+              <button
+                onClick={onNext}
+                disabled={currentIndex >= totalCount - 1}
+                className="p-1 rounded hover:bg-slate-800 hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
         <button onClick={onClose} className="text-slate-500 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors">
           <X size={20} />
@@ -233,6 +264,7 @@ export function LokiLogFlyout({ log, onClose, dict }: LokiLogFlyoutProps) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }

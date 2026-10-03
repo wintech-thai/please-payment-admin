@@ -120,7 +120,7 @@ const LogRow = memo(function LogRow({
 }) {
   return (
     <div className="group border-b border-slate-800/40 relative">
-      {isSelected && <div className="absolute left-0 top-0 bottom-0 w-0.75 bg-blue-500 z-10" />}
+      {isSelected && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-blue-500 z-10" />}
       <div
         className={clsx(
           'flex cursor-pointer transition-colors duration-100 border-t border-transparent hover:border-slate-800/60',

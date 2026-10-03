@@ -66,6 +66,7 @@ export default function LokiView() {
   const [hasMoreOlder, setHasMoreOlder] = useState(false)
   const [hasMoreNewer, setHasMoreNewer] = useState(false)
   const [selectedLog, setSelectedLog] = useState<LokiLogEntry | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
 
   // Restore last query/time range from localStorage on mount
@@ -277,6 +278,7 @@ export default function LokiView() {
           onLogSelect={setSelectedLog}
           onIconClick={(log) => {
             setSelectedLog(log)
+            setSelectedIndex(sortedLogs.findIndex((l) => l.id === log.id))
             setIsFlyoutOpen(true)
           }}
           selectedLog={selectedLog}
@@ -302,6 +304,20 @@ export default function LokiView() {
           log={selectedLog}
           onClose={() => setIsFlyoutOpen(false)}
           dict={t.flyout as unknown as FlyoutDict}
+          currentIndex={selectedIndex ?? undefined}
+          totalCount={sortedLogs.length}
+          onPrev={() => {
+            if (selectedIndex === null || selectedIndex <= 0) return
+            const newIdx = selectedIndex - 1
+            setSelectedIndex(newIdx)
+            setSelectedLog(sortedLogs[newIdx])
+          }}
+          onNext={() => {
+            if (selectedIndex === null || selectedIndex >= sortedLogs.length - 1) return
+            const newIdx = selectedIndex + 1
+            setSelectedIndex(newIdx)
+            setSelectedLog(sortedLogs[newIdx])
+          }}
         />
       )}
     </div>

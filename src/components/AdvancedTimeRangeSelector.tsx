@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Clock, ChevronDown, Check } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 export interface TimeRangeValue {
   type: 'relative' | 'absolute'
@@ -33,10 +34,16 @@ function fromLocalStr(str: string): number {
   return Math.floor(new Date(str).getTime() / 1000)
 }
 
-function fmtAbsLabel(unixSec: number): string {
+// toLocalStr/fromLocalStr above convert <input type="datetime-local"> values, which are
+// inherently browser-local per the HTML spec — never timezone-converted. This formats the
+// already-resolved absolute point in time for DISPLAY, so it uses the user's preferred
+// timezone like every other displayed timestamp in the app (same zone as the input in the
+// common "follow browser" case — only differs when the user set a custom timezone).
+function fmtAbsLabel(unixSec: number, timezone: string): string {
   const d = new Date(unixSec * 1000)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-    ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+  const datePart = new Intl.DateTimeFormat('en-US', { timeZone: timezone, month: 'short', day: 'numeric' }).format(d)
+  const timePart = new Intl.DateTimeFormat('en-US', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
+  return `${datePart} ${timePart}`
 }
 
 function calcRelativeStart(value: string): number {
@@ -51,6 +58,7 @@ function calcRelativeStart(value: string): number {
 export function AdvancedTimeRangeSelector({ value, onChange, disabled, className, align = 'end' }: Props) {
   const { t } = useLang()
   const tAL = t.auditLog
+  const { timezone } = useFormatDate()
 
   const quickRanges = useMemo(() => [
     { value: '5m',  label: tAL.last5m },
@@ -133,7 +141,7 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
       value: 'custom',
       start,
       end,
-      label: `${fmtAbsLabel(start)} → ${fmtAbsLabel(end)}`,
+      label: `${fmtAbsLabel(start, timezone)} → ${fmtAbsLabel(end, timezone)}`,
     })
     setIsOpen(false)
   }
@@ -151,12 +159,12 @@ export function AdvancedTimeRangeSelector({ value, onChange, disabled, className
   const displayLabel = useMemo(() => {
     if (value.type === 'absolute') {
       if (value.start && value.end) {
-        return `${fmtAbsLabel(value.start)} → ${fmtAbsLabel(value.end)}`
+        return `${fmtAbsLabel(value.start, timezone)} → ${fmtAbsLabel(value.end, timezone)}`
       }
       return value.label ?? tAL.customRange
     }
     return quickRanges.find(r => r.value === value.value)?.label ?? value.label ?? tAL.last24h
-  }, [value, quickRanges, tAL])
+  }, [value, quickRanges, tAL, timezone])
 
   return (
     <div className={clsx('relative', className)} ref={ref}>

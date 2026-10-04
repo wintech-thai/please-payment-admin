@@ -9,19 +9,18 @@ import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock, X, Copy, Check, History, TriangleAlert } from 'lucide-react'
 import AuditTrailDrawer from '@/components/AuditTrailDrawer'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d?: string | null, timezone?: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone ?? 'Asia/Bangkok')
   } catch { return d }
 }
 
@@ -148,6 +147,7 @@ export default function PayOutTxDetailPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+  const { timezone } = useFormatDate()
 
   const [detail, setDetail] = useState<PayOutTxDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -256,7 +256,7 @@ export default function PayOutTxDetailPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-6">
           <SectionHeader>{m.sectionGeneral}</SectionHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate)}</InfoRow>
+            <InfoRow label={m.fieldCreated}>{formatDateTime(detail?.createdDate, timezone)}</InfoRow>
             <InfoRow label={m.fieldStatus}>
               <div className="flex items-start gap-2 flex-wrap">
                 <StatusBadge status={detail?.status} isPeerToPeer={detail?.txIsPeerToPeer} />

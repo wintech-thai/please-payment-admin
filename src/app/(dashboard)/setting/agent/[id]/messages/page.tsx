@@ -15,6 +15,8 @@ import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import { AgentEventHistogram } from '@/components/AgentEventHistogram'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime } from '@/lib/datetime'
 
 const CHANNELS = ['APP', 'LINE', 'SMS']
 const EVENT_TYPES = ['Heartbeat', 'PaymentTx']
@@ -40,13 +42,10 @@ function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string }
   return { fromDate: new Date(startMs).toISOString(), toDate: new Date(now).toISOString() }
 }
 
-function formatDate(d?: string | null) {
+function formatDate(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleDateString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTime(d, timezone)
   } catch { return d }
 }
 
@@ -126,6 +125,7 @@ function EventDetailFlyout({
 }) {
   const { t } = useLang()
   const tAL = t.auditLog
+  const { timezone } = useFormatDate()
   const [tab, setTab] = useState<'table' | 'json'>('table')
   const [fieldSearch, setFieldSearch] = useState('')
   const [isCopied, setIsCopied] = useState(false)
@@ -184,7 +184,7 @@ function EventDetailFlyout({
               </h3>
               {(event.eventType || event.channel) && (
                 <p className="text-[11px] text-primary-200 mt-0.5">
-                  {[event.eventType, event.channel, formatDate(event.createdDate)].filter(Boolean).join(' · ')}
+                  {[event.eventType, event.channel, formatDate(event.createdDate, timezone)].filter(Boolean).join(' · ')}
                 </p>
               )}
             </div>
@@ -348,6 +348,7 @@ function EventDetailFlyout({
 export default function AgentMessagesPage() {
   const { t } = useLang()
   const m = t.agent
+  const { timezone } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const agentId = params.id as string
@@ -679,7 +680,7 @@ export default function AgentMessagesPage() {
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
                           <span className={clsx('text-sm font-semibold', highlighted ? 'text-primary-700' : 'text-gray-800')}>
-                            {formatDate(event.createdDate)}
+                            {formatDate(event.createdDate, timezone)}
                           </span>
                           {formatAge(event.createdDate) && (
                             <span className="text-xs text-gray-400">{formatAge(event.createdDate)}</span>

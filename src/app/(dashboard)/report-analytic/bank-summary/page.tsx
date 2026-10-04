@@ -8,6 +8,7 @@ import { summaryApi } from '@/lib/api/summary.api'
 import type { BankSummaryResponse } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100]
 const HIGHLIGHTED_KEY = 'bankSummary_highlightedKey'
@@ -58,6 +59,7 @@ function activePreset(tr: TimeRangeValue): QuickPreset | null {
 export default function BankSummaryPage() {
   const { t } = useLang()
   const m = t.bankSummary
+  const { fmtDate } = useFormatDate()
   const [data, setData] = useState<BankSummaryResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '30d' })
@@ -122,7 +124,7 @@ export default function BankSummaryPage() {
       .filter((x): x is typeof x & { date: string } => !!x.date)
       .sort((a, b) => (a.date as string).localeCompare(b.date as string) || (a.bankCode ?? '').localeCompare(b.bankCode ?? ''))
       .map(x => ({
-        date: new Date(x.date as string).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        date: fmtDate(x.date as string),
         bankCode: x.bankCode ?? '-',
         accountNumber: x.accountNumber ?? '-',
         accountName: x.accountName ?? '-',
@@ -132,7 +134,7 @@ export default function BankSummaryPage() {
         withdrawAmt: x.withdrawalAmount ?? 0,
       }))
     return merchantFilter === '__all__' ? rows : rows.filter(r => r.merchant === merchantFilter)
-  }, [data, merchantFilter])
+  }, [data, merchantFilter, fmtDate])
 
   useEffect(() => { setPage(1) }, [tableRows])
 

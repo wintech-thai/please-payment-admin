@@ -13,6 +13,7 @@ import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { RevenueSummaryResponse, DailyRevenueItem, DailyMerchantRevenueItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 const PIE_COLORS = ['#059669', '#f59e0b', '#d946ef']
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100]
@@ -98,6 +99,7 @@ function PieTooltip({ active, payload }: any) {
 export default function RevenueSummaryPage() {
   const { t } = useLang()
   const m = t.revenueSummary
+  const { fmtDate } = useFormatDate()
   const [data, setData] = useState<RevenueSummaryResponse | null>(null)
   const [payInCount, setPayInCount] = useState<number | null>(null)
   const [payOutCount, setPayOutCount] = useState<number | null>(null)
@@ -246,7 +248,7 @@ export default function RevenueSummaryPage() {
         !!x.date && !!x.merchantCode)
       .sort((a, b) => a.date.localeCompare(b.date) || a.merchantCode.localeCompare(b.merchantCode))
       .map(x => ({
-        date: new Date(x.date).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        date: fmtDate(x.date),
         merchant: x.merchantCode,
         payInAmt:  x.payInAmount  ?? 0,
         payOutAmt: x.payOutAmount ?? 0,
@@ -257,7 +259,7 @@ export default function RevenueSummaryPage() {
         totalFee:  (x.payInFee ?? 0) + (x.payOutFee ?? 0) + (x.withdrawalFee ?? 0),
       }))
     return merchantFilter === '__all__' ? rows : rows.filter(r => r.merchant === merchantFilter)
-  }, [data, merchantFilter])
+  }, [data, merchantFilter, fmtDate])
 
   useEffect(() => { setPage(1) }, [tableRows])
 

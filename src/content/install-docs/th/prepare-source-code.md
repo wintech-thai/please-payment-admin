@@ -7,11 +7,14 @@ updatedAt: "{{BUILD_DATE}}"
 
 ## 1.1 สร้าง repository สำหรับการติดตั้ง
 
-สร้าง repository ใหม่ใน Git hosting ของคุณ แล้วนำ [please-payment-k3s-demo](https://github.com/wintech-thai/please-payment-k3s-demo) มาใช้เป็น template ของ repository นี้ เพื่อให้ปรับค่าได้โดยไม่แก้ template ต้นทาง
+สร้าง repository ใหม่ใน Git hosting ของคุณโดยใช้ branch `main` แล้วนำ [`please-payment-k3s-demo`](https://github.com/wintech-thai/please-payment-k3s-demo) มาใช้เป็น template ของ repository นี้ เพื่อให้ปรับค่าได้โดยไม่แก้ template ต้นทาง
 
 ## 1.2 ตรวจ source repositories
 
-ก่อนเริ่ม ให้ตรวจว่า repository ที่สร้างในข้อ 1.1 พร้อมให้ VM และ Argo CD อ่านได้ เพราะหลังรัน bootstrap Argo CD จะอ่าน manifests จาก repository นี้
+เตรียม URL และสิทธิ์อ่าน repository ที่สร้างในข้อ 1.1 สำหรับ VM และ Argo CD แล้วทดสอบ clone ในข้อ 3.1 และเชื่อม repository ในข้อ 3.5 เพราะหลังรัน bootstrap Argo CD จะอ่าน manifests จาก repository นี้
+
+- **Public repository:** VM และ Argo CD อ่านผ่าน URL ได้โดยไม่ต้องตั้ง credentials
+- **Private repository:** เตรียมสิทธิ์อ่านสำหรับ clone บน VM และ credentials แบบอ่านอย่างเดียวสำหรับ Argo CD แยกกัน โดยเชื่อม repository ในข้อ [3.5](./install-k3s#35-เริ่ม-sync-applications-ด้วย-script-04) สิทธิ์ที่ใช้ clone บน VM ไม่ได้ถูกส่งให้ Argo CD อัตโนมัติ
 
 ## 1.3 ตั้งค่าที่จำเป็นก่อนติดตั้ง
 
@@ -32,8 +35,8 @@ updatedAt: "{{BUILD_DATE}}"
 
 ## Checklist
 
-- ⬜ สร้าง repository ใหม่และนำ template ไปไว้แล้ว
-- ⬜ ตรวจว่า VM และ Argo CD อ่าน repository นี้ได้
+- ⬜ สร้าง repository ใหม่บน branch `main` และนำ template ไปไว้แล้ว
+- ⬜ เตรียม URL และสิทธิ์อ่าน repository สำหรับ VM และ Argo CD แล้ว
 - ⬜ ตั้ง `domain1`–`domain3` และอีเมลใน ClusterIssuer แล้ว
 - ⬜ เปลี่ยน repository URL ใน bootstrap และ Application manifests แล้ว
 - ⬜ push source code ที่แก้ไขไปยัง repository ก่อนติดตั้ง

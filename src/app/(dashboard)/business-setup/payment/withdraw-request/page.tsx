@@ -10,6 +10,8 @@ import { Search, RefreshCw, ChevronLeft, ChevronRight, X, Paperclip, MoreHorizon
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import { getMerchantBase } from '@/lib/merchant-url'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 import QRCode from 'react-qr-code'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 import ExportCsvModal from '@/components/ExportCsvModal'
@@ -20,6 +22,7 @@ type SlipItem = { slipId?: string | null; imageBase64: string; uploadedAt: strin
 function SlipViewerModal({ slips, item, onClose }: { slips: SlipItem[]; item: PayOutRequestItem; onClose: () => void }) {
   const { t } = useLang()
   const m = t.payOutRequest
+  const { fmtDateTime } = useFormatDate()
   const [idx, setIdx] = useState(0)
   const [localSlips, setLocalSlips] = useState<SlipItem[]>(slips)
   const [dupIds, setDupIds] = useState<string[]>([])
@@ -98,7 +101,7 @@ function SlipViewerModal({ slips, item, onClose }: { slips: SlipItem[]; item: Pa
         <div className="flex items-center gap-3">
           <span className="text-white text-sm font-semibold">{m.slipViewerTitle} ({idx + 1} / {localSlips.length})</span>
           {slip?.uploadedAt && (
-            <span className="text-white/60 text-xs">{new Date(slip.uploadedAt).toLocaleString('th-TH')}</span>
+            <span className="text-white/60 text-xs">{fmtDateTime(slip.uploadedAt)}</span>
           )}
         </div>
         <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors">
@@ -298,13 +301,10 @@ function formatAge(createdDate?: string | null): string {
   return `${hours}h ${mins}min`
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d?: string | null, timezone?: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone ?? 'Asia/Bangkok')
   } catch { return d }
 }
 
@@ -424,6 +424,7 @@ function WithdrawRequestPageContent() {
   const m = t.payOutRequest
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { timezone } = useFormatDate()
 
   const [search, setSearch] = useState<string>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
@@ -688,7 +689,7 @@ function WithdrawRequestPageContent() {
                         className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group"
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/withdraw-request/${item.id}`) }}
                       >
-                        <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
+                        <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate, timezone)}</span>
                         {item.refId1 && (
                           <p className="text-xs text-gray-400 mt-0.5">{item.refId1}</p>
                         )}
@@ -972,7 +973,7 @@ function WithdrawRequestPageContent() {
             const accountType = item.isPayInBankAccountOverride ? item.payinAccountTypeOverride : item.payinAccountType
             const promptPayId = item.isPayInBankAccountOverride ? item.payinPromptPayIdOverride : item.payinPromptPayId
             return [
-              formatDateTime(item.createdDate),
+              formatDateTime(item.createdDate, timezone),
               item.merchantCode ?? '',
               item.merchantName ?? '',
               item.generatedAmount ?? '',

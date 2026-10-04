@@ -9,6 +9,8 @@ import { toast } from 'sonner'
 import { Search, RefreshCw, ChevronLeft, ChevronRight, Upload, ExternalLink } from 'lucide-react'
 import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 function getTimeFilter(tr: TimeRangeValue): { FromDate: string; ToDate: string } {
   if (tr.type === 'absolute' && tr.start && tr.end) {
@@ -32,13 +34,10 @@ function formatAmount(n?: number | null): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone)
   } catch { return d }
 }
 
@@ -68,6 +67,7 @@ export default function PayInSlipListPage() {
   const router = useRouter()
   const { t } = useLang()
   const m = t.payInSlip
+  const { timezone } = useFormatDate()
 
   const [items, setItems] = useState<PayInSlipItem[]>([])
   const [total, setTotal] = useState(0)
@@ -356,7 +356,7 @@ export default function PayInSlipListPage() {
 
                     {/* Created Date */}
                     <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                      <span className="text-sm text-gray-500">{formatDateTime(item.createdDate)}</span>
+                      <span className="text-sm text-gray-500">{formatDateTime(item.createdDate, timezone)}</span>
                     </td>
                   </tr>
                 )

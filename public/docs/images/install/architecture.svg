@@ -5,7 +5,7 @@
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#111827"/><stop offset="1" stop-color="#090d17"/></linearGradient>
     <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fb923c"/><stop offset="1" stop-color="#ea580c"/></linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".35"/></filter>
-    <style>.label{font:700 23px Arial,sans-serif;fill:#f8fafc}.body{font:16px Arial,sans-serif;fill:#cbd5e1}.small{font:14px Arial,sans-serif;fill:#94a3b8}.box{fill:#172033;stroke:#334155;stroke-width:1.5}.line{stroke:#64748b;stroke-width:2;stroke-dasharray:6 6}.pill{fill:#243044}.accent{fill:url(#accent)}</style>
+    <style>.label{font:700 23px Arial,sans-serif;fill:#f8fafc}.badge{font:700 16px Arial,sans-serif;fill:#f8fafc}.body{font:16px Arial,sans-serif;fill:#cbd5e1}.small{font:14px Arial,sans-serif;fill:#94a3b8}.box{fill:#172033;stroke:#334155;stroke-width:1.5}.line{stroke:#64748b;stroke-width:2;stroke-dasharray:6 6}.pill{fill:#243044}.accent{fill:url(#accent)}</style>
   </defs>
   <rect width="1280" height="780" rx="28" fill="url(#bg)"/>
   <text x="64" y="76" class="label" font-size="32">Application on your infrastructure</text>
@@ -24,7 +24,7 @@
     <rect x="128" y="534" width="250" height="104" rx="14" class="box"/>
     <text x="152" y="572" class="label">Argo CD</text><text x="152" y="600" class="body">sync configuration from Git</text>
     <rect x="446" y="390" width="304" height="248" rx="14" fill="#1d2638" stroke="#fb923c" stroke-width="2"/>
-    <text x="470" y="428" class="label">Application</text><text x="470" y="462" class="body">Admin · Merchant · API</text><text x="470" y="490" class="body">Jobs · PostgreSQL · Redis</text><rect x="470" y="534" width="184" height="44" rx="22" class="accent"/><text x="491" y="562" class="label" font-size="16">Business workloads</text>
+    <text x="470" y="428" class="label">Application</text><text x="470" y="462" class="body">Admin · Merchant · API</text><text x="470" y="490" class="body">Jobs · PostgreSQL · Redis</text><rect x="470" y="534" width="224" height="44" rx="22" class="accent"/><text x="582" y="556" class="badge" text-anchor="middle" dominant-baseline="middle">Business workloads</text>
     <rect x="814" y="390" width="330" height="104" rx="14" class="box"/>
     <text x="838" y="428" class="label">Configuration</text><text x="838" y="456" class="body">external-secrets · local PV</text>
     <rect x="814" y="534" width="330" height="104" rx="14" class="box"/>

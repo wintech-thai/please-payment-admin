@@ -9,6 +9,8 @@ import { useLang } from '@/context/LanguageContext'
 import { iocApi, type IocItem } from '@/lib/api/ioc.api'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import RowActionsMenu from '@/components/RowActionsMenu'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime } from '@/lib/datetime'
 
 const BASE_PATH = '/risk-management/indicator-of-compromise'
 const FILTER_KEY = 'ioc_filter'
@@ -29,10 +31,10 @@ function getTimeFilter(tr: TimeRangeValue): { fromDate?: string; toDate?: string
   return { fromDate: new Date(startMs).toISOString(), toDate: new Date(now).toISOString() }
 }
 
-function formatDate(d?: string | null) {
+function formatDate(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return formatDateTime(d, timezone, false)
   } catch { return d }
 }
 
@@ -95,6 +97,7 @@ function ReputationBadge({ reputation, t }: { reputation?: string | null; t: any
 function IndicatorOfCompromiseContent() {
   const { t } = useLang()
   const m = t.ioc
+  const { timezone } = useFormatDate()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -391,10 +394,10 @@ function IndicatorOfCompromiseContent() {
                           onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`${BASE_PATH}/${item.id}`) }}
                           className={clsx('text-sm font-semibold hover:underline', isHighlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
-                          {formatDate(item.firstSeenDate)}
+                          {formatDate(item.firstSeenDate, timezone)}
                         </button>
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">{formatDate(item.lastSeenDate)}</td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">{formatDate(item.lastSeenDate, timezone)}</td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded-full uppercase">{item.iocType ?? '—'}</span>
                       </td>

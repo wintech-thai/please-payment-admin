@@ -9,19 +9,18 @@ import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, RefreshCw, ExternalLink, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone)
   } catch { return d }
 }
 
@@ -181,6 +180,7 @@ export default function TransitBankAccountWalletPage() {
   const params = useParams()
   const router = useRouter()
   const bankAccountId = params.id as string
+  const { timezone } = useFormatDate()
 
   const [wallet, setWallet] = useState<WalletItem | null>(null)
   const [account, setAccount] = useState<BankAccountItem | null>(null)
@@ -410,7 +410,7 @@ export default function TransitBankAccountWalletPage() {
                         isSelected ? 'bg-primary-100' : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/40 hover:bg-gray-100/50'
                       )}
                     >
-                      <td className="px-6 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">{formatDateTime(tx.createdDate)}</td>
+                      <td className="px-6 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">{formatDateTime(tx.createdDate, timezone)}</td>
                       <td className="px-6 py-3 border-b border-gray-100 max-w-[220px]"><TagsCell tags={tx.tags} /></td>
                       <td className="px-6 py-3 border-b border-gray-100 text-sm text-gray-600 max-w-[200px] truncate">{tx.description || '—'}</td>
                       <td className="px-6 py-3 border-b border-gray-100 text-right whitespace-nowrap">

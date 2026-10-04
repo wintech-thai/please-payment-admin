@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { ChevronLeft, CheckCircle, AlertCircle, Clock } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 const TYPE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
   'backup.done':     { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
@@ -63,6 +64,7 @@ function JobStatusBadge({ status }: { status?: string | null }) {
 
 export default function BackupJobDetailPage() {
   const { t } = useLang()
+  const { fmtDateTime } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const jobId = params.id as string
@@ -86,7 +88,7 @@ export default function BackupJobDetailPage() {
   const formatDate = (d?: string | null) => {
     if (!d) return '—'
     try {
-      return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      return fmtDateTime(d)
     } catch { return d }
   }
 

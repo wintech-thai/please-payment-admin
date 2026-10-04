@@ -10,6 +10,7 @@ import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import RowActionsMenu from '@/components/RowActionsMenu'
 import { getMerchantBase } from '@/lib/merchant-url'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 // ── Domain helpers ────────────────────────────────────────────────────────────
 
@@ -311,6 +312,7 @@ function ApiKeysTable({ keys, selectedKeyId, setSelectedKeyId, formatDate, m, on
 export default function MerchantKeysUsersPage() {
   const { t } = useLang()
   const m = t.merchant
+  const { fmtDate } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const merchantId = params.id as string
@@ -574,11 +576,7 @@ export default function MerchantKeysUsersPage() {
     })
   }
 
-  const formatDate = (d?: string | null) => {
-    if (!d) return '—'
-    try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) }
-    catch { return d }
-  }
+  const formatDate = (d?: string | null) => d ? fmtDate(d) : '—'
 
   if (loading) {
     return (

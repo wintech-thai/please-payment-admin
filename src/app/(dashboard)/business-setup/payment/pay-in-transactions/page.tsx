@@ -14,6 +14,8 @@ import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/Adv
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 import ExportCsvModal from '@/components/ExportCsvModal'
 import type { CsvCell } from '@/lib/csv-export'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 const HIGHLIGHTED_KEY = 'payInTx_highlightedId'
 const FILTER_KEY = 'payInTx_filter'
@@ -51,13 +53,10 @@ function formatAge(createdDate?: string | null): string {
   return `${hours}h ${mins}min`
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone)
   } catch { return d }
 }
 
@@ -652,6 +651,7 @@ export default function PayInTransactionsPage() {
   const { t } = useLang()
   const m = t.payInTx
   const router = useRouter()
+  const { timezone } = useFormatDate()
 
   const [search, setSearch] = useState<string>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
@@ -899,7 +899,7 @@ export default function PayInTransactionsPage() {
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/pay-in-transactions/${item.id}`) }}
                       >
                         <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">
-                          {formatDateTime(item.createdDate)}
+                          {formatDateTime(item.createdDate, timezone)}
                         </span>
                         {item.refId1 && <p className="text-xs text-gray-400 mt-0.5">{item.refId1}</p>}
                       </td>
@@ -1107,7 +1107,7 @@ export default function PayInTransactionsPage() {
             'Payer Name', 'Status', 'Status Reason', 'Payment Request Id', 'Ref1', 'Ref2', 'Ref3',
           ]}
           mapRow={(item): CsvCell[] => [
-            formatDateTime(item.createdDate),
+            formatDateTime(item.createdDate, timezone),
             item.merchantCode ?? '',
             item.merchantName ?? '',
             item.txAmountDecimal ?? item.txAmount ?? '',

@@ -30,7 +30,7 @@ updatedAt: "{{BUILD_DATE}}"
 
 ## ส่วนประกอบใน template
 
-![ผังส่วนประกอบหลักของระบบ](/install-guide/please-payment-architecture.svg)
+![ผังส่วนประกอบหลักของระบบ](/docs/images/install/architecture.svg)
 
 template ประกอบด้วย K3s, ingress-nginx, cert-manager, External Secrets Operator, Argo CD, แอปพลิเคชันหลัก, PostgreSQL/Redis, monitoring, logs และ Discord alerts. รายการ applications มี `discord-alm` ซึ่งใช้ `DISCORD_WEBHOOK`
 

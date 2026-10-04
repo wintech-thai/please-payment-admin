@@ -39,7 +39,7 @@ Ingress และ certificate manifest ใช้ทั้งสาม domains
 
 ## 4.4 ตรวจ DNS, ingress และ TLS
 
-จากเครื่องผู้ดูแล ตรวจ DNS:
+จาก VM ที่ติดตั้ง `dnsutils` ในข้อ 3.1 แล้ว ตรวจ DNS โดยแทน hostnames ตัวอย่างด้วยค่าจริงของคุณ:
 
 ```bash
 dig +short admin.example.com

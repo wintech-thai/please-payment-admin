@@ -12,6 +12,8 @@ import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/Adv
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 import ExportCsvModal from '@/components/ExportCsvModal'
 import type { CsvCell } from '@/lib/csv-export'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 const HIGHLIGHTED_KEY = 'payOutTx_highlightedId'
 const FILTER_KEY = 'payOutTx_filter'
@@ -38,13 +40,10 @@ function formatAmount(n?: number | null): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d?: string | null, timezone?: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone ?? 'Asia/Bangkok')
   } catch { return d }
 }
 
@@ -116,6 +115,7 @@ export default function PayOutTransactionsPage() {
   const { t } = useLang()
   const m = t.payOutTx
   const router = useRouter()
+  const { timezone } = useFormatDate()
 
   const [search, setSearch] = useState<string>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
@@ -358,7 +358,7 @@ export default function PayOutTransactionsPage() {
                         className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group"
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/withdraw-transactions/${item.id}`) }}
                       >
-                        <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
+                        <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate, timezone)}</span>
                         {item.refId1 && <p className="text-xs text-gray-400 mt-0.5">{item.refId1}</p>}
                       </td>
 
@@ -557,7 +557,7 @@ export default function PayOutTransactionsPage() {
           mapRow={(item): CsvCell[] => {
             const isKnown = (v?: string | null) => (v && v.toUpperCase() !== 'UNKNOWN' ? v : null)
             return [
-              formatDateTime(item.createdDate),
+              formatDateTime(item.createdDate, timezone),
               item.merchantCode ?? '',
               item.merchantName ?? '',
               item.txAmountDecimal ?? item.txAmount ?? '',

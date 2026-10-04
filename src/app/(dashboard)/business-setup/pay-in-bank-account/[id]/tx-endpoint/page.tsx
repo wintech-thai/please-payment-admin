@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { ChevronLeft, Copy, Check, Plus, Key, Ban, CheckCircle, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
 
 function deriveApiDomain(): string {
   if (typeof window === 'undefined') return ''
@@ -101,6 +102,7 @@ function ConfirmDialog({ title, onConfirm, onCancel, t }: {
 export default function PayInTxEndpointPage() {
   const { t } = useLang()
   const m = t.bankAccount
+  const { fmtDate } = useFormatDate()
   const router = useRouter()
   const params = useParams()
   const bankAccountId = params.id as string
@@ -217,11 +219,7 @@ export default function PayInTxEndpointPage() {
     })
   }
 
-  const formatDate = (d?: string | null) => {
-    if (!d) return '—'
-    try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) }
-    catch { return d }
-  }
+  const formatDate = (d?: string | null) => d ? fmtDate(d) : '—'
 
   if (loading) {
     return (

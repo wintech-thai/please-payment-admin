@@ -18,6 +18,8 @@ import ExportCsvModal from '@/components/ExportCsvModal'
 import QrPaymentModal from '@/components/QrPaymentModal'
 import QrPaymentP2PModal from '@/components/QrPaymentP2PModal'
 import type { CsvCell } from '@/lib/csv-export'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 
 const HIGHLIGHTED_KEY = 'payInRequests_highlightedId'
 const FILTER_KEY = 'payInRequests_filter'
@@ -55,13 +57,10 @@ function formatAge(createdDate?: string | null): string {
   return `${hours}h ${mins}min`
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d: string | null | undefined, timezone: string) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
+    return formatDateTimeTz(d, timezone)
   } catch { return d }
 }
 
@@ -616,6 +615,7 @@ function SlipQuickViewModal({
 }) {
   const { t } = useLang()
   const m = t.payInRequest
+  const { fmtDateTime } = useFormatDate()
   const [slips, setSlips] = useState<SlipQuickItem[]>([])
   const [loading, setLoading] = useState(true)
   const [idx, setIdx] = useState(0)
@@ -708,7 +708,7 @@ function SlipQuickViewModal({
       <div className="flex-none flex items-center justify-between px-5 py-3" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3">
           <span className="text-white text-sm font-semibold">{m.slipViewerTitle} ({slips.length === 0 ? '—' : `${idx + 1} / ${slips.length}`})</span>
-          {slip?.uploadedAt && <span className="text-white/60 text-xs">{new Date(slip.uploadedAt).toLocaleString('th-TH')}</span>}
+          {slip?.uploadedAt && <span className="text-white/60 text-xs">{fmtDateTime(slip.uploadedAt)}</span>}
         </div>
         <div className="flex items-center gap-3">
           {isPending && slips.length > 0 && (
@@ -979,6 +979,7 @@ export default function PayInRequestsPage() {
   const { t } = useLang()
   const m = t.payInRequest
   const router = useRouter()
+  const { timezone } = useFormatDate()
 
   const [search, setSearch] = useState<string>(() =>
     typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')?.search ?? '') : ''
@@ -1299,7 +1300,7 @@ export default function PayInRequestsPage() {
                         className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group align-top"
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/pay-in-requests/${item.id}`) }}
                       >
-                        <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate)}</span>
+                        <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate, timezone)}</span>
                         {item.refId1 && (
                           <p className="text-xs text-gray-400 mt-0.5">{item.refId1}</p>
                         )}
@@ -1512,7 +1513,7 @@ export default function PayInRequestsPage() {
             'Payer Name', 'Status', 'Status Reason', 'Payment Tx Id', 'Ref1', 'Ref2', 'Ref3',
           ]}
           mapRow={(item): CsvCell[] => [
-            formatDateTime(item.createdDate),
+            formatDateTime(item.createdDate, timezone),
             item.merchantCode ?? '',
             item.merchantName ?? '',
             item.generatedAmount ?? '',

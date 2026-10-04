@@ -9,20 +9,18 @@ import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, RefreshCw, ExternalLink, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDateTime as fmtDateTimeTz } from '@/lib/datetime'
 
 function formatAmount(n?: number | null): string {
   if (n == null) return '—'
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatDateTime(d?: string | null) {
+function formatDateTime(d?: string | null, timezone?: string) {
   if (!d) return '—'
-  try {
-    return new Date(d).toLocaleString('th-TH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
-  } catch { return d }
+  try { return fmtDateTimeTz(d, timezone!) }
+  catch { return d }
 }
 
 function DailyUsageBar({ current, limit }: { current: number; limit: number }) {
@@ -251,6 +249,7 @@ function PointModal({
 export default function MerchantWalletPage() {
   const { t } = useLang()
   const wt = t.merchant.wallet
+  const { timezone } = useFormatDate()
   const params = useParams()
   const router = useRouter()
   const merchantId = params.id as string
@@ -528,7 +527,7 @@ export default function MerchantWalletPage() {
                       )}
                     >
                       <td className="px-6 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">
-                        {formatDateTime(tx.createdDate)}
+                        {formatDateTime(tx.createdDate, timezone)}
                       </td>
                       <td className="px-6 py-3 border-b border-gray-100 max-w-[220px]">
                         <TagsCell tags={tx.tags} />

@@ -8,6 +8,8 @@ import { summaryApi } from '@/lib/api/summary.api'
 import type { PayerSummaryResponse } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useLang } from '@/context/LanguageContext'
+import { useFormatDate } from '@/hooks/useFormatDate'
+import { formatDate as formatDateTz } from '@/lib/datetime'
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100]
 const HIGHLIGHTED_KEY = 'payerSummary_highlightedKey'
@@ -34,9 +36,9 @@ function fmt(n?: number | null) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function fmtDate(d?: string | null) {
+function fmtDate(d?: string | null, timezone?: string) {
   if (!d) return '-'
-  try { return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) } catch { return '-' }
+  try { return formatDateTz(d, timezone ?? 'Asia/Bangkok') } catch { return '-' }
 }
 
 type QuickPreset = '1D' | '7D' | '30D' | 'month'
@@ -63,6 +65,7 @@ function activePreset(tr: TimeRangeValue): QuickPreset | null {
 export default function PayerSummaryPage() {
   const { t } = useLang()
   const m = t.payerSummary
+  const { timezone } = useFormatDate()
   const [data, setData] = useState<PayerSummaryResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'relative', value: '30d' })
@@ -106,8 +109,8 @@ export default function PayerSummaryPage() {
       merchant: x.merchantCode ?? '-',
       txCount: x.transactionCount ?? 0,
       totalAmount: x.totalAmount ?? 0,
-      firstSeen: fmtDate(x.firstSeenDate),
-      lastSeen: fmtDate(x.lastSeenDate),
+      firstSeen: fmtDate(x.firstSeenDate, timezone),
+      lastSeen: fmtDate(x.lastSeenDate, timezone),
     }))
     if (merchantFilter !== '__all__') rows = rows.filter(r => r.merchant === merchantFilter)
     if (appliedSearch.trim()) {
@@ -115,7 +118,7 @@ export default function PayerSummaryPage() {
       rows = rows.filter(r => r.payerName.toLowerCase().includes(q))
     }
     return rows
-  }, [data, merchantFilter, appliedSearch])
+  }, [data, merchantFilter, appliedSearch, timezone])
 
   useEffect(() => { setPage(1) }, [tableRows])
 

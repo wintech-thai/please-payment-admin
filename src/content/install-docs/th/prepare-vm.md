@@ -26,7 +26,7 @@ Disk ใช้เก็บข้อมูล PostgreSQL, Redis, container images
 1. เปิด **Compute Engine → VM instances → Create instance**
 2. เลือก region และ zone ที่ต้องการใช้งาน
 3. เลือก Ubuntu LTS เป็น operating system
-4. เลือก machine type ที่มีอย่างน้อย 8 vCPU และ RAM 16 GiB เช่น `e2-standard-8`
+4. เลือก series **E2 → Custom** แล้วตั้ง **8 vCPU / RAM 16 GiB** หรือเลือกขนาดที่มีทรัพยากรไม่น้อยกว่านี้ ดู [วิธีสร้าง Custom machine type](https://docs.cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type)
 5. ตั้ง boot disk เป็น SSD ขนาดอย่างน้อย 200 GiB
 6. สร้าง Static external IPv4 แล้วผูกกับ VM เพื่อให้ IP ไม่เปลี่ยนเมื่อ stop หรือ start เครื่อง
 7. เพิ่ม network tag เช่น `application-server` เพื่อใช้กับ firewall rules ในหัวข้อถัดไป
@@ -59,10 +59,10 @@ df -hT /data
 
 K3s ใน template กำหนด local storage path เป็น `/data`. หากใช้ disk แยก ให้ mount disk นั้นที่ `/data` ก่อนรัน script 00; หากยังไม่ได้ mount, `/data` จะใช้ filesystem ของ root disk. ตรวจ `lsblk -f`, `findmnt -T /data` และ `df -hT /data` ว่าแสดง filesystem และพื้นที่ของ disk ที่ตั้งใจใช้ อย่าตรวจเฉพาะ `/` เมื่อวางแผนใช้ disk แยก
 
-ผลที่คาดหวังคือ SSH ใช้งานได้, Ubuntu พร้อมใช้งาน, มีอย่างน้อย 8 vCPU, RAM 16 GiB และ filesystem ที่ `/data` มีพื้นที่ตามแผน
+ผลที่คาดหวังคือ SSH ใช้งานได้, Ubuntu พร้อมใช้งาน, มีอย่างน้อย 8 vCPU, RAM 16 GiB และ filesystem ที่ `/data` มีพื้นที่ตามแผน ภาพประกอบเป็นผลจาก VM ตัวอย่างที่มีทรัพยากรมากกว่าสเปกแนะนำ
 
 <figure class="install-evidence">
-<img src="/docs/images/install/step-2.5-vm-ready.png" alt="ผลตรวจ VM ทดสอบ: 8 vCPU, EBS 300 GiB และ /data ใช้ root filesystem" />
+<img src="/docs/images/install/step-2.5-vm-ready.png" alt="ตัวอย่างผลตรวจ CPU, memory และ disk ของ VM" />
 <figcaption>ภาพที่ 2.5 ผลตรวจความพร้อมของ VM</figcaption>
 </figure>
 

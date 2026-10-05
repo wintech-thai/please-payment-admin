@@ -333,6 +333,7 @@ function AuditLogContent() {
           totalHits={totalCount}
           interval={chartInterval}
           maxDocCount={chartMax}
+          minBarHeightPct={2}
           dict={{ totalLogs: tAL.totalLogs ?? 'Total Logs' }}
         />
       </div>

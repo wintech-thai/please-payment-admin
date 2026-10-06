@@ -77,6 +77,7 @@ export default function UpdateMerchantPage() {
   const [payOutMax, setPayOutMax] = useState<string>('0')
   const [payoutPartialCountLimitP2P, setPayoutPartialCountLimitP2P] = useState<string>('5')
   const [payoutNotMatchActionP2P, setPayoutNotMatchActionP2P] = useState<string>('')
+  const [payoutSelectionTypeP2P, setPayoutSelectionTypeP2P] = useState<string>('')
   const [payinDailyAmountLimit, setPayinDailyAmountLimit] = useState<string>('0')
   const [payinDailyCountLimit, setPayinDailyCountLimit] = useState<string>('0')
   const [discardCent, setDiscardCent] = useState(false)
@@ -146,6 +147,7 @@ export default function UpdateMerchantPage() {
         setPayOutMax(merch.payoutMaxAmount != null ? String(merch.payoutMaxAmount) : '0')
         setPayoutPartialCountLimitP2P(merch.payoutPartialCountLimitP2P != null ? String(merch.payoutPartialCountLimitP2P) : '5')
         setPayoutNotMatchActionP2P(merch.payoutNotMatchActionP2P ?? '')
+        setPayoutSelectionTypeP2P(merch.payoutSelectionTypeP2P ?? '')
         setPayinDailyAmountLimit(merch.payinDailyTxAmountLimit != null ? String(merch.payinDailyTxAmountLimit) : '0')
         setPayinDailyCountLimit(merch.payinDailyTxCountLimit != null ? String(merch.payinDailyTxCountLimit) : '0')
         setDiscardCent(merch.discardCent ?? false)
@@ -207,6 +209,7 @@ export default function UpdateMerchantPage() {
         PayoutMaxAmount: payOutMax,
         PayoutPartialCountLimitP2P: parseInt(payoutPartialCountLimitP2P || '0', 10),
         PayoutNotMatchActionP2P: payoutNotMatchActionP2P || undefined,
+        PayoutSelectionTypeP2P: payoutSelectionTypeP2P || undefined,
         PayinDailyTxAmountLimit: payinDailyAmountLimit,
         PayinDailyTxCountLimit: payinDailyCountLimit,
         DiscardCent: discardCent,
@@ -463,8 +466,11 @@ export default function UpdateMerchantPage() {
             <div className="border-t border-gray-100 mt-5 pt-5">
               <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-4">{m.sectionTransactionLimits}</p>
 
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-gray-500 mb-3">{m.fieldPayIn}</p>
+              <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+                <p className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 uppercase tracking-wide mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  {m.fieldPayIn}
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label={m.fieldMinAmount} error={errors.payInMin}>
                     <input
@@ -509,8 +515,11 @@ export default function UpdateMerchantPage() {
                 </div>
               </div>
 
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-3">{m.fieldPayOut}</p>
+              <div className="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
+                <p className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 uppercase tracking-wide mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  {m.fieldPayOut}
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label={m.fieldMinAmount} error={errors.payOutMin}>
                     <input
@@ -553,6 +562,21 @@ export default function UpdateMerchantPage() {
                     </select>
                     <p className="text-xs text-gray-400 mt-1">{m.fieldPayoutNotMatchActionP2PHint}</p>
                   </FormField>
+                  <div className="col-span-2">
+                    <FormField label={m.fieldPayoutSelectionTypeP2P}>
+                      <select
+                        value={payoutSelectionTypeP2P}
+                        onChange={e => { setPayoutSelectionTypeP2P(e.target.value); markDirty() }}
+                        className={inputCls(false)}
+                      >
+                        <option value="">{m.payoutSelectionTypeNotSet}</option>
+                        <option value="AllowAll">{m.payoutSelectionTypeAllowAll}</option>
+                        <option value="AllowForSameMerchant">{m.payoutSelectionTypeAllowForSameMerchant}</option>
+                        <option value="NotAllow">{m.payoutSelectionTypeNotAllow}</option>
+                      </select>
+                      <p className="text-xs text-gray-400 mt-1">{m.fieldPayoutSelectionTypeP2PHint}</p>
+                    </FormField>
+                  </div>
                 </div>
               </div>
             </div>

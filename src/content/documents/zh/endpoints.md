@@ -73,7 +73,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
     "payInBankAccountNo": "xxx-xxxxx-x",
     "payInBankAccountName": "公司名称",
     "payInPromptPayId": null,
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -96,8 +97,105 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `websocketPath` | WebSocket 的路径（`/realtime/payment-tx`） |
 | `expireAt` | QR Code 的过期时间 |
 | `slipUploadUrl` | 回单上传页面的相对路径 —— 不含域名前缀，需自行拼接 `{{MERCHANT_URL}}`（详见下文说明）以生成完整 URL，再提供给客户打开回单上传页面，无需登录 |
+| `paymentStatusUrl` | 支付状态页面的相对路径 —— 与 `slipUploadUrl` 一样为相对路径，同样需拼接 `{{MERCHANT_URL}}`。该页面无需登录，并**沿用此笔 Payment Request 原本的 QR Code**（不会重新生成）。适合用于客户已取得 QR 但忘记扫描，或已扫描但想查看状态的情况 |
 
-> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 仅为相对路径，需自行拼接 `{{MERCHANT_URL}}` 域名。例如若 `slipUploadUrl` 为 `/payin-slip-upload/org123/xxx/yyy`，则完整 URL 应为 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 与 `paymentStatusUrl` 仅为相对路径，需自行拼接 `{{MERCHANT_URL}}` 域名。例如若 `slipUploadUrl` 为 `/payin-slip-upload/org123/xxx/yyy`，则完整 URL 应为 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+
+### 支付状态页面（Payment Status Page）
+
+`paymentStatusUrl` 指向一个公开页面（无需登录），显示：
+
+- Payment Request 的当前状态（Pending / Approved / Paid）
+- 原始 QR Code（若状态仍为 Pending）—— 若状态已不是 Pending，QR 会以打叉的方式显示，并附带警示文字提醒不要扫描
+- 金额、目标银行账户名称/账号，或 PromptPay ID
+- `refId1`、`refId2`、`refId3`、付款人姓名（Payer Name）
+- 商户信息
+- 一个链接到回单上传页面的按钮（在新分页打开）
+
+该页面**可在浏览器中刷新以查看最新状态**（未使用 WebSocket 实时更新）—— 适合取代每次客户重新索取 QR 时都创建新 Payment Request 的做法。创建时取得的同一个 `paymentStatusUrl` 可在 token 过期（24 小时）前重复使用。
+
+<div style="display:flex;justify-content:center;margin:1.5rem 0">
+<div style="width:100%;max-width:360px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:var(--font-prompt),-apple-system,'Segoe UI',Roboto,sans-serif;background:#fff">
+  <!-- header -->
+  <div style="background:linear-gradient(135deg,#0d7a6e,#14b8a6);padding:18px 20px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="color:#fff;font-weight:700;font-size:15px">支付状态</div>
+      <div style="color:rgba(255,255,255,0.75);font-size:12px">Payment Status</div>
+    </div>
+    <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M21 2v6h-6M3 22v-6h6M3.51 9a9 9 0 0114.85-3.36L21 8M3 16l2.64 2.36A9 9 0 0020.49 15"/></svg>
+    </div>
+  </div>
+  <!-- body -->
+  <div style="padding:24px 20px;background:#fff;text-align:center">
+    <span style="display:inline-block;background:#d1fae5;color:#059669;font-size:12px;font-weight:700;padding:5px 14px;border-radius:999px;margin-bottom:14px">已支付</span>
+    <div style="font-size:30px;font-weight:800;color:#1a1a1a;line-height:1.1">111.00</div>
+    <div style="font-size:11px;color:#999;margin-bottom:18px">THB</div>
+    <!-- QR with do-not-scan overlay -->
+    <div style="position:relative;width:180px;height:180px;margin:0 auto 18px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+      <svg width="180" height="180" viewBox="0 0 21 21" style="opacity:0.35">
+        <rect width="21" height="21" fill="#ffffff"/>
+        <rect x="0" y="0" width="7" height="7" fill="#1a1a1a"/><rect x="1" y="1" width="5" height="5" fill="#ffffff"/><rect x="2" y="2" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="14" y="0" width="7" height="7" fill="#1a1a1a"/><rect x="15" y="1" width="5" height="5" fill="#ffffff"/><rect x="16" y="2" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="0" y="14" width="7" height="7" fill="#1a1a1a"/><rect x="1" y="15" width="5" height="5" fill="#ffffff"/><rect x="2" y="16" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="9" y="1" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="2" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="4" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="5" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="6" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="9" y="8" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="12" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="9" y="14" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="15" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="17" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="18" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="19" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="14" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="16" y="8" width="1" height="1" fill="#1a1a1a"/><rect x="18" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="15" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="17" y="12" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="19" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="14" y="13" width="1" height="1" fill="#1a1a1a"/><rect x="16" y="14" width="1" height="1" fill="#1a1a1a"/><rect x="18" y="15" width="1" height="1" fill="#1a1a1a"/><rect x="15" y="16" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="17" y="17" width="1" height="1" fill="#1a1a1a"/><rect x="19" y="18" width="1" height="1" fill="#1a1a1a"/><rect x="14" y="19" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="2" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="4" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="6" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="3" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="5" y="12" width="1" height="1" fill="#1a1a1a"/><rect x="1" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="6" y="12" width="1" height="1" fill="#1a1a1a"/>
+      </svg>
+      <div style="position:absolute;inset:0;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+        <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>
+        <div style="color:#dc2626;font-weight:700;font-size:11px;text-align:center;padding:0 10px">请勿扫描 —— 此请求已不处于待处理状态</div>
+      </div>
+    </div>
+    <!-- bank info -->
+    <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;margin-bottom:14px;text-align:left;font-size:13px">
+      <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#222">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+        李四
+      </div>
+      <div style="color:#888;font-size:12px;margin:2px 0 6px 22px">KTB · 098-0-01234-5</div>
+      <div style="display:flex;align-items:center;gap:8px;color:#555">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        PromptPay: 081-234-5678
+      </div>
+    </div>
+    <!-- ref / payer / merchant -->
+    <div style="text-align:left;font-size:12px;color:#555;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <span style="color:#999">付款人:</span> <strong style="color:#333">张三</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">参考编号 1:</span> <strong style="color:#333">ORDER-2026-001</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">参考编号 2:</span> <strong style="color:#333">222</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">参考编号 3:</span> <strong style="color:#333">333</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+        <span style="color:#999">商户:</span> <strong style="color:#333">示例商户</strong>
+      </div>
+    </div>
+    <!-- button -->
+    <button disabled style="width:100%;padding:12px;background:linear-gradient(135deg,#0d7a6e,#14b8a6);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:not-allowed">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4-4 4M12 4v12"/></svg>
+      上传回单
+    </button>
+  </div>
+</div>
+</div>
+
+> 以上示例展示的是状态**已不是 Pending**（已支付）的情况，因此 QR 呈淡化显示并叠加打叉图标与"请勿扫描"提示 —— 若状态仍为 **Pending**，则会正常展示 QR，不带遮罩，可正常扫描。
 
 ### QR 与账户信息的展示方式
 
@@ -116,13 +214,14 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 
 当客户打开 Slip Upload URL 时，会看到该 Payment Request 对应的回单上传页面，具有以下功能：
 
+- **Payment Request 确认信息** —— 显示商户名称、金额、目标账户、付款人姓名，方便客户确认上传的是正确的请求
 - **上传回单图片** —— 从手机相机或相册中选择图片
 - **回单参考号** —— 输入回单参考号（字母数字）的前 4 位和后 4 位，用于匹配及重复检测
 - **备注** —— 可选的附加说明字段
 - **重复回单检测** —— 若系统中已存在相同参考号的回单，会自动发出警告
 
 <div style="display:flex;justify-content:center;margin:1.5rem 0">
-<div style="width:100%;max-width:520px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:sans-serif;background:#fff">
+<div style="width:100%;max-width:520px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:var(--font-prompt),-apple-system,'Segoe UI',Roboto,sans-serif;background:#fff">
   <!-- header -->
   <div style="background:linear-gradient(135deg,#0d7a6e,#14b8a6);padding:18px 20px;display:flex;align-items:center;gap:12px">
     <div style="width:38px;height:38px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center">
@@ -135,6 +234,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
   </div>
   <!-- body -->
   <div style="padding:20px;background:#f8f9fa">
+    <!-- payment info card -->
+    <div style="background:#eef2f1;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">商户</span><span style="font-weight:600;color:#333">示例商户</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">金额</span><span style="font-weight:700;color:#0d7a6e">500.00 THB</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">转入账户</span><span style="font-weight:600;color:#333">Kasikorn 012-3-45678-9</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:#888">付款人</span><span style="font-weight:600;color:#333">张三</span></div>
+    </div>
     <p style="text-align:center;color:#555;font-size:13px;margin:0 0 14px">Select a payment slip image to upload</p>
     <!-- drop zone -->
     <div style="border:2px dashed #cdd5e0;border-radius:12px;padding:36px 20px;text-align:center;background:#fff;margin-bottom:16px">
@@ -240,7 +346,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
     "payInBankAccountNo": "012-3-45678-9",
     "payInBankAccountName": "收款方账户名称",
     "payInPromptPayId": "0812345678",
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -254,10 +361,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 | `payInBankAccountName` | 商户账户 | 收款方账户（来自匹配的 Pay-Out Request） |
 | 转账方式 | 扫描 QR Code | 直接转账至 response 中指定的账户（需自行填写账户信息） |
 | `slipUploadUrl` | ✅ | ✅（非常重要 —— 客户必须上传回单作为凭证） |
+| `paymentStatusUrl` | ✅ | ✅（也可用于查看状态 + 链接到回单上传页面） |
 
 > **重要：** 对于 P2P —— `isQrAvailable` 通常为 `false`，因为目标账户可能未绑定 PromptPay。此时**必须展示账户信息**（`payInBankCode`、`payInBankAccountNo`、`payInBankAccountName`、`payInPromptPayId`），以便客户自行填写转账，同时展示 `slipUploadUrl` 以便上传转账凭证。
 
-> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 与普通 Pay-In 一样为相对路径，需自行拼接 `{{MERCHANT_URL}}`，例如 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`（完整说明参见上文 [Response Fields](#response-fields)）
+> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 与 `paymentStatusUrl` 与普通 Pay-In 一样为相对路径，需自行拼接 `{{MERCHANT_URL}}`，例如 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`（完整说明参见上文 [Response Fields](#response-fields)）
 
 > **建议：** 将 `slipUploadUrl` 生成为 **QR Code**，与目标账户信息一并展示 —— 客户转账后扫描 QR 即可直接打开回单上传页面，无需手动输入 URL（示例参见上方回单上传页面）
 

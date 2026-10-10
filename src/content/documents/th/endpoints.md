@@ -73,7 +73,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
     "payInBankAccountNo": "xxx-xxxxx-x",
     "payInBankAccountName": "ชื่อบริษัท",
     "payInPromptPayId": null,
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -96,8 +97,105 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `websocketPath` | path สำหรับ WebSocket (`/realtime/payment-tx`) |
 | `expireAt` | QR Code หมดอายุเมื่อไหร่ |
 | `slipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ `{{MERCHANT_URL}}` (ดูคำอธิบายด้านล่าง) เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
+| `paymentStatusUrl` | Relative path สำหรับหน้าแสดงสถานะการชำระเงิน — relative path เหมือน `slipUploadUrl` ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เช่นกัน หน้านี้ไม่ต้อง login และ**ใช้ QR Code เดิม**ของ Payment Request นี้ (ไม่ generate QR ใหม่) เหมาะสำหรับส่งให้ลูกค้าที่ขอ QR ไปแล้วแต่ลืม scan หรือ scan ไปแล้วแต่อยากเช็คสถานะ |
 
-> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` เป็น relative path เท่านั้น ต้องนำไปต่อกับโดเมน `{{MERCHANT_URL}}` เอง เช่น หาก `slipUploadUrl` คือ `/payin-slip-upload/org123/xxx/yyy` ก็ให้สร้าง URL เต็มเป็น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` และ `paymentStatusUrl` เป็น relative path เท่านั้น ต้องนำไปต่อกับโดเมน `{{MERCHANT_URL}}` เอง เช่น หาก `slipUploadUrl` คือ `/payin-slip-upload/org123/xxx/yyy` ก็ให้สร้าง URL เต็มเป็น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+
+### หน้าแสดงสถานะการชำระเงิน (Payment Status Page)
+
+`paymentStatusUrl` พาไปยังหน้า page สาธารณะ (ไม่ต้อง login) ที่แสดง:
+
+- สถานะปัจจุบันของ Payment Request (Pending / Approved / Paid)
+- QR Code เดิม (ถ้าสถานะยังเป็น Pending) — ถ้าสถานะไม่ใช่ Pending แล้ว จะแสดง QR แบบมีกากบาททับพร้อมข้อความเตือนว่าห้ามสแกน
+- จำนวนเงิน, ชื่อบัญชี/เลขบัญชีธนาคารปลายทาง หรือ PromptPay ID
+- `refId1`, `refId2`, `refId3`, ชื่อผู้โอน (Payer Name)
+- ข้อมูล Merchant
+- ปุ่มลิงก์ไปหน้าอัปโหลดสลิป (เปิด tab ใหม่)
+
+หน้านี้ **refresh browser ได้เพื่อดูสถานะล่าสุด** (ไม่ได้ทำ real-time ผ่าน WebSocket) เหมาะสำหรับใช้แทนการสร้าง Payment Request ใหม่ทุกครั้งที่ลูกค้าขอ QR ซ้ำ — ใช้ `paymentStatusUrl` เดิมที่ได้จาก response ตอนสร้าง Payment Request ครั้งแรกซ้ำได้เรื่อยๆ จนกว่า token จะหมดอายุ (24 ชั่วโมง)
+
+<div style="display:flex;justify-content:center;margin:1.5rem 0">
+<div style="width:100%;max-width:360px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:var(--font-prompt),-apple-system,'Segoe UI',Roboto,sans-serif;background:#fff">
+  <!-- header -->
+  <div style="background:linear-gradient(135deg,#0d7a6e,#14b8a6);padding:18px 20px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="color:#fff;font-weight:700;font-size:15px">สถานะการชำระเงิน</div>
+      <div style="color:rgba(255,255,255,0.75);font-size:12px">Payment Status</div>
+    </div>
+    <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M21 2v6h-6M3 22v-6h6M3.51 9a9 9 0 0114.85-3.36L21 8M3 16l2.64 2.36A9 9 0 0020.49 15"/></svg>
+    </div>
+  </div>
+  <!-- body -->
+  <div style="padding:24px 20px;background:#fff;text-align:center">
+    <span style="display:inline-block;background:#d1fae5;color:#059669;font-size:12px;font-weight:700;padding:5px 14px;border-radius:999px;margin-bottom:14px">ชำระเงินแล้ว</span>
+    <div style="font-size:30px;font-weight:800;color:#1a1a1a;line-height:1.1">111.00</div>
+    <div style="font-size:11px;color:#999;margin-bottom:18px">THB</div>
+    <!-- QR with do-not-scan overlay -->
+    <div style="position:relative;width:180px;height:180px;margin:0 auto 18px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+      <svg width="180" height="180" viewBox="0 0 21 21" style="opacity:0.35">
+        <rect width="21" height="21" fill="#ffffff"/>
+        <rect x="0" y="0" width="7" height="7" fill="#1a1a1a"/><rect x="1" y="1" width="5" height="5" fill="#ffffff"/><rect x="2" y="2" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="14" y="0" width="7" height="7" fill="#1a1a1a"/><rect x="15" y="1" width="5" height="5" fill="#ffffff"/><rect x="16" y="2" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="0" y="14" width="7" height="7" fill="#1a1a1a"/><rect x="1" y="15" width="5" height="5" fill="#ffffff"/><rect x="2" y="16" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="9" y="1" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="2" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="4" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="5" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="6" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="9" y="8" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="12" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="9" y="14" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="15" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="17" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="18" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="19" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="14" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="16" y="8" width="1" height="1" fill="#1a1a1a"/><rect x="18" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="15" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="17" y="12" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="19" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="14" y="13" width="1" height="1" fill="#1a1a1a"/><rect x="16" y="14" width="1" height="1" fill="#1a1a1a"/><rect x="18" y="15" width="1" height="1" fill="#1a1a1a"/><rect x="15" y="16" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="17" y="17" width="1" height="1" fill="#1a1a1a"/><rect x="19" y="18" width="1" height="1" fill="#1a1a1a"/><rect x="14" y="19" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="2" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="4" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="6" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="3" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="5" y="12" width="1" height="1" fill="#1a1a1a"/><rect x="1" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="6" y="12" width="1" height="1" fill="#1a1a1a"/>
+      </svg>
+      <div style="position:absolute;inset:0;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+        <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>
+        <div style="color:#dc2626;font-weight:700;font-size:11px;text-align:center;padding:0 10px">ห้ามสแกน — รายการนี้ไม่ได้อยู่ในสถานะรอดำเนินการแล้ว</div>
+      </div>
+    </div>
+    <!-- bank info -->
+    <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;margin-bottom:14px;text-align:left;font-size:13px">
+      <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#222">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+        สมหญิง มีสุข
+      </div>
+      <div style="color:#888;font-size:12px;margin:2px 0 6px 22px">KTB · 098-0-01234-5</div>
+      <div style="display:flex;align-items:center;gap:8px;color:#555">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        PromptPay: 081-234-5678
+      </div>
+    </div>
+    <!-- ref / payer / merchant -->
+    <div style="text-align:left;font-size:12px;color:#555;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <span style="color:#999">ผู้โอน:</span> <strong style="color:#333">สมชาย ใจดี</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">เลขอ้างอิง 1:</span> <strong style="color:#333">ORDER-2026-001</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">เลขอ้างอิง 2:</span> <strong style="color:#333">222</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">เลขอ้างอิง 3:</span> <strong style="color:#333">333</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+        <span style="color:#999">ร้านค้า:</span> <strong style="color:#333">ร้านค้าตัวอย่าง</strong>
+      </div>
+    </div>
+    <!-- button -->
+    <button disabled style="width:100%;padding:12px;background:linear-gradient(135deg,#0d7a6e,#14b8a6);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:not-allowed">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4-4 4M12 4v12"/></svg>
+      อัปโหลดสลิป
+    </button>
+  </div>
+</div>
+</div>
+
+> ตัวอย่างข้างบนคือกรณีสถานะ **ไม่ใช่ Pending** แล้ว (ชำระเงินแล้ว) จึงเห็น QR ถูกจางลงพร้อมกากบาททับและข้อความ "ห้ามสแกน" — ถ้าสถานะยังเป็น **Pending** จะแสดง QR ปกติไม่มีกากบาท ให้สแกนได้ตามปกติ
 
 ### การแสดงผล QR และข้อมูลบัญชี
 
@@ -116,13 +214,14 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 
 เมื่อลูกค้าเปิด Slip Upload URL ลูกค้าจะเจอหน้าอัปโหลดสลิปสำหรับ Payment Request นั้นๆ ซึ่งมีฟีเจอร์ดังนี้:
 
+- **ข้อมูลยืนยัน Payment Request** — แสดงชื่อ Merchant, จำนวนเงิน, บัญชีปลายทาง, ชื่อผู้โอน ให้ลูกค้าเช็คก่อนอัปโหลดว่า upload ไปให้ request ที่ถูกต้อง
 - **อัปโหลดรูปสลิป** — เลือกรูปจากกล้องหรือ Gallery ของมือถือ
 - **เลขอ้างอิงสลิป** — กรอก 4 หลักแรกและ 4 หลักสุดท้ายของเลขอ้างอิงสลิป (alphanumeric) เพื่อ matching และตรวจจับสลิปซ้ำ
 - **หมายเหตุ** — ช่องเสริมสำหรับข้อความเพิ่มเติม
 - **ตรวจสอบสลิปซ้ำ** — ระบบแจ้งเตือนอัตโนมัติถ้าพบสลิปที่มีเลขอ้างอิงเดียวกันในระบบแล้ว
 
 <div style="display:flex;justify-content:center;margin:1.5rem 0">
-<div style="width:100%;max-width:520px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:sans-serif;background:#fff">
+<div style="width:100%;max-width:520px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:var(--font-prompt),-apple-system,'Segoe UI',Roboto,sans-serif;background:#fff">
   <!-- header -->
   <div style="background:linear-gradient(135deg,#0d7a6e,#14b8a6);padding:18px 20px;display:flex;align-items:center;gap:12px">
     <div style="width:38px;height:38px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center">
@@ -135,6 +234,13 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
   </div>
   <!-- body -->
   <div style="padding:20px;background:#f8f9fa">
+    <!-- payment info card -->
+    <div style="background:#eef2f1;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">ร้านค้า</span><span style="font-weight:600;color:#333">ร้านค้าตัวอย่าง</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">จำนวนเงิน</span><span style="font-weight:700;color:#0d7a6e">500.00 THB</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">โอนเข้าบัญชี</span><span style="font-weight:600;color:#333">กสิกรไทย 012-3-45678-9</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:#888">ผู้โอน</span><span style="font-weight:600;color:#333">สมชาย ใจดี</span></div>
+    </div>
     <p style="text-align:center;color:#555;font-size:13px;margin:0 0 14px">Select a payment slip image to upload</p>
     <!-- drop zone -->
     <div style="border:2px dashed #cdd5e0;border-radius:12px;padding:36px 20px;text-align:center;background:#fff;margin-bottom:16px">
@@ -240,7 +346,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
     "payInBankAccountNo": "012-3-45678-9",
     "payInBankAccountName": "ชื่อผู้รับปลายทาง",
     "payInPromptPayId": "0812345678",
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -254,10 +361,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 | `payInBankAccountName` | บัญชี Merchant | บัญชีของผู้รับปลายทาง (จาก Pay-Out Request ที่จับคู่) |
 | การโอนเงิน | สแกน QR Code | โอนตรงไปยังบัญชีที่ระบุใน response (กรอกข้อมูลบัญชีเอง) |
 | `slipUploadUrl` | ✅ | ✅ (สำคัญมาก — ลูกค้าต้องอัปโหลดสลิปเป็นหลักฐาน) |
+| `paymentStatusUrl` | ✅ | ✅ (ใช้ดูสถานะ + ลิงก์ไปอัปโหลดสลิปได้เหมือนกัน) |
 
 > **สำคัญ:** สำหรับ P2P — `isQrAvailable` มักเป็น `false` เพราะบัญชีปลายทางอาจไม่ผูกกับ PromptPay ในกรณีนี้ **ต้องแสดงข้อมูลบัญชี** (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) เพื่อให้ลูกค้ากรอกโอนเงินเองด้วยตัวเอง พร้อมทั้งแสดง `slipUploadUrl` เพื่อให้อัปโหลดสลิปหลักฐานการโอน
 
-> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` เป็น relative path เช่นเดียวกับ Pay-In ปกติ ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เอง เช่น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (ดูคำอธิบายเต็มในหัวข้อ [Response Fields](#response-fields) ด้านบน)
+> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` และ `paymentStatusUrl` เป็น relative path เช่นเดียวกับ Pay-In ปกติ ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เอง เช่น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (ดูคำอธิบายเต็มในหัวข้อ [Response Fields](#response-fields) ด้านบน)
 
 > **แนะนำ:** นำ `slipUploadUrl` ไปทำเป็น **QR Code** แสดงควบคู่กับข้อมูลบัญชีปลายทาง — ลูกค้าโอนเงินแล้วสแกน QR เปิดหน้าอัปโหลดสลิปได้เลยโดยไม่ต้องพิมพ์ URL เอง (ดูตัวอย่างหน้าอัปโหลดสลิปด้านบน)
 

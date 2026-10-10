@@ -114,6 +114,89 @@ Creates a Payment Request and returns a QR Code for the customer to scan and tra
 
 This page **can be refreshed in the browser to see the latest status** (it does not use real-time WebSocket updates) — useful instead of creating a new Payment Request every time a customer asks for the QR again. The same `paymentStatusUrl` from the original creation response can be reused repeatedly until the token expires (24 hours).
 
+<div style="display:flex;justify-content:center;margin:1.5rem 0">
+<div style="width:100%;max-width:360px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:var(--font-prompt),-apple-system,'Segoe UI',Roboto,sans-serif;background:#fff">
+  <!-- header -->
+  <div style="background:linear-gradient(135deg,#0d7a6e,#14b8a6);padding:18px 20px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="color:#fff;font-weight:700;font-size:15px">Payment Status</div>
+      <div style="color:rgba(255,255,255,0.75);font-size:12px">สถานะการชำระเงิน</div>
+    </div>
+    <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M21 2v6h-6M3 22v-6h6M3.51 9a9 9 0 0114.85-3.36L21 8M3 16l2.64 2.36A9 9 0 0020.49 15"/></svg>
+    </div>
+  </div>
+  <!-- body -->
+  <div style="padding:24px 20px;background:#fff;text-align:center">
+    <span style="display:inline-block;background:#d1fae5;color:#059669;font-size:12px;font-weight:700;padding:5px 14px;border-radius:999px;margin-bottom:14px">Paid</span>
+    <div style="font-size:30px;font-weight:800;color:#1a1a1a;line-height:1.1">111.00</div>
+    <div style="font-size:11px;color:#999;margin-bottom:18px">THB</div>
+    <!-- QR with do-not-scan overlay -->
+    <div style="position:relative;width:180px;height:180px;margin:0 auto 18px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+      <svg width="180" height="180" viewBox="0 0 21 21" style="opacity:0.35">
+        <rect width="21" height="21" fill="#ffffff"/>
+        <rect x="0" y="0" width="7" height="7" fill="#1a1a1a"/><rect x="1" y="1" width="5" height="5" fill="#ffffff"/><rect x="2" y="2" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="14" y="0" width="7" height="7" fill="#1a1a1a"/><rect x="15" y="1" width="5" height="5" fill="#ffffff"/><rect x="16" y="2" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="0" y="14" width="7" height="7" fill="#1a1a1a"/><rect x="1" y="15" width="5" height="5" fill="#ffffff"/><rect x="2" y="16" width="3" height="3" fill="#1a1a1a"/>
+        <rect x="9" y="1" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="2" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="4" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="5" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="6" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="9" y="8" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="12" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="9" y="14" width="1" height="1" fill="#1a1a1a"/><rect x="11" y="15" width="1" height="1" fill="#1a1a1a"/><rect x="9" y="17" width="1" height="1" fill="#1a1a1a"/><rect x="12" y="18" width="1" height="1" fill="#1a1a1a"/><rect x="10" y="19" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="14" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="16" y="8" width="1" height="1" fill="#1a1a1a"/><rect x="18" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="15" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="17" y="12" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="19" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="14" y="13" width="1" height="1" fill="#1a1a1a"/><rect x="16" y="14" width="1" height="1" fill="#1a1a1a"/><rect x="18" y="15" width="1" height="1" fill="#1a1a1a"/><rect x="15" y="16" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="17" y="17" width="1" height="1" fill="#1a1a1a"/><rect x="19" y="18" width="1" height="1" fill="#1a1a1a"/><rect x="14" y="19" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="2" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="4" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="6" y="9" width="1" height="1" fill="#1a1a1a"/><rect x="3" y="11" width="1" height="1" fill="#1a1a1a"/><rect x="5" y="12" width="1" height="1" fill="#1a1a1a"/><rect x="1" y="10" width="1" height="1" fill="#1a1a1a"/><rect x="6" y="12" width="1" height="1" fill="#1a1a1a"/>
+      </svg>
+      <div style="position:absolute;inset:0;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+        <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>
+        <div style="color:#dc2626;font-weight:700;font-size:11px;text-align:center;padding:0 10px">Do not scan — this request is no longer Pending</div>
+      </div>
+    </div>
+    <!-- bank info -->
+    <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;margin-bottom:14px;text-align:left;font-size:13px">
+      <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#222">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+        Jane Smith
+      </div>
+      <div style="color:#888;font-size:12px;margin:2px 0 6px 22px">KTB · 098-0-01234-5</div>
+      <div style="display:flex;align-items:center;gap:8px;color:#555">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        PromptPay: 081-234-5678
+      </div>
+    </div>
+    <!-- ref / payer / merchant -->
+    <div style="text-align:left;font-size:12px;color:#555;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <span style="color:#999">Payer:</span> <strong style="color:#333">John Doe</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">Ref 1:</span> <strong style="color:#333">ORDER-2026-001</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">Ref 2:</span> <strong style="color:#333">222</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/></svg>
+        <span style="color:#999">Ref 3:</span> <strong style="color:#333">333</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#999" stroke-width="2" style="flex-shrink:0"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+        <span style="color:#999">Merchant:</span> <strong style="color:#333">Example Shop</strong>
+      </div>
+    </div>
+    <!-- button -->
+    <button disabled style="width:100%;padding:12px;background:linear-gradient(135deg,#0d7a6e,#14b8a6);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:not-allowed">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4-4 4M12 4v12"/></svg>
+      Upload Slip
+    </button>
+  </div>
+</div>
+</div>
+
+> The example above shows a status that is **no longer Pending** (Paid), so the QR appears faded with a crossed-out overlay and a "do not scan" warning — if the status is still **Pending**, the QR is shown normally without the overlay, ready to scan.
+
 ### Displaying the QR and Account Info
 
 **Always check `isQrAvailable` before rendering:**
@@ -131,13 +214,14 @@ This page **can be refreshed in the browser to see the latest status** (it does 
 
 When the customer opens the Slip Upload URL, they'll see the slip upload page for that Payment Request, which offers:
 
+- **Payment Request confirmation info** — shows the merchant name, amount, destination account, and payer name so the customer can confirm they're uploading to the right request
 - **Upload slip image** — choose an image from the camera or the phone's gallery
 - **Slip reference number** — enter the first 4 and last 4 digits of the slip reference number (alphanumeric) for matching and duplicate detection
 - **Note** — an optional field for additional text
 - **Duplicate slip check** — the system automatically warns if a slip with the same reference number already exists
 
 <div style="display:flex;justify-content:center;margin:1.5rem 0">
-<div style="width:100%;max-width:520px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:sans-serif;background:#fff">
+<div style="width:100%;max-width:520px;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.35);font-family:var(--font-prompt),-apple-system,'Segoe UI',Roboto,sans-serif;background:#fff">
   <!-- header -->
   <div style="background:linear-gradient(135deg,#0d7a6e,#14b8a6);padding:18px 20px;display:flex;align-items:center;gap:12px">
     <div style="width:38px;height:38px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center">
@@ -150,6 +234,13 @@ When the customer opens the Slip Upload URL, they'll see the slip upload page fo
   </div>
   <!-- body -->
   <div style="padding:20px;background:#f8f9fa">
+    <!-- payment info card -->
+    <div style="background:#eef2f1;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">Merchant</span><span style="font-weight:600;color:#333">Example Shop</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">Amount</span><span style="font-weight:700;color:#0d7a6e">500.00 THB</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888">Transfer to</span><span style="font-weight:600;color:#333">Kasikorn 012-3-45678-9</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:#888">Payer</span><span style="font-weight:600;color:#333">John Doe</span></div>
+    </div>
     <p style="text-align:center;color:#555;font-size:13px;margin:0 0 14px">Select a payment slip image to upload</p>
     <!-- drop zone -->
     <div style="border:2px dashed #cdd5e0;border-radius:12px;padding:36px 20px;text-align:center;background:#fff;margin-bottom:16px">

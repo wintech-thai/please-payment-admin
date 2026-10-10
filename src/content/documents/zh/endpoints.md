@@ -73,7 +73,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
     "payInBankAccountNo": "xxx-xxxxx-x",
     "payInBankAccountName": "公司名称",
     "payInPromptPayId": null,
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -96,8 +97,22 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `websocketPath` | WebSocket 的路径（`/realtime/payment-tx`） |
 | `expireAt` | QR Code 的过期时间 |
 | `slipUploadUrl` | 回单上传页面的相对路径 —— 不含域名前缀，需自行拼接 `{{MERCHANT_URL}}`（详见下文说明）以生成完整 URL，再提供给客户打开回单上传页面，无需登录 |
+| `paymentStatusUrl` | 支付状态页面的相对路径 —— 与 `slipUploadUrl` 一样为相对路径，同样需拼接 `{{MERCHANT_URL}}`。该页面无需登录，并**沿用此笔 Payment Request 原本的 QR Code**（不会重新生成）。适合用于客户已取得 QR 但忘记扫描，或已扫描但想查看状态的情况 |
 
-> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 仅为相对路径，需自行拼接 `{{MERCHANT_URL}}` 域名。例如若 `slipUploadUrl` 为 `/payin-slip-upload/org123/xxx/yyy`，则完整 URL 应为 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 与 `paymentStatusUrl` 仅为相对路径，需自行拼接 `{{MERCHANT_URL}}` 域名。例如若 `slipUploadUrl` 为 `/payin-slip-upload/org123/xxx/yyy`，则完整 URL 应为 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+
+### 支付状态页面（Payment Status Page）
+
+`paymentStatusUrl` 指向一个公开页面（无需登录），显示：
+
+- Payment Request 的当前状态（Pending / Approved / Paid）
+- 原始 QR Code（若状态仍为 Pending）—— 若状态已不是 Pending，QR 会以打叉的方式显示，并附带警示文字提醒不要扫描
+- 金额、目标银行账户名称/账号，或 PromptPay ID
+- `refId1`、`refId2`、`refId3`、付款人姓名（Payer Name）
+- 商户信息
+- 一个链接到回单上传页面的按钮（在新分页打开）
+
+该页面**可在浏览器中刷新以查看最新状态**（未使用 WebSocket 实时更新）—— 适合取代每次客户重新索取 QR 时都创建新 Payment Request 的做法。创建时取得的同一个 `paymentStatusUrl` 可在 token 过期（24 小时）前重复使用。
 
 ### QR 与账户信息的展示方式
 
@@ -240,7 +255,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
     "payInBankAccountNo": "012-3-45678-9",
     "payInBankAccountName": "收款方账户名称",
     "payInPromptPayId": "0812345678",
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -254,10 +270,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 | `payInBankAccountName` | 商户账户 | 收款方账户（来自匹配的 Pay-Out Request） |
 | 转账方式 | 扫描 QR Code | 直接转账至 response 中指定的账户（需自行填写账户信息） |
 | `slipUploadUrl` | ✅ | ✅（非常重要 —— 客户必须上传回单作为凭证） |
+| `paymentStatusUrl` | ✅ | ✅（也可用于查看状态 + 链接到回单上传页面） |
 
 > **重要：** 对于 P2P —— `isQrAvailable` 通常为 `false`，因为目标账户可能未绑定 PromptPay。此时**必须展示账户信息**（`payInBankCode`、`payInBankAccountNo`、`payInBankAccountName`、`payInPromptPayId`），以便客户自行填写转账，同时展示 `slipUploadUrl` 以便上传转账凭证。
 
-> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 与普通 Pay-In 一样为相对路径，需自行拼接 `{{MERCHANT_URL}}`，例如 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`（完整说明参见上文 [Response Fields](#response-fields)）
+> **重要 —— 应拼接哪个域名：** `slipUploadUrl` 与 `paymentStatusUrl` 与普通 Pay-In 一样为相对路径，需自行拼接 `{{MERCHANT_URL}}`，例如 `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`（完整说明参见上文 [Response Fields](#response-fields)）
 
 > **建议：** 将 `slipUploadUrl` 生成为 **QR Code**，与目标账户信息一并展示 —— 客户转账后扫描 QR 即可直接打开回单上传页面，无需手动输入 URL（示例参见上方回单上传页面）
 

@@ -73,7 +73,8 @@ Creates a Payment Request and returns a QR Code for the customer to scan and tra
     "payInBankAccountNo": "xxx-xxxxx-x",
     "payInBankAccountName": "Company Name",
     "payInPromptPayId": null,
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -96,8 +97,22 @@ Creates a Payment Request and returns a QR Code for the customer to scan and tra
 | `websocketPath` | The WebSocket path (`/realtime/payment-tx`) |
 | `expireAt` | When the QR Code expires |
 | `slipUploadUrl` | Relative path to the slip upload page — has no domain prefix, must be concatenated with `{{MERCHANT_URL}}` (see explanation below) to form the full URL, then given to the customer to open the slip upload page without needing to log in |
+| `paymentStatusUrl` | Relative path to the payment status page — a relative path just like `slipUploadUrl`, also needs to be concatenated with `{{MERCHANT_URL}}`. This page requires no login and **reuses the original QR Code** of this payment request (never re-generated). Useful for a customer who already got a QR but forgot to scan it, or scanned it and wants to check the status |
 
-> **Important — which domain to concatenate:** `slipUploadUrl` is a relative path only. You must concatenate it with the `{{MERCHANT_URL}}` domain yourself. For example, if `slipUploadUrl` is `/payin-slip-upload/org123/xxx/yyy`, form the full URL as `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+> **Important — which domain to concatenate:** `slipUploadUrl` and `paymentStatusUrl` are relative paths only. You must concatenate them with the `{{MERCHANT_URL}}` domain yourself. For example, if `slipUploadUrl` is `/payin-slip-upload/org123/xxx/yyy`, form the full URL as `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+
+### Payment Status Page
+
+`paymentStatusUrl` leads to a public page (no login required) that shows:
+
+- The current status of the Payment Request (Pending / Approved / Paid)
+- The original QR Code (if still Pending) — if the status is no longer Pending, the QR is shown crossed out with a warning not to scan it
+- The amount, destination bank account name/number, or PromptPay ID
+- `refId1`, `refId2`, `refId3`, and the Payer Name
+- Merchant information
+- A button linking to the slip upload page (opens in a new tab)
+
+This page **can be refreshed in the browser to see the latest status** (it does not use real-time WebSocket updates) — useful instead of creating a new Payment Request every time a customer asks for the QR again. The same `paymentStatusUrl` from the original creation response can be reused repeatedly until the token expires (24 hours).
 
 ### Displaying the QR and Account Info
 
@@ -240,7 +255,8 @@ Creates a **Peer-to-Peer (P2P)** Pay-In Request — the system automatically mat
     "payInBankAccountNo": "012-3-45678-9",
     "payInBankAccountName": "Recipient Account Name",
     "payInPromptPayId": "0812345678",
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -254,10 +270,11 @@ Creates a **Peer-to-Peer (P2P)** Pay-In Request — the system automatically mat
 | `payInBankAccountName` | Merchant's account | The recipient's account (from the matched Pay-Out Request) |
 | Transfer method | Scan the QR Code | Transfer directly to the account specified in the response (enter account details manually) |
 | `slipUploadUrl` | ✅ | ✅ (very important — the customer must upload a slip as proof) |
+| `paymentStatusUrl` | ✅ | ✅ (also usable to check status + link to the slip upload page) |
 
 > **Important:** For P2P — `isQrAvailable` is usually `false` because the destination account may not be linked to PromptPay. In this case **you must display the account details** (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) so the customer can enter the transfer manually, and also show `slipUploadUrl` so they can upload proof of transfer.
 
-> **Important — which domain to concatenate:** `slipUploadUrl` is a relative path, same as standard Pay-In. You must concatenate it with `{{MERCHANT_URL}}` yourself, e.g. `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (see the full explanation in [Response Fields](#response-fields) above)
+> **Important — which domain to concatenate:** `slipUploadUrl` and `paymentStatusUrl` are relative paths, same as standard Pay-In. You must concatenate them with `{{MERCHANT_URL}}` yourself, e.g. `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (see the full explanation in [Response Fields](#response-fields) above)
 
 > **Recommended:** Turn `slipUploadUrl` into a **QR Code** shown alongside the destination account details — the customer transfers funds, then scans the QR to open the slip upload page directly without typing the URL (see the slip upload page example above)
 

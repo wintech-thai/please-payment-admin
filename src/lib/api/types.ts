@@ -550,6 +550,7 @@ export interface PaymentRequestResponse {
   websocketPath?: string
   sessionId?: string
   slipUploadUrl?: string | null
+  paymentStatusUrl?: string | null
 }
 
 // ─── Pay-In Requests ─────────────────────────────────────────────────────────
@@ -600,6 +601,7 @@ export interface PayInRequestDetail extends PayInRequestItem {
   direction?: string | null
   jobId?: string | null
   slipUploadUrl?: string | null
+  paymentStatusUrl?: string | null
   expireDate?: string | null
 }
 

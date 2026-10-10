@@ -202,6 +202,7 @@ body {
   .prose-docs blockquote { @apply border-l-4 border-primary-500 pl-4 italic text-zinc-400 my-4; }
   .prose-docs code:not(pre code) {
     @apply bg-zinc-800 text-primary-300 px-1.5 py-0.5 rounded text-sm font-mono;
+    white-space: nowrap;
   }
   .prose-docs pre {
     @apply bg-zinc-900 border border-zinc-700 rounded-xl p-4 mb-4 overflow-x-auto;

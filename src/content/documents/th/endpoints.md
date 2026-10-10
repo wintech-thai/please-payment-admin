@@ -73,7 +73,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
     "payInBankAccountNo": "xxx-xxxxx-x",
     "payInBankAccountName": "ชื่อบริษัท",
     "payInPromptPayId": null,
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -96,8 +97,22 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequest/{merch
 | `websocketPath` | path สำหรับ WebSocket (`/realtime/payment-tx`) |
 | `expireAt` | QR Code หมดอายุเมื่อไหร่ |
 | `slipUploadUrl` | Relative path สำหรับหน้าอัปโหลดสลิป — ไม่มี domain นำหน้า ต้องนำไปต่อกับ `{{MERCHANT_URL}}` (ดูคำอธิบายด้านล่าง) เพื่อสร้าง URL เต็ม แล้วส่งให้ลูกค้าเปิดหน้าอัปโหลดสลิปได้โดยไม่ต้อง login |
+| `paymentStatusUrl` | Relative path สำหรับหน้าแสดงสถานะการชำระเงิน — relative path เหมือน `slipUploadUrl` ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เช่นกัน หน้านี้ไม่ต้อง login และ**ใช้ QR Code เดิม**ของ Payment Request นี้ (ไม่ generate QR ใหม่) เหมาะสำหรับส่งให้ลูกค้าที่ขอ QR ไปแล้วแต่ลืม scan หรือ scan ไปแล้วแต่อยากเช็คสถานะ |
 
-> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` เป็น relative path เท่านั้น ต้องนำไปต่อกับโดเมน `{{MERCHANT_URL}}` เอง เช่น หาก `slipUploadUrl` คือ `/payin-slip-upload/org123/xxx/yyy` ก็ให้สร้าง URL เต็มเป็น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` และ `paymentStatusUrl` เป็น relative path เท่านั้น ต้องนำไปต่อกับโดเมน `{{MERCHANT_URL}}` เอง เช่น หาก `slipUploadUrl` คือ `/payin-slip-upload/org123/xxx/yyy` ก็ให้สร้าง URL เต็มเป็น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy`
+
+### หน้าแสดงสถานะการชำระเงิน (Payment Status Page)
+
+`paymentStatusUrl` พาไปยังหน้า page สาธารณะ (ไม่ต้อง login) ที่แสดง:
+
+- สถานะปัจจุบันของ Payment Request (Pending / Approved / Paid)
+- QR Code เดิม (ถ้าสถานะยังเป็น Pending) — ถ้าสถานะไม่ใช่ Pending แล้ว จะแสดง QR แบบมีกากบาททับพร้อมข้อความเตือนว่าห้ามสแกน
+- จำนวนเงิน, ชื่อบัญชี/เลขบัญชีธนาคารปลายทาง หรือ PromptPay ID
+- `refId1`, `refId2`, `refId3`, ชื่อผู้โอน (Payer Name)
+- ข้อมูล Merchant
+- ปุ่มลิงก์ไปหน้าอัปโหลดสลิป (เปิด tab ใหม่)
+
+หน้านี้ **refresh browser ได้เพื่อดูสถานะล่าสุด** (ไม่ได้ทำ real-time ผ่าน WebSocket) เหมาะสำหรับใช้แทนการสร้าง Payment Request ใหม่ทุกครั้งที่ลูกค้าขอ QR ซ้ำ — ใช้ `paymentStatusUrl` เดิมที่ได้จาก response ตอนสร้าง Payment Request ครั้งแรกซ้ำได้เรื่อยๆ จนกว่า token จะหมดอายุ (24 ชั่วโมง)
 
 ### การแสดงผล QR และข้อมูลบัญชี
 
@@ -240,7 +255,8 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
     "payInBankAccountNo": "012-3-45678-9",
     "payInBankAccountName": "ชื่อผู้รับปลายทาง",
     "payInPromptPayId": "0812345678",
-    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-..."
+    "slipUploadUrl": "/payin-slip-upload/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/a1b2c3d4-...",
+    "paymentStatusUrl": "/payin-status/org123/3fa85f64-5717-4562-b3fc-2c963f66afa6/e5f6a7b8-..."
   }
 }
 ```
@@ -254,10 +270,11 @@ POST {{API_URL}}/api/PaymentRequest/org/{orgId}/action/SubmitPayInRequestP2P/{me
 | `payInBankAccountName` | บัญชี Merchant | บัญชีของผู้รับปลายทาง (จาก Pay-Out Request ที่จับคู่) |
 | การโอนเงิน | สแกน QR Code | โอนตรงไปยังบัญชีที่ระบุใน response (กรอกข้อมูลบัญชีเอง) |
 | `slipUploadUrl` | ✅ | ✅ (สำคัญมาก — ลูกค้าต้องอัปโหลดสลิปเป็นหลักฐาน) |
+| `paymentStatusUrl` | ✅ | ✅ (ใช้ดูสถานะ + ลิงก์ไปอัปโหลดสลิปได้เหมือนกัน) |
 
 > **สำคัญ:** สำหรับ P2P — `isQrAvailable` มักเป็น `false` เพราะบัญชีปลายทางอาจไม่ผูกกับ PromptPay ในกรณีนี้ **ต้องแสดงข้อมูลบัญชี** (`payInBankCode`, `payInBankAccountNo`, `payInBankAccountName`, `payInPromptPayId`) เพื่อให้ลูกค้ากรอกโอนเงินเองด้วยตัวเอง พร้อมทั้งแสดง `slipUploadUrl` เพื่อให้อัปโหลดสลิปหลักฐานการโอน
 
-> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` เป็น relative path เช่นเดียวกับ Pay-In ปกติ ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เอง เช่น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (ดูคำอธิบายเต็มในหัวข้อ [Response Fields](#response-fields) ด้านบน)
+> **สำคัญ — ต้อง concat กับโดเมนไหน:** `slipUploadUrl` และ `paymentStatusUrl` เป็น relative path เช่นเดียวกับ Pay-In ปกติ ต้องนำไปต่อกับ `{{MERCHANT_URL}}` เอง เช่น `{{MERCHANT_URL}}/payin-slip-upload/org123/xxx/yyy` (ดูคำอธิบายเต็มในหัวข้อ [Response Fields](#response-fields) ด้านบน)
 
 > **แนะนำ:** นำ `slipUploadUrl` ไปทำเป็น **QR Code** แสดงควบคู่กับข้อมูลบัญชีปลายทาง — ลูกค้าโอนเงินแล้วสแกน QR เปิดหน้าอัปโหลดสลิปได้เลยโดยไม่ต้องพิมพ์ URL เอง (ดูตัวอย่างหน้าอัปโหลดสลิปด้านบน)
 

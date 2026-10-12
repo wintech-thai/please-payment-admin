@@ -18,6 +18,8 @@ function RegisterAgentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isLineApi = searchParams.get('type') === 'line-api'
+  const targetOrgId = searchParams.get('orgId') || 'global'
+  const targetMerchantName = searchParams.get('merchantName') || ''
 
   const [code, setCode] = useState('')
   const [description, setDescription] = useState('')
@@ -152,7 +154,7 @@ function RegisterAgentContent() {
             ApiKey: lineApiKey.trim(),
             AgentImageTag: agentImageTag.trim() || 'v0.0.1',
           },
-        })
+        }, targetOrgId)
         const data = res.data as any
         agentId = data?.agent?.agentId ?? data?.agentId
         toast.success(m.createLineApiSuccess)
@@ -300,6 +302,12 @@ function RegisterAgentContent() {
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2 pb-2">
+
+          {targetOrgId !== 'global' && targetMerchantName && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-800 font-medium">
+              {m.creatingForMerchant}: <span className="font-bold">{targetMerchantName}</span>
+            </div>
+          )}
 
           {/* Basic Info */}
           <div className="flex-none bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-4">

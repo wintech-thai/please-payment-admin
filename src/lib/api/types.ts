@@ -185,6 +185,7 @@ export interface MerchantItem {
   payoutPartialCountLimitP2P?: number | null
   payoutNotMatchActionP2P?: string | null
   payoutSelectionTypeP2P?: string | null
+  payInBankCustodyType?: string | null
 }
 
 export interface GetMerchantsPayload {
@@ -219,6 +220,7 @@ export interface AddMerchantPayload {
     PayinDailyTxAmountLimit?: number | string
     PayinDailyTxCountLimit?: number | string
     PayinExpireMinute?: number
+    PayInBankCustodyType?: string
   }
 }
 
@@ -1229,6 +1231,7 @@ export interface RejectTransferRequestPayload {
 
 export interface AgentItem {
   agentId: string
+  orgId?: string | null
   code?: string | null
   description?: string | null
   tags?: string | null

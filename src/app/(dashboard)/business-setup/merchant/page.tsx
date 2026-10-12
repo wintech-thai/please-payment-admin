@@ -28,6 +28,21 @@ function StatusBadge({ status }: { status?: string | null }) {
   )
 }
 
+function CustodyTypeBadge({ custodyType, m }: { custodyType?: string | null; m: any }) {
+  const isMerchantOwn = custodyType === 'MerchantOwn'
+  return (
+    <span
+      title={isMerchantOwn ? m.custodyTypeMerchantOwnHint : m.custodyTypePlatformOwnHint}
+      className={clsx(
+        'inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold ring-1 cursor-help flex-shrink-0',
+        isMerchantOwn ? 'bg-orange-50 text-orange-700 ring-orange-200' : 'bg-gray-100 text-gray-500 ring-gray-200'
+      )}
+    >
+      {isMerchantOwn ? 'M' : 'P'}
+    </span>
+  )
+}
+
 function ConfirmDialog({ title, desc, confirmLabel, onConfirm, onCancel }: {
   title: string; desc: string; confirmLabel: string
   onConfirm: () => void; onCancel: () => void
@@ -345,6 +360,7 @@ function MerchantContent() {
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <div className="flex items-center gap-1">
+                          <CustodyTypeBadge custodyType={merchant.payInBankCustodyType} m={m} />
                           <button
                             onClick={e => { e.stopPropagation(); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/bank-accounts`) }}
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"

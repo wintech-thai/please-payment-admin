@@ -679,12 +679,15 @@ function RiskPolicyStatusBadge({ status, m }: { status?: string | null; m: any }
   )
 }
 
-function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FormField({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
-        {label}
-      </label>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide">
+          {label}
+        </label>
+        {hint && <span className="text-[11px] text-gray-400 normal-case tracking-normal">{hint}</span>}
+      </div>
       {children}
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>

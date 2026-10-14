@@ -323,6 +323,7 @@ export interface BankAccountItem {
   accountType?: string | null       // "PromptPay" | "Native"
   accountCategory?: string | null   // "PayIn" | "PayOut"
   accountLevel?: string | null      // "Global" | "Selected"
+  custodyType?: string | null       // "MerchantOwn" | "PlatformOwn"
   payinMinAmount?: number | null
   payinMaxAmount?: number | null
   payoutMinAmount?: number | null
@@ -362,6 +363,7 @@ export interface GetBankAccountsPayload {
   AccountCategory?: string
   AccountType?: string
   AccountLevel?: string
+  CustodyType?: string
   page?: number
   limit?: number
 }
@@ -375,6 +377,7 @@ export interface AddBankAccountPayload {
   AccountType?: string
   AccountCategory?: string
   AccountLevel?: string
+  CustodyType?: string
   PayinMinAmount?: number
   PayinMaxAmount?: number
   PayoutMinAmount?: number

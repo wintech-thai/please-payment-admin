@@ -44,11 +44,15 @@ export default function MerchantLinkPage() {
   const [merchants, setMerchants] = useState<MerchantRow[]>([])
   const [search, setSearch] = useState('')
 
-  // Build merchant rows by merging GetMerchants with GetMerchantsForBankAccount
-  const buildMerchantRows = (allMerchants: MerchantItem[], linkedItems: BankAccountMerchantItem[]): MerchantRow[] => {
+  // Build merchant rows by merging GetMerchants with GetMerchantsForBankAccount —
+  // filtered to merchants whose own PayInBankCustodyType matches this bank account's CustodyType
+  const buildMerchantRows = (allMerchants: MerchantItem[], linkedItems: BankAccountMerchantItem[], custodyType: string): MerchantRow[] => {
     // API returns only the selected merchants (no isSelected field) — presence in list = selected
     const selectedSet = new Set(linkedItems.map(i => i.merchantId))
-    return allMerchants.map(mer => ({
+    const candidates = custodyType === 'MerchantOwn'
+      ? allMerchants.filter(mer => mer.payInBankCustodyType === 'MerchantOwn')
+      : allMerchants.filter(mer => !mer.payInBankCustodyType || mer.payInBankCustodyType === 'PlatformOwn')
+    return candidates.map(mer => ({
       merchantId: mer.id,
       merchantName: mer.name || mer.code || mer.id,
       merchantCode: mer.code,
@@ -96,7 +100,7 @@ export default function MerchantLinkPage() {
         linkedItems = Array.isArray(raw) ? raw : (raw?.merchants ?? raw?.Merchants ?? [])
       }
 
-      setMerchants(buildMerchantRows(allMerchants, linkedItems))
+      setMerchants(buildMerchantRows(allMerchants, linkedItems, account?.custodyType || 'PlatformOwn'))
     }).finally(() => setLoading(false))
   }, [id])
 
@@ -118,15 +122,22 @@ export default function MerchantLinkPage() {
     }
   }
 
+  const isMerchantOwn = bankAccount?.custodyType === 'MerchantOwn'
+
   const handleToggle = async (merchantId: string, currentSelected: boolean) => {
     const newState = !currentSelected
     // Optimistic update — flip immediately so UI responds at once
     setMerchants(prev => prev.map(r =>
-      r.merchantId === merchantId ? { ...r, isSelected: newState, toggling: true } : r
+      isMerchantOwn
+        ? { ...r, isSelected: r.merchantId === merchantId ? newState : false, toggling: r.merchantId === merchantId }
+        : (r.merchantId === merchantId ? { ...r, isSelected: newState, toggling: true } : r)
     ))
     try {
       if (currentSelected) {
         await bankAccountApi.unselectMerchant(id, merchantId)
+      } else if (isMerchantOwn) {
+        // MerchantOwn bank accounts can only be linked to one merchant — this un-links any previous one server-side
+        await bankAccountApi.selectSingleMerchant(id, merchantId)
       } else {
         await bankAccountApi.selectMerchant(id, merchantId)
       }
@@ -140,7 +151,7 @@ export default function MerchantLinkPage() {
       toast.error(err instanceof Error ? err.message : m.failedToToggleMerchant)
       return
     }
-    setMerchants(prev => prev.map(r => r.merchantId === merchantId ? { ...r, toggling: false } : r))
+    setMerchants(prev => prev.map(r => ({ ...r, toggling: false })))
   }
 
   const isGlobal = bankAccount?.accountLevel?.toLowerCase() === 'global'
@@ -231,6 +242,12 @@ export default function MerchantLinkPage() {
                 {merchants.length} {t.admin.all?.toLowerCase() || 'total'}
               </span>
             </div>
+
+            {isMerchantOwn && (
+              <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-700">
+                {m.merchantLinkSingleSelectHint}
+              </div>
+            )}
 
             {/* Search */}
             <div className="px-4 py-3 border-b border-gray-100">

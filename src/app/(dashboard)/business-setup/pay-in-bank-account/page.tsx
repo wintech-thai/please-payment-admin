@@ -11,6 +11,21 @@ import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Trash2, ChevronL
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 
+function CustodyTypeBadge({ custodyType, m }: { custodyType?: string | null; m: any }) {
+  const isMerchantOwn = custodyType === 'MerchantOwn'
+  return (
+    <span
+      title={isMerchantOwn ? m.custodyTypeMerchantOwn : m.custodyTypePlatformOwn}
+      className={clsx(
+        'inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold ring-1 cursor-help flex-shrink-0',
+        isMerchantOwn ? 'bg-orange-50 text-orange-700 ring-orange-200' : 'bg-gray-100 text-gray-500 ring-gray-200'
+      )}
+    >
+      {isMerchantOwn ? 'M' : 'P'}
+    </span>
+  )
+}
+
 function StatusBadge({ status }: { status?: string | null }) {
   const lower = status?.toLowerCase()
   const cfg =
@@ -435,14 +450,17 @@ function BankAccountContent() {
                         {account.accountName || '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 whitespace-nowrap">
-                        {account.merchantLinkCount != null ? (
-                          <button
-                            onClick={e => { e.stopPropagation(); sessionStorage.setItem('bankaccount_highlight', account.accountId); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/merchant-link`) }}
-                            className="inline-flex items-center justify-center min-w-[1.5rem] px-2 py-0.5 text-xs font-bold text-primary-700 bg-primary-50 ring-1 ring-primary-200 rounded-full hover:bg-primary-100 transition-colors cursor-pointer"
-                          >
-                            {account.merchantLinkCount}
-                          </button>
-                        ) : '—'}
+                        <div className="flex items-center gap-1.5">
+                          <CustodyTypeBadge custodyType={account.custodyType} m={m} />
+                          {account.merchantLinkCount != null ? (
+                            <button
+                              onClick={e => { e.stopPropagation(); sessionStorage.setItem('bankaccount_highlight', account.accountId); router.push(`/business-setup/pay-in-bank-account/${account.accountId}/merchant-link`) }}
+                              className="inline-flex items-center justify-center min-w-[1.5rem] px-2 py-0.5 text-xs font-bold text-primary-700 bg-primary-50 ring-1 ring-primary-200 rounded-full hover:bg-primary-100 transition-colors cursor-pointer"
+                            >
+                              {account.merchantLinkCount}
+                            </button>
+                          ) : '—'}
+                        </div>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm whitespace-nowrap">
                         {account.isNativeQrSupport ? (

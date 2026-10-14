@@ -69,6 +69,9 @@ export const bankAccountApi = {
   selectMerchant: (bankAccountId: string, merchantId: string) =>
     client.post(`${BASE}/SelectMerchantById/${bankAccountId}/${merchantId}`, {}),
 
+  selectSingleMerchant: (bankAccountId: string, merchantId: string) =>
+    client.post(`${BASE}/SelectSingleMerchantById/${bankAccountId}/${merchantId}`, {}),
+
   unselectMerchant: (bankAccountId: string, merchantId: string) =>
     client.post(`${BASE}/UnSelectMerchantById/${bankAccountId}/${merchantId}`, {}),
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
+import { merchantApi } from '@/lib/api/merchant.api'
 import type { BankAccountItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { ChevronLeft, X, Plus, Trash2 } from 'lucide-react'
@@ -18,6 +19,8 @@ function RegisterAgentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isLineApi = searchParams.get('type') === 'line-api'
+  const targetOrgId = searchParams.get('orgId') || 'global'
+  const targetMerchantName = searchParams.get('merchantName') || ''
 
   const [code, setCode] = useState('')
   const [description, setDescription] = useState('')
@@ -45,17 +48,37 @@ function RegisterAgentContent() {
   const markDirty = () => { if (!isDirty) setIsDirty(true) }
 
   useEffect(() => {
-    bankAccountApi.getPayInBankAccountsWithGlobalAll()
-      .then(res => {
-        const data = res.data as any
-        const raw: any[] = data?.bankAccounts ?? data ?? []
-        setAllBankAccounts(raw.map(item => ({
+    // บัญชีธนาคารที่เลือกได้ต้อง filter ตาม custody type: agent ของ merchant เห็นแต่บัญชีที่ผูกกับ merchant นั้น (MerchantOwn อยู่แล้ว), agent ระดับ global เห็นแต่บัญชี PlatformOwn
+    const isGlobalAgent = !targetOrgId || targetOrgId === 'global'
+    const load = async () => {
+      try {
+        let rawAccounts: any[] = []
+        if (isGlobalAgent) {
+          const bankRes = await bankAccountApi.getPayInBankAccountsWithGlobalAll()
+          const bankData = bankRes.data as any
+          const accounts: any[] = bankData?.bankAccounts ?? bankData ?? []
+          rawAccounts = accounts.filter((a: any) => (a.custodyType ?? a.CustodyType) !== 'MerchantOwn')
+        } else {
+          const merchantsRes = await merchantApi.getMerchants({ Limit: 1000 } as any)
+          const mData = merchantsRes.data as any
+          const mList: any[] = Array.isArray(mData) ? mData : (mData?.merchants ?? mData?.Merchants ?? [])
+          const merchantId = mList.find(item => (item.orgId ?? item.OrgId) === targetOrgId)?.id ?? mList.find(item => (item.orgId ?? item.OrgId) === targetOrgId)?.Id
+          if (merchantId) {
+            const bankRes = await bankAccountApi.getPayInBankAccountsOnlyForMerchant(merchantId)
+            const bankData = bankRes.data as any
+            rawAccounts = bankData?.bankAccounts ?? bankData ?? []
+          }
+        }
+        setAllBankAccounts(rawAccounts.map(item => ({
           ...item,
           accountId: item.id || item.bankAccountId || item.BankAccountId || item.accountId || item.AccountId || item.Id || '',
         })))
-      })
-      .catch(() => toast.error(m.loadBankAccountsFailed))
-  }, [])
+      } catch {
+        toast.error(m.loadBankAccountsFailed)
+      }
+    }
+    load()
+  }, [targetOrgId])
 
   const uniqueBankCodes = useMemo(
     () => Array.from(new Set(allBankAccounts.map(a => a.bankCode).filter(Boolean))) as string[],
@@ -152,7 +175,7 @@ function RegisterAgentContent() {
             ApiKey: lineApiKey.trim(),
             AgentImageTag: agentImageTag.trim() || 'v0.0.1',
           },
-        })
+        }, targetOrgId)
         const data = res.data as any
         agentId = data?.agent?.agentId ?? data?.agentId
         toast.success(m.createLineApiSuccess)
@@ -300,6 +323,12 @@ function RegisterAgentContent() {
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2 pb-2">
+
+          {targetOrgId !== 'global' && targetMerchantName && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-800 font-medium">
+              {m.creatingForMerchant}: <span className="font-bold">{targetMerchantName}</span>
+            </div>
+          )}
 
           {/* Basic Info */}
           <div className="flex-none bg-white rounded-xl shadow-sm border border-gray-100 px-7 py-4">

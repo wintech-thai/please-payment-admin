@@ -447,20 +447,26 @@ export default function UpdateMerchantPage() {
                 </div>
               </label>
 
-              <div className="sm:col-start-2">
-                <FormField label={m.fieldPayinExpireMinute} error={errors.payinExpireMinute}>
-                  <input
-                    type="number"
-                    min={5}
-                    max={60}
-                    step={1}
-                    value={payinExpireMinute}
-                    onChange={e => { setPayinExpireMinute(e.target.value); markDirty(); clearErr('payinExpireMinute') }}
-                    className={inputCls(!!errors.payinExpireMinute)}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">{m.hintPayinExpireMinute}</p>
-                </FormField>
-              </div>
+              <FormField label={m.fieldPayInBankCustodyType} hint={m.fieldPayInBankCustodyTypeLockedHint}>
+                <input
+                  value={merchant?.payInBankCustodyType === 'MerchantOwn' ? m.custodyTypeMerchantOwn : m.custodyTypePlatformOwn}
+                  readOnly
+                  className={clsx(inputCls(false), 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                />
+              </FormField>
+
+              <FormField label={m.fieldPayinExpireMinute} error={errors.payinExpireMinute}>
+                <input
+                  type="number"
+                  min={5}
+                  max={60}
+                  step={1}
+                  value={payinExpireMinute}
+                  onChange={e => { setPayinExpireMinute(e.target.value); markDirty(); clearErr('payinExpireMinute') }}
+                  className={inputCls(!!errors.payinExpireMinute)}
+                />
+                <p className="text-xs text-gray-400 mt-1">{m.hintPayinExpireMinute}</p>
+              </FormField>
             </div>
 
             <div className="border-t border-gray-100 mt-5 pt-5">
@@ -673,12 +679,15 @@ function RiskPolicyStatusBadge({ status, m }: { status?: string | null; m: any }
   )
 }
 
-function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FormField({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
-        {label}
-      </label>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide">
+          {label}
+        </label>
+        {hint && <span className="text-[11px] text-gray-400 normal-case tracking-normal">{hint}</span>}
+      </div>
       {children}
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>

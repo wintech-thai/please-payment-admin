@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
+import { merchantApi } from '@/lib/api/merchant.api'
 import type { AgentItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { Search, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight, Key, ChevronDown, RotateCcw, RefreshCw, QrCode, X, CheckCircle2, AlertCircle } from 'lucide-react'
@@ -254,6 +255,10 @@ function AgentListContent() {
   const [qrPinCode, setQrPinCode] = useState<string | null>(null)
   const qrPollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const qrElapsedRef = useRef(0)
+  const [merchantMap, setMerchantMap] = useState<Record<string, string>>({})
+  const [merchantOwnMerchants, setMerchantOwnMerchants] = useState<{ id: string; orgId: string; name: string }[]>([])
+  const [showMerchantPicker, setShowMerchantPicker] = useState(false)
+  const [merchantPickerQuery, setMerchantPickerQuery] = useState('')
 
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const registerMenuRef = useRef<HTMLDivElement | null>(null)
@@ -273,6 +278,7 @@ function AgentListContent() {
         const normalized = list.map(item => ({
           ...item,
           agentId: item.agentId ?? item.AgentId ?? item.id ?? item.Id ?? '',
+          orgId: item.orgId ?? item.OrgId ?? null,
           agentType: item.agentType ?? item.AgentType ?? null,
           agentConfigObj: item.agentConfigObj ?? item.AgentConfigObj ?? null,
           lastSeenDate: item.lastSeenDate ?? item.LastSeenDate ?? item.lastSeen ?? item.LastSeen ?? null,
@@ -297,6 +303,31 @@ function AgentListContent() {
   }
 
   useEffect(() => { fetchAgents() }, [page, itemsPerPage])
+
+  // ดึงรายชื่อ merchant ทั้งหมดมาทำ OrgId -> Name map สำหรับคอลัมน์ Merchant,
+  // และกรองเฉพาะ MerchantOwn ไว้ให้ dropdown "Merchant Line Agent" เลือกได้
+  useEffect(() => {
+    merchantApi.getMerchants({ Limit: 1000 } as any)
+      .then(res => {
+        const data = res.data as any
+        const list: any[] = Array.isArray(data) ? data : (data?.merchants ?? data?.Merchants ?? [])
+        const map: Record<string, string> = {}
+        const merchantOwn: { id: string; orgId: string; name: string }[] = []
+        list.forEach(item => {
+          const orgId = item.orgId ?? item.OrgId
+          const name = item.name ?? item.Name
+          const id = item.id ?? item.Id
+          const custodyType = item.payInBankCustodyType ?? item.PayInBankCustodyType
+          if (orgId && name) map[orgId] = name
+          if (orgId && name && id && custodyType === 'MerchantOwn') {
+            merchantOwn.push({ id, orgId, name })
+          }
+        })
+        setMerchantMap(map)
+        setMerchantOwnMerchants(merchantOwn)
+      })
+      .catch(() => {})
+  }, [])
 
   // Background polling for Line Api agents every 10 seconds
   useEffect(() => {
@@ -489,7 +520,7 @@ function AgentListContent() {
   const totalPages = Math.ceil(total / itemsPerPage)
   const startRow = total === 0 ? 0 : (page - 1) * itemsPerPage + 1
   const endRow = Math.min(page * itemsPerPage, total)
-  const cols = ['', m.colCode, m.colAgentType, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colEnabled, m.colAction]
+  const cols = ['', m.colCode, m.colAgentType, m.colMerchant, m.colDescription, m.colTags, m.colCreatedDate, m.colLastSeen, m.colLastErrorSeen, m.colStatus, m.colEnabled, m.colAction]
 
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
@@ -652,19 +683,63 @@ function AgentListContent() {
                 onClick={() => { setShowRegisterMenu(false); router.push('/setting/agent/create?type=line-api') }}
                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <span className="w-5 h-5 rounded bg-green-100 flex items-center justify-center text-green-700 font-bold text-[10px] flex-shrink-0">L</span>
-                {m.menuRegisterLineApi}
+                <span className="w-5 h-5 rounded bg-green-100 flex items-center justify-center text-green-700 font-bold text-[10px] flex-shrink-0">G</span>
+                {m.menuRegisterGlobalLineAgent}
               </button>
               <button
-                onClick={() => { setShowRegisterMenu(false); router.push('/setting/agent/create') }}
+                onClick={() => { setShowRegisterMenu(false); setMerchantPickerQuery(''); setShowMerchantPicker(true) }}
                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <span className="w-5 h-5 rounded bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-[10px] flex-shrink-0">A</span>
-                {m.menuRegisterAndroidApp}
+                <span className="w-5 h-5 rounded bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-[10px] flex-shrink-0">M</span>
+                {m.menuRegisterMerchantLineAgent}
               </button>
             </div>
           )}
         </div>
+
+        {showMerchantPicker && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowMerchantPicker(false)}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900">{m.merchantPickerTitle}</h3>
+                <button onClick={() => setShowMerchantPicker(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-4">
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    autoFocus
+                    value={merchantPickerQuery}
+                    onChange={e => setMerchantPickerQuery(e.target.value)}
+                    placeholder={m.merchantPickerSearchPlaceholder}
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto flex flex-col gap-1">
+                  {merchantOwnMerchants
+                    .filter(mc => mc.name.toLowerCase().includes(merchantPickerQuery.toLowerCase()))
+                    .map(mc => (
+                      <button
+                        key={mc.id}
+                        onClick={() => {
+                          setShowMerchantPicker(false)
+                          router.push(`/setting/agent/create?type=line-api&orgId=${encodeURIComponent(mc.orgId)}&merchantName=${encodeURIComponent(mc.name)}`)
+                        }}
+                        className="text-left px-3 py-2.5 rounded-lg hover:bg-primary-50 transition-colors text-sm text-gray-700"
+                      >
+                        {mc.name}
+                      </button>
+                    ))}
+                  {merchantOwnMerchants.filter(mc => mc.name.toLowerCase().includes(merchantPickerQuery.toLowerCase())).length === 0 && (
+                    <p className="text-sm text-gray-400 text-center py-6">{m.merchantPickerNoResults}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Toolbar */}
@@ -795,6 +870,14 @@ function AgentListContent() {
                       {/* Agent Type */}
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
                         <AgentTypeBadge agentType={agent.agentType} />
+                      </td>
+                      {/* Merchant */}
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm">
+                        {agent.orgId && agent.orgId !== 'global' ? (
+                          <span className="text-gray-700">{merchantMap[agent.orgId] ?? agent.orgId}</span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 bg-blue-50 text-blue-700 ring-1 ring-blue-200 rounded-full text-[10px] font-semibold">{m.globalAgentBadge}</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-600 max-w-[200px] truncate">
                         {agent.description ?? '—'}

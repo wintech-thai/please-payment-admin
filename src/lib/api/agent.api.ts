@@ -76,8 +76,8 @@ export const agentApi = {
   getAgentEventTimeSeries: (agentId: string, payload: AgentEventTimeSeriesPayload = {}) =>
     client.post<AgentEventTimeSeriesItem[]>(`${BASE}/GetAgentEventTimeSeries/${agentId}`, payload),
 
-  addLineApiAgent: (payload: AddAgentPayload) =>
-    client.post<{ agent: AgentItem }>(`${BASE}/AddLineApiAgent`, payload),
+  addLineApiAgent: (payload: AddAgentPayload, orgId: string = 'global') =>
+    client.post<{ agent: AgentItem }>(`/admin-api/AdminAgent/org/${orgId}/action/AddLineApiAgent`, payload),
 
   restartLineApiAgentById: (agentId: string) =>
     client.post(`${BASE}/RestartLineApiAgentById/${agentId}`, {}),

@@ -19,6 +19,7 @@ export default function CreateMerchantPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [payInBankCustodyType, setPayInBankCustodyType] = useState('')
   const [payInFee, setPayInFee] = useState<string>('0')
   const [payOutFee, setPayOutFee] = useState<string>('0')
   const [payInMin, setPayInMin] = useState<string>('1')
@@ -46,6 +47,7 @@ export default function CreateMerchantPage() {
     if (!name.trim()) errs.name = m.nameRequired
     if (!email.trim()) errs.email = m.emailRequired
     if (!phone.trim()) errs.phone = m.phoneRequired
+    if (!payInBankCustodyType) errs.payInBankCustodyType = m.payInBankCustodyTypeRequired
     if (payInFee === '' || isNaN(parseFloat(payInFee))) errs.payInFee = m.payInFeeRequired
     if (payOutFee === '' || isNaN(parseFloat(payOutFee))) errs.payOutFee = m.payOutFeeRequired
     if (payInMin === '' || isNaN(parseFloat(payInMin))) errs.payInMin = m.payInMinRequired
@@ -104,6 +106,7 @@ export default function CreateMerchantPage() {
           IncludeGlobalBankAccount: includeGlobalBankAccount,
           PayinExpireMinute: parseInt(payinExpireMinute),
           WhitelistBankAccountNamesArr: whitelistNames,
+          PayInBankCustodyType: payInBankCustodyType || undefined,
         },
       })
       setIsDirty(false)
@@ -252,20 +255,30 @@ export default function CreateMerchantPage() {
                 </div>
               </label>
 
-              <div className="sm:col-start-2">
-                <FormField label={m.fieldPayinExpireMinute} error={errors.payinExpireMinute}>
-                  <input
-                    type="number"
-                    min={5}
-                    max={60}
-                    step={1}
-                    value={payinExpireMinute}
-                    onChange={e => { setPayinExpireMinute(e.target.value); mark(); clearErr('payinExpireMinute') }}
-                    className={inputCls(!!errors.payinExpireMinute)}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">{m.hintPayinExpireMinute}</p>
-                </FormField>
-              </div>
+              <FormField label={m.fieldPayInBankCustodyType} required error={errors.payInBankCustodyType} hint={m.fieldPayInBankCustodyTypeHint}>
+                <select
+                  value={payInBankCustodyType}
+                  onChange={e => { setPayInBankCustodyType(e.target.value); mark(); clearErr('payInBankCustodyType') }}
+                  className={inputCls(!!errors.payInBankCustodyType)}
+                >
+                  <option value="">{m.fieldPayInBankCustodyTypePlaceholder}</option>
+                  <option value="MerchantOwn">{m.custodyTypeMerchantOwn}</option>
+                  <option value="PlatformOwn">{m.custodyTypePlatformOwn}</option>
+                </select>
+              </FormField>
+
+              <FormField label={m.fieldPayinExpireMinute} error={errors.payinExpireMinute}>
+                <input
+                  type="number"
+                  min={5}
+                  max={60}
+                  step={1}
+                  value={payinExpireMinute}
+                  onChange={e => { setPayinExpireMinute(e.target.value); mark(); clearErr('payinExpireMinute') }}
+                  className={inputCls(!!errors.payinExpireMinute)}
+                />
+                <p className="text-xs text-gray-400 mt-1">{m.hintPayinExpireMinute}</p>
+              </FormField>
             </div>
 
             <div className="border-t border-gray-100 mt-5 pt-5">

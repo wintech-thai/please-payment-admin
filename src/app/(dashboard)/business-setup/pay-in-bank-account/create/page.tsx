@@ -26,6 +26,7 @@ export default function CreateBankAccountPage() {
   const [promptPayId, setPromptPayId] = useState('')
   const [accountType, setAccountType] = useState<'PromptPay' | 'Native' | ''>('')
   const [accountLevel, setAccountLevel] = useState<'Global' | 'Selected' | ''>('')
+  const [custodyType, setCustodyType] = useState<'PlatformOwn' | 'MerchantOwn' | ''>('')
   const [payInMin, setPayInMin] = useState('')
   const [payInMax, setPayInMax] = useState('')
   const [payOutMin, setPayOutMin] = useState('')
@@ -84,6 +85,7 @@ export default function CreateBankAccountPage() {
       }
     }
     if (!accountLevel) errs.accountLevel = m.accountLevelRequired
+    if (!custodyType) errs.custodyType = m.custodyTypeRequired
     if (payInMin === '' || isNaN(parseInt(payInMin, 10))) errs.payInMin = m.payInMinRequired
     if (payInMax === '' || isNaN(parseInt(payInMax, 10))) errs.payInMax = m.payInMaxRequired
     if (payOutMin === '' || isNaN(parseInt(payOutMin, 10))) errs.payOutMin = m.payOutMinRequired
@@ -107,6 +109,7 @@ export default function CreateBankAccountPage() {
         AccountType: accountType,
         AccountCategory: 'PayIn',
         AccountLevel: accountLevel,
+        CustodyType: custodyType,
         PayinMinAmount: toInt(payInMin),
         PayinMaxAmount: toInt(payInMax),
         PayoutMinAmount: toInt(payOutMin),
@@ -250,41 +253,56 @@ export default function CreateBankAccountPage() {
                   <option value="Selected">{m.accountLevelMerchantSpecify}</option>
                 </select>
               </FormField>
+
             </div>
 
-            {/* Random Cent toggle + rounding dropdown */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <label className="flex items-center gap-3 cursor-pointer w-fit select-none">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={isRandomCent}
-                    onChange={e => { setIsRandomCent(e.target.checked); mark() }}
-                  />
-                  <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-primary-500 transition-colors" />
-                  <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">{m.fieldRandomCent}</p>
-                  <p className="text-xs text-gray-400">{m.fieldRandomCentHint}</p>
-                </div>
-              </label>
-              {!isRandomCent && (
-                <div className="mt-3 ml-12">
-                  <p className="text-xs font-semibold text-gray-500 mb-1">{m.fieldCentRoundingMode}</p>
-                  <select
-                    value={centRoundingMode}
-                    onChange={e => { setCentRoundingMode(e.target.value); mark() }}
-                    className="w-52 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
-                  >
-                    <option value="">{m.centRoundingNone}</option>
-                    <option value="Round">{m.centRoundingRound}</option>
-                    <option value="Round Up">{m.centRoundingRoundUp}</option>
-                    <option value="Truncate">{m.centRoundingTruncate}</option>
-                  </select>
-                </div>
-              )}
+            {/* Random Cent toggle + rounding dropdown | Custody Type */}
+            <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer w-fit select-none">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={isRandomCent}
+                      onChange={e => { setIsRandomCent(e.target.checked); mark() }}
+                    />
+                    <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-primary-500 transition-colors" />
+                    <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{m.fieldRandomCent}</p>
+                    <p className="text-xs text-gray-400">{m.fieldRandomCentHint}</p>
+                  </div>
+                </label>
+                {!isRandomCent && (
+                  <div className="mt-3 ml-12">
+                    <p className="text-xs font-semibold text-gray-500 mb-1">{m.fieldCentRoundingMode}</p>
+                    <select
+                      value={centRoundingMode}
+                      onChange={e => { setCentRoundingMode(e.target.value); mark() }}
+                      className="w-52 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+                    >
+                      <option value="">{m.centRoundingNone}</option>
+                      <option value="Round">{m.centRoundingRound}</option>
+                      <option value="Round Up">{m.centRoundingRoundUp}</option>
+                      <option value="Truncate">{m.centRoundingTruncate}</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <FormField label={m.fieldCustodyType} required error={errors.custodyType}>
+                <select
+                  value={custodyType}
+                  onChange={e => { setCustodyType(e.target.value as 'PlatformOwn' | 'MerchantOwn'); mark(); clearErr('custodyType') }}
+                  className={inputCls(!!errors.custodyType)}
+                >
+                  <option value="">—</option>
+                  <option value="PlatformOwn">{m.custodyTypePlatformOwn}</option>
+                  <option value="MerchantOwn">{m.custodyTypeMerchantOwn}</option>
+                </select>
+              </FormField>
             </div>
 
           </div>

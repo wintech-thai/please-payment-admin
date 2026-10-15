@@ -185,6 +185,7 @@ export interface MerchantItem {
   payoutPartialCountLimitP2P?: number | null
   payoutNotMatchActionP2P?: string | null
   payoutSelectionTypeP2P?: string | null
+  payInBankCustodyType?: string | null
 }
 
 export interface GetMerchantsPayload {
@@ -219,6 +220,7 @@ export interface AddMerchantPayload {
     PayinDailyTxAmountLimit?: number | string
     PayinDailyTxCountLimit?: number | string
     PayinExpireMinute?: number
+    PayInBankCustodyType?: string
   }
 }
 
@@ -321,6 +323,7 @@ export interface BankAccountItem {
   accountType?: string | null       // "PromptPay" | "Native"
   accountCategory?: string | null   // "PayIn" | "PayOut"
   accountLevel?: string | null      // "Global" | "Selected"
+  custodyType?: string | null       // "MerchantOwn" | "PlatformOwn"
   payinMinAmount?: number | null
   payinMaxAmount?: number | null
   payoutMinAmount?: number | null
@@ -360,6 +363,7 @@ export interface GetBankAccountsPayload {
   AccountCategory?: string
   AccountType?: string
   AccountLevel?: string
+  CustodyType?: string
   page?: number
   limit?: number
 }
@@ -373,6 +377,7 @@ export interface AddBankAccountPayload {
   AccountType?: string
   AccountCategory?: string
   AccountLevel?: string
+  CustodyType?: string
   PayinMinAmount?: number
   PayinMaxAmount?: number
   PayoutMinAmount?: number
@@ -1229,6 +1234,7 @@ export interface RejectTransferRequestPayload {
 
 export interface AgentItem {
   agentId: string
+  orgId?: string | null
   code?: string | null
   description?: string | null
   tags?: string | null

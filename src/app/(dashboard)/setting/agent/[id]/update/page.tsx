@@ -4,13 +4,61 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { agentApi } from '@/lib/api/agent.api'
 import { bankAccountApi } from '@/lib/api/bank-account.api'
+import { merchantApi } from '@/lib/api/merchant.api'
 import type { BankAccountItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, X, Plus, Trash2 } from 'lucide-react'
+import { ChevronLeft, X, Plus, Trash2, Copy, Check } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
 import { useLang } from '@/context/LanguageContext'
+
+function highlightJson(json: string): string {
+  return json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    (match) => {
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) return `<span style="color:#6366f1;font-weight:600">${match}</span>`
+        return `<span style="color:#059669">${match}</span>`
+      }
+      if (/true|false/.test(match)) return `<span style="color:#d97706">${match}</span>`
+      if (/null/.test(match)) return `<span style="color:#9ca3af">${match}</span>`
+      return `<span style="color:#0284c7">${match}</span>`
+    }
+  )
+}
+
+function RawJsonModal({ data, onClose }: { data: unknown; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const json = JSON.stringify(data, null, 2)
+  const copy = () => {
+    navigator.clipboard.writeText(json)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col mx-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-none">
+          <span className="text-sm font-semibold text-gray-700 font-mono">Raw JSON</span>
+          <div className="flex items-center gap-2">
+            <button onClick={copy} className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        <pre
+          className="overflow-auto p-5 text-xs font-mono leading-relaxed whitespace-pre-wrap break-all bg-gray-50"
+          dangerouslySetInnerHTML={{ __html: highlightJson(json) }}
+        />
+      </div>
+    </div>
+  )
+}
 
 export default function UpdateAgentPage() {
   const { t } = useLang()
@@ -24,6 +72,10 @@ export default function UpdateAgentPage() {
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [agentType, setAgentType] = useState<string | null>(null)
+  const [agentOrgId, setAgentOrgId] = useState<string | null>(null)
+  const [merchantMap, setMerchantMap] = useState<Record<string, string>>({})
+  const [rawAgentData, setRawAgentData] = useState<unknown>(null)
+  const [showRawJson, setShowRawJson] = useState(false)
   const [errors, setErrors] = useState<{ code?: string; userName?: string; apiKey?: string }>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -52,18 +104,21 @@ export default function UpdateAgentPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const [agentRes, bankRes] = await Promise.all([
+        const [agentRes, merchantsRes] = await Promise.all([
           agentApi.getAgentById(agentId),
-          bankAccountApi.getPayInBankAccountsWithGlobalAll(),
+          merchantApi.getMerchants({ Limit: 1000 } as any),
         ])
         const data = agentRes.data as any
         const agent = data?.agent ?? data
+        setRawAgentData(agent)
         setCode(agent?.code ?? '')
         setDescription(agent?.description ?? '')
         const rawTags: string = agent?.tags ?? ''
         setTags(rawTags ? rawTags.split(',').map((t: string) => t.trim()).filter(Boolean) : [])
         const aType = agent?.agentType ?? agent?.AgentType ?? null
         setAgentType(aType)
+        const resolvedOrgId = agent?.orgId ?? agent?.OrgId ?? null
+        setAgentOrgId(resolvedOrgId)
 
         // Load Line Api config if present
         const config = agent?.agentConfigObj ?? agent?.AgentConfigObj ?? null
@@ -73,8 +128,35 @@ export default function UpdateAgentPage() {
           setAgentImageTag(config.agentImageTag ?? config.AgentImageTag ?? 'v0.0.1')
         }
 
-        const bankData = bankRes.data as any
-        const rawAccounts: any[] = bankData?.bankAccounts ?? bankData ?? []
+        const mData = merchantsRes.data as any
+        const mList: any[] = Array.isArray(mData) ? mData : (mData?.merchants ?? mData?.Merchants ?? [])
+        const nameMap: Record<string, string> = {}
+        const idMap: Record<string, string> = {}
+        mList.forEach(item => {
+          const mOrgId = item.orgId ?? item.OrgId
+          const name = item.name ?? item.Name
+          const mId = item.id ?? item.Id
+          if (mOrgId && name) nameMap[mOrgId] = name
+          if (mOrgId && mId) idMap[mOrgId] = mId
+        })
+        setMerchantMap(nameMap)
+
+        // บัญชีธนาคารที่เลือกได้ต้อง filter ตาม custody type: agent ของ merchant เห็นแต่บัญชีที่ผูกกับ merchant นั้น (MerchantOwn อยู่แล้ว), agent ระดับ global เห็นแต่บัญชี PlatformOwn
+        const isGlobalAgent = !resolvedOrgId || resolvedOrgId === 'global'
+        let rawAccounts: any[] = []
+        if (isGlobalAgent) {
+          const bankRes = await bankAccountApi.getPayInBankAccountsWithGlobalAll()
+          const bankData = bankRes.data as any
+          const accounts: any[] = bankData?.bankAccounts ?? bankData ?? []
+          rawAccounts = accounts.filter((a: any) => (a.custodyType ?? a.CustodyType) !== 'MerchantOwn')
+        } else {
+          const merchantId = idMap[resolvedOrgId]
+          if (merchantId) {
+            const bankRes = await bankAccountApi.getPayInBankAccountsOnlyForMerchant(merchantId)
+            const bankData = bankRes.data as any
+            rawAccounts = bankData?.bankAccounts ?? bankData ?? []
+          }
+        }
         setAllBankAccounts(rawAccounts.map(item => ({
           ...item,
           accountId: item.id || item.bankAccountId || item.BankAccountId || item.accountId || item.AccountId || item.Id || '',
@@ -308,15 +390,36 @@ export default function UpdateAgentPage() {
           className="p-2 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-gray-900">{m.editTitle}</h1>
             {code && <span className="px-2.5 py-0.5 text-xs font-bold bg-primary-100 text-primary-700 rounded-full">{code}</span>}
             {isLineApi && <span className="px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-full ring-1 ring-green-200">Line Api</span>}
+            {agentOrgId && agentOrgId !== 'global' && (
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-orange-100 text-orange-700 rounded-full ring-1 ring-orange-200">
+                {merchantMap[agentOrgId] ?? agentOrgId}
+              </span>
+            )}
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">{isLineApi ? m.editLineApiSubtitle : m.editSubtitle}</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {isLineApi ? m.editLineApiSubtitle : m.editSubtitle}
+            {agentOrgId && agentOrgId !== 'global'
+              ? ` · ${m.linkedMerchantLabel}: ${merchantMap[agentOrgId] ?? agentOrgId}`
+              : agentOrgId === 'global' ? ` · ${m.linkedMerchantGlobal}` : ''}
+          </p>
         </div>
+        {rawAgentData != null && (
+          <button
+            type="button"
+            onClick={() => setShowRawJson(true)}
+            className="px-2 py-1 text-[11px] font-mono font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors"
+          >
+            {'{ }'}
+          </button>
+        )}
       </div>
+
+      {showRawJson && rawAgentData != null && <RawJsonModal data={rawAgentData} onClose={() => setShowRawJson(false)} />}
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2 pb-2">

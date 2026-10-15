@@ -104,9 +104,9 @@ export default function UpdateAgentPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const [agentRes, bankRes] = await Promise.all([
+        const [agentRes, merchantsRes] = await Promise.all([
           agentApi.getAgentById(agentId),
-          bankAccountApi.getPayInBankAccountsWithGlobalAll(),
+          merchantApi.getMerchants({ Limit: 1000 } as any),
         ])
         const data = agentRes.data as any
         const agent = data?.agent ?? data
@@ -117,7 +117,8 @@ export default function UpdateAgentPage() {
         setTags(rawTags ? rawTags.split(',').map((t: string) => t.trim()).filter(Boolean) : [])
         const aType = agent?.agentType ?? agent?.AgentType ?? null
         setAgentType(aType)
-        setAgentOrgId(agent?.orgId ?? agent?.OrgId ?? null)
+        const resolvedOrgId = agent?.orgId ?? agent?.OrgId ?? null
+        setAgentOrgId(resolvedOrgId)
 
         // Load Line Api config if present
         const config = agent?.agentConfigObj ?? agent?.AgentConfigObj ?? null
@@ -127,8 +128,35 @@ export default function UpdateAgentPage() {
           setAgentImageTag(config.agentImageTag ?? config.AgentImageTag ?? 'v0.0.1')
         }
 
-        const bankData = bankRes.data as any
-        const rawAccounts: any[] = bankData?.bankAccounts ?? bankData ?? []
+        const mData = merchantsRes.data as any
+        const mList: any[] = Array.isArray(mData) ? mData : (mData?.merchants ?? mData?.Merchants ?? [])
+        const nameMap: Record<string, string> = {}
+        const idMap: Record<string, string> = {}
+        mList.forEach(item => {
+          const mOrgId = item.orgId ?? item.OrgId
+          const name = item.name ?? item.Name
+          const mId = item.id ?? item.Id
+          if (mOrgId && name) nameMap[mOrgId] = name
+          if (mOrgId && mId) idMap[mOrgId] = mId
+        })
+        setMerchantMap(nameMap)
+
+        // บัญชีธนาคารที่เลือกได้ต้อง filter ตาม custody type: agent ของ merchant เห็นแต่บัญชีที่ผูกกับ merchant นั้น (MerchantOwn อยู่แล้ว), agent ระดับ global เห็นแต่บัญชี PlatformOwn
+        const isGlobalAgent = !resolvedOrgId || resolvedOrgId === 'global'
+        let rawAccounts: any[] = []
+        if (isGlobalAgent) {
+          const bankRes = await bankAccountApi.getPayInBankAccountsWithGlobalAll()
+          const bankData = bankRes.data as any
+          const accounts: any[] = bankData?.bankAccounts ?? bankData ?? []
+          rawAccounts = accounts.filter((a: any) => (a.custodyType ?? a.CustodyType) !== 'MerchantOwn')
+        } else {
+          const merchantId = idMap[resolvedOrgId]
+          if (merchantId) {
+            const bankRes = await bankAccountApi.getPayInBankAccountsOnlyForMerchant(merchantId)
+            const bankData = bankRes.data as any
+            rawAccounts = bankData?.bankAccounts ?? bankData ?? []
+          }
+        }
         setAllBankAccounts(rawAccounts.map(item => ({
           ...item,
           accountId: item.id || item.bankAccountId || item.BankAccountId || item.accountId || item.AccountId || item.Id || '',
@@ -149,22 +177,6 @@ export default function UpdateAgentPage() {
     }
     load()
   }, [agentId])
-
-  useEffect(() => {
-    merchantApi.getMerchants({ Limit: 1000 } as any)
-      .then(res => {
-        const data = res.data as any
-        const list: any[] = Array.isArray(data) ? data : (data?.merchants ?? data?.Merchants ?? [])
-        const map: Record<string, string> = {}
-        list.forEach(item => {
-          const orgId = item.orgId ?? item.OrgId
-          const name = item.name ?? item.Name
-          if (orgId && name) map[orgId] = name
-        })
-        setMerchantMap(map)
-      })
-      .catch(() => {})
-  }, [])
 
   const uniqueBankCodes = useMemo(
     () => Array.from(new Set(allBankAccounts.map(a => a.bankCode).filter(Boolean))) as string[],

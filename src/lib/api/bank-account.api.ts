@@ -90,6 +90,10 @@ export const bankAccountApi = {
   getPayInBankAccountsForMerchant: (merchantId: string) =>
     client.get<{ bankAccounts: BankAccountItem[] }>(`${BASE}/GetPayInBankAccountsWithGlobalForMerchant/${merchantId}`),
 
+  // Only this merchant's own linked PayIn bank accounts (no Global ones merged in) — used by the LINE agent's bank-account picker
+  getPayInBankAccountsOnlyForMerchant: (merchantId: string) =>
+    client.get<{ bankAccounts: BankAccountItem[] }>(`${BASE}/GetPayInBankAccountsForMerchant/${merchantId}`),
+
   getPayInBankAccountsWithGlobalAll: () =>
     client.get<{ bankAccounts: BankAccountItem[] }>(`${BASE}/GetPayInBankAccountsWithGlobalAll`),
 

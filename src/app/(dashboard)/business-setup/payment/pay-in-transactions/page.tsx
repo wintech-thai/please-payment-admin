@@ -908,13 +908,13 @@ export default function PayInTransactionsPage() {
                       {/* Merchant */}
                       <td className="px-4 py-3 border-b border-gray-100">
                         {item.merchantCode || item.merchantName ? (
-                          <div className="flex items-center gap-1.5">
-                            <CustodyTypeBadge custodyType={item.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
-                            <div>
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <CustodyTypeBadge custodyType={item.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                               <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
-                              {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
                             </div>
-                          </div>
+                            {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
+                          </>
                         ) : (
                           <p className="text-sm text-gray-400">—</p>
                         )}

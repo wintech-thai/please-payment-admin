@@ -424,30 +424,6 @@ export default function UpdateMerchantPage() {
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
               </FormField>
-
-              <FormField label={m.fieldPayInFeeWalletSource} hint={isMerchantOwn ? m.feeWalletSourceLockedHint : undefined}>
-                <select
-                  value={isMerchantOwn ? 'PointWallet' : payInFeeWalletSource}
-                  disabled={isMerchantOwn}
-                  onChange={e => { setPayInFeeWalletSource(e.target.value); markDirty() }}
-                  className={clsx(inputCls(false), isMerchantOwn && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
-                >
-                  <option value="MerchantWallet">{m.feeWalletSourceMerchantWallet}</option>
-                  <option value="PointWallet">{m.feeWalletSourcePointWallet}</option>
-                </select>
-              </FormField>
-
-              <FormField label={m.fieldPayOutFeeWalletSource} hint={isMerchantOwn ? m.feeWalletSourceLockedHint : undefined}>
-                <select
-                  value={isMerchantOwn ? 'PointWallet' : payOutFeeWalletSource}
-                  disabled={isMerchantOwn}
-                  onChange={e => { setPayOutFeeWalletSource(e.target.value); markDirty() }}
-                  className={clsx(inputCls(false), isMerchantOwn && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
-                >
-                  <option value="MerchantWallet">{m.feeWalletSourceMerchantWallet}</option>
-                  <option value="PointWallet">{m.feeWalletSourcePointWallet}</option>
-                </select>
-              </FormField>
             </div>
 
             {/* Discard Cent / Include Global Bank Account / PayinExpireMinute */}
@@ -497,6 +473,32 @@ export default function UpdateMerchantPage() {
                   className={inputCls(!!errors.payinExpireMinute)}
                 />
                 <p className="text-xs text-gray-400 mt-1">{m.hintPayinExpireMinute}</p>
+              </FormField>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label={m.fieldPayInFeeWalletSource} hint={isMerchantOwn ? m.feeWalletSourceLockedHint : undefined}>
+                <select
+                  value={isMerchantOwn ? 'PointWallet' : payInFeeWalletSource}
+                  disabled={isMerchantOwn}
+                  onChange={e => { setPayInFeeWalletSource(e.target.value); markDirty() }}
+                  className={clsx(inputCls(false), isMerchantOwn && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                >
+                  <option value="MerchantWallet">{m.feeWalletSourceMerchantWallet}</option>
+                  <option value="PointWallet">{m.feeWalletSourcePointWallet}</option>
+                </select>
+              </FormField>
+
+              <FormField label={m.fieldPayOutFeeWalletSource} hint={isMerchantOwn ? m.feeWalletSourceLockedHint : undefined}>
+                <select
+                  value={isMerchantOwn ? 'PointWallet' : payOutFeeWalletSource}
+                  disabled={isMerchantOwn}
+                  onChange={e => { setPayOutFeeWalletSource(e.target.value); markDirty() }}
+                  className={clsx(inputCls(false), isMerchantOwn && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                >
+                  <option value="MerchantWallet">{m.feeWalletSourceMerchantWallet}</option>
+                  <option value="PointWallet">{m.feeWalletSourcePointWallet}</option>
+                </select>
               </FormField>
             </div>
 

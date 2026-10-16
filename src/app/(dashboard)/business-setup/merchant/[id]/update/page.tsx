@@ -82,6 +82,8 @@ export default function UpdateMerchantPage() {
   const [payinDailyCountLimit, setPayinDailyCountLimit] = useState<string>('0')
   const [discardCent, setDiscardCent] = useState(false)
   const [includeGlobalBankAccount, setIncludeGlobalBankAccount] = useState(true)
+  const [payInFeeWalletSource, setPayInFeeWalletSource] = useState<string>('MerchantWallet')
+  const [payOutFeeWalletSource, setPayOutFeeWalletSource] = useState<string>('MerchantWallet')
   const [payinExpireMinute, setPayinExpireMinute] = useState<string>('15')
   const [whitelistNames, setWhitelistNames] = useState<string[]>([])
   const [whitelistInput, setWhitelistInput] = useState('')
@@ -152,6 +154,8 @@ export default function UpdateMerchantPage() {
         setPayinDailyCountLimit(merch.payinDailyTxCountLimit != null ? String(merch.payinDailyTxCountLimit) : '0')
         setDiscardCent(merch.discardCent ?? false)
         setIncludeGlobalBankAccount(merch.includeGlobalBankAccount ?? true)
+        setPayInFeeWalletSource(merch.payInFeeWalletSource ?? 'MerchantWallet')
+        setPayOutFeeWalletSource(merch.payOutFeeWalletSource ?? 'MerchantWallet')
         setPayinExpireMinute(merch.payinExpireMinute != null ? String(merch.payinExpireMinute) : '15')
         setWhitelistNames(merch.whitelistBankAccountNamesArr ?? [])
         setRiskPolicyId(merch.riskPolicyId ?? '')
@@ -180,6 +184,7 @@ export default function UpdateMerchantPage() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const isMerchantOwn = merchant?.payInBankCustodyType === 'MerchantOwn'
   const selectedRiskPolicy = riskPolicies.find(p => p.id === riskPolicyId)
   const filteredRiskPolicies = useMemo(() => {
     if (!riskPolicyQuery) return riskPolicies
@@ -214,6 +219,8 @@ export default function UpdateMerchantPage() {
         PayinDailyTxCountLimit: payinDailyCountLimit,
         DiscardCent: discardCent,
         IncludeGlobalBankAccount: includeGlobalBankAccount,
+        PayInFeeWalletSource: isMerchantOwn ? 'PointWallet' : payInFeeWalletSource,
+        PayOutFeeWalletSource: isMerchantOwn ? 'PointWallet' : payOutFeeWalletSource,
         PayinExpireMinute: parseInt(payinExpireMinute),
         WhitelistBankAccountNamesArr: whitelistNames,
         RiskPolicyId: riskPolicyId || null,
@@ -416,6 +423,30 @@ export default function UpdateMerchantPage() {
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
+              </FormField>
+
+              <FormField label={m.fieldPayInFeeWalletSource} hint={isMerchantOwn ? m.feeWalletSourceLockedHint : undefined}>
+                <select
+                  value={isMerchantOwn ? 'PointWallet' : payInFeeWalletSource}
+                  disabled={isMerchantOwn}
+                  onChange={e => { setPayInFeeWalletSource(e.target.value); markDirty() }}
+                  className={clsx(inputCls(false), isMerchantOwn && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                >
+                  <option value="MerchantWallet">{m.feeWalletSourceMerchantWallet}</option>
+                  <option value="PointWallet">{m.feeWalletSourcePointWallet}</option>
+                </select>
+              </FormField>
+
+              <FormField label={m.fieldPayOutFeeWalletSource} hint={isMerchantOwn ? m.feeWalletSourceLockedHint : undefined}>
+                <select
+                  value={isMerchantOwn ? 'PointWallet' : payOutFeeWalletSource}
+                  disabled={isMerchantOwn}
+                  onChange={e => { setPayOutFeeWalletSource(e.target.value); markDirty() }}
+                  className={clsx(inputCls(false), isMerchantOwn && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                >
+                  <option value="MerchantWallet">{m.feeWalletSourceMerchantWallet}</option>
+                  <option value="PointWallet">{m.feeWalletSourcePointWallet}</option>
+                </select>
               </FormField>
             </div>
 

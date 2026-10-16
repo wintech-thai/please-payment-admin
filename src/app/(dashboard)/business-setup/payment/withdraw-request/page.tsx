@@ -15,6 +15,7 @@ import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 import QRCode from 'react-qr-code'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 import ExportCsvModal from '@/components/ExportCsvModal'
+import CustodyTypeBadge from '@/components/CustodyTypeBadge'
 import type { CsvCell } from '@/lib/csv-export'
 
 type SlipItem = { slipId?: string | null; imageBase64: string; uploadedAt: string; note?: string | null; first4?: string | null; last4?: string | null }
@@ -698,6 +699,7 @@ function WithdrawRequestPageContent() {
                       {/* Merchant */}
                       <td className="px-4 py-3 border-b border-gray-100">
                         <div className="flex items-center gap-1.5">
+                          <CustodyTypeBadge custodyType={item.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                           <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
                           {item.payoutIsWithdrawal && (
                             <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-blue-50 text-blue-700 ring-blue-200">

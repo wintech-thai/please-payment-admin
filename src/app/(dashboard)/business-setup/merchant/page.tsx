@@ -7,7 +7,7 @@ import { merchantApi } from '@/lib/api/merchant.api'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, Building2, ChevronLeft, ChevronRight, Webhook, Coins } from 'lucide-react'
+import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Key, Wallet, Building2, ChevronLeft, ChevronRight, Webhook, Coins, Gem } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { isCurrencyFeatureEnabled } from '@/lib/feature-flags'
@@ -393,17 +393,31 @@ function MerchantContent() {
                         {formatRange(merchant.payoutMinAmount, merchant.payoutMaxAmount)}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-sm whitespace-nowrap text-right">
-                        {merchant.currentBalance != null ? (
-                          <Link
-                            href={`/business-setup/merchant/${merchant.id}/wallet`}
-                            onClick={e => e.stopPropagation()}
-                            className="tabular-nums text-gray-700 hover:underline hover:text-primary-600"
-                          >
-                            {merchant.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </Link>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
+                        <div className="flex flex-col items-end gap-0.5">
+                          {merchant.currentBalance != null ? (
+                            <Link
+                              href={`/business-setup/merchant/${merchant.id}/wallet`}
+                              onClick={e => e.stopPropagation()}
+                              title={m.walletSummary}
+                              className="tabular-nums text-gray-700 hover:underline hover:text-primary-600"
+                            >
+                              {merchant.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Link>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                          {merchant.currentPointBalance != null && (
+                            <Link
+                              href={`/business-setup/merchant/${merchant.id}/point-wallet`}
+                              onClick={e => e.stopPropagation()}
+                              title={m.pointSummary}
+                              className="flex items-center gap-1 text-xs tabular-nums text-violet-600 hover:underline hover:text-violet-700"
+                            >
+                              <Gem className="w-3 h-3 flex-shrink-0" />
+                              {merchant.currentPointBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Link>
+                          )}
+                        </div>
                       </td>
 
                       {/* Actions — 3-dot menu */}
@@ -486,6 +500,13 @@ function MerchantContent() {
                               >
                                 <Wallet className="w-4 h-4 flex-shrink-0" />
                                 {m.walletSummary}
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setOpenMenuId(null); sessionStorage.setItem('merchant_highlight', merchant.id); router.push(`/business-setup/merchant/${merchant.id}/point-wallet`) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <Gem className="w-4 h-4 flex-shrink-0" />
+                                {m.pointSummary}
                               </button>
                               <div className="border-t border-gray-200 my-1" />
                               <button

@@ -760,9 +760,8 @@ export default function PayOutRequestDetailPage() {
           finally { setLoadingJob(false) }
         }
 
-        const [payinRes, transitRes] = await Promise.allSettled([
+        const [payinRes] = await Promise.allSettled([
           bankAccountApi.getPayInBankAccountsWithGlobalAll(),
-          bankAccountApi.getTransitBankAccountsAll(),
         ])
         const toOption = (a: any, category: 'PayIn' | 'Transit'): AccountOption => ({
           bankAccountId: a.bankAccountId || a.BankAccountId || a.id || a.Id || a.accountId || a.AccountId || '',
@@ -776,13 +775,7 @@ export default function PayOutRequestDetailPage() {
         const payinList = payinRes.status === 'fulfilled'
           ? (() => { const r = payinRes.value.data as any; return (Array.isArray(r) ? r : (r?.bankAccounts ?? r?.BankAccounts ?? [])) })()
           : []
-        const transitList = transitRes.status === 'fulfilled'
-          ? (() => { const r = transitRes.value.data as any; return (Array.isArray(r) ? r : (r?.bankAccounts ?? r?.BankAccounts ?? [])) })()
-          : []
-        const mapped: AccountOption[] = [
-          ...payinList.map((a: any) => toOption(a, 'PayIn')),
-          ...transitList.map((a: any) => toOption(a, 'Transit')),
-        ]
+        const mapped: AccountOption[] = payinList.map((a: any) => toOption(a, 'PayIn'))
         setAllAccounts(mapped)
 
         // Pre-fill search box with previously saved account label
@@ -1228,36 +1221,8 @@ export default function PayOutRequestDetailPage() {
               </InfoRow>
             </div>
           ) : (
-            /* Pending — tab switch + searchable single account picker */
+            /* Pending — searchable single account picker (PayIn source only — x086: Transit source removed) */
             <div className="max-w-md">
-              {/* Source type tabs */}
-              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg mb-3 w-fit">
-                <button
-                  type="button"
-                  onClick={() => { setSourceTab('PayIn'); setAccountSearch(''); setSelectedAccountId(''); setBankErrors({}) }}
-                  className={clsx(
-                    'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
-                    sourceTab === 'PayIn'
-                      ? 'bg-white text-blue-700 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  )}
-                >
-                  PayIn
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSourceTab('Transit'); setAccountSearch(''); setSelectedAccountId(''); setBankErrors({}) }}
-                  className={clsx(
-                    'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
-                    sourceTab === 'Transit'
-                      ? 'bg-white text-purple-700 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  )}
-                >
-                  Transit
-                </button>
-              </div>
-
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 {m.fieldSourceAccount} <span className="text-red-500">*</span>
               </label>

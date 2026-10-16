@@ -186,6 +186,9 @@ export interface MerchantItem {
   payoutNotMatchActionP2P?: string | null
   payoutSelectionTypeP2P?: string | null
   payInBankCustodyType?: string | null
+  payInFeeWalletSource?: string | null
+  payOutFeeWalletSource?: string | null
+  currentPointBalance?: number | null
 }
 
 export interface GetMerchantsPayload {
@@ -245,6 +248,8 @@ export interface UpdateMerchantPayload {
   PayoutPartialCountLimitP2P?: number
   PayoutNotMatchActionP2P?: string
   PayoutSelectionTypeP2P?: string
+  PayInFeeWalletSource?: string
+  PayOutFeeWalletSource?: string
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────
@@ -566,6 +571,7 @@ export interface PayInRequestItem {
   orgId?: string | null
   merchantCode?: string | null
   merchantName?: string | null
+  payInBankCustodyType?: string | null
   generatedAmount?: number | null
   requestedAmount?: number | null
   currency?: string | null
@@ -653,6 +659,7 @@ export interface PayInTxItem {
   merchantId?: string | null
   merchantCode?: string | null
   merchantName?: string | null
+  payInBankCustodyType?: string | null
   paymentRequestId?: string | null
   description?: string | null
   currency?: string | null
@@ -713,6 +720,7 @@ export interface PayOutTxItem {
   merchantId?: string | null
   merchantCode?: string | null
   merchantName?: string | null
+  payInBankCustodyType?: string | null
   paymentRequestId?: string | null
   description?: string | null
   currency?: string | null
@@ -1029,6 +1037,7 @@ export interface PayOutRequestItem {
   merchantId2?: string | null
   merchantCode?: string | null
   merchantName?: string | null
+  payInBankCustodyType?: string | null
   description?: string | null
   currency?: string | null
   status?: string | null            // "Pending" | "Paid" | "Rejected"

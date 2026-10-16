@@ -413,7 +413,7 @@ export default function MerchantPointWalletPage() {
 
         {/* Wallet info */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <SectionHeader>{wt.sectionWallet}</SectionHeader>
+          <SectionHeader>{wt.sectionPointWallet}</SectionHeader>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <div className="col-span-2">
               <dt className="text-xs text-gray-400 uppercase font-semibold tracking-wide">{wt.labelWalletId}</dt>

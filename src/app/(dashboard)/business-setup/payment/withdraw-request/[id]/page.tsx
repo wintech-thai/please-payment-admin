@@ -760,8 +760,14 @@ export default function PayOutRequestDetailPage() {
           finally { setLoadingJob(false) }
         }
 
+        // ถ้า payout นี้เป็นของ merchant แบบ MerchantOwn ให้เลือกได้เฉพาะ payin bank account ของ merchant นั้นเท่านั้น
+        // ถ้าเป็น PlatformOwn (หรือไม่รู้) ให้เห็นบัญชีของ platform/global เหมือนเดิม
+        const isMerchantOwn = (req as any)?.payInBankCustodyType === 'MerchantOwn'
+        const merchantGuid = (req as any)?.merchantId2 ?? null
         const [payinRes] = await Promise.allSettled([
-          bankAccountApi.getPayInBankAccountsWithGlobalAll(),
+          isMerchantOwn && merchantGuid
+            ? bankAccountApi.getPayInBankAccountsOnlyForMerchant(merchantGuid)
+            : bankAccountApi.getPayInBankAccountsWithGlobalAll(),
         ])
         const toOption = (a: any, category: 'PayIn' | 'Transit'): AccountOption => ({
           bankAccountId: a.bankAccountId || a.BankAccountId || a.id || a.Id || a.accountId || a.AccountId || '',
@@ -769,7 +775,8 @@ export default function PayOutRequestDetailPage() {
           accountNumber: a.accountNumber ?? a.AccountNumber ?? null,
           accountName: a.accountName ?? a.AccountName ?? null,
           accountType: a.accountType ?? a.AccountType ?? null,
-          currentWalletBalance: a.currentWalletBalance ?? a.CurrentWalletBalance ?? a.currentWalletBalanceDecimal ?? null,
+          currentWalletBalance: a.currentWalletBalance ?? a.CurrentWalletBalance ?? a.currentWalletBalanceDecimal
+            ?? a.currentBalance ?? a.CurrentBalance ?? null,
           category,
         })
         const payinList = payinRes.status === 'fulfilled'

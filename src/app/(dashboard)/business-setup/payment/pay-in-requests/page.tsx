@@ -17,6 +17,7 @@ import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 import ExportCsvModal from '@/components/ExportCsvModal'
 import QrPaymentModal from '@/components/QrPaymentModal'
 import QrPaymentP2PModal from '@/components/QrPaymentP2PModal'
+import CustodyTypeBadge from '@/components/CustodyTypeBadge'
 import type { CsvCell } from '@/lib/csv-export'
 import { useFormatDate } from '@/hooks/useFormatDate'
 import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
@@ -1418,7 +1419,10 @@ export default function PayInRequestsPage() {
                       </td>
 
                       <td className="px-4 py-3 border-b border-gray-100 align-top">
-                        <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
+                        <div className="flex items-center gap-1.5">
+                          <CustodyTypeBadge custodyType={item.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
+                          <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
+                        </div>
                         {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
                       </td>
 

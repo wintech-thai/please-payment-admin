@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { merchantApi } from '@/lib/api/merchant.api'
 import { riskPolicyApi, type RiskPolicyItem } from '@/lib/api/risk-policy.api'
+import { paymentGatewayApi } from '@/lib/api/payment-gateway.api'
+import type { PaymentGatewayItem } from '@/lib/api/types'
 import type { MerchantItem } from '@/lib/api/types'
 import { toast } from 'sonner'
 import { ChevronLeft, Mail, Phone, X, Copy, Check } from 'lucide-react'
@@ -82,6 +84,8 @@ export default function UpdateMerchantPage() {
   const [payinDailyCountLimit, setPayinDailyCountLimit] = useState<string>('0')
   const [discardCent, setDiscardCent] = useState(false)
   const [includeGlobalBankAccount, setIncludeGlobalBankAccount] = useState(true)
+  const [payInFeeWalletSource, setPayInFeeWalletSource] = useState<string>('MerchantWallet')
+  const [payOutFeeWalletSource, setPayOutFeeWalletSource] = useState<string>('MerchantWallet')
   const [payinExpireMinute, setPayinExpireMinute] = useState<string>('15')
   const [whitelistNames, setWhitelistNames] = useState<string[]>([])
   const [whitelistInput, setWhitelistInput] = useState('')
@@ -90,6 +94,11 @@ export default function UpdateMerchantPage() {
   const [riskPolicyQuery, setRiskPolicyQuery] = useState('')
   const [riskPolicyDropdownOpen, setRiskPolicyDropdownOpen] = useState(false)
   const riskPolicyDropdownRef = useRef<HTMLDivElement>(null)
+  const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayItem[]>([])
+  const [paymentGatewayId, setPaymentGatewayId] = useState('')
+  const [paymentGatewayQuery, setPaymentGatewayQuery] = useState('')
+  const [paymentGatewayDropdownOpen, setPaymentGatewayDropdownOpen] = useState(false)
+  const paymentGatewayDropdownRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
@@ -152,9 +161,12 @@ export default function UpdateMerchantPage() {
         setPayinDailyCountLimit(merch.payinDailyTxCountLimit != null ? String(merch.payinDailyTxCountLimit) : '0')
         setDiscardCent(merch.discardCent ?? false)
         setIncludeGlobalBankAccount(merch.includeGlobalBankAccount ?? true)
+        setPayInFeeWalletSource(merch.payInFeeWalletSource ?? 'MerchantWallet')
+        setPayOutFeeWalletSource(merch.payOutFeeWalletSource ?? 'MerchantWallet')
         setPayinExpireMinute(merch.payinExpireMinute != null ? String(merch.payinExpireMinute) : '15')
         setWhitelistNames(merch.whitelistBankAccountNamesArr ?? [])
         setRiskPolicyId(merch.riskPolicyId ?? '')
+        setPaymentGatewayId(merch.paymentGatewayId ?? '')
       })
       .catch(() => {
         toast.error(m.failedToLoadMerchant)
@@ -173,14 +185,32 @@ export default function UpdateMerchantPage() {
   }, [])
 
   useEffect(() => {
+    paymentGatewayApi.getPaymentGateways({ Limit: 200 })
+      .then(res => {
+        const raw = res.data as any
+        const list: PaymentGatewayItem[] = Array.isArray(raw) ? raw : (raw?.paymentGateways ?? raw?.items ?? [])
+        setPaymentGateways(list)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (riskPolicyDropdownRef.current && !riskPolicyDropdownRef.current.contains(e.target as Node)) setRiskPolicyDropdownOpen(false)
+      if (paymentGatewayDropdownRef.current && !paymentGatewayDropdownRef.current.contains(e.target as Node)) setPaymentGatewayDropdownOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const isMerchantOwn = merchant?.payInBankCustodyType === 'MerchantOwn'
   const selectedRiskPolicy = riskPolicies.find(p => p.id === riskPolicyId)
+  const selectedPaymentGateway = paymentGateways.find(p => p.id === paymentGatewayId)
+  const filteredPaymentGateways = useMemo(() => {
+    if (!paymentGatewayQuery) return paymentGateways
+    const q = paymentGatewayQuery.toLowerCase()
+    return paymentGateways.filter(p => p.code?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q))
+  }, [paymentGateways, paymentGatewayQuery])
   const filteredRiskPolicies = useMemo(() => {
     if (!riskPolicyQuery) return riskPolicies
     const q = riskPolicyQuery.toLowerCase()
@@ -214,9 +244,12 @@ export default function UpdateMerchantPage() {
         PayinDailyTxCountLimit: payinDailyCountLimit,
         DiscardCent: discardCent,
         IncludeGlobalBankAccount: includeGlobalBankAccount,
+        PayInFeeWalletSource: isMerchantOwn ? 'PointWallet' : payInFeeWalletSource,
+        PayOutFeeWalletSource: isMerchantOwn ? 'PointWallet' : payOutFeeWalletSource,
         PayinExpireMinute: parseInt(payinExpireMinute),
         WhitelistBankAccountNamesArr: whitelistNames,
         RiskPolicyId: riskPolicyId || null,
+        PaymentGatewayId: paymentGatewayId || null,
       })
       setIsDirty(false)
       toast.success(m.updatedSuccess)
@@ -378,6 +411,66 @@ export default function UpdateMerchantPage() {
                   </div>
                 </FormField>
               </div>
+
+              <div className="sm:col-span-2">
+                <FormField label={m.fieldPaymentGateway}>
+                  <div ref={paymentGatewayDropdownRef} className="relative">
+                    <div className={clsx(inputCls(false), 'flex items-center gap-2 cursor-text')} onClick={() => setPaymentGatewayDropdownOpen(true)}>
+                      {paymentGatewayId && selectedPaymentGateway ? (
+                        <>
+                          <span className="flex-1 truncate">
+                            {selectedPaymentGateway.code}
+                            {selectedPaymentGateway.description && <span className="text-gray-400"> — {selectedPaymentGateway.description}</span>}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); setPaymentGatewayId(''); setPaymentGatewayQuery(''); markDirty() }}
+                            className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          value={paymentGatewayQuery}
+                          onChange={e => { setPaymentGatewayQuery(e.target.value); setPaymentGatewayDropdownOpen(true) }}
+                          onFocus={() => setPaymentGatewayDropdownOpen(true)}
+                          placeholder={m.fieldPaymentGatewayPlaceholder}
+                          className="flex-1 outline-none bg-transparent"
+                        />
+                      )}
+                    </div>
+                    {paymentGatewayDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                        {filteredPaymentGateways.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-gray-400">{m.noPaymentGatewayFound}</div>
+                        ) : (
+                          filteredPaymentGateways.map(p => (
+                            <div
+                              key={p.id}
+                              onMouseDown={e => {
+                                e.preventDefault()
+                                setPaymentGatewayId(p.id)
+                                setPaymentGatewayQuery('')
+                                setPaymentGatewayDropdownOpen(false)
+                                markDirty()
+                              }}
+                              className={clsx(
+                                'flex flex-col gap-0.5 px-4 py-2.5 text-sm cursor-pointer hover:bg-primary-50 transition-colors',
+                                paymentGatewayId === p.id && 'bg-primary-50 text-primary-700 font-medium'
+                              )}
+                            >
+                              <span className="font-semibold truncate">{p.code}</span>
+                              {p.description && <span className="text-xs text-gray-400 truncate">{p.description}</span>}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </FormField>
+              </div>
             </div>
           </div>
 
@@ -466,6 +559,32 @@ export default function UpdateMerchantPage() {
                   className={inputCls(!!errors.payinExpireMinute)}
                 />
                 <p className="text-xs text-gray-400 mt-1">{m.hintPayinExpireMinute}</p>
+              </FormField>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label={m.fieldPayInFeeWalletSource} hint={isMerchantOwn ? m.feeWalletSourceLockedHint : undefined}>
+                <select
+                  value={isMerchantOwn ? 'PointWallet' : payInFeeWalletSource}
+                  disabled={isMerchantOwn}
+                  onChange={e => { setPayInFeeWalletSource(e.target.value); markDirty() }}
+                  className={clsx(inputCls(false), isMerchantOwn && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                >
+                  <option value="MerchantWallet">{m.feeWalletSourceMerchantWallet}</option>
+                  <option value="PointWallet">{m.feeWalletSourcePointWallet}</option>
+                </select>
+              </FormField>
+
+              <FormField label={m.fieldPayOutFeeWalletSource} hint={isMerchantOwn ? m.feeWalletSourceLockedHint : undefined}>
+                <select
+                  value={isMerchantOwn ? 'PointWallet' : payOutFeeWalletSource}
+                  disabled={isMerchantOwn}
+                  onChange={e => { setPayOutFeeWalletSource(e.target.value); markDirty() }}
+                  className={clsx(inputCls(false), isMerchantOwn && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+                >
+                  <option value="MerchantWallet">{m.feeWalletSourceMerchantWallet}</option>
+                  <option value="PointWallet">{m.feeWalletSourcePointWallet}</option>
+                </select>
               </FormField>
             </div>
 

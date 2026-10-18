@@ -11,6 +11,7 @@ import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 import ExportCsvModal from '@/components/ExportCsvModal'
+import CustodyTypeBadge from '@/components/CustodyTypeBadge'
 import type { CsvCell } from '@/lib/csv-export'
 import { useFormatDate } from '@/hooks/useFormatDate'
 import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
@@ -367,6 +368,7 @@ export default function PayOutTransactionsPage() {
                         {item.merchantCode || item.merchantName ? (
                           <>
                             <div className="flex items-center gap-1.5">
+                              <CustodyTypeBadge custodyType={item.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                               <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
                               {item.payoutIsWithdrawal && (
                                 <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 bg-blue-50 text-blue-700 ring-blue-200">

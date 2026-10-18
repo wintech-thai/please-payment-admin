@@ -13,6 +13,7 @@ import clsx from 'clsx'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 import ExportCsvModal from '@/components/ExportCsvModal'
+import CustodyTypeBadge from '@/components/CustodyTypeBadge'
 import type { CsvCell } from '@/lib/csv-export'
 import { useFormatDate } from '@/hooks/useFormatDate'
 import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
@@ -908,7 +909,10 @@ export default function PayInTransactionsPage() {
                       <td className="px-4 py-3 border-b border-gray-100">
                         {item.merchantCode || item.merchantName ? (
                           <>
-                            <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
+                            <div className="flex items-center gap-1.5">
+                              <CustodyTypeBadge custodyType={item.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
+                              <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
+                            </div>
                             {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
                           </>
                         ) : (

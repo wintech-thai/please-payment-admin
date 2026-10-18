@@ -150,6 +150,50 @@ export interface UpdateApiKeyPayload {
   tags?: string        // comma-separated string e.g. "prod,backend"
 }
 
+// ─── Payment Gateway ─────────────────────────────────────────────────────────
+
+export interface PaymentGatewayItem {
+  id: string
+  orgId?: string | null
+  scheme?: string | null          // "PleasePayment" — กำหนดได้แค่ตอน Add เท่านั้น
+  code?: string | null
+  description?: string | null
+  endpointBaseUrl?: string | null
+  endpointOrgId?: string | null
+  endpointMerchantId?: string | null
+  apiKey?: string | null          // secret, ไม่ return กลับมาตอนแสดง list
+  tags?: string | null
+  createdDate?: string | null
+}
+
+export interface GetPaymentGatewaysPayload {
+  FullTextSearch?: string
+  Scheme?: string
+  Offset?: number
+  Limit?: number
+}
+
+export interface AddPaymentGatewayPayload {
+  Scheme: string
+  Code: string
+  Description?: string
+  EndpointBaseUrl?: string
+  EndpointOrgId?: string
+  EndpointMerchantId?: string
+  ApiKey?: string
+  Tags?: string
+}
+
+export interface UpdatePaymentGatewayPayload {
+  Code: string
+  Description?: string
+  EndpointBaseUrl?: string
+  EndpointOrgId?: string
+  EndpointMerchantId?: string
+  ApiKey?: string
+  Tags?: string
+}
+
 // ─── Merchant ────────────────────────────────────────────────────────────────
 
 export interface MerchantItem {
@@ -186,6 +230,10 @@ export interface MerchantItem {
   payoutNotMatchActionP2P?: string | null
   payoutSelectionTypeP2P?: string | null
   payInBankCustodyType?: string | null
+  payInFeeWalletSource?: string | null
+  payOutFeeWalletSource?: string | null
+  currentPointBalance?: number | null
+  paymentGatewayId?: string | null
 }
 
 export interface GetMerchantsPayload {
@@ -245,6 +293,9 @@ export interface UpdateMerchantPayload {
   PayoutPartialCountLimitP2P?: number
   PayoutNotMatchActionP2P?: string
   PayoutSelectionTypeP2P?: string
+  PayInFeeWalletSource?: string
+  PayOutFeeWalletSource?: string
+  PaymentGatewayId?: string | null
 }
 
 // ─── Merchant Org Users & API Keys ───────────────────────────────────────────
@@ -566,6 +617,7 @@ export interface PayInRequestItem {
   orgId?: string | null
   merchantCode?: string | null
   merchantName?: string | null
+  payInBankCustodyType?: string | null
   generatedAmount?: number | null
   requestedAmount?: number | null
   currency?: string | null
@@ -653,6 +705,7 @@ export interface PayInTxItem {
   merchantId?: string | null
   merchantCode?: string | null
   merchantName?: string | null
+  payInBankCustodyType?: string | null
   paymentRequestId?: string | null
   description?: string | null
   currency?: string | null
@@ -713,6 +766,7 @@ export interface PayOutTxItem {
   merchantId?: string | null
   merchantCode?: string | null
   merchantName?: string | null
+  payInBankCustodyType?: string | null
   paymentRequestId?: string | null
   description?: string | null
   currency?: string | null
@@ -1029,6 +1083,7 @@ export interface PayOutRequestItem {
   merchantId2?: string | null
   merchantCode?: string | null
   merchantName?: string | null
+  payInBankCustodyType?: string | null
   description?: string | null
   currency?: string | null
   status?: string | null            // "Pending" | "Paid" | "Rejected"

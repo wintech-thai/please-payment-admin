@@ -716,7 +716,9 @@ export default function PayOutRequestDetailPage() {
   const [showNoticeDrawer, setShowNoticeDrawer] = useState(false)
   const [highlightedPartialId, setHighlightedPartialId] = useState<string | null>(null)
 
-  const isPending = detail?.status?.toLowerCase() === 'pending'
+  // x088: merchant แบบ MerchantOwn custody เอง Payout Request เป็น read only ที่ Admin ทั้งหมด แก้ไข/approve/reject ไม่ได้
+  const isMerchantOwn = detail?.payInBankCustodyType === 'MerchantOwn'
+  const isPending = detail?.status?.toLowerCase() === 'pending' && !isMerchantOwn
   const isRejected = detail?.status?.toLowerCase() === 'rejected'
   const msg1Lines = (job?.jobMessage ?? '').split('\n').filter(l => l.trim())
   const msg2Lines = (job?.jobMessage2 ?? '').split('\n').filter(l => l.trim())
@@ -849,7 +851,7 @@ export default function PayOutRequestDetailPage() {
       if (selectedAccountId) payload.PayoutBankAccountId = selectedAccountId
       await paymentRequestApi.updatePayOutRequestById(id, payload)
       toast.success(m.toastSaveSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push(`/business-setup/payment/withdraw-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastSaveFailed)
     } finally {
@@ -876,7 +878,7 @@ export default function PayOutRequestDetailPage() {
         PayoutBankAccountId: selectedAccountId || undefined,
       })
       toast.success(m.toastApproveSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push(`/business-setup/payment/withdraw-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastApproveFailed)
     } finally {
@@ -890,7 +892,7 @@ export default function PayOutRequestDetailPage() {
     try {
       await paymentRequestApi.rejectPayOutRequestById(id, { RejectReason: reason, StatusCode: rejectStatus })
       toast.success(m.toastRejectSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push(`/business-setup/payment/withdraw-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastRejectFailed)
     } finally {

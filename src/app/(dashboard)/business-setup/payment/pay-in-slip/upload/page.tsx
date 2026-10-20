@@ -512,7 +512,7 @@ export default function UploadPayInSlipPage() {
       })
 
       toast.success(m.toastUploadSuccess)
-      router.push('/business-setup/payment/pay-in-slip')
+      router.push(`/business-setup/payment/pay-in-slip?refresh=${Date.now()}`)
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? err?.message ?? m.toastUploadFailed
       toast.error(msg)

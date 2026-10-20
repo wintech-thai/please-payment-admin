@@ -334,7 +334,7 @@ function CreatePayInTxModal({
 
 // ── Approve Modal ─────────────────────────────────────────────────────────────
 
-interface MerchantOption { id: string; code?: string | null; name?: string | null; status?: string | null }
+interface MerchantOption { id: string; code?: string | null; name?: string | null; status?: string | null; custodyType?: string | null }
 
 function normalizeMerchant(m: any): MerchantOption {
   return {
@@ -342,6 +342,7 @@ function normalizeMerchant(m: any): MerchantOption {
     code: m.merchantCode ?? m.code ?? null,
     name: m.merchantName ?? m.name ?? null,
     status: m.merchantStatus ?? m.status ?? null,
+    custodyType: m.payInBankCustodyType ?? m.PayInBankCustodyType ?? null,
   }
 }
 
@@ -399,6 +400,8 @@ function ApproveModal({
   }, [])
 
   const filteredMerchants = merchants.filter(merch => {
+    // x088: Unidentified tx ที่กำลังจะ approve ให้ merchant ได้แค่ merchant แบบ PlatformOwn เท่านั้น
+    if (merch.custodyType === 'MerchantOwn') return false
     const q = merchantSearch.toLowerCase()
     return (
       merch.code?.toLowerCase().includes(q) ||
@@ -594,7 +597,8 @@ function ActionMenu({
   const [dropUp, setDropUp] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
-  const isUnidentified = tx.status?.toLowerCase() === 'unidentified'
+  // x088: ถ้า merchant ของ tx นี้เป็น MerchantOwn ต้องให้ไปอนุมัติที่โปรแกรม Merchant เอง Admin ทำได้แค่ view only
+  const isUnidentified = tx.status?.toLowerCase() === 'unidentified' && tx.payInBankCustodyType !== 'MerchantOwn'
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {

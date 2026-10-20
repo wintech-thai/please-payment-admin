@@ -288,7 +288,7 @@ export default function TransferRequestDetailPage() {
       if (d?.payinBankAccountId) payload.PayinBankAccountId = d.payinBankAccountId
       await paymentRequestApi.updateTransferRequestById(id, payload)
       toast.success(m.toastSaveSuccess)
-      router.push('/business-setup/payment/transfer-request')
+      router.push(`/business-setup/payment/transfer-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastSaveFailed)
     } finally {
@@ -321,7 +321,7 @@ export default function TransferRequestDetailPage() {
         return
       }
       toast.success(m.toastApproveSuccess)
-      router.push('/business-setup/payment/transfer-request')
+      router.push(`/business-setup/payment/transfer-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastApproveFailed)
     } finally {
@@ -335,7 +335,7 @@ export default function TransferRequestDetailPage() {
     try {
       await paymentRequestApi.rejectTransferRequestById(id, { RejectReason: reason })
       toast.success(m.toastRejectSuccess)
-      router.push('/business-setup/payment/transfer-request')
+      router.push(`/business-setup/payment/transfer-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastRejectFailed)
     } finally {

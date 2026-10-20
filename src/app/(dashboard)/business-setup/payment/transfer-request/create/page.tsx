@@ -155,10 +155,10 @@ export default function CreateTransferRequestPage() {
         if (id) {
           router.push(`/business-setup/payment/transfer-request/${id}`)
         } else {
-          router.push('/business-setup/payment/transfer-request')
+          router.push(`/business-setup/payment/transfer-request?refresh=${Date.now()}`)
         }
       } else {
-        router.push('/business-setup/payment/transfer-request')
+        router.push(`/business-setup/payment/transfer-request?refresh=${Date.now()}`)
       }
     } catch (err: any) {
       const description = err?.response?.data?.description ?? err?.response?.data?.message

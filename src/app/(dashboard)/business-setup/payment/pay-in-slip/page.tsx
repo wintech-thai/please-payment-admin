@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { paymentDocumentApi } from '@/lib/api/payment-document.api'
 import type { PayInSlipItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
@@ -63,8 +63,9 @@ function StatusBadge({ status }: { status?: string | null }) {
   )
 }
 
-export default function PayInSlipListPage() {
+function PayInSlipListPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { t } = useLang()
   const m = t.payInSlip
   const { timezone } = useFormatDate()
@@ -118,7 +119,13 @@ export default function PayInSlipListPage() {
     }
   }, [m.failedToLoad])
 
-  useEffect(() => { fetchData(timeRange, search, statusFilter) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchData(timeRange, search, statusFilter)
+    if (searchParams.get('refresh')) {
+      router.replace('/business-setup/payment/pay-in-slip')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()])
 
   const handleSearch = () => fetchData(timeRange, search, statusFilter)
 
@@ -410,5 +417,13 @@ export default function PayInSlipListPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PayInSlipListPage() {
+  return (
+    <Suspense>
+      <PayInSlipListPageContent />
+    </Suspense>
   )
 }

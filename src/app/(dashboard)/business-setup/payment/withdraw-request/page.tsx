@@ -495,10 +495,15 @@ function WithdrawRequestPageContent() {
 
   useEffect(() => {
     load(1, itemsPerPage, timeRange, search, statusFilter, p2pFilter)
-    if (searchParams.get('refresh') === '1') {
+    if (searchParams.get('refresh')) {
+      // Strip the param so re-visiting this page via browser back doesn't re-trigger it
       router.replace('/business-setup/payment/withdraw-request')
     }
-  }, [])
+    // Depends on the raw query string (not just []) so that a cached/reused page instance
+    // (Next.js App Router can preserve this component across a create→push navigation)
+    // still reloads — each caller appends a unique ?refresh=<timestamp> after a mutation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()])
 
   const handleRefresh = () => {
     setPage(1)

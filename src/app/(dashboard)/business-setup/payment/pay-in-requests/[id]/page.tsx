@@ -906,7 +906,8 @@ export default function PayInRequestDetailPage() {
   const statusLower = detail?.status?.toLowerCase()
   const isApproved = statusLower === 'approved'
   const isRejected = statusLower === 'rejected'
-  const isPending = statusLower === 'pending'
+  // x088: merchant แบบ MerchantOwn approve/reject เองที่โปรแกรม Merchant เท่านั้น Admin ทำได้แค่ view only
+  const isPending = statusLower === 'pending' && detail?.payInBankCustodyType !== 'MerchantOwn'
   const msg1Lines = (job?.jobMessage ?? '').split('\n').filter(l => l.trim())
   const msg2Lines = (job?.jobMessage2 ?? '').split('\n').filter(l => l.trim())
 

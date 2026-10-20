@@ -727,7 +727,8 @@ function SlipQuickViewModal({
   const [editLast4, setEditLast4] = useState('')
   const [editNote, setEditNote] = useState('')
   const [saving, setSaving] = useState(false)
-  const isPending = item.status?.toLowerCase() === 'pending'
+  // x088: merchant แบบ MerchantOwn สร้าง/approve/reject เองที่โปรแกรม Merchant เท่านั้น Admin ทำได้แค่ view only
+  const isPending = item.status?.toLowerCase() === 'pending' && item.payInBankCustodyType !== 'MerchantOwn'
 
   useEffect(() => {
     paymentRequestApi.getPayInSlipUploads(item.orgId ?? '', item.id)
@@ -1018,7 +1019,8 @@ function ActionMenu({
   const [dropUp, setDropUp] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
-  const isPending = item.status?.toLowerCase() === 'pending'
+  // x088: merchant แบบ MerchantOwn สร้าง/approve/reject เองที่โปรแกรม Merchant เท่านั้น Admin ทำได้แค่ view only
+  const isPending = item.status?.toLowerCase() === 'pending' && item.payInBankCustodyType !== 'MerchantOwn'
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -1212,6 +1214,8 @@ export default function PayInRequestsPage() {
   }
 
   const filteredPickerMerchants = pickerMerchants.filter(mc => {
+    // x088: merchant แบบ MerchantOwn สร้าง payment request เองที่โปรแกรม Merchant เท่านั้น ห้ามเลือกจาก Admin
+    if (mc.payInBankCustodyType === 'MerchantOwn') return false
     if (!merchantSearch.trim()) return true
     const q = merchantSearch.toLowerCase()
     return mc.code?.toLowerCase().includes(q) || mc.name?.toLowerCase().includes(q)
@@ -1419,11 +1423,11 @@ export default function PayInRequestsPage() {
                       </td>
 
                       <td className="px-4 py-3 border-b border-gray-100 align-top">
-                        <div className="flex items-center gap-1.5">
+                        <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
                           <CustodyTypeBadge custodyType={item.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
-                          <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
-                        </div>
-                        {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
+                          {item.merchantCode ?? '—'}
+                        </p>
+                        {item.merchantName && <p className="text-xs text-gray-500 mt-0.5 pl-[22px]">{item.merchantName}</p>}
                       </td>
 
                       <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap align-top">
@@ -1715,8 +1719,11 @@ export default function PayInRequestsPage() {
                     className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{mc.code}</p>
-                      {mc.name && <p className="text-xs text-gray-500 truncate">{mc.name}</p>}
+                      <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
+                        <CustodyTypeBadge custodyType={mc.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
+                        <span className="truncate">{mc.code}</span>
+                      </p>
+                      {mc.name && <p className="text-xs text-gray-500 truncate pl-[22px]">{mc.name}</p>}
                     </div>
                   </button>
                 ))

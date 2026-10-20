@@ -170,8 +170,7 @@ export default function CreateWithdrawalRequestPage() {
       })
       setIsDirty(false)
       toast.success(m.toastCreateWithdrawSuccess)
-      router.push('/business-setup/payment/withdraw-request')
-      router.refresh()
+      router.push(`/business-setup/payment/withdraw-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastCreateWithdrawFailed)
     } finally {

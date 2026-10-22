@@ -363,6 +363,7 @@ function ApproveModal({
   const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loadingMerchants, setLoadingMerchants] = useState(false)
+  const [confirmStep, setConfirmStep] = useState(false)
 
   useEffect(() => {
     const fetchMerchants = async () => {
@@ -409,9 +410,14 @@ function ApproveModal({
     )
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedMerchant) { toast.error(m.toastMerchantRequired); return }
+    setConfirmStep(true)
+  }
+
+  const handleConfirm = async () => {
+    if (!selectedMerchant) return
     setLoading(true)
     try {
       await paymentTxApi.approveUnidentifiedPaymentTx(tx.id, selectedMerchant.id)
@@ -429,11 +435,40 @@ function ApproveModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-900">{m.modalApproveTitle}</h3>
+          <h3 className="text-base font-bold text-gray-900">{confirmStep ? m.confirmApproveTitle : m.modalApproveTitle}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {confirmStep ? (
+          <div className="px-6 py-5 space-y-4">
+            <p className="text-sm text-gray-600">{m.confirmApproveDesc}</p>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{m.labelBankAccount}</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {[tx.payInBankCode, tx.payInBankAccountNo].filter(Boolean).join(' · ') || '—'}
+              </p>
+              <p className="text-sm text-gray-700 mt-1">
+                <span className="font-semibold">{formatAmount(tx.txAmountDecimal ?? tx.txAmount)}</span>
+                {tx.currency ? ` ${tx.currency}` : ''}
+              </p>
+            </div>
+            <div className="bg-emerald-50 rounded-lg p-3 space-y-1 ring-1 ring-emerald-100">
+              <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">{m.labelMerchant}</p>
+              <p className="text-sm font-semibold text-emerald-900">{selectedMerchant?.code ?? selectedMerchant?.id}</p>
+              {selectedMerchant?.name && <p className="text-xs text-emerald-700">{selectedMerchant.name}</p>}
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={() => setConfirmStep(false)} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-60">
+                {m.btnBack}
+              </button>
+              <button type="button" onClick={handleConfirm} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-60">
+                {loading ? m.btnApproving : m.btnApprove}
+              </button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {/* Bank account info (readonly) */}
           <div className="bg-gray-50 rounded-lg p-3 space-y-1">
@@ -505,11 +540,12 @@ function ApproveModal({
             <button type="button" onClick={onClose} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
               {m.btnCancel}
             </button>
-            <button type="submit" disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-60">
-              {loading ? '...' : m.btnApprove}
+            <button type="submit" className="flex-1 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-60">
+              {m.btnApprove}
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   )
@@ -530,9 +566,14 @@ function RejectModal({
   const m = t.payInTx
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
+  const [confirmStep, setConfirmStep] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setConfirmStep(true)
+  }
+
+  const handleConfirm = async () => {
     setLoading(true)
     try {
       await paymentTxApi.rejectUnidentifiedPaymentTx(tx.id, reason)
@@ -550,11 +591,31 @@ function RejectModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-900">{m.modalRejectTitle}</h3>
+          <h3 className="text-base font-bold text-gray-900">{confirmStep ? m.confirmRejectTitle : m.modalRejectTitle}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {confirmStep ? (
+          <div className="px-6 py-5 space-y-4">
+            <p className="text-sm text-gray-600">{m.confirmRejectDesc}</p>
+            {reason && (
+              <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{m.labelRejectReason}</p>
+                <p className="text-sm text-gray-800 whitespace-pre-wrap">{reason}</p>
+              </div>
+            )}
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={() => setConfirmStep(false)} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-60">
+                {m.btnBack}
+              </button>
+              <button type="button" onClick={handleConfirm} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-60">
+                {loading ? m.btnRejecting : m.btnReject}
+              </button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{m.labelRejectReason}</label>
@@ -570,11 +631,12 @@ function RejectModal({
             <button type="button" onClick={onClose} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
               {m.btnCancel}
             </button>
-            <button type="submit" disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-60">
-              {loading ? '...' : m.btnReject}
+            <button type="submit" className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-60">
+              {m.btnReject}
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   )

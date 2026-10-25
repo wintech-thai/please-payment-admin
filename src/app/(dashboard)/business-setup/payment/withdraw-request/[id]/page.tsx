@@ -1298,6 +1298,7 @@ export default function PayOutRequestDetailPage() {
                           )}
                         >
                           <div className="flex items-center gap-1.5 flex-wrap">
+                            <CustodyTypeBadge custodyType={a.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                             <span className="font-medium">{a.bankCode}</span>
                             {a.accountNumber && <span>{a.accountNumber}</span>}
                             {a.accountName && <span className="text-gray-400 text-xs">— {a.accountName}</span>}
@@ -1316,7 +1317,6 @@ export default function PayOutRequestDetailPage() {
                                 {a.accountType}
                               </span>
                             )}
-                            <CustodyTypeBadge custodyType={a.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                           </div>
                           {a.currentWalletBalance != null && (
                             <div className="mt-1 flex items-center gap-1">

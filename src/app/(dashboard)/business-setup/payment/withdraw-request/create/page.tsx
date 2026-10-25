@@ -12,6 +12,7 @@ import { ChevronLeft, RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
+import CustodyTypeBadge from '@/components/CustodyTypeBadge'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -89,7 +90,8 @@ export default function CreatePayOutRequestPage() {
         const list: BankAccountItem[] = Array.isArray(data)
           ? data
           : (data?.bankAccounts ?? data?.BankAccounts ?? [])
-        setPayoutAccounts(list)
+        // x088 ปรับแก้ #2: บัญชีปลายทางของ Payout Request ต้องเป็น PlatformOwn เท่านั้น
+        setPayoutAccounts(list.filter(ba => ba.custodyType !== 'MerchantOwn'))
       })
       .catch(() => toast.error(m.toastFailedToLoadBanks))
       .finally(() => setLoadingAccounts(false))
@@ -115,9 +117,10 @@ export default function CreatePayOutRequestPage() {
 
   const selectedMerchant = merchants.find(mc => mc.id === merchantId)
 
-  const filteredMerchants = merchantSearch.trim()
-    ? merchants.filter(mc => getMerchantLabel(mc).toLowerCase().includes(merchantSearch.toLowerCase()))
-    : merchants
+  const filteredMerchants = merchants
+    // x088 ปรับแก้ #3: merchant แบบ MerchantOwn สร้าง Payout Request เองไม่ได้อยู่แล้ว ห้ามเลือกจาก Admin
+    .filter(mc => mc.payInBankCustodyType !== 'MerchantOwn')
+    .filter(mc => !merchantSearch.trim() || getMerchantLabel(mc).toLowerCase().includes(merchantSearch.toLowerCase()))
 
   const mark = () => { if (!isDirty) setIsDirty(true) }
   const clearErr = (key: string) => setErrors(p => ({ ...p, [key]: '' }))
@@ -180,8 +183,7 @@ export default function CreatePayOutRequestPage() {
       })
       setIsDirty(false)
       toast.success(m.toastCreateSuccess)
-      router.push('/business-setup/payment/withdraw-request')
-      router.refresh()
+      router.push(`/business-setup/payment/withdraw-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastCreateFailed)
     } finally {
@@ -247,13 +249,14 @@ export default function CreatePayOutRequestPage() {
                               mark(); clearErr('merchantId')
                             }}
                             className={clsx(
-                              'w-full text-left px-3 py-2 text-sm transition-colors',
+                              'w-full flex items-center gap-1.5 text-left px-3 py-2 text-sm transition-colors',
                               merchantId === mc.id
                                 ? 'bg-primary-50 text-primary-700 font-medium'
                                 : 'text-gray-800 hover:bg-gray-50'
                             )}
                           >
-                            {getMerchantLabel(mc)}
+                            <CustodyTypeBadge custodyType={mc.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
+                            <span className="truncate">{getMerchantLabel(mc)}</span>
                           </button>
                         ))
                       )}
@@ -307,6 +310,7 @@ export default function CreatePayOutRequestPage() {
                         {selectedBankAccount ? (
                           <>
                             <span className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1">
+                              <CustodyTypeBadge custodyType={selectedBankAccount.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                               <span className="font-semibold text-gray-900 text-sm">
                                 {[selectedBankAccount.bankCode, selectedBankAccount.accountNumber].filter(Boolean).join(' ')}
                               </span>
@@ -351,6 +355,7 @@ export default function CreatePayOutRequestPage() {
                               )}
                             >
                               <span className="flex-1 min-w-0 flex items-center flex-wrap gap-1.5">
+                                <CustodyTypeBadge custodyType={ba.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                                 <span className={clsx('text-sm font-semibold', payoutBankAccountId === id ? 'text-primary-700' : 'text-gray-900')}>
                                   {bankPart}
                                 </span>

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { paymentRequestApi } from '@/lib/api/payment-request.api'
 import type { TransferRequestItem } from '@/lib/api/types'
 import { useLang } from '@/context/LanguageContext'
@@ -63,10 +63,11 @@ function StatusBadge({ status }: { status?: string | null }) {
   )
 }
 
-export default function TransferRequestPage() {
+function TransferRequestPageContent() {
   const { t } = useLang()
   const m = t.transferRequest
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { timezone } = useFormatDate()
 
   const [search, setSearch] = useState<string>(() =>
@@ -123,7 +124,13 @@ export default function TransferRequestPage() {
     }
   }, [m.failedToLoad])
 
-  useEffect(() => { load(1, itemsPerPage, timeRange, search, statusFilter) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load(1, itemsPerPage, timeRange, search, statusFilter)
+    if (searchParams.get('refresh')) {
+      router.replace('/business-setup/payment/transfer-request')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()])
 
   const handleRefresh = () => {
     setPage(1)
@@ -418,5 +425,13 @@ export default function TransferRequestPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function TransferRequestPage() {
+  return (
+    <Suspense>
+      <TransferRequestPageContent />
+    </Suspense>
   )
 }

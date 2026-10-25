@@ -13,6 +13,7 @@ import { formatDateTime as formatDateTimeTz } from '@/lib/datetime'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight, ChevronDown, CheckCircle, AlertCircle, Clock, Search, X, Copy, Check, Link2, Paperclip, ExternalLink, History, Loader2, TriangleAlert, Pencil } from 'lucide-react'
 import AuditTrailDrawer from '@/components/AuditTrailDrawer'
+import CustodyTypeBadge from '@/components/CustodyTypeBadge'
 import AuditNoticeDrawer from '@/components/AuditNoticeDrawer'
 import QRCode from 'react-qr-code'
 import clsx from 'clsx'
@@ -26,6 +27,7 @@ interface AccountOption {
   accountName?: string | null
   accountType?: string | null
   currentWalletBalance?: number | null
+  custodyType?: string | null
   category?: 'PayIn' | 'Transit'
 }
 
@@ -716,7 +718,9 @@ export default function PayOutRequestDetailPage() {
   const [showNoticeDrawer, setShowNoticeDrawer] = useState(false)
   const [highlightedPartialId, setHighlightedPartialId] = useState<string | null>(null)
 
-  const isPending = detail?.status?.toLowerCase() === 'pending'
+  // x088: merchant แบบ MerchantOwn custody เอง Payout Request เป็น read only ที่ Admin ทั้งหมด แก้ไข/approve/reject ไม่ได้
+  const isMerchantOwn = detail?.payInBankCustodyType === 'MerchantOwn'
+  const isPending = detail?.status?.toLowerCase() === 'pending' && !isMerchantOwn
   const isRejected = detail?.status?.toLowerCase() === 'rejected'
   const msg1Lines = (job?.jobMessage ?? '').split('\n').filter(l => l.trim())
   const msg2Lines = (job?.jobMessage2 ?? '').split('\n').filter(l => l.trim())
@@ -777,12 +781,17 @@ export default function PayOutRequestDetailPage() {
           accountType: a.accountType ?? a.AccountType ?? null,
           currentWalletBalance: a.currentWalletBalance ?? a.CurrentWalletBalance ?? a.currentWalletBalanceDecimal
             ?? a.currentBalance ?? a.CurrentBalance ?? null,
+          custodyType: a.custodyType ?? a.CustodyType ?? null,
           category,
         })
         const payinList = payinRes.status === 'fulfilled'
           ? (() => { const r = payinRes.value.data as any; return (Array.isArray(r) ? r : (r?.bankAccounts ?? r?.BankAccounts ?? [])) })()
           : []
-        const mapped: AccountOption[] = payinList.map((a: any) => toOption(a, 'PayIn'))
+        let mapped: AccountOption[] = payinList.map((a: any) => toOption(a, 'PayIn'))
+        if (!isMerchantOwn) {
+          // x088 ปรับแก้ #2: บัญชีปลายทางของ Payout Request (merchant แบบ PlatformOwn) ต้องเป็น PlatformOwn เท่านั้น
+          mapped = mapped.filter(a => a.custodyType !== 'MerchantOwn')
+        }
         setAllAccounts(mapped)
 
         // Pre-fill search box with previously saved account label
@@ -849,7 +858,7 @@ export default function PayOutRequestDetailPage() {
       if (selectedAccountId) payload.PayoutBankAccountId = selectedAccountId
       await paymentRequestApi.updatePayOutRequestById(id, payload)
       toast.success(m.toastSaveSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push(`/business-setup/payment/withdraw-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastSaveFailed)
     } finally {
@@ -876,7 +885,7 @@ export default function PayOutRequestDetailPage() {
         PayoutBankAccountId: selectedAccountId || undefined,
       })
       toast.success(m.toastApproveSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push(`/business-setup/payment/withdraw-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastApproveFailed)
     } finally {
@@ -890,7 +899,7 @@ export default function PayOutRequestDetailPage() {
     try {
       await paymentRequestApi.rejectPayOutRequestById(id, { RejectReason: reason, StatusCode: rejectStatus })
       toast.success(m.toastRejectSuccess)
-      router.push('/business-setup/payment/withdraw-request')
+      router.push(`/business-setup/payment/withdraw-request?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastRejectFailed)
     } finally {
@@ -1289,6 +1298,7 @@ export default function PayOutRequestDetailPage() {
                           )}
                         >
                           <div className="flex items-center gap-1.5 flex-wrap">
+                            <CustodyTypeBadge custodyType={a.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                             <span className="font-medium">{a.bankCode}</span>
                             {a.accountNumber && <span>{a.accountNumber}</span>}
                             {a.accountName && <span className="text-gray-400 text-xs">— {a.accountName}</span>}

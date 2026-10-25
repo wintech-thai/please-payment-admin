@@ -272,7 +272,7 @@ export default function PayInSlipDetailPage() {
         RefId: refId.trim(),
       })
       toast.success(m.toastUpdateSuccess)
-      router.push('/business-setup/payment/pay-in-slip')
+      router.push(`/business-setup/payment/pay-in-slip?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? m.toastUpdateFailed)
     } finally {
@@ -321,7 +321,7 @@ export default function PayInSlipDetailPage() {
         MerchantId: detail?.merchantId ?? '',
       })
       toast.success(m.toastApproveSuccess)
-      router.push('/business-setup/payment/pay-in-slip')
+      router.push(`/business-setup/payment/pay-in-slip?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? err?.response?.data?.description ?? err?.response?.data?.message ?? m.toastApproveFailed)
     } finally {
@@ -343,7 +343,7 @@ export default function PayInSlipDetailPage() {
       })
       toast.success(m.toastRejectSuccess)
       setShowRejectModal(false)
-      router.push('/business-setup/payment/pay-in-slip')
+      router.push(`/business-setup/payment/pay-in-slip?refresh=${Date.now()}`)
     } catch (err: any) {
       toast.error(err?.message ?? err?.response?.data?.description ?? err?.response?.data?.message ?? m.toastRejectFailed)
     } finally {

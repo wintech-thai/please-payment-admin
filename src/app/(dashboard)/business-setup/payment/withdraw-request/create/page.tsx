@@ -310,6 +310,7 @@ export default function CreatePayOutRequestPage() {
                         {selectedBankAccount ? (
                           <>
                             <span className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1">
+                              <CustodyTypeBadge custodyType={selectedBankAccount.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                               <span className="font-semibold text-gray-900 text-sm">
                                 {[selectedBankAccount.bankCode, selectedBankAccount.accountNumber].filter(Boolean).join(' ')}
                               </span>
@@ -317,7 +318,6 @@ export default function CreatePayOutRequestPage() {
                                 <span className="text-gray-400 text-sm font-normal">— {selectedBankAccount.accountName}</span>
                               )}
                               <AccountTypeBadge type={selectedBankAccount.accountType} />
-                              <CustodyTypeBadge custodyType={selectedBankAccount.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                             </span>
                           </>
                         ) : (
@@ -355,6 +355,7 @@ export default function CreatePayOutRequestPage() {
                               )}
                             >
                               <span className="flex-1 min-w-0 flex items-center flex-wrap gap-1.5">
+                                <CustodyTypeBadge custodyType={ba.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                                 <span className={clsx('text-sm font-semibold', payoutBankAccountId === id ? 'text-primary-700' : 'text-gray-900')}>
                                   {bankPart}
                                 </span>
@@ -362,7 +363,6 @@ export default function CreatePayOutRequestPage() {
                                   <span className="text-sm text-gray-400 font-normal">— {namePart}</span>
                                 )}
                                 <AccountTypeBadge type={ba.accountType} />
-                                <CustodyTypeBadge custodyType={ba.custodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                               </span>
                             </button>
                           )

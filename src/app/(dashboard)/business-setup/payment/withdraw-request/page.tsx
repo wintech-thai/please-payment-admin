@@ -692,7 +692,7 @@ function WithdrawRequestPageContent() {
                     >
                       {/* Date — click to navigate (stopPropagation to avoid double highlight) */}
                       <td
-                        className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group"
+                        className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group align-top"
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/withdraw-request/${item.id}`) }}
                       >
                         <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate, timezone)}</span>
@@ -702,7 +702,7 @@ function WithdrawRequestPageContent() {
                       </td>
 
                       {/* Merchant */}
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="px-4 py-3 border-b border-gray-100 align-top">
                         <div className="flex items-center gap-1.5">
                           <CustodyTypeBadge custodyType={item.payInBankCustodyType} platformLabel={t.bankAccount.custodyTypePlatformOwn} merchantLabel={t.bankAccount.custodyTypeMerchantOwn} />
                           <p className="text-sm font-semibold text-gray-800">{item.merchantCode ?? '—'}</p>
@@ -712,11 +712,11 @@ function WithdrawRequestPageContent() {
                             </span>
                           )}
                         </div>
-                        {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
+                        {item.merchantName && <p className="text-xs text-gray-500 mt-0.5 pl-[22px]">{item.merchantName}</p>}
                       </td>
 
                       {/* Amount */}
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap align-top">
                         <p className="text-sm font-semibold text-gray-800 tabular-nums">
                           {formatAmount(item.generatedAmount)}
                         </p>
@@ -737,7 +737,7 @@ function WithdrawRequestPageContent() {
                       </td>
 
                       {/* Fee */}
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap align-top">
                         {item.payoutFeeDecimal != null && item.payoutFeeDecimal > 0 ? (
                           <>
                             <p className="text-sm font-semibold tabular-nums text-gray-800">{formatAmount(item.payoutFeeDecimal)}</p>
@@ -761,7 +761,7 @@ function WithdrawRequestPageContent() {
                       </td>
 
                       {/* Destination bank — use Override fields when isPayInBankAccountOverride = true */}
-                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
+                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px] align-top">
                         {(() => {
                           const bankCode = item.isPayInBankAccountOverride ? item.payinBankCodeOverride : item.payinBankCode
                           const bankAccountNo = item.isPayInBankAccountOverride ? item.payinBankAccountNoOverride : item.payinBankAccountNo
@@ -796,7 +796,7 @@ function WithdrawRequestPageContent() {
                       </td>
 
                       {/* Source bank — stored in payoutBank* fields */}
-                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
+                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px] align-top">
                         {item.payoutBankCode || item.payoutBankAccountNo ? (
                           <p className="text-sm font-semibold text-gray-800">
                             {[item.payoutBankCode, item.payoutBankAccountNo].filter(Boolean).join(' · ')}
@@ -820,7 +820,7 @@ function WithdrawRequestPageContent() {
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
+                      <td className="px-4 py-3 border-b border-gray-100 align-top" onClick={e => e.stopPropagation()}>
                         <div className="flex items-start gap-1.5 flex-wrap">
                           <StatusBadge
                             status={item.status}
@@ -867,7 +867,7 @@ function WithdrawRequestPageContent() {
                       </td>
 
                       {/* REF */}
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="px-4 py-3 border-b border-gray-100 align-top">
                         <div className="flex flex-col gap-0.5">
                           {item.refId1 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId1}</span> : null}
                           {item.refId2 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId2}</span> : null}
@@ -877,7 +877,7 @@ function WithdrawRequestPageContent() {
                       </td>
 
                       {/* Action menu */}
-                      <td className="px-2 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
+                      <td className="px-2 py-3 border-b border-gray-100 align-top" onClick={e => e.stopPropagation()}>
                         <div className="relative">
                           <button
                             onClick={() => setOpenActionId(openActionId === item.id ? null : item.id)}

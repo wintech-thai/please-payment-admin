@@ -356,7 +356,7 @@ export default function PayOutTransactionsPage() {
                     >
                       {/* Date */}
                       <td
-                        className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group"
+                        className="px-4 py-3 border-b border-gray-100 whitespace-nowrap cursor-pointer group align-top"
                         onClick={e => { e.stopPropagation(); handleRowHighlight(item.id); router.push(`/business-setup/payment/withdraw-transactions/${item.id}`) }}
                       >
                         <span className="text-sm text-gray-600 group-hover:text-primary-600 group-hover:underline">{formatDateTime(item.createdDate, timezone)}</span>
@@ -364,7 +364,7 @@ export default function PayOutTransactionsPage() {
                       </td>
 
                       {/* Merchant */}
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="px-4 py-3 border-b border-gray-100 align-top">
                         {item.merchantCode || item.merchantName ? (
                           <>
                             <div className="flex items-center gap-1.5">
@@ -376,7 +376,7 @@ export default function PayOutTransactionsPage() {
                                 </span>
                               )}
                             </div>
-                            {item.merchantName && <p className="text-xs text-gray-500 mt-0.5">{item.merchantName}</p>}
+                            {item.merchantName && <p className="text-xs text-gray-500 mt-0.5 pl-[22px]">{item.merchantName}</p>}
                           </>
                         ) : (
                           <p className="text-sm text-gray-400">—</p>
@@ -384,7 +384,7 @@ export default function PayOutTransactionsPage() {
                       </td>
 
                       {/* Amount */}
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap align-top">
                         <p className="text-sm font-semibold text-gray-800 tabular-nums">
                           {formatAmount(item.txAmountDecimal ?? item.txAmount)}
                         </p>
@@ -392,7 +392,7 @@ export default function PayOutTransactionsPage() {
                       </td>
 
                       {/* Fee */}
-                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-right whitespace-nowrap align-top">
                         {item.payoutFeeDecimal != null && item.payoutFeeDecimal > 0 ? (
                           <>
                             <p className="text-sm font-semibold tabular-nums text-gray-800">{formatAmount(item.payoutFeeDecimal)}</p>
@@ -414,7 +414,7 @@ export default function PayOutTransactionsPage() {
                       </td>
 
                       {/* Dest Bank */}
-                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
+                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px] align-top">
                         {item.payInBankCode || item.payInBankAccountNo ? (
                           <p className="text-sm font-semibold text-gray-800">
                             {[item.payInBankCode, item.payInBankAccountNo].filter(Boolean).join(' · ')}
@@ -434,7 +434,7 @@ export default function PayOutTransactionsPage() {
                       </td>
 
                       {/* Source Bank */}
-                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px]">
+                      <td className="px-4 py-3 border-b border-gray-100 min-w-[180px] align-top">
                         {(() => {
                           const isKnown = (v?: string | null) => v && v.toUpperCase() !== 'UNKNOWN'
                           const code = isKnown(item.payOutBankCode) ? item.payOutBankCode : null
@@ -460,7 +460,7 @@ export default function PayOutTransactionsPage() {
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="px-4 py-3 border-b border-gray-100 align-top">
                         <div className="flex items-start gap-1.5 flex-wrap">
                           <StatusBadge status={item.status} createdDate={item.createdDate} statusReason={item.statusReason} isPeerToPeer={item.txIsPeerToPeer} />
                           {(item.noticeCount ?? 0) > 0 && (
@@ -477,7 +477,7 @@ export default function PayOutTransactionsPage() {
                       </td>
 
                       {/* REF */}
-                      <td className="px-4 py-3 border-b border-gray-100">
+                      <td className="px-4 py-3 border-b border-gray-100 align-top">
                         <div className="flex flex-col gap-0.5">
                           {item.refId1 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId1}</span> : null}
                           {item.refId2 ? <span className="text-xs text-gray-600 whitespace-nowrap">{item.refId2}</span> : null}

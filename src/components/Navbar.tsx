@@ -24,10 +24,12 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [businessSetupOpen, setBusinessSetupOpen] = useState(false)
+  const [systemManagementOpen, setSystemManagementOpen] = useState(false)
   const [modal, setModal] = useState<'profile' | 'changePassword' | null>(null)
   const [username, setUsername] = useState('Admin')
   const [cryptoEnabled, setCryptoEnabled] = useState(false)
   const businessSetupRef = useRef<HTMLDivElement>(null)
+  const systemManagementRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setUsername(localStorage.getItem('username') || 'Admin')
@@ -44,6 +46,16 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [businessSetupOpen])
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (systemManagementRef.current && !systemManagementRef.current.contains(e.target as Node)) {
+        setSystemManagementOpen(false)
+      }
+    }
+    if (systemManagementOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [systemManagementOpen])
+
   async function handleLogout() {
     setLoggingOut(true)
     clearAuthData()
@@ -55,12 +67,20 @@ export default function Navbar() {
 
   const isAdministratorActive = pathname.startsWith('/administrator')
   const isRiskManagementActive = pathname.startsWith('/risk-management')
-  const isBusinessSetupActive = pathname.startsWith('/business-setup') || isRiskManagementActive
+  const isMasterReferenceActive = pathname.startsWith('/business-setup/master-reference')
+  const isServiceRequestActive = pathname.startsWith('/business-setup/service-request')
+  const isSystemManagementActive = isRiskManagementActive || isMasterReferenceActive || isServiceRequestActive
+  const isBusinessSetupActive = pathname.startsWith('/business-setup') && !isMasterReferenceActive && !isServiceRequestActive
 
   const businessSetupChildren = [
+    { href: '/business-setup/merchant', label: t.nav.merchant, comingSoon: false },
+  ]
+
+  // x089: moved out of Business Setup (it was getting crowded) — URLs unchanged, just surfaced here instead
+  const systemManagementChildren = [
     { href: '/business-setup/master-reference', label: t.nav.masterReference, comingSoon: false },
     { href: '/risk-management', label: t.nav.riskManagement, comingSoon: false },
-    { href: '/business-setup/merchant', label: t.nav.merchant, comingSoon: false },
+    { href: '/business-setup/service-request', label: t.nav.serviceRequest, comingSoon: false },
   ]
 
   return (
@@ -241,6 +261,47 @@ export default function Navbar() {
           >
             {t.nav.setting}
           </Link>
+
+          {/* System Management dropdown */}
+          <div className="relative" ref={systemManagementRef}>
+            <button
+              onClick={() => setSystemManagementOpen(v => !v)}
+              className={clsx(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+                isSystemManagementActive
+                  ? 'bg-white/20 text-white'
+                  : 'text-white hover:bg-white/15'
+              )}
+            >
+              <span>{t.nav.systemManagement}</span>
+              <svg
+                className={clsx('w-3 h-3 flex-shrink-0 transition-transform', systemManagementOpen && 'rotate-180')}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {systemManagementOpen && (
+              <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+                {systemManagementChildren.map(item => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setSystemManagementOpen(false)}
+                    className={clsx(
+                      'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
+                      pathname.startsWith(item.href)
+                        ? 'text-primary-700 font-semibold bg-primary-50'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    )}
+                  >
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
         </nav>
 
@@ -537,6 +598,26 @@ export default function Navbar() {
             </svg>
             <span>{t.nav.setting}</span>
           </Link>
+
+          {/* System Management group */}
+          <div className="px-3 py-1.5">
+            <p className="text-xs font-semibold text-orange-300/60 uppercase tracking-wider mb-1">{t.nav.systemManagement}</p>
+            {systemManagementChildren.map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={clsx(
+                  'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
+                  pathname.startsWith(item.href)
+                    ? 'bg-white/20 text-white'
+                    : 'text-white hover:bg-white/15'
+                )}
+              >
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
 
           {/* Document */}
           <a

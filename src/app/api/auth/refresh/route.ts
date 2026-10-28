@@ -34,15 +34,15 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    const data = await response.json()
-
     if (!response.ok) {
+      // backend returns a plain-text body on failure, not JSON — don't parse it
       const res = NextResponse.json({ message: 'Refresh failed' }, { status: 401 })
       res.cookies.delete('accessToken')
       res.cookies.delete('refreshToken')
       return res
     }
 
+    const data = await response.json()
     const newAccessToken: string = data.token?.access_token || ''
     const newRefreshToken: string = data.token?.refresh_token || refreshToken
 

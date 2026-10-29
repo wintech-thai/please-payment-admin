@@ -41,8 +41,8 @@ export const serviceRequestApi = {
   deleteServiceRequestById: (id: string) =>
     client.delete<ServiceRequestResult>(`${BASE}/DeleteServiceRequestById/${id}`),
 
-  regenerateLink: (id: string) =>
-    client.post<ServiceRequestResult>(`${BASE}/RegenerateServiceRequestLink/${id}`),
+  regenerateLink: (id: string, adminDomain?: string) =>
+    client.post<ServiceRequestResult>(`${BASE}/RegenerateServiceRequestLink/${id}`, null, { params: { adminDomain } }),
 
   resendLinkEmail: (id: string) =>
     client.post<ServiceRequestResult>(`${BASE}/ResendServiceRequestLinkEmail/${id}`),

@@ -279,7 +279,7 @@ export default function ServiceRequestDetailPage() {
     setActionLoading(true)
     try {
       if (type === 'regenerate') {
-        const res = await serviceRequestApi.regenerateLink(id)
+        const res = await serviceRequestApi.regenerateLink(id, typeof window !== 'undefined' ? window.location.origin : undefined)
         const data = res.data as any
         if (data?.status === 'OK' || data?.Status === 'OK') {
           const link = data.registrationLink ?? data.RegistrationLink

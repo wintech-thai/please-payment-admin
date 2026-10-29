@@ -398,7 +398,7 @@ function ServiceRequestListContent() {
     setActionLoading(item.id)
     try {
       if (type === 'regenerate') {
-        const res = await serviceRequestApi.regenerateLink(item.id)
+        const res = await serviceRequestApi.regenerateLink(item.id, typeof window !== 'undefined' ? window.location.origin : undefined)
         const data = res.data as any
         if (data?.status === 'OK' || data?.Status === 'OK') {
           const link = data.registrationLink ?? data.RegistrationLink

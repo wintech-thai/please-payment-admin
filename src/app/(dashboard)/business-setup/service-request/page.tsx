@@ -33,7 +33,7 @@ function StatusBadge({ status, expiredDate, m }: { status?: string | null; expir
   const isExpired = (status === 'Pending' || status === 'Confirmed') && !!expiredDate && new Date(expiredDate) < new Date()
   const effective = isExpired ? 'Expired' : (status || 'Pending')
   const cfg: Record<string, { bg: string; dot: string; label: string }> = {
-    Pending: { bg: 'bg-gray-100 text-gray-600 ring-gray-200', dot: 'bg-gray-400', label: m.statusPending },
+    Pending: { bg: 'bg-amber-50 text-amber-700 ring-amber-200', dot: 'bg-amber-400', label: m.statusPending },
     Confirmed: { bg: 'bg-blue-50 text-blue-700 ring-blue-200', dot: 'bg-blue-500', label: m.statusConfirmed },
     Approved: { bg: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500', label: m.statusApproved },
     Rejected: { bg: 'bg-red-50 text-red-700 ring-red-200', dot: 'bg-red-500', label: m.statusRejected },
@@ -79,8 +79,8 @@ function LinkResultModal({ title, link, onClose, m, doneLabel }: { title: string
         <div className="px-6 py-5 space-y-4">
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">{m.createModalLinkLabel}</label>
-            <div className="flex items-center gap-2">
-              <input readOnly value={link} className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-600 truncate" />
+            <div className="flex items-start gap-2">
+              <div className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-600 break-all select-all">{link}</div>
               <button onClick={handleCopy} className="flex-shrink-0 px-3 py-2 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors flex items-center gap-1">
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? m.createModalCopied : m.createModalCopy}
@@ -222,8 +222,8 @@ function CreateLinkModal({ serviceType, onClose, onCreated, m, cancelLabel }: { 
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">{m.createModalLinkLabel}</label>
-              <div className="flex items-center gap-2">
-                <input readOnly value={link} className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-600 truncate" />
+              <div className="flex items-start gap-2">
+                <div className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-600 break-all select-all">{link}</div>
                 <button onClick={handleCopy} className="flex-shrink-0 px-3 py-2 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors flex items-center gap-1">
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? m.createModalCopied : m.createModalCopy}
@@ -480,7 +480,7 @@ function ServiceRequestListContent() {
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
-            {m.createLink}
+            {m.createServiceRequest}
             <ChevronDown className={clsx('w-3.5 h-3.5 transition-transform', showTypeMenu && 'rotate-180')} />
           </button>
           {showTypeMenu && (
@@ -503,11 +503,14 @@ function ServiceRequestListContent() {
         <div className="flex items-center gap-2 flex-1 min-w-56 max-w-xs bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
           <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <input
+            type="search"
+            name="service-request-search"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && applyFilters()}
             placeholder={m.searchPlaceholder}
-            className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder-gray-400"
+            autoComplete="off"
+            className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder-gray-400 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
           />
           {searchTerm && (
             <button onClick={() => { setSearchTerm(''); setPage(1); fetchItems(1, '', statusFilter, typeFilter, timeRange) }} className="text-gray-400 hover:text-gray-600">✕</button>
@@ -605,7 +608,7 @@ function ServiceRequestListContent() {
                           onClick={e => { e.stopPropagation(); handleOpenDetail(item.id) }}
                           className={clsx('text-sm font-semibold font-mono hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
                         >
-                          {item.id ? `${item.id.slice(0, 8)}…` : '—'}
+                          {item.id ? item.id.slice(0, 8) : '—'}
                         </button>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">{item.createdDate ? fmtDateTime(item.createdDate, false) : '—'}</td>

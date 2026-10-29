@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { serviceRequestApi } from '@/lib/api/service-request.api'
 import type { ServiceRequestItem, PaymentTxJob } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Link2, Mail, Trash2 } from 'lucide-react'
+import { ChevronLeft, Link2, Mail, RefreshCw, Trash2, X, Copy, Check } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { useFormatDate } from '@/hooks/useFormatDate'
@@ -39,6 +39,36 @@ function JobStatusBadge({ status, m }: { status?: string | null; m: any }) {
   return <span className={clsx('inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ring-1', cfg.bg)}>{cfg.label}</span>
 }
 
+// x089 ปรับแก้ 7 : tags are "customer-registration-link" (initial), "...-regenerate", "...-resend"
+function JobTagIcon({ tags }: { tags?: string | null }) {
+  if (tags?.endsWith('-regenerate')) return <RefreshCw className="w-4 h-4 mt-0.5 text-primary-500 flex-shrink-0" />
+  if (tags?.endsWith('-resend')) return <Mail className="w-4 h-4 mt-0.5 text-primary-500 flex-shrink-0" />
+  return <Link2 className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
+}
+
+function jobLink(job: PaymentTxJob): string | null {
+  return job.parameters?.find(p => p.name === 'REGISTRATION_LINK')?.value ?? null
+}
+
+function JobLinkCopyButton({ link, m }: { link: string; m: any }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      onClick={e => {
+        e.stopPropagation()
+        navigator.clipboard.writeText(link)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }}
+      title={link}
+      className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+    >
+      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? m.createModalCopied : m.createModalCopy}
+    </button>
+  )
+}
+
 function ConfirmModal({ title, desc, onConfirm, onCancel, loading, confirmLabel, cancelLabel }: {
   title: string; desc: string; onConfirm: () => void; onCancel: () => void; loading: boolean; confirmLabel: string; cancelLabel: string
 }) {
@@ -56,6 +86,56 @@ function ConfirmModal({ title, desc, onConfirm, onCancel, loading, confirmLabel,
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+function LinkResultModal({ title, link, onClose, m, doneLabel }: { title: string; link: string; onClose: () => void; m: any; doneLabel: string }) {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = () => {
+    navigator.clipboard.writeText(link)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-primary-600" />
+            <h3 className="text-base font-bold text-gray-900">{title}</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">{m.createModalLinkLabel}</label>
+            <div className="flex items-center gap-2">
+              <input readOnly value={link} className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-600 truncate" />
+              <button onClick={handleCopy} className="flex-shrink-0 px-3 py-2 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors flex items-center gap-1">
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? m.createModalCopied : m.createModalCopy}
+              </button>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-full py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors">
+            {doneLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
+        <X className="w-5 h-5" />
+      </button>
+      <img src={src} alt="book bank" className="max-w-full max-h-full object-contain rounded-lg" onClick={e => e.stopPropagation()} />
     </div>
   )
 }
@@ -83,6 +163,8 @@ export default function ServiceRequestDetailPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'regenerate' | 'resend' | 'delete' }>({ open: false })
+  const [linkModal, setLinkModal] = useState<{ open: boolean; title?: string; link?: string }>({ open: false })
+  const [showImagePreview, setShowImagePreview] = useState(false)
 
   const fetchDetail = async () => {
     setLoading(true)
@@ -123,8 +205,16 @@ export default function ServiceRequestDetailPage() {
       if (type === 'regenerate') {
         const res = await serviceRequestApi.regenerateLink(id)
         const data = res.data as any
-        if (data?.status === 'OK' || data?.Status === 'OK') { toast.success(m.regenerateSuccess); fetchDetail() }
-        else toast.error(data?.description ?? m.regenerateFailed)
+        if (data?.status === 'OK' || data?.Status === 'OK') {
+          const link = data.registrationLink ?? data.RegistrationLink
+          toast.success(m.regenerateSuccess)
+          fetchDetail()
+          setConfirmModal({ open: false })
+          if (link) setLinkModal({ open: true, title: m.regenerateLinkModalTitle, link })
+          setActionLoading(false)
+          return
+        }
+        toast.error(data?.description ?? m.regenerateFailed)
       } else if (type === 'resend') {
         const res = await serviceRequestApi.resendLinkEmail(id)
         const data = res.data as any
@@ -184,6 +274,20 @@ export default function ServiceRequestDetailPage() {
         />
       )}
 
+      {linkModal.open && linkModal.link && (
+        <LinkResultModal
+          title={linkModal.title ?? m.viewLinkModalTitle}
+          link={linkModal.link}
+          onClose={() => setLinkModal({ open: false })}
+          m={m}
+          doneLabel={m.createModalDone}
+        />
+      )}
+
+      {showImagePreview && bookBankImage && (
+        <ImagePreviewModal src={bookBankImage} onClose={() => setShowImagePreview(false)} />
+      )}
+
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.push('/business-setup/service-request')} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <ChevronLeft className="w-5 h-5" />
@@ -207,22 +311,31 @@ export default function ServiceRequestDetailPage() {
         </button>
         <span className="text-xs text-gray-400">({m.comingSoon})</span>
 
-        {canModify && (
-          <div className="ml-auto flex items-center gap-2">
-            <button onClick={() => setConfirmModal({ open: true, type: 'regenerate' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <Link2 className="w-4 h-4" />
-              {m.actionRegenerateLink}
-            </button>
-            <button onClick={() => setConfirmModal({ open: true, type: 'resend' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <Mail className="w-4 h-4" />
-              {m.actionResendEmail}
-            </button>
-            <button onClick={() => setConfirmModal({ open: true, type: 'delete' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-              <Trash2 className="w-4 h-4" />
-              {m.actionDelete}
-            </button>
-          </div>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setLinkModal({ open: true, title: m.viewLinkModalTitle, link: `${item.adminDomain}/customer-signup/global/${item.id}/${item.otp}` })}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Link2 className="w-4 h-4" />
+            {m.actionViewLink}
+          </button>
+          {canModify && (
+            <>
+              <button onClick={() => setConfirmModal({ open: true, type: 'regenerate' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <Link2 className="w-4 h-4" />
+                {m.actionRegenerateLink}
+              </button>
+              <button onClick={() => setConfirmModal({ open: true, type: 'resend' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <Mail className="w-4 h-4" />
+                {m.actionResendEmail}
+              </button>
+              <button onClick={() => setConfirmModal({ open: true, type: 'delete' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                <Trash2 className="w-4 h-4" />
+                {m.actionDelete}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -250,7 +363,9 @@ export default function ServiceRequestDetailPage() {
             {bookBankImage && (
               <div className="pt-2">
                 <span className="text-sm text-gray-400">{m.fieldBookBank}</span>
-                <img src={bookBankImage} alt="book bank" className="mt-2 w-full max-h-60 object-contain rounded-lg border border-gray-100" />
+                <button type="button" onClick={() => setShowImagePreview(true)} className="block mt-2 w-full">
+                  <img src={bookBankImage} alt="book bank" className="w-full max-h-60 object-contain rounded-lg border border-gray-100 hover:opacity-90 transition-opacity cursor-zoom-in" />
+                </button>
               </div>
             )}
           </div>
@@ -269,15 +384,29 @@ export default function ServiceRequestDetailPage() {
           <p className="text-sm text-gray-400">{m.noJobs}</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {jobs.map((job, i) => (
-              <div key={job.id ?? i} className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-gray-50 border border-gray-100">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{job.tags ?? job.type ?? '—'}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{job.createdDate ? fmtDateTime(job.createdDate) : '—'}</p>
+            {jobs.map((job, i) => {
+              const link = jobLink(job)
+              return (
+                <div key={job.id ?? i} className="px-4 py-3 rounded-lg bg-gray-50 border border-gray-100">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <JobTagIcon tags={job.tags} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{job.tags ?? job.type ?? '—'}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{job.createdDate ? fmtDateTime(job.createdDate) : '—'}</p>
+                      </div>
+                    </div>
+                    <JobStatusBadge status={job.status} m={m} />
+                  </div>
+                  {link && (
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+                      <input readOnly value={link} className="flex-1 min-w-0 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white text-gray-600 truncate" />
+                      <JobLinkCopyButton link={link} m={m} />
+                    </div>
+                  )}
                 </div>
-                <JobStatusBadge status={job.status} m={m} />
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

@@ -9,6 +9,8 @@ export interface GetServiceRequestsPayload {
   Status?: string
   Offset?: number
   Limit?: number
+  FromDate?: string
+  ToDate?: string
 }
 
 export interface CreateRegistrationLinkPayload {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useParams } from 'next/navigation'
 import { Loader2, Upload, CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react'
+import { toast } from 'sonner'
 import clsx from 'clsx'
 import NavbarClean from '@/components/NavbarClean'
 import { LanguageProvider, useLang } from '@/context/LanguageContext'
@@ -25,12 +26,14 @@ const BANKS: { code: string; nameTh: string; nameEn: string }[] = [
   { code: 'LHFG', nameTh: 'ธนาคารแลนด์ แอนด์ เฮ้าส์', nameEn: 'Land and Houses Bank' },
 ]
 
-const SHOP_CODE_REGEX = /^[A-Za-z0-9_-]{3,30}$/
+const SHOP_CODE_REGEX = /^[a-z0-9_-]{3,20}$/
 const USERNAME_REGEX = /^[a-zA-Z0-9._:-]{4,80}$/
 
 const BASE = '/api/proxy/admin-api/AdminServiceRequest/org/global/action'
 
-async function compressImageToBase64(file: File, maxWidth = 1200, quality = 0.82): Promise<string> {
+// x089 ปรับแก้ 3 : book bank photos need to stay legible when admin opens the full-size preview,
+// so this keeps more resolution/quality than the slip-upload copy of this function
+async function compressImageToBase64(file: File, maxWidth = 1800, quality = 0.9): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = e => {
@@ -55,7 +58,7 @@ function pick<T>(d: any, camel: string, pascal: string): T | undefined {
   return d?.[camel] ?? d?.[pascal]
 }
 
-type PageState = 'loading' | 'invalid' | 'expired' | 'form' | 'approved' | 'rejected' | 'submitting' | 'success' | 'error'
+type PageState = 'loading' | 'invalid' | 'expired' | 'form' | 'approved' | 'rejected' | 'submitting' | 'success'
 
 function CustomerSignupContent() {
   const params = useParams()
@@ -65,7 +68,6 @@ function CustomerSignupContent() {
   const m = t.customerSignup
 
   const [pageState, setPageState] = useState<PageState>('loading')
-  const [errorMsg, setErrorMsg] = useState('')
   const [email, setEmail] = useState('')
 
   const [firstName, setFirstName] = useState('')
@@ -155,8 +157,7 @@ function CustomerSignupContent() {
         })
         const upData = await upRes.json()
         if (pick<string>(upData, 'status', 'Status') !== 'OK') {
-          setErrorMsg(pick(upData, 'description', 'Description') || m.errorDefault)
-          setPageState('error')
+          toast.error(pick(upData, 'description', 'Description') || m.errorDefault)
           setSubmitting(false)
           return
         }
@@ -181,19 +182,17 @@ function CustomerSignupContent() {
       if (pick<string>(data, 'status', 'Status') === 'OK') {
         setPageState('success')
       } else {
-        setErrorMsg(pick(data, 'description', 'Description') || m.errorDefault)
-        setPageState('error')
+        toast.error(pick(data, 'description', 'Description') || m.errorDefault)
       }
     } catch {
-      setErrorMsg(m.errorDefault)
-      setPageState('error')
+      toast.error(m.errorDefault)
     } finally {
       setSubmitting(false)
     }
   }
 
   const gradientStyle = { background: 'linear-gradient(135deg, rgb(var(--color-primary-800)) 0%, rgb(var(--color-primary-700)) 40%, rgb(var(--color-primary-500)) 100%)' }
-  const showForm = pageState === 'form' || pageState === 'submitting' || pageState === 'error'
+  const showForm = pageState === 'form' || pageState === 'submitting'
 
   return (
     <>
@@ -320,7 +319,7 @@ function CustomerSignupContent() {
                     <input
                       type="text"
                       value={shopCode}
-                      onChange={e => { setShopCode(e.target.value); clearErr('shopCode') }}
+                      onChange={e => { setShopCode(e.target.value.toLowerCase()); clearErr('shopCode') }}
                       disabled={submitting}
                       placeholder={m.shopCodePlaceholder}
                       className={clsx(inputCls, errors.shopCode && 'border-red-400 focus:ring-red-400')}
@@ -339,10 +338,6 @@ function CustomerSignupContent() {
                     />
                     <p className="text-[11px] text-gray-400 mt-1">{m.usernameHint}</p>
                   </Field>
-
-                  {pageState === 'error' && (
-                    <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">{errorMsg}</div>
-                  )}
 
                   <button
                     type="submit"

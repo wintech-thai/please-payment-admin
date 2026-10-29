@@ -69,7 +69,8 @@ export default function Navbar() {
   const isRiskManagementActive = pathname.startsWith('/risk-management')
   const isMasterReferenceActive = pathname.startsWith('/business-setup/master-reference')
   const isServiceRequestActive = pathname.startsWith('/business-setup/service-request')
-  const isSystemManagementActive = isRiskManagementActive || isMasterReferenceActive || isServiceRequestActive
+  const isPaymentGatewayActive = pathname.startsWith('/setting/payment-gateway')
+  const isSystemManagementActive = isRiskManagementActive || isMasterReferenceActive || isServiceRequestActive || isPaymentGatewayActive
   const isBusinessSetupActive = pathname.startsWith('/business-setup') && !isMasterReferenceActive && !isServiceRequestActive
 
   const businessSetupChildren = [
@@ -81,6 +82,8 @@ export default function Navbar() {
     { href: '/business-setup/master-reference', label: t.nav.masterReference, comingSoon: false },
     { href: '/risk-management', label: t.nav.riskManagement, comingSoon: false },
     { href: '/business-setup/service-request', label: t.nav.serviceRequest, comingSoon: false },
+    // x089 ปรับแก้ 9 : moved out of Support & Setting — URL unchanged
+    { href: '/setting/payment-gateway', label: t.nav.paymentGateway, comingSoon: false },
   ]
 
   return (
@@ -254,7 +257,7 @@ export default function Navbar() {
             href="/setting/brand-theme"
             className={clsx(
               'flex items-center px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
-              pathname.startsWith('/setting')
+              pathname.startsWith('/setting') && !isPaymentGatewayActive
                 ? 'bg-white/20 text-white'
                 : 'text-white hover:bg-white/15'
             )}
@@ -589,7 +592,7 @@ export default function Navbar() {
             onClick={() => setMobileMenuOpen(false)}
             className={clsx(
               'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-              pathname.startsWith('/setting') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/15'
+              pathname.startsWith('/setting') && !isPaymentGatewayActive ? 'bg-white/20 text-white' : 'text-white hover:bg-white/15'
             )}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>

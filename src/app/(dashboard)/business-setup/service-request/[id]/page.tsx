@@ -29,11 +29,16 @@ function StatusBadge({ status, expiredDate, m }: { status?: string | null; expir
   )
 }
 
-function JobStatusBadge({ status, m }: { status?: string | null; m: any }) {
-  const lower = (status || '').toLowerCase()
-  const cfg = lower === 'success' || lower === 'completed'
+// status ที่ Ruby dispatcher เซ็ตตอนจบงานคือ "Done" เสมอไม่ว่าจะสำเร็จหรือพัง — ผลจริงต้องดูจาก succeedCount/failedCount
+function JobStatusBadge({ job, m }: { job: Pick<PaymentTxJob, 'status' | 'succeedCount' | 'failedCount'>; m: any }) {
+  const lower = (job.status || '').toLowerCase()
+  const isDone = lower === 'done' || lower === 'success' || lower === 'completed'
+  const failed = lower === 'failed' || lower === 'error' || (isDone && (job.failedCount ?? 0) > 0)
+  const succeeded = isDone && !failed
+
+  const cfg = succeeded
     ? { bg: 'bg-emerald-50 text-emerald-700 ring-emerald-200', label: m.jobStatusSuccess }
-    : lower === 'failed' || lower === 'error'
+    : failed
     ? { bg: 'bg-red-50 text-red-700 ring-red-200', label: m.jobStatusFailed }
     : { bg: 'bg-amber-50 text-amber-700 ring-amber-200', label: m.jobStatusPending }
   return <span className={clsx('inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ring-1', cfg.bg)}>{cfg.label}</span>
@@ -180,7 +185,7 @@ function JobLogModal({ job, onClose, m }: { job: PaymentTxJob; onClose: () => vo
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <JobStatusBadge status={job.status} m={m} />
+            <JobStatusBadge job={job} m={m} />
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
               <X className="w-4 h-4" />
             </button>
@@ -486,7 +491,7 @@ export default function ServiceRequestDetailPage() {
                         <p className="text-xs text-gray-400 mt-0.5">{job.createdDate ? fmtDateTime(job.createdDate) : '—'}</p>
                       </div>
                     </div>
-                    <JobStatusBadge status={job.status} m={m} />
+                    <JobStatusBadge job={job} m={m} />
                   </div>
                   {link && (
                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">

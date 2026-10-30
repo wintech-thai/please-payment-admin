@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const AUTH_ONLY_PUBLIC_PATHS = ['/login']
-const ALWAYS_PUBLIC_PATHS = ['/admin-signup-confirm', '/forgot-password', '/user-invite-confirm', '/documents', '/access-blocked']
+const ALWAYS_PUBLIC_PATHS = ['/admin-signup-confirm', '/forgot-password', '/user-invite-confirm', '/documents', '/access-blocked', '/customer-signup']
 
 // Always reachable even when the Web IP policy would otherwise block this visitor:
 // /login so a mistakenly-blocked admin can still authenticate, and the IP & Blacklist

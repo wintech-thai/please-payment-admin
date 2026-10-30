@@ -36,18 +36,6 @@ const menuItems: MenuItem[] = [
   },
   {
     type: 'flat',
-    href: '/setting/payment-gateway',
-    labelKey: 'sidebarPaymentGateway',
-    icon: (
-      <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <rect x="2" y="5" width="20" height="14" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2 10h20" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 15h4" />
-      </svg>
-    ),
-  },
-  {
-    type: 'flat',
     href: '/setting/support-case',
     labelKey: 'sidebarSupportCase',
     icon: (

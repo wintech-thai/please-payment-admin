@@ -1434,3 +1434,39 @@ export interface MerchantCurrencyResponse {
   merchantCurrency?: MerchantCurrencyItem | null
   MerchantCurrency?: MerchantCurrencyItem | null
 }
+
+// ─── Service Request (x089) ─────────────────────────────────────────────────
+
+export interface ServiceRequestItem {
+  id?: string | null
+  orgId?: string | null
+  serviceType?: string | null
+  status?: string | null
+  otp?: string | null
+  expiredDate?: string | null
+  lang?: string | null
+  adminDomain?: string | null
+  email?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  phone?: string | null
+  bankCode?: string | null
+  bankAccountNumber?: string | null
+  bankAccountName?: string | null
+  promptPayId?: string | null
+  bookBankFileDocumentId?: string | null
+  shopCode?: string | null
+  username?: string | null
+  createdDate?: string | null
+  updatedDate?: string | null
+  approvedDate?: string | null
+}
+
+export interface ServiceRequestResult {
+  status?: string | null
+  description?: string | null
+  serviceRequest?: ServiceRequestItem | null
+  registrationLink?: string | null
+  bookBankImageBase64?: string | null
+  bookBankMimeType?: string | null
+}

@@ -142,22 +142,22 @@ function ChartTooltip({ active, payload, label, fmt, fmtTime, scrollRef }: {
   if (!active || !payload || payload.length === 0) return null
   const sorted = [...payload].sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden text-[11px]" style={{ minWidth: 200 }}>
-      <div className="bg-gray-50 px-3 py-1.5 font-mono text-gray-500 border-b border-gray-100">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden text-[13px]" style={{ minWidth: 260 }}>
+      <div className="bg-gray-50 px-3.5 py-2 font-mono text-gray-600 font-semibold border-b border-gray-100">
         {fmtTime(label ?? 0, false)}
       </div>
-      <div ref={scrollRef} className="max-h-[200px] overflow-y-auto">
+      <div ref={scrollRef} className="max-h-[260px] overflow-y-auto">
         <table className="w-full">
           <tbody>
             {sorted.map((p) => (
               <tr key={p.dataKey} className="border-t border-gray-50 first:border-0">
-                <td className="px-3 py-1">
-                  <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <span className="w-2 h-2 rounded-full flex-none" style={{ backgroundColor: p.color }} />
-                    <span className="text-gray-600 truncate max-w-[140px]">{p.dataKey}</span>
+                <td className="px-3.5 py-1.5">
+                  <span className="inline-flex items-center gap-2 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full flex-none" style={{ backgroundColor: p.color }} />
+                    <span className="text-gray-700 truncate max-w-[180px]">{p.dataKey}</span>
                   </span>
                 </td>
-                <td className="px-3 py-1 text-right font-mono font-semibold text-gray-900 whitespace-nowrap">
+                <td className="px-3.5 py-1.5 text-right font-mono font-bold text-gray-900 whitespace-nowrap">
                   {fmt(Number(p.value) || 0)}
                 </td>
               </tr>
@@ -245,19 +245,19 @@ function ResourceSection({
       </div>
 
       {/* Time series chart */}
-      <div ref={chartWrapperRef} className="bg-white rounded-xl border border-gray-100 p-3 mb-4" style={{ height: 260 }}>
+      <div ref={chartWrapperRef} className="bg-white rounded-xl border border-gray-100 p-3 mb-4" style={{ height: 340 }}>
         {loading ? (
           <div className="h-full flex items-center justify-center text-xs text-gray-400">{dict.loading}</div>
         ) : seriesData.length === 0 ? (
           <div className="h-full flex items-center justify-center text-xs text-gray-300">{dict.noData}</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={seriesData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+            <LineChart data={seriesData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="ts" tickFormatter={(ts) => fmtTime(ts, false)} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-              <YAxis tickFormatter={(v) => fmt(v)} tick={{ fontSize: 10, fill: '#94a3b8' }} width={70} />
+              <XAxis dataKey="ts" tickFormatter={(ts) => fmtTime(ts, false)} tick={{ fontSize: 12, fill: '#64748b' }} />
+              <YAxis tickFormatter={(v) => fmt(v)} tick={{ fontSize: 12, fill: '#64748b' }} width={80} />
               <Tooltip content={<ChartTooltip fmt={fmt} fmtTime={fmtTime} scrollRef={tooltipScrollRef} />} wrapperStyle={{ zIndex: 50 }} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
+              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
               {totalRequest > 0 && namespace !== ALL_NS && (
                 <ReferenceLine y={totalRequest} stroke="#eab308" strokeDasharray="4 4" />
               )}
@@ -265,7 +265,7 @@ function ResourceSection({
                 <ReferenceLine y={totalLimit} stroke="#ef4444" strokeDasharray="4 4" />
               )}
               {seriesKeys.map((k, i) => (
-                <Line key={k} type="monotone" dataKey={k} stroke={colorFor(i)} dot={false} activeDot={{ r: 3 }} strokeWidth={1.75} isAnimationActive={false} />
+                <Line key={k} type="monotone" dataKey={k} stroke={colorFor(i)} dot={false} activeDot={{ r: 4 }} strokeWidth={2.5} isAnimationActive={false} />
               ))}
             </LineChart>
           </ResponsiveContainer>

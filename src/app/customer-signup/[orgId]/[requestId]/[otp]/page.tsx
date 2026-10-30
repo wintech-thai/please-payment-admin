@@ -87,7 +87,10 @@ function CustomerSignupContent() {
 
   useEffect(() => {
     if (!requestId || !otp) { setPageState('invalid'); return }
-    fetch(`${BASE}/GetPleasePaymentServiceRequestByRequestIdOtp/${requestId}/${otp}`)
+    // credentials: 'omit' — ถ้า admin เผลอเปิดลิงก์นี้ใน browser ที่ login ค้างอยู่ ต้องไม่ส่ง
+    // accessToken cookie ไปด้วย ไม่งั้น proxy จะแนบ token ของ admin เข้าไปปนกับ request
+    // ที่ควร anonymous (ยืนยันตัวด้วย OTP ในลิงก์เท่านั้น) ทำให้ backend error กลายเป็น Invalid Link
+    fetch(`${BASE}/GetPleasePaymentServiceRequestByRequestIdOtp/${requestId}/${otp}`, { credentials: 'omit' })
       .then(r => r.json())
       .then(data => {
         const status = pick<string>(data, 'status', 'Status')
@@ -152,6 +155,7 @@ function CustomerSignupContent() {
         const base64 = await compressImageToBase64(bookBankFile)
         const upRes = await fetch(`${BASE}/UploadPleasePaymentServiceRequestBookBank/${requestId}/${otp}`, {
           method: 'POST',
+          credentials: 'omit',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ FileContent: base64, MimeType: bookBankFile.type, Description: 'BookBank' }),
         })
@@ -165,6 +169,7 @@ function CustomerSignupContent() {
 
       const res = await fetch(`${BASE}/SavePleasePaymentServiceRequest/${requestId}/${otp}`, {
         method: 'POST',
+        credentials: 'omit',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           FirstName: firstName.trim(),

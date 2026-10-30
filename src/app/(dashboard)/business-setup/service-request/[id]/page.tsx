@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { serviceRequestApi } from '@/lib/api/service-request.api'
 import type { ServiceRequestItem, PaymentTxJob } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { ChevronLeft, Link2, Mail, RefreshCw, Trash2, X, Copy, Check, ScrollText } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Link2, Mail, RefreshCw, Trash2, X, Copy, Check, ScrollText } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { useFormatDate } from '@/hooks/useFormatDate'
@@ -159,7 +159,8 @@ function JobLogLine({ line }: { line: string }) {
   )
 }
 
-function JobLogModal({ job, onClose, m }: { job: PaymentTxJob; onClose: () => void; m: any }) {
+// x089 ปรับแก้ 9 : log โชว์แบบ inline expand/collapse ในการ์ด job เดียวกันกับ link แทน popup แยก จะได้ใช้ความกว้างเต็ม section
+function JobLogPanel({ job, m }: { job: PaymentTxJob; m: any }) {
   const [copied, setCopied] = useState(false)
   const log = job.jobMessage?.trim()
   const lines = log ? log.split('\n') : []
@@ -171,50 +172,20 @@ function JobLogModal({ job, onClose, m }: { job: PaymentTxJob; onClose: () => vo
     setTimeout(() => setCopied(false), 2000)
   }
 
+  if (!log) return <p className="text-sm text-gray-400 text-center py-4">{m.jobLogEmpty}</p>
+
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-xl max-h-[80vh] rounded-2xl shadow-2xl bg-white flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
-              <ScrollText className="w-4.5 h-4.5 text-primary-600" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-bold text-gray-900">{m.jobLogModalTitle}</h3>
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{job.tags ?? job.type ?? '—'}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <JobStatusBadge job={job} m={m} />
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4 bg-gray-50">
-          {log ? (
-            <div className="relative rounded-xl bg-white border border-gray-200 shadow-sm">
-              <button
-                onClick={handleCopy}
-                title={m.createModalCopy}
-                className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-              >
-                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copied ? m.createModalCopied : m.createModalCopy}
-              </button>
-              <div className="px-4 py-3.5 pr-20 font-mono text-xs leading-relaxed space-y-0.5">
-                {lines.map((line, i) => <JobLogLine key={i} line={line} />)}
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-6">{m.jobLogEmpty}</p>
-          )}
-        </div>
-        <div className="px-5 py-3 border-t border-gray-100 flex justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-            {m.jobLogClose}
-          </button>
-        </div>
+    <div className="relative rounded-xl bg-white border border-gray-200 shadow-sm">
+      <button
+        onClick={handleCopy}
+        title={m.createModalCopy}
+        className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+      >
+        {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+        {copied ? m.createModalCopied : m.createModalCopy}
+      </button>
+      <div className="px-4 py-3.5 pr-20 font-mono text-xs leading-relaxed space-y-0.5">
+        {lines.map((line, i) => <JobLogLine key={i} line={line} />)}
       </div>
     </div>
   )
@@ -245,7 +216,7 @@ export default function ServiceRequestDetailPage() {
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'regenerate' | 'resend' | 'delete' }>({ open: false })
   const [linkModal, setLinkModal] = useState<{ open: boolean; title?: string; link?: string }>({ open: false })
   const [showImagePreview, setShowImagePreview] = useState(false)
-  const [logModalJob, setLogModalJob] = useState<PaymentTxJob | null>(null)
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null)
 
   const fetchDetail = async () => {
     setLoading(true)
@@ -369,10 +340,6 @@ export default function ServiceRequestDetailPage() {
         <ImagePreviewModal src={bookBankImage} onClose={() => setShowImagePreview(false)} />
       )}
 
-      {logModalJob && (
-        <JobLogModal job={logModalJob} onClose={() => setLogModalJob(null)} m={m} />
-      )}
-
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.push('/business-setup/service-request')} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <ChevronLeft className="w-5 h-5" />
@@ -471,6 +438,7 @@ export default function ServiceRequestDetailPage() {
           <div className="flex flex-col gap-2">
             {jobs.map((job, i) => {
               const link = jobLink(job)
+              const isExpanded = expandedJobId === job.id
               return (
                 <div key={job.id ?? i} className="px-4 py-3 rounded-lg bg-gray-50 border border-gray-100">
                   <div className="flex items-center justify-between gap-3">
@@ -481,11 +449,12 @@ export default function ServiceRequestDetailPage() {
                           <p className="text-sm font-medium text-gray-800 truncate">{job.tags ?? job.type ?? '—'}</p>
                           <button
                             type="button"
-                            onClick={() => setLogModalJob(job)}
+                            onClick={() => setExpandedJobId(isExpanded ? null : (job.id ?? null))}
                             title={m.jobViewLog}
-                            className="p-1 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+                            className={clsx('p-1 rounded-lg transition-colors flex-shrink-0 flex items-center', isExpanded ? 'bg-primary-100 text-primary-600' : 'hover:bg-gray-200 text-gray-400 hover:text-gray-600')}
                           >
                             <ScrollText className="w-3.5 h-3.5" />
+                            <ChevronDown className={clsx('w-3 h-3 transition-transform', isExpanded && 'rotate-180')} />
                           </button>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">{job.createdDate ? fmtDateTime(job.createdDate) : '—'}</p>
@@ -497,6 +466,11 @@ export default function ServiceRequestDetailPage() {
                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
                       <input readOnly value={link} className="flex-1 min-w-0 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white text-gray-600 truncate" />
                       <JobLinkCopyButton link={link} m={m} />
+                    </div>
+                  )}
+                  {isExpanded && (
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                      <JobLogPanel job={job} m={m} />
                     </div>
                   )}
                 </div>

@@ -389,7 +389,9 @@ function ServiceRequestListContent() {
   const handleCreated = (id: string) => {
     sessionStorage.setItem('service_request_highlight', id)
     setSelectedRowId(id)
-    fetchItems()
+    // x089 Bug 8 : รายการใหม่โผล่หน้า 1 เสมอ (sort newest-first) — ถ้า admin ค้างอยู่หน้าอื่น ต้องกลับไปหน้า 1 ด้วยไม่งั้นจะไม่เห็น
+    setPage(1)
+    fetchItems(1)
   }
 
   const handleConfirmAction = async () => {

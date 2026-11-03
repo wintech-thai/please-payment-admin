@@ -55,6 +55,34 @@ export interface ClientIpDebugResponse {
   headerName?: string | null
 }
 
+export interface SmtpConfigData {
+  smtpUser?: string | null
+  /** Masked (e.g. "sm*******iK") on read; only send a value here when the user actually typed a new one. */
+  smtpPassword?: string | null
+  smtpFromDomain?: string | null
+}
+
+export interface SmtpConfigResponse {
+  status?: string
+  description?: string
+  configuration?: {
+    configId?: string
+    orgId?: string
+    configType?: string
+    status?: string
+    createdDate?: string
+    smtpConfig?: SmtpConfigData
+  }
+}
+
+export interface TestEmailJob {
+  id?: string
+  status?: string
+  jobMessage?: string | null
+  succeedCount?: number | null
+  failedCount?: number | null
+}
+
 export const adminConfigApi = {
   getBrandConfig: () =>
     client.get<AdminConfig>(
@@ -84,4 +112,16 @@ export const adminConfigApi = {
     const res = await fetch('/api/debug-client-ip', { cache: 'no-store' })
     return res.json()
   },
+
+  getSmtpConfig: () =>
+    client.get<SmtpConfigResponse>(`${BASE}/GetSmtpConfig`),
+
+  setSmtpConfig: (payload: SmtpConfigData) =>
+    client.post(`${BASE}/SetSmtpConfig`, { SmtpConfig: payload }),
+
+  submitTestEmailJob: (toEmail: string) =>
+    client.post<{ status: string; description: string; jobId?: string }>(`${BASE}/SubmitTestEmailJob`, { ToEmail: toEmail }),
+
+  getTestEmailJobById: (jobId: string) =>
+    client.get<TestEmailJob>(`${BASE}/GetTestEmailJobById/${jobId}`),
 }

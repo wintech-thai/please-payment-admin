@@ -9,6 +9,7 @@ import { THEME_LIST, DEFAULT_THEME, applyTheme } from '@/lib/brand-themes'
 import type { ThemeName } from '@/lib/brand-themes'
 import { useBrand } from '@/context/BrandContext'
 import { useLang } from '@/context/LanguageContext'
+import SmtpConfigModal from '@/components/SmtpConfigModal'
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024  // 2 MB
 const LOGO_W = 240
@@ -45,6 +46,7 @@ export default function BrandThemePage() {
   // Confirm cancel
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [smtpModalOpen, setSmtpModalOpen] = useState(false)
 
   const s = config?.status?.toLowerCase() ?? ''
   const isEnabled = s === 'active' || s.startsWith('enable')
@@ -194,50 +196,62 @@ export default function BrandThemePage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 max-w-3xl">
+    <div className="flex flex-col gap-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{bt.title}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{bt.subtitle}</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">{bt.title}</h1>
+        <p className="text-sm text-gray-500 mt-0.5">{bt.subtitle}</p>
       </div>
 
+      {smtpModalOpen && <SmtpConfigModal onClose={() => setSmtpModalOpen(false)} />}
+
       {/* Status Card */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className={clsx('w-10 h-10 rounded-full flex items-center justify-center',
-            isEnabled ? 'bg-emerald-100' : 'bg-gray-100')}>
-            <svg className={clsx('w-5 h-5', isEnabled ? 'text-emerald-600' : 'text-gray-400')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
+      <div className="flex items-stretch gap-4">
+        <div className="max-w-3xl w-full bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className={clsx('w-10 h-10 rounded-full flex items-center justify-center',
+              isEnabled ? 'bg-emerald-100' : 'bg-gray-100')}>
+              <svg className={clsx('w-5 h-5', isEnabled ? 'text-emerald-600' : 'text-gray-400')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">{bt.statusTitle}</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {isEnabled ? bt.statusActiveDesc : bt.statusDisabledDesc}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">{bt.statusTitle}</p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {isEnabled ? bt.statusActiveDesc : bt.statusDisabledDesc}
-            </p>
+          <div className="flex items-center gap-3">
+            <StatusBadge enabled={isEnabled} labelEnabled={bt.statusEnabled} labelDisabled={bt.statusDisabled} />
+            <button
+              onClick={handleToggleStatus}
+              disabled={togglingStatus || !config?.configId}
+              className={clsx(
+                'px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50',
+                isEnabled
+                  ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              )}
+            >
+              {togglingStatus ? bt.btnUpdating : isEnabled ? bt.btnDisable : bt.btnEnable}
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <StatusBadge enabled={isEnabled} labelEnabled={bt.statusEnabled} labelDisabled={bt.statusDisabled} />
-          <button
-            onClick={handleToggleStatus}
-            disabled={togglingStatus || !config?.configId}
-            className={clsx(
-              'px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50',
-              isEnabled
-                ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-            )}
-          >
-            {togglingStatus ? bt.btnUpdating : isEnabled ? bt.btnDisable : bt.btnEnable}
-          </button>
-        </div>
+
+        <button
+          onClick={() => setSmtpModalOpen(true)}
+          className="flex-shrink-0 flex items-center gap-2 px-6 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl shadow-sm transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          {t.smtpConfig.btnOpen}
+        </button>
       </div>
 
       {/* Main Content Card */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="max-w-3xl w-full bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {!editing && !!config?.configId && !isEnabled && (

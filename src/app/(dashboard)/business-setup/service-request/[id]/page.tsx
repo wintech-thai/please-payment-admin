@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronDown, Link2, Mail, RefreshCw, Trash2, X, Copy, Chec
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { useFormatDate } from '@/hooks/useFormatDate'
+import ApproveWizardModal from './ApproveWizardModal'
 
 function StatusBadge({ status, expiredDate, m }: { status?: string | null; expiredDate?: string | null; m: any }) {
   const isExpired = (status === 'Pending' || status === 'Confirmed') && !!expiredDate && new Date(expiredDate) < new Date()
@@ -88,6 +89,48 @@ function ConfirmModal({ title, desc, onConfirm, onCancel, loading, confirmLabel,
           </button>
           <button onClick={onConfirm} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-xl hover:bg-primary-700 disabled:opacity-60 transition-colors">
             {loading ? '...' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RejectReasonModal({ onConfirm, onCancel, loading, m, cancelLabel }: {
+  onConfirm: (reason: string) => void; onCancel: () => void; loading: boolean; m: any; cancelLabel: string
+}) {
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+
+  const handleSubmit = () => {
+    const trimmed = reason.trim()
+    if (!trimmed) { setError(m.rejectReasonRequired); return }
+    onConfirm(trimmed)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onCancel}>
+      <div className="w-full max-w-md rounded-2xl shadow-2xl bg-white px-6 py-6" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{m.rejectModalTitle}</h3>
+        <p className="text-sm text-gray-500 mb-4">{m.rejectModalDesc}</p>
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">{m.rejectReasonLabel}</label>
+        <textarea
+          value={reason}
+          onChange={e => { setReason(e.target.value); setError('') }}
+          placeholder={m.rejectReasonPlaceholder}
+          rows={4}
+          className={clsx(
+            'w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-200 resize-none',
+            error ? 'border-red-300' : 'border-gray-200'
+          )}
+        />
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        <div className="flex gap-3 mt-5">
+          <button onClick={onCancel} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-60">
+            {cancelLabel}
+          </button>
+          <button onClick={handleSubmit} disabled={loading} className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 disabled:opacity-60 transition-colors">
+            {loading ? '...' : m.rejectConfirm}
           </button>
         </div>
       </div>
@@ -217,6 +260,9 @@ export default function ServiceRequestDetailPage() {
   const [linkModal, setLinkModal] = useState<{ open: boolean; title?: string; link?: string }>({ open: false })
   const [showImagePreview, setShowImagePreview] = useState(false)
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectLoading, setRejectLoading] = useState(false)
+  const [showApproveWizard, setShowApproveWizard] = useState(false)
 
   const fetchDetail = async () => {
     setLoading(true)
@@ -248,6 +294,26 @@ export default function ServiceRequestDetailPage() {
   useEffect(() => { if (id) fetchDetail() }, [id])
 
   const canModify = item?.status !== 'Approved' && item?.status !== 'Rejected'
+
+  const handleReject = async (reason: string) => {
+    if (!id) return
+    setRejectLoading(true)
+    try {
+      const res = await serviceRequestApi.rejectServiceRequestById(id, reason)
+      const data = res.data as any
+      if (data?.status === 'OK' || data?.Status === 'OK') {
+        toast.success(m.rejectSuccess)
+        setShowRejectModal(false)
+        fetchDetail()
+      } else {
+        toast.error(data?.description ?? data?.Description ?? m.rejectFailed)
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : m.rejectFailed)
+    } finally {
+      setRejectLoading(false)
+    }
+  }
 
   const handleConfirmAction = async () => {
     const { type } = confirmModal
@@ -340,6 +406,32 @@ export default function ServiceRequestDetailPage() {
         <ImagePreviewModal src={bookBankImage} onClose={() => setShowImagePreview(false)} />
       )}
 
+      {showRejectModal && (
+        <RejectReasonModal
+          onConfirm={handleReject}
+          onCancel={() => setShowRejectModal(false)}
+          loading={rejectLoading}
+          m={m}
+          cancelLabel={t.admin.cancel}
+        />
+      )}
+
+      {showApproveWizard && (
+        <ApproveWizardModal
+          item={item}
+          onClose={() => setShowApproveWizard(false)}
+          onSuccess={(signupLink) => {
+            setShowApproveWizard(false)
+            fetchDetail()
+            if (signupLink) setLinkModal({ open: true, title: m.approveSignupLinkModalTitle, link: signupLink })
+          }}
+          m={m}
+          tMerchant={t.merchant}
+          tBankAccount={t.bankAccount}
+          cancelLabel={t.admin.cancel}
+        />
+      )}
+
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.push('/business-setup/service-request')} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <ChevronLeft className="w-5 h-5" />
@@ -353,15 +445,26 @@ export default function ServiceRequestDetailPage() {
         </div>
       </div>
 
-      {/* Approve/Reject — coming soon stubs */}
+      {/* Approve/Reject — live (x090) */}
       <div className="flex items-center gap-3 mb-6">
-        <button disabled title={m.comingSoon} className="px-4 py-2 text-sm font-semibold text-white bg-emerald-400 rounded-lg opacity-50 cursor-not-allowed">
-          {m.actionApprove}
-        </button>
-        <button disabled title={m.comingSoon} className="px-4 py-2 text-sm font-semibold text-white bg-red-400 rounded-lg opacity-50 cursor-not-allowed">
-          {m.actionReject}
-        </button>
-        <span className="text-xs text-gray-400">({m.comingSoon})</span>
+        {canModify ? (
+          <button onClick={() => setShowApproveWizard(true)} className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
+            {m.actionApprove}
+          </button>
+        ) : (
+          <button disabled className="px-4 py-2 text-sm font-semibold text-white bg-emerald-400 rounded-lg opacity-50 cursor-not-allowed">
+            {m.actionApprove}
+          </button>
+        )}
+        {canModify ? (
+          <button onClick={() => setShowRejectModal(true)} className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+            {m.actionReject}
+          </button>
+        ) : (
+          <button disabled className="px-4 py-2 text-sm font-semibold text-white bg-red-400 rounded-lg opacity-50 cursor-not-allowed">
+            {m.actionReject}
+          </button>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -403,6 +506,7 @@ export default function ServiceRequestDetailPage() {
           <InfoRow label={m.fieldCreatedDate} value={item.createdDate ? fmtDateTime(item.createdDate) : null} />
           <InfoRow label={m.fieldExpiredDate} value={item.expiredDate ? fmtDateTime(item.expiredDate) : null} />
           <InfoRow label={m.fieldApprovedDate} value={item.approvedDate ? fmtDateTime(item.approvedDate) : null} />
+          {item.status === 'Rejected' && <InfoRow label={m.fieldRejectReason} value={item.rejectReason} />}
         </div>
 
         <div className="flex flex-col gap-5">

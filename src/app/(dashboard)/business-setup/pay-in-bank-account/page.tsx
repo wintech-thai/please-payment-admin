@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { Search, Plus, MoreHorizontal, Ban, CheckCircle, Link2, Trash2, ChevronLeft, ChevronRight, Landmark, Webhook, Wallet, Settings2, ShieldCheck } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
+import { BookBankPreviewIcon } from '@/components/BookBankPhoto'
 
 function CustodyTypeBadge({ custodyType, m }: { custodyType?: string | null; m: any }) {
   const isMerchantOwn = custodyType === 'MerchantOwn'
@@ -435,13 +436,18 @@ function BankAccountContent() {
                         />
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap">
-                        <Link
-                          href={`/business-setup/pay-in-bank-account/${account.accountId}/update`}
-                          onClick={e => e.stopPropagation()}
-                          className={clsx('font-semibold text-sm hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
-                        >
-                          {account.bankName || account.bankCode || '—'}
-                        </Link>
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/business-setup/pay-in-bank-account/${account.accountId}/update`}
+                            onClick={e => e.stopPropagation()}
+                            className={clsx('font-semibold text-sm hover:underline', highlighted ? 'text-primary-700' : 'text-gray-800 hover:text-primary-600')}
+                          >
+                            {account.bankName || account.bankCode || '—'}
+                          </Link>
+                          {account.bookBankFileDocumentId && (
+                            <BookBankPreviewIcon bankAccountId={account.accountId} />
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-gray-600 whitespace-nowrap text-sm">
                         {account.accountNumber || '—'}

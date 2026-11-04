@@ -1,5 +1,5 @@
 import { client } from '@/lib/axios'
-import type { ServiceRequestItem, ServiceRequestResult, PaymentTxJob } from './types'
+import type { ServiceRequestItem, ServiceRequestResult, PaymentTxJob, AddMerchantPayload, AddBankAccountPayload } from './types'
 
 const BASE = '/admin-api/AdminServiceRequest/org/global/action'
 
@@ -40,6 +40,12 @@ export const serviceRequestApi = {
 
   deleteServiceRequestById: (id: string) =>
     client.delete<ServiceRequestResult>(`${BASE}/DeleteServiceRequestById/${id}`),
+
+  rejectServiceRequestById: (id: string, rejectReason: string) =>
+    client.post<ServiceRequestResult>(`${BASE}/RejectServiceRequestById/${id}`, { RejectReason: rejectReason }),
+
+  approveServiceRequestById: (id: string, organization: AddMerchantPayload, bankAccount: AddBankAccountPayload) =>
+    client.post<ServiceRequestResult>(`${BASE}/ApproveServiceRequestById/${id}`, { Organization: organization, BankAccount: bankAccount }),
 
   regenerateLink: (id: string, adminDomain?: string) =>
     client.post<ServiceRequestResult>(`${BASE}/RegenerateServiceRequestLink/${id}`, null, { params: { adminDomain } }),

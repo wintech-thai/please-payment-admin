@@ -37,7 +37,7 @@ export default function CreatePayOutRequestPage() {
   const [refId2, setRefId2] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [payoutFeePayer, setPayoutFeePayer] = useState<'Merchant' | 'Beneficiary'>('Merchant')
+  const payoutFeePayer: 'Merchant' | 'Beneficiary' = 'Merchant'
 
   // Data lists
   const [merchants, setMerchants] = useState<MerchantItem[]>([])
@@ -374,30 +374,6 @@ export default function CreatePayOutRequestPage() {
                     <p className="text-xs text-gray-400 mt-1.5">{m.noPayoutBankAccounts}</p>
                   )}
                 </FormField>
-              </div>
-
-              {/* Fee Payer Switch */}
-              <div className="flex-shrink-0">
-                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">{m.fieldFeePayer ?? 'Fee Payer'}</p>
-                <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-                  {(['Merchant', 'Beneficiary'] as const).map(opt => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => { setPayoutFeePayer(opt); mark() }}
-                      className={clsx(
-                        'px-4 py-2.5 text-sm font-semibold transition-colors',
-                        payoutFeePayer === opt
-                          ? opt === 'Merchant'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-orange-500 text-white'
-                          : 'bg-white text-gray-500 hover:bg-gray-50'
-                      )}
-                    >
-                      {opt === 'Merchant' ? (m.feePayerMerchant ?? 'Merchant') : (m.feePayerBeneficiary ?? 'Beneficiary')}
-                    </button>
-                  ))}
-                </div>
               </div>
 
             </div>

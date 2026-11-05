@@ -269,6 +269,7 @@ export interface AddMerchantPayload {
     PayinDailyTxCountLimit?: number | string
     PayinExpireMinute?: number
     PayInBankCustodyType?: string
+    PaymentGatewayId?: string | null
   }
 }
 
@@ -381,6 +382,7 @@ export interface BankAccountItem {
   payoutMaxAmount?: number | null
   dailyQuota?: number | null
   currentPayinDailyTxAmount?: number | null
+  currentBalance?: number | null
   status?: string | null
   createdDate?: string | null
   merchantLinkCount?: number | null
@@ -390,6 +392,7 @@ export interface BankAccountItem {
   isNativeQrSupport?: boolean | null
   isRandomCent?: boolean | null
   decimalAction?: string | null
+  bookBankFileDocumentId?: string | null
   bankConfigObj?: BankAccountConfigItem | null
 }
 
@@ -1457,6 +1460,7 @@ export interface ServiceRequestItem {
   bookBankFileDocumentId?: string | null
   shopCode?: string | null
   username?: string | null
+  rejectReason?: string | null
   createdDate?: string | null
   updatedDate?: string | null
   approvedDate?: string | null

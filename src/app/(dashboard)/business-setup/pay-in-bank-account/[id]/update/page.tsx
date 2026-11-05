@@ -10,6 +10,7 @@ import clsx from 'clsx'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import LeaveConfirmModal from '@/components/LeaveConfirmModal'
 import { useLang } from '@/context/LanguageContext'
+import { BookBankUploadControl } from '@/components/BookBankPhoto'
 
 const PROMPTPAY_RE = /^(0\d{9}|\d{13})$/
 const DIGITS_ONLY_RE = /^\d+$/
@@ -37,6 +38,7 @@ export default function UpdateBankAccountPage() {
   const id = params.id as string
 
   const [account, setAccount] = useState<BankAccountItem | null>(null)
+  const [bookBankImage, setBookBankImage] = useState<{ base64?: string | null; mimeType?: string | null }>({})
   const [banks, setBanks] = useState<BankItem[]>([])
   const [bankCode, setBankCode] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
@@ -62,35 +64,43 @@ export default function UpdateBankAccountPage() {
   const [rawJsonCopied, setRawJsonCopied] = useState(false)
   const { showConfirm, guardNavigation, confirmLeave, cancelLeave } = useUnsavedChanges(isDirty)
 
+  const fetchAccount = () => {
+    return bankAccountApi.getBankAccountById(id).then(accRes => {
+      const raw = accRes.data as any
+      const a: BankAccountItem = raw?.bankAccount ?? raw?.BankAccount ?? raw
+      setAccount(a)
+      setBookBankImage({
+        base64: raw?.bookBankImageBase64 ?? raw?.BookBankImageBase64,
+        mimeType: raw?.bookBankMimeType ?? raw?.BookBankMimeType,
+      })
+      setBankCode(a.bankCode ?? '')
+      setAccountNumber(a.accountNumber ?? '')
+      setAccountName(a.accountName ?? '')
+      setPromptPayId(a.promptPayId ?? '')
+      setAccountType((a.accountType as 'PromptPay' | 'Native') ?? '')
+      setAccountLevel((a.accountLevel as 'Global' | 'Selected') ?? '')
+      setCustodyType((a.custodyType as 'PlatformOwn' | 'MerchantOwn') || 'PlatformOwn')
+      setPayInMin(a.payinMinAmount != null ? String(a.payinMinAmount) : '')
+      setPayInMax(a.payinMaxAmount != null ? String(a.payinMaxAmount) : '')
+      setPayOutMin(a.payoutMinAmount != null ? String(a.payoutMinAmount) : '')
+      setPayOutMax(a.payoutMaxAmount != null ? String(a.payoutMaxAmount) : '')
+      setDailyQuota(a.dailyQuota != null ? String(a.dailyQuota) : '')
+      setIsRandomCent(a.isRandomCent ?? false)
+      setCentRoundingMode(a.decimalAction ?? '')
+      setTags(a.tags ? a.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
+    })
+  }
+
   useEffect(() => {
     Promise.allSettled([
-      bankAccountApi.getBankAccountById(id),
+      fetchAccount(),
       bankAccountApi.getAvailableBanks(),
     ]).then(([accRes, banksRes]) => {
       if (banksRes.status === 'fulfilled') {
         const raw = banksRes.value.data as any
         setBanks(Array.isArray(raw) ? raw : (raw?.banks ?? raw?.Banks ?? []))
       }
-      if (accRes.status === 'fulfilled') {
-        const raw = accRes.value.data as any
-        const a: BankAccountItem = raw?.bankAccount ?? raw?.BankAccount ?? raw
-        setAccount(a)
-        setBankCode(a.bankCode ?? '')
-        setAccountNumber(a.accountNumber ?? '')
-        setAccountName(a.accountName ?? '')
-        setPromptPayId(a.promptPayId ?? '')
-        setAccountType((a.accountType as 'PromptPay' | 'Native') ?? '')
-        setAccountLevel((a.accountLevel as 'Global' | 'Selected') ?? '')
-        setCustodyType((a.custodyType as 'PlatformOwn' | 'MerchantOwn') || 'PlatformOwn')
-        setPayInMin(a.payinMinAmount != null ? String(a.payinMinAmount) : '')
-        setPayInMax(a.payinMaxAmount != null ? String(a.payinMaxAmount) : '')
-        setPayOutMin(a.payoutMinAmount != null ? String(a.payoutMinAmount) : '')
-        setPayOutMax(a.payoutMaxAmount != null ? String(a.payoutMaxAmount) : '')
-        setDailyQuota(a.dailyQuota != null ? String(a.dailyQuota) : '')
-        setIsRandomCent(a.isRandomCent ?? false)
-        setCentRoundingMode(a.decimalAction ?? '')
-        setTags(a.tags ? a.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
-      } else {
+      if (accRes.status === 'rejected') {
         toast.error(m.failedToLoadAccount)
         router.push(`/business-setup/pay-in-bank-account?highlight=${id}`)
       }
@@ -345,6 +355,23 @@ export default function UpdateBankAccountPage() {
                   <option value="MerchantOwn">{m.custodyTypeMerchantOwn}</option>
                 </select>
               </FormField>
+            </div>
+
+            <div className="border-t border-gray-100 mt-5 pt-5">
+              <BookBankUploadControl
+                bankAccountId={id}
+                imageBase64={bookBankImage.base64}
+                mimeType={bookBankImage.mimeType}
+                onUploaded={fetchAccount}
+                labels={{
+                  title: m.fieldBookBank,
+                  upload: m.bookBankUpload,
+                  replace: m.bookBankReplace,
+                  uploading: m.bookBankUploading,
+                  success: m.bookBankUploadSuccess,
+                  failed: m.bookBankUploadFailed,
+                }}
+              />
             </div>
 
           </div>

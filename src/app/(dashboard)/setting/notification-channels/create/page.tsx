@@ -20,6 +20,7 @@ const EVENT_TYPE_META: Record<string, { label: string; checkedCls: string; dotCl
   'Backup.Done':                        { label: 'Backup Done',             checkedCls: 'border-sky-400 bg-sky-50 text-sky-700',            dotCls: 'bg-sky-400' },
   'Restore.Success':                    { label: 'Restore Success',         checkedCls: 'border-teal-400 bg-teal-50 text-teal-700',         dotCls: 'bg-teal-400' },
   'Restore.Failed':                     { label: 'Restore Failed',          checkedCls: 'border-rose-400 bg-rose-50 text-rose-700',         dotCls: 'bg-rose-400' },
+  'MerchantRegistration.Event':         { label: 'Merchant Registration',   checkedCls: 'border-indigo-400 bg-indigo-50 text-indigo-700',   dotCls: 'bg-indigo-400' },
 }
 
 function CreateNotiChannelContent() {

@@ -37,7 +37,10 @@ export const bankAccountApi = {
     }),
 
   getBankAccountById: (id: string) =>
-    client.get<{ bankAccount: BankAccountItem }>(`${BASE}/GetBankAccountById/${id}`),
+    client.get<{ bankAccount: BankAccountItem; bookBankImageBase64?: string; bookBankMimeType?: string }>(`${BASE}/GetBankAccountById/${id}`),
+
+  uploadBookBank: (id: string, fileContent: string, mimeType: string) =>
+    client.post(`${BASE}/UploadBankAccountBookBankById/${id}`, { FileContent: fileContent, MimeType: mimeType, Description: 'BookBank' }),
 
   updateBankAccountConfigById: (id: string, payload: UpdateBankAccountConfigPayload) =>
     client.post(`${BASE}/UpdateBankAccountConfigById/${id}`, payload),

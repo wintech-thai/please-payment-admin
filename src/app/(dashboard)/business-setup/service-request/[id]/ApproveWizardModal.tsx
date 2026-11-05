@@ -61,7 +61,7 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
   const [name, setName] = useState(item.shopCode ?? '')
   const [email, setEmail] = useState(item.email ?? '')
   const [phone, setPhone] = useState(item.phone ?? '')
-  const [payInBankCustodyType, setPayInBankCustodyType] = useState<'PlatformOwn' | 'MerchantOwn' | ''>('PlatformOwn') // x090 ปรับแก้ 2 : default เป็น PlatformOwn
+  const [payInBankCustodyType, setPayInBankCustodyType] = useState<'PlatformOwn' | 'MerchantOwn' | ''>('PlatformOwn')
   const [payInFee, setPayInFee] = useState('0')
   const [payOutFee, setPayOutFee] = useState('0')
   const [payInMin, setPayInMin] = useState('1')
@@ -70,7 +70,7 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
   const [payOutMax, setPayOutMax] = useState('50000')
   const [payinExpireMinute, setPayinExpireMinute] = useState('15')
 
-  // x090 ปรับแก้ 2 : Payment Gateway เลือกได้จากหน้านี้ (ไม่บังคับ)
+  // Payment Gateway เลือกได้จากหน้านี้ (ไม่บังคับ)
   const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayItem[]>([])
   const [paymentGatewayId, setPaymentGatewayId] = useState('')
   const [paymentGatewayQuery, setPaymentGatewayQuery] = useState('')
@@ -109,7 +109,7 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
   const [baPayOutMin, setBaPayOutMin] = useState('10')
   const [baPayOutMax, setBaPayOutMax] = useState('1000')
 
-  // x090 ปรับแก้ 2 : PlatformOwn ให้เลือกจากบัญชีที่มีอยู่แล้วแทนการสร้างใหม่
+  // PlatformOwn ให้เลือกจากบัญชีที่มีอยู่แล้วแทนการสร้างใหม่
   const [platformBankAccounts, setPlatformBankAccounts] = useState<BankAccountItem[]>([])
   const [platformBankAccountsLoading, setPlatformBankAccountsLoading] = useState(true)
   const [existingBankAccountId, setExistingBankAccountId] = useState('')
@@ -398,9 +398,17 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
                         existingBankAccountId === a.accountId ? 'bg-primary-50' : 'hover:bg-gray-50'
                       )}
                     >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 truncate">{a.bankName || a.bankCode} · {a.accountNumber}</p>
-                        <p className="text-xs text-gray-400 truncate">{a.accountName}</p>
+                      <div className="min-w-0 flex items-start gap-2">
+                        <span
+                          title={tMerchant.custodyTypePlatformOwn}
+                          className="mt-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold ring-1 bg-gray-100 text-gray-500 ring-gray-200 cursor-help flex-shrink-0"
+                        >
+                          P
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{a.bankName || a.bankCode} · {a.accountNumber}</p>
+                          <p className="text-xs text-gray-400 truncate">{a.accountName}</p>
+                        </div>
                       </div>
                       {existingBankAccountId === a.accountId && <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />}
                     </div>

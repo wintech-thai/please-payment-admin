@@ -119,7 +119,7 @@ function CustomerSignupContent() {
 
   const clearErr = (k: string) => setErrors(p => ({ ...p, [k]: '' }))
 
-  const MAX_BOOK_BANK_FILE_BYTES = 10 * 1024 * 1024 // x090 ปรับแก้ 1 : กันอัปโหลดรูปใหญ่เกินไป
+  const MAX_BOOK_BANK_FILE_BYTES = 10 * 1024 * 1024 // กันอัปโหลดรูปใหญ่เกินไป
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -192,6 +192,7 @@ function CustomerSignupContent() {
       })
       const data = await res.json()
       if (pick<string>(data, 'status', 'Status') === 'OK') {
+        toast.success(m.successTitle)
         setPageState('success')
       } else {
         toast.error(pick(data, 'description', 'Description') || m.errorDefault)

@@ -44,8 +44,8 @@ export const serviceRequestApi = {
   rejectServiceRequestById: (id: string, rejectReason: string) =>
     client.post<ServiceRequestResult>(`${BASE}/RejectServiceRequestById/${id}`, { RejectReason: rejectReason }),
 
-  approveServiceRequestById: (id: string, organization: AddMerchantPayload, bankAccount: AddBankAccountPayload) =>
-    client.post<ServiceRequestResult>(`${BASE}/ApproveServiceRequestById/${id}`, { Organization: organization, BankAccount: bankAccount }),
+  approveServiceRequestById: (id: string, organization: AddMerchantPayload, bankAccount: AddBankAccountPayload | null, existingBankAccountId?: string) =>
+    client.post<ServiceRequestResult>(`${BASE}/ApproveServiceRequestById/${id}`, { Organization: organization, BankAccount: bankAccount, ExistingBankAccountId: existingBankAccountId }),
 
   regenerateLink: (id: string, adminDomain?: string) =>
     client.post<ServiceRequestResult>(`${BASE}/RegenerateServiceRequestLink/${id}`, null, { params: { adminDomain } }),

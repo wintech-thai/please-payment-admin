@@ -269,6 +269,7 @@ export interface AddMerchantPayload {
     PayinDailyTxCountLimit?: number | string
     PayinExpireMinute?: number
     PayInBankCustodyType?: string
+    PaymentGatewayId?: string | null
   }
 }
 

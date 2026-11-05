@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Mail, Phone, X, ChevronRight, ChevronLeft as ChevronLeftIcon, Check } from 'lucide-react'
 import clsx from 'clsx'
 import { toast } from 'sonner'
-import type { ServiceRequestItem } from '@/lib/api/types'
+import type { ServiceRequestItem, PaymentGatewayItem, BankAccountItem } from '@/lib/api/types'
 import { serviceRequestApi } from '@/lib/api/service-request.api'
+import { paymentGatewayApi } from '@/lib/api/payment-gateway.api'
+import { bankAccountApi } from '@/lib/api/bank-account.api'
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -59,7 +61,7 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
   const [name, setName] = useState(item.shopCode ?? '')
   const [email, setEmail] = useState(item.email ?? '')
   const [phone, setPhone] = useState(item.phone ?? '')
-  const [payInBankCustodyType, setPayInBankCustodyType] = useState('')
+  const [payInBankCustodyType, setPayInBankCustodyType] = useState<'PlatformOwn' | 'MerchantOwn' | ''>('PlatformOwn') // x090 ปรับแก้ 2 : default เป็น PlatformOwn
   const [payInFee, setPayInFee] = useState('0')
   const [payOutFee, setPayOutFee] = useState('0')
   const [payInMin, setPayInMin] = useState('1')
@@ -68,14 +70,73 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
   const [payOutMax, setPayOutMax] = useState('50000')
   const [payinExpireMinute, setPayinExpireMinute] = useState('15')
 
+  // x090 ปรับแก้ 2 : Payment Gateway เลือกได้จากหน้านี้ (ไม่บังคับ)
+  const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayItem[]>([])
+  const [paymentGatewayId, setPaymentGatewayId] = useState('')
+  const [paymentGatewayQuery, setPaymentGatewayQuery] = useState('')
+  const [paymentGatewayDropdownOpen, setPaymentGatewayDropdownOpen] = useState(false)
+  const paymentGatewayDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    paymentGatewayApi.getPaymentGateways({ Limit: 200 })
+      .then(res => {
+        const raw = res.data as any
+        setPaymentGateways(Array.isArray(raw) ? raw : (raw?.paymentGateways ?? raw?.items ?? []))
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (paymentGatewayDropdownRef.current && !paymentGatewayDropdownRef.current.contains(e.target as Node)) setPaymentGatewayDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const selectedPaymentGateway = paymentGateways.find(p => p.id === paymentGatewayId)
+  const filteredPaymentGateways = useMemo(() => {
+    if (!paymentGatewayQuery) return paymentGateways
+    const q = paymentGatewayQuery.toLowerCase()
+    return paymentGateways.filter(p => p.code?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q))
+  }, [paymentGateways, paymentGatewayQuery])
+
   // Step 2 — Bank Account (locked fields prefilled from the service request)
   const isPromptPay = !!item.promptPayId?.trim()
-  const [baAccountLevel, setBaAccountLevel] = useState<'Global' | 'Selected' | ''>('Selected')
-  const [baCustodyType, setBaCustodyType] = useState<'PlatformOwn' | 'MerchantOwn' | ''>('')
-  const [baPayInMin, setBaPayInMin] = useState('')
-  const [baPayInMax, setBaPayInMax] = useState('')
-  const [baPayOutMin, setBaPayOutMin] = useState('')
-  const [baPayOutMax, setBaPayOutMax] = useState('')
+  const isPlatformOwn = payInBankCustodyType === 'PlatformOwn'
+  const [baPayInMin, setBaPayInMin] = useState('10')
+  const [baPayInMax, setBaPayInMax] = useState('1000')
+  const [baPayOutMin, setBaPayOutMin] = useState('10')
+  const [baPayOutMax, setBaPayOutMax] = useState('1000')
+
+  // x090 ปรับแก้ 2 : PlatformOwn ให้เลือกจากบัญชีที่มีอยู่แล้วแทนการสร้างใหม่
+  const [platformBankAccounts, setPlatformBankAccounts] = useState<BankAccountItem[]>([])
+  const [platformBankAccountsLoading, setPlatformBankAccountsLoading] = useState(true)
+  const [existingBankAccountId, setExistingBankAccountId] = useState('')
+  const [platformBankAccountQuery, setPlatformBankAccountQuery] = useState('')
+
+  useEffect(() => {
+    bankAccountApi.getBankAccounts({ CustodyType: 'PlatformOwn', limit: 200 })
+      .then(res => {
+        const raw = res.data as any
+        const list: any[] = Array.isArray(raw) ? raw : (raw?.bankAccounts ?? [])
+        setPlatformBankAccounts(list.map(item => ({
+          ...item,
+          accountId: item.id || item.bankAccountId || item.BankAccountId || item.accountId || item.AccountId || item.Id || '',
+        })))
+      })
+      .catch(() => {})
+      .finally(() => setPlatformBankAccountsLoading(false))
+  }, [])
+
+  const filteredPlatformBankAccounts = useMemo(() => {
+    if (!platformBankAccountQuery) return platformBankAccounts
+    const q = platformBankAccountQuery.toLowerCase()
+    return platformBankAccounts.filter(a =>
+      a.accountName?.toLowerCase().includes(q) || a.accountNumber?.toLowerCase().includes(q) || a.bankCode?.toLowerCase().includes(q)
+    )
+  }, [platformBankAccounts, platformBankAccountQuery])
+  const selectedPlatformBankAccount = platformBankAccounts.find(a => a.accountId === existingBankAccountId)
 
   const clearErr = (key: string) => setErrors(p => ({ ...p, [key]: '' }))
 
@@ -99,12 +160,14 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
 
   const validateStep2 = () => {
     const errs: Record<string, string> = {}
-    if (!baAccountLevel) errs.baAccountLevel = tBankAccount.accountLevelRequired
-    if (!baCustodyType) errs.baCustodyType = tBankAccount.custodyTypeRequired
-    if (baPayInMin === '' || isNaN(parseInt(baPayInMin, 10))) errs.baPayInMin = tBankAccount.payInMinRequired
-    if (baPayInMax === '' || isNaN(parseInt(baPayInMax, 10))) errs.baPayInMax = tBankAccount.payInMaxRequired
-    if (baPayOutMin === '' || isNaN(parseInt(baPayOutMin, 10))) errs.baPayOutMin = tBankAccount.payOutMinRequired
-    if (baPayOutMax === '' || isNaN(parseInt(baPayOutMax, 10))) errs.baPayOutMax = tBankAccount.payOutMaxRequired
+    if (isPlatformOwn) {
+      if (!existingBankAccountId) errs.existingBankAccountId = tBankAccount.bankAccountRequired ?? tBankAccount.bankRequired
+    } else {
+      if (baPayInMin === '' || isNaN(parseInt(baPayInMin, 10))) errs.baPayInMin = tBankAccount.payInMinRequired
+      if (baPayInMax === '' || isNaN(parseInt(baPayInMax, 10))) errs.baPayInMax = tBankAccount.payInMaxRequired
+      if (baPayOutMin === '' || isNaN(parseInt(baPayOutMin, 10))) errs.baPayOutMin = tBankAccount.payOutMinRequired
+      if (baPayOutMax === '' || isNaN(parseInt(baPayOutMax, 10))) errs.baPayOutMax = tBankAccount.payOutMaxRequired
+    }
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -141,22 +204,24 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
             PayoutMaxAmount: toNum(payOutMax),
             PayinExpireMinute: parseInt(payinExpireMinute),
             PayInBankCustodyType: payInBankCustodyType,
+            PaymentGatewayId: paymentGatewayId || undefined,
           },
         },
-        {
+        isPlatformOwn ? null : {
           BankCode: item.bankCode ?? undefined,
           AccountNumber: item.bankAccountNumber ?? undefined,
           AccountName: item.bankAccountName ?? undefined,
           PromptPayId: isPromptPay ? (item.promptPayId ?? undefined) : undefined,
           AccountType: isPromptPay ? 'PromptPay' : 'Native',
           AccountCategory: 'PayIn',
-          AccountLevel: baAccountLevel,
-          CustodyType: baCustodyType,
+          AccountLevel: 'Selected',
+          CustodyType: 'MerchantOwn',
           PayinMinAmount: parseInt(baPayInMin, 10),
           PayinMaxAmount: parseInt(baPayInMax, 10),
           PayoutMinAmount: parseInt(baPayOutMin, 10),
           PayoutMaxAmount: parseInt(baPayOutMax, 10),
-        }
+        },
+        isPlatformOwn ? existingBankAccountId : undefined
       )
       const data = res.data as any
       if (data?.status === 'OK' || data?.Status === 'OK') {
@@ -229,11 +294,55 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
                   </div>
                 </FormField>
                 <FormField label={tMerchant.fieldPayInBankCustodyType} required error={errors.payInBankCustodyType}>
-                  <select value={payInBankCustodyType} onChange={e => { setPayInBankCustodyType(e.target.value); clearErr('payInBankCustodyType') }} className={inputCls(!!errors.payInBankCustodyType)}>
+                  <select value={payInBankCustodyType} onChange={e => { setPayInBankCustodyType(e.target.value as any); clearErr('payInBankCustodyType') }} className={inputCls(!!errors.payInBankCustodyType)}>
                     <option value="">{tMerchant.fieldPayInBankCustodyTypePlaceholder}</option>
                     <option value="MerchantOwn">{tMerchant.custodyTypeMerchantOwn}</option>
                     <option value="PlatformOwn">{tMerchant.custodyTypePlatformOwn}</option>
                   </select>
+                </FormField>
+                <FormField label={tMerchant.fieldPaymentGateway}>
+                  <div ref={paymentGatewayDropdownRef} className="relative">
+                    <div className={clsx(inputCls(false), 'flex items-center gap-2 cursor-text')} onClick={() => setPaymentGatewayDropdownOpen(true)}>
+                      {paymentGatewayId && selectedPaymentGateway ? (
+                        <>
+                          <span className="flex-1 truncate">
+                            {selectedPaymentGateway.code}
+                            {selectedPaymentGateway.description && <span className="text-gray-400"> — {selectedPaymentGateway.description}</span>}
+                          </span>
+                          <button type="button" onClick={e => { e.stopPropagation(); setPaymentGatewayId(''); setPaymentGatewayQuery('') }} className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          value={paymentGatewayQuery}
+                          onChange={e => { setPaymentGatewayQuery(e.target.value); setPaymentGatewayDropdownOpen(true) }}
+                          onFocus={() => setPaymentGatewayDropdownOpen(true)}
+                          placeholder={tMerchant.fieldPaymentGatewayPlaceholder}
+                          className="flex-1 outline-none bg-transparent"
+                        />
+                      )}
+                    </div>
+                    {paymentGatewayDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                        {filteredPaymentGateways.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-gray-400">{tMerchant.noPaymentGatewayFound}</div>
+                        ) : (
+                          filteredPaymentGateways.map(p => (
+                            <div
+                              key={p.id}
+                              onMouseDown={e => { e.preventDefault(); setPaymentGatewayId(p.id); setPaymentGatewayQuery(''); setPaymentGatewayDropdownOpen(false) }}
+                              className={clsx('flex flex-col gap-0.5 px-4 py-2.5 text-sm cursor-pointer hover:bg-primary-50 transition-colors', paymentGatewayId === p.id && 'bg-primary-50 text-primary-700 font-medium')}
+                            >
+                              <span className="font-semibold truncate">{p.code}</span>
+                              {p.description && <span className="text-xs text-gray-400 truncate">{p.description}</span>}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </FormField>
                 <FormField label={tMerchant.fieldPayinExpireMinute} error={errors.payinExpireMinute}>
                   <input type="number" min={5} max={60} value={payinExpireMinute} onChange={e => { setPayinExpireMinute(e.target.value); clearErr('payinExpireMinute') }} className={inputCls(!!errors.payinExpireMinute)} />
@@ -260,7 +369,48 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
             </div>
           )}
 
-          {step === 2 && (
+          {step === 2 && isPlatformOwn && (
+            <div className="space-y-4">
+              <SectionHeader>{m.wizardStepBankAccount}</SectionHeader>
+              <FormField label={tBankAccount.title} required error={errors.existingBankAccountId}>
+                <div className={inputCls(!!errors.existingBankAccountId)}>
+                  <input
+                    type="text"
+                    value={platformBankAccountQuery}
+                    onChange={e => setPlatformBankAccountQuery(e.target.value)}
+                    placeholder={tBankAccount.searchPlaceholder ?? tMerchant.fieldPaymentGatewayPlaceholder}
+                    className="w-full outline-none bg-transparent"
+                  />
+                </div>
+              </FormField>
+              <div className="rounded-xl border border-gray-100 max-h-72 overflow-y-auto divide-y divide-gray-50">
+                {platformBankAccountsLoading ? (
+                  <div className="px-4 py-6 text-center text-sm text-gray-400">...</div>
+                ) : filteredPlatformBankAccounts.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-sm text-gray-400">{tBankAccount.noAccountsFound ?? '—'}</div>
+                ) : (
+                  filteredPlatformBankAccounts.map(a => (
+                    <div
+                      key={a.accountId}
+                      onClick={() => { setExistingBankAccountId(a.accountId); clearErr('existingBankAccountId') }}
+                      className={clsx(
+                        'flex items-center justify-between gap-3 px-4 py-3 cursor-pointer transition-colors',
+                        existingBankAccountId === a.accountId ? 'bg-primary-50' : 'hover:bg-gray-50'
+                      )}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{a.bankName || a.bankCode} · {a.accountNumber}</p>
+                        <p className="text-xs text-gray-400 truncate">{a.accountName}</p>
+                      </div>
+                      {existingBankAccountId === a.accountId && <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 2 && !isPlatformOwn && (
             <div className="space-y-4">
               <SectionHeader>{m.wizardStepBankAccount}</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -278,18 +428,11 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
                     <input value={item.promptPayId ?? ''} disabled className={inputCls(false, true)} />
                   </FormField>
                 )}
-                <FormField label={tBankAccount.fieldAccountLevel} required error={errors.baAccountLevel}>
-                  <select value={baAccountLevel} onChange={e => { setBaAccountLevel(e.target.value as any); clearErr('baAccountLevel') }} className={inputCls(!!errors.baAccountLevel)}>
-                    <option value="Global">Global</option>
-                    <option value="Selected">Selected</option>
-                  </select>
+                <FormField label={tBankAccount.fieldAccountLevel} hint={m.wizardLockedFromRequest}>
+                  <input value="Selected" disabled className={inputCls(false, true)} />
                 </FormField>
-                <FormField label={tBankAccount.fieldCustodyType} required error={errors.baCustodyType}>
-                  <select value={baCustodyType} onChange={e => { setBaCustodyType(e.target.value as any); clearErr('baCustodyType') }} className={inputCls(!!errors.baCustodyType)}>
-                    <option value="">—</option>
-                    <option value="MerchantOwn">{tMerchant.custodyTypeMerchantOwn}</option>
-                    <option value="PlatformOwn">{tMerchant.custodyTypePlatformOwn}</option>
-                  </select>
+                <FormField label={tBankAccount.fieldCustodyType} hint={m.wizardLockedFromRequest}>
+                  <input value={tMerchant.custodyTypeMerchantOwn} disabled className={inputCls(false, true)} />
                 </FormField>
                 <FormField label={tBankAccount.fieldPayInMin} required error={errors.baPayInMin}>
                   <input type="number" min={0} value={baPayInMin} onChange={e => { setBaPayInMin(e.target.value); clearErr('baPayInMin') }} className={inputCls(!!errors.baPayInMin)} />
@@ -318,15 +461,27 @@ export default function ApproveWizardModal({ item, onClose, onSuccess, m, tMerch
                   <span className="text-gray-400">{tMerchant.fieldEmail}</span><span className="text-gray-800 font-medium">{email}</span>
                   <span className="text-gray-400">{tMerchant.fieldPhone}</span><span className="text-gray-800 font-medium">{phone}</span>
                   <span className="text-gray-400">{tMerchant.fieldPayInBankCustodyType}</span><span className="text-gray-800 font-medium">{payInBankCustodyType}</span>
+                  {selectedPaymentGateway && (
+                    <><span className="text-gray-400">{tMerchant.fieldPaymentGateway}</span><span className="text-gray-800 font-medium">{selectedPaymentGateway.code}</span></>
+                  )}
                 </div>
               </div>
               <div className="rounded-xl border border-gray-100 p-4 space-y-1.5">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">{m.wizardStepBankAccount}</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                  <span className="text-gray-400">{tBankAccount.fieldBank}</span><span className="text-gray-800 font-medium">{item.bankCode} {item.bankAccountNumber}</span>
-                  <span className="text-gray-400">{tBankAccount.fieldAccountName}</span><span className="text-gray-800 font-medium">{item.bankAccountName}</span>
-                  <span className="text-gray-400">{tBankAccount.fieldAccountLevel}</span><span className="text-gray-800 font-medium">{baAccountLevel}</span>
-                  <span className="text-gray-400">{tBankAccount.fieldCustodyType}</span><span className="text-gray-800 font-medium">{baCustodyType}</span>
+                  {isPlatformOwn ? (
+                    <>
+                      <span className="text-gray-400">{tBankAccount.fieldBank}</span><span className="text-gray-800 font-medium">{selectedPlatformBankAccount?.bankName || selectedPlatformBankAccount?.bankCode} {selectedPlatformBankAccount?.accountNumber}</span>
+                      <span className="text-gray-400">{tBankAccount.fieldAccountName}</span><span className="text-gray-800 font-medium">{selectedPlatformBankAccount?.accountName}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-gray-400">{tBankAccount.fieldBank}</span><span className="text-gray-800 font-medium">{item.bankCode} {item.bankAccountNumber}</span>
+                      <span className="text-gray-400">{tBankAccount.fieldAccountName}</span><span className="text-gray-800 font-medium">{item.bankAccountName}</span>
+                    </>
+                  )}
+                  <span className="text-gray-400">{tBankAccount.fieldAccountLevel}</span><span className="text-gray-800 font-medium">{isPlatformOwn ? '—' : 'Selected'}</span>
+                  <span className="text-gray-400">{tBankAccount.fieldCustodyType}</span><span className="text-gray-800 font-medium">{payInBankCustodyType}</span>
                 </div>
               </div>
             </div>

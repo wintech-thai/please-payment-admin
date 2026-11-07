@@ -1474,3 +1474,45 @@ export interface ServiceRequestResult {
   bookBankImageBase64?: string | null
   bookBankMimeType?: string | null
 }
+
+export interface AccountDocItemRow {
+  id?: string | null
+  productType?: string | null
+  productCode?: string | null
+  productDesc?: string | null
+  quantity?: number | null
+  unitPrice?: number | null
+  totalPrice?: number | null
+  netAmount?: number | null
+}
+
+export interface PurchaseCashItem {
+  id?: string | null
+  orgId?: string | null
+  code?: string | null
+  documentNo?: string | null
+  description?: string | null
+  entityId?: string | null
+  tags?: string | null
+  documentType?: string | null
+  documentSubType?: string | null
+  productType?: string | null
+  documentDate?: string | null
+  totalPrice?: number | null
+  netAmount?: number | null
+  grandTotal?: number | null
+  status?: string | null
+  rejectReason?: string | null
+  documentParams?: string | null
+  createdDate?: string | null
+  updatedDate?: string | null
+  approvedDate?: string | null
+  statusDate?: string | null
+  items?: AccountDocItemRow[] | null
+}
+
+export interface PurchaseCashResult {
+  status?: string | null
+  description?: string | null
+  accountDoc?: PurchaseCashItem | null
+}

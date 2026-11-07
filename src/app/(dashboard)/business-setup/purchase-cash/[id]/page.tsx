@@ -200,6 +200,12 @@ export default function PurchaseCashDetailPage() {
 
   const canModify = item.status === 'Pending'
 
+  // ปรับแก้ ข้อ 4c : ดึง Payment ID (externalPaymentRequestId) จาก documentParams มาแสดง เหมือนฝั่ง merchant
+  let externalPaymentRequestId: string | null = null
+  if (item.documentParams) {
+    try { externalPaymentRequestId = JSON.parse(item.documentParams)?.externalPaymentRequestId ?? null } catch { externalPaymentRequestId = null }
+  }
+
   return (
     <div className="flex flex-col overflow-hidden h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6.5rem)]">
       {confirmOpen && (
@@ -281,6 +287,12 @@ export default function PurchaseCashDetailPage() {
               <dt className="text-xs text-gray-400 uppercase font-semibold tracking-wide">{m.fieldCreatedDate}</dt>
               <dd className="mt-0.5 text-gray-700">{item.createdDate ? fmtDateTime(item.createdDate, true) : '—'}</dd>
             </div>
+            {externalPaymentRequestId && (
+              <div>
+                <dt className="text-xs text-gray-400 uppercase font-semibold tracking-wide">{m.fieldPaymentId}</dt>
+                <dd className="mt-0.5 text-gray-700 text-xs break-all">{externalPaymentRequestId}</dd>
+              </div>
+            )}
             {item.status === 'Rejected' && (
               <div>
                 <dt className="text-xs text-gray-400 uppercase font-semibold tracking-wide">{m.fieldRejectReason}</dt>

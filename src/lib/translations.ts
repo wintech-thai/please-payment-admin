@@ -353,7 +353,7 @@ export const translations = {
     purchaseCashAdmin: {
       title: 'คำสั่งซื้อ',
       subtitle: 'จัดการคำสั่งซื้อจาก merchant ทั้งหมด',
-      searchPlaceholder: 'ค้นหาเลขที่เอกสาร, สถานะ',
+      searchPlaceholder: 'ค้นหาเลขที่เอกสาร, สถานะ, ชื่อร้านค้า',
       filterAllStatus: 'ทุกสถานะ',
       colDocNo: 'เลขที่เอกสาร',
       colCreatedDate: 'วันที่สร้าง',
@@ -3611,7 +3611,7 @@ export const translations = {
     purchaseCashAdmin: {
       title: 'Purchasing Order',
       subtitle: 'Manage purchase orders from all merchants',
-      searchPlaceholder: 'Search document no, status',
+      searchPlaceholder: 'Search document no, status, merchant name',
       filterAllStatus: 'All Status',
       colDocNo: 'Document No',
       colCreatedDate: 'Created Date',

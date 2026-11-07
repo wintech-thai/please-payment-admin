@@ -25,6 +25,20 @@ function getTimeFilter(tr: TimeRangeValue): { fromDate: string; toDate: string }
   return { fromDate: new Date(startMs).toISOString(), toDate: new Date(now).toISOString() }
 }
 
+// ปรับแก้ ข้อ 5 : column TYPE ก็ทำเป็น badge สีๆ เหมือน status
+function TypeBadge({ type }: { type?: string | null }) {
+  const cfg: Record<string, { bg: string; dot: string }> = {
+    PointTopUp: { bg: 'bg-violet-50 text-violet-700 ring-violet-200', dot: 'bg-violet-500' },
+  }
+  const c = cfg[type ?? ''] ?? { bg: 'bg-gray-100 text-gray-600 ring-gray-200', dot: 'bg-gray-400' }
+  return (
+    <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', c.bg)}>
+      <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', c.dot)} />
+      {type ?? '—'}
+    </span>
+  )
+}
+
 function StatusBadge({ status, m }: { status?: string | null; m: any }) {
   const effective = status || 'Pending'
   const cfg: Record<string, { bg: string; dot: string; label: string }> = {
@@ -219,7 +233,7 @@ function PurchaseCashListContent() {
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">{item.createdDate ? fmtDateTime(item.createdDate, false) : '—'}</td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm font-semibold text-gray-700">{item.orgId ?? '—'}</td>
-                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-600">{item.documentSubType ?? '—'}</td>
+                      <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap"><TypeBadge type={item.documentSubType} /></td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-700 tabular-nums">{fmtNum(item.grandTotal ?? item.totalPrice)}</td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap"><StatusBadge status={item.status} m={m} /></td>
                     </tr>

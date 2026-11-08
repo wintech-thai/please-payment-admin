@@ -70,7 +70,8 @@ export default function Navbar() {
   const isMasterReferenceActive = pathname.startsWith('/business-setup/master-reference')
   const isServiceRequestActive = pathname.startsWith('/business-setup/service-request')
   const isPaymentGatewayActive = pathname.startsWith('/setting/payment-gateway')
-  const isSystemManagementActive = isRiskManagementActive || isMasterReferenceActive || isServiceRequestActive || isPaymentGatewayActive
+  const isPurchaseCashActive = pathname.startsWith('/business-setup/purchase-cash')
+  const isSystemManagementActive = isAdministratorActive || isRiskManagementActive || isMasterReferenceActive || isServiceRequestActive || isPaymentGatewayActive || isPurchaseCashActive
   const isBusinessSetupActive = pathname.startsWith('/business-setup') && !isMasterReferenceActive && !isServiceRequestActive
 
   const businessSetupChildren = [
@@ -81,6 +82,10 @@ export default function Navbar() {
   const systemManagementChildren = [
     { href: '/business-setup/master-reference', label: t.nav.masterReference, comingSoon: false },
     { href: '/risk-management', label: t.nav.riskManagement, comingSoon: false },
+    { href: '/business-setup/purchase-cash', label: t.nav.purchasingOrder, comingSoon: false },
+  ]
+  // x092 item 5: Service Request / Payment Gateway grouped separately with a divider, per spec screenshot
+  const systemManagementChildren2 = [
     { href: '/business-setup/service-request', label: t.nav.serviceRequest, comingSoon: false },
     // x089 ปรับแก้ 9 : moved out of Support & Setting — URL unchanged
     { href: '/setting/payment-gateway', label: t.nav.paymentGateway, comingSoon: false },
@@ -239,19 +244,6 @@ export default function Navbar() {
             {t.nav.reportAndAnalytic}
           </Link>
 
-          {/* Administrator */}
-          <Link
-            href="/administrator/custom-roles"
-            className={clsx(
-              'flex items-center px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
-              isAdministratorActive
-                ? 'bg-white/20 text-white'
-                : 'text-white hover:bg-white/15'
-            )}
-          >
-            {t.nav.administrator}
-          </Link>
-
           {/* Setting */}
           <Link
             href="/setting/brand-theme"
@@ -286,8 +278,41 @@ export default function Navbar() {
             </button>
 
             {systemManagementOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+              <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50">
+                <Link
+                  href="/administrator/custom-roles"
+                  onClick={() => setSystemManagementOpen(false)}
+                  className={clsx(
+                    'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
+                    isAdministratorActive
+                      ? 'text-primary-700 font-semibold bg-primary-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  )}
+                >
+                  <span>{t.nav.administrator}</span>
+                </Link>
+
+                <div className="my-1.5 border-t border-gray-100" />
+
                 {systemManagementChildren.map(item => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setSystemManagementOpen(false)}
+                    className={clsx(
+                      'flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
+                      pathname.startsWith(item.href)
+                        ? 'text-primary-700 font-semibold bg-primary-50'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    )}
+                  >
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+
+                <div className="my-1.5 border-t border-gray-100" />
+
+                {systemManagementChildren2.map(item => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -570,22 +595,6 @@ export default function Navbar() {
             <span>{t.nav.reportAndAnalytic}</span>
           </Link>
 
-          {/* Administrator */}
-          <Link
-            href="/administrator/custom-roles"
-            onClick={() => setMobileMenuOpen(false)}
-            className={clsx(
-              'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-              isAdministratorActive ? 'bg-white/20 text-white' : 'text-white hover:bg-white/15'
-            )}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span>{t.nav.administrator}</span>
-          </Link>
-
           {/* Setting */}
           <Link
             href="/setting/brand-theme"
@@ -603,9 +612,42 @@ export default function Navbar() {
           </Link>
 
           {/* System Management group */}
-          <div className="px-3 py-1.5">
-            <p className="text-xs font-semibold text-orange-300/60 uppercase tracking-wider mb-1">{t.nav.systemManagement}</p>
+          <div className="px-3 py-2">
+            <p className="text-xs font-semibold text-orange-300/60 uppercase tracking-wider mb-1.5">{t.nav.systemManagement}</p>
+            <Link
+              href="/administrator/custom-roles"
+              onClick={() => setMobileMenuOpen(false)}
+              className={clsx(
+                'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
+                isAdministratorActive
+                  ? 'bg-white/20 text-white'
+                  : 'text-white hover:bg-white/15'
+              )}
+            >
+              <span>{t.nav.administrator}</span>
+            </Link>
+
+            <div className="my-2 border-t border-white/10" />
+
             {systemManagementChildren.map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={clsx(
+                  'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
+                  pathname.startsWith(item.href)
+                    ? 'bg-white/20 text-white'
+                    : 'text-white hover:bg-white/15'
+                )}
+              >
+                <span>{item.label}</span>
+              </Link>
+            ))}
+
+            <div className="my-2 border-t border-white/10" />
+
+            {systemManagementChildren2.map(item => (
               <Link
                 key={item.href}
                 href={item.href}

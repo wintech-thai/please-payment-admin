@@ -210,7 +210,7 @@ export default function BrandThemePage() {
 
       {/* Status Card */}
       <div className="flex items-stretch gap-3">
-        <div className="max-w-3xl w-full flex-shrink-0 bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={clsx('w-10 h-10 rounded-full flex items-center justify-center',
               isEnabled ? 'bg-emerald-100' : 'bg-gray-100')}>
@@ -264,7 +264,7 @@ export default function BrandThemePage() {
       </div>
 
       {/* Main Content Card */}
-      <div className="max-w-3xl w-full bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="w-full bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {!editing && !!config?.configId && !isEnabled && (

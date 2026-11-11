@@ -75,6 +75,24 @@ export interface SmtpConfigResponse {
   }
 }
 
+export interface PaymentConfirmationConfigData {
+  /** Masked (e.g. "sm*******iK") on read; only send a value here when the user actually typed a new one. */
+  apiKey?: string | null
+}
+
+export interface PaymentConfirmationConfigResponse {
+  status?: string
+  description?: string
+  configuration?: {
+    configId?: string
+    orgId?: string
+    configType?: string
+    status?: string
+    createdDate?: string
+    paymentConfirmationConfig?: PaymentConfirmationConfigData
+  }
+}
+
 export interface TestEmailJob {
   id?: string
   status?: string
@@ -124,4 +142,10 @@ export const adminConfigApi = {
 
   getTestEmailJobById: (jobId: string) =>
     client.get<TestEmailJob>(`${BASE}/GetTestEmailJobById/${jobId}`),
+
+  getPaymentConfirmationConfig: () =>
+    client.get<PaymentConfirmationConfigResponse>(`${BASE}/GetPaymentConfirmationConfig`),
+
+  setPaymentConfirmationConfig: (payload: PaymentConfirmationConfigData) =>
+    client.post(`${BASE}/SetPaymentConfirmationConfig`, { PaymentConfirmationConfig: payload }),
 }

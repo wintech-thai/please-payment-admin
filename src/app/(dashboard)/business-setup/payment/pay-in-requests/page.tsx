@@ -1740,6 +1740,7 @@ export default function PayInRequestsPage() {
           merchantName={qrTarget.merchant.name ?? qrTarget.merchant.code ?? undefined}
           orgId={qrTarget.merchant.orgId}
           onClose={() => { setQrTarget(null); handleRefresh() }}
+          onSuccess={id => { handleRefresh(); if (id) handleRowHighlight(id) }}
         />
       )}
       {qrTarget && qrTarget.isP2P && (
@@ -1748,6 +1749,7 @@ export default function PayInRequestsPage() {
           merchantName={qrTarget.merchant.name ?? qrTarget.merchant.code ?? undefined}
           orgId={qrTarget.merchant.orgId}
           onClose={() => { setQrTarget(null); handleRefresh() }}
+          onSuccess={id => { handleRefresh(); if (id) handleRowHighlight(id) }}
         />
       )}
     </div>

@@ -10,6 +10,7 @@ import type { ThemeName } from '@/lib/brand-themes'
 import { useBrand } from '@/context/BrandContext'
 import { useLang } from '@/context/LanguageContext'
 import SmtpConfigModal from '@/components/SmtpConfigModal'
+import PaymentConfirmationConfigModal from '@/components/PaymentConfirmationConfigModal'
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024  // 2 MB
 const LOGO_W = 240
@@ -47,6 +48,7 @@ export default function BrandThemePage() {
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [smtpModalOpen, setSmtpModalOpen] = useState(false)
+  const [paymentConfirmationModalOpen, setPaymentConfirmationModalOpen] = useState(false)
 
   const s = config?.status?.toLowerCase() ?? ''
   const isEnabled = s === 'active' || s.startsWith('enable')
@@ -204,10 +206,11 @@ export default function BrandThemePage() {
       </div>
 
       {smtpModalOpen && <SmtpConfigModal onClose={() => setSmtpModalOpen(false)} />}
+      {paymentConfirmationModalOpen && <PaymentConfirmationConfigModal onClose={() => setPaymentConfirmationModalOpen(false)} />}
 
       {/* Status Card */}
-      <div className="flex items-stretch gap-4">
-        <div className="max-w-3xl w-full bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between gap-4">
+      <div className="flex items-stretch gap-3">
+        <div className="max-w-3xl w-full flex-shrink-0 bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={clsx('w-10 h-10 rounded-full flex items-center justify-center',
               isEnabled ? 'bg-emerald-100' : 'bg-gray-100')}>
@@ -241,12 +244,22 @@ export default function BrandThemePage() {
 
         <button
           onClick={() => setSmtpModalOpen(true)}
-          className="flex-shrink-0 flex items-center gap-2 px-6 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl shadow-sm transition-colors"
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xl shadow-sm transition-colors whitespace-nowrap"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           {t.smtpConfig.btnOpen}
+        </button>
+
+        <button
+          onClick={() => setPaymentConfirmationModalOpen(true)}
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xl shadow-sm transition-colors whitespace-nowrap"
+        >
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          {t.paymentConfirmationConfig.btnOpen}
         </button>
       </div>
 

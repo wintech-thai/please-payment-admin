@@ -376,10 +376,12 @@ function ApproveConfirmModal({
   item,
   onSuccess,
   onClose,
+  mode = 'approve',
 }: {
   item: PayInRequestItem
   onSuccess: () => void
   onClose: () => void
+  mode?: 'approve' | 'reapprove'
 }) {
   const { t } = useLang()
   const m = t.payInRequest
@@ -423,15 +425,17 @@ function ApproveConfirmModal({
   const handleConfirm = async () => {
     setLoading(true)
     try {
-      await paymentRequestApi.createPaymentTxByPayInRequestId(item.id, {
-        StatusCode: approveStatusCode || undefined,
-        StatusReason: reason.trim() || undefined,
-      })
-      toast.success(m.toastApproveSuccess)
+      const payload = { StatusCode: approveStatusCode || undefined, StatusReason: reason.trim() || undefined }
+      if (mode === 'reapprove') {
+        await paymentRequestApi.approveRejectedPayInRequestById(item.id, payload)
+      } else {
+        await paymentRequestApi.createPaymentTxByPayInRequestId(item.id, payload)
+      }
+      toast.success(mode === 'reapprove' ? m.toastReapproveSuccess : m.toastApproveSuccess)
       onSuccess()
       onClose()
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : m.toastApproveFailed)
+      toast.error(err instanceof Error ? err.message : (mode === 'reapprove' ? m.toastReapproveFailed : m.toastApproveFailed))
     } finally {
       setLoading(false)
     }
@@ -441,7 +445,7 @@ function ApproveConfirmModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-900">{m.modalApproveTitle}</h3>
+          <h3 className="text-base font-bold text-gray-900">{mode === 'reapprove' ? m.modalReapproveTitle : m.modalApproveTitle}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
             <X className="w-4 h-4" />
           </button>
@@ -1004,12 +1008,14 @@ function ActionMenu({
   item,
   onApprove,
   onReject,
+  onApproveRejected,
   onSlipLink,
   onStatusLink,
 }: {
   item: PayInRequestItem
   onApprove: () => void
   onReject: () => void
+  onApproveRejected: () => void
   onSlipLink: () => void
   onStatusLink: () => void
 }) {
@@ -1021,6 +1027,8 @@ function ActionMenu({
   const btnRef = useRef<HTMLButtonElement>(null)
   // x088: merchant แบบ MerchantOwn สร้าง/approve/reject เองที่โปรแกรม Merchant เท่านั้น Admin ทำได้แค่ view only
   const isPending = item.status?.toLowerCase() === 'pending' && item.payInBankCustodyType !== 'MerchantOwn'
+  // Re-approve a Rejected request, only when it's not MerchantOwn
+  const isRejectedReapprovable = item.status?.toLowerCase() === 'rejected' && item.payInBankCustodyType !== 'MerchantOwn'
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -1065,6 +1073,14 @@ function ActionMenu({
             className="w-full px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {m.menuReject}
+          </button>
+          <button
+            type="button"
+            disabled={!isRejectedReapprovable}
+            onClick={() => { setOpen(false); onApproveRejected() }}
+            className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {m.menuApproveRejected}
           </button>
           <button
             type="button"
@@ -1113,6 +1129,7 @@ export default function PayInRequestsPage() {
   const [loading, setLoading] = useState(false)
   const [approveTarget, setApproveTarget] = useState<PayInRequestItem | null>(null)
   const [rejectTarget, setRejectTarget] = useState<PayInRequestItem | null>(null)
+  const [reapproveTarget, setReapproveTarget] = useState<PayInRequestItem | null>(null)
   const [slipLinkTarget, setSlipLinkTarget] = useState<PayInRequestItem | null>(null)
   const [statusLinkTarget, setStatusLinkTarget] = useState<PayInRequestItem | null>(null)
   const [slipViewerTarget, setSlipViewerTarget] = useState<PayInRequestItem | null>(null)
@@ -1526,6 +1543,7 @@ export default function PayInRequestsPage() {
                           item={item}
                           onApprove={() => setApproveTarget(item)}
                           onReject={() => setRejectTarget(item)}
+                          onApproveRejected={() => setReapproveTarget(item)}
                           onSlipLink={() => setSlipLinkTarget(item)}
                           onStatusLink={() => setStatusLinkTarget(item)}
                         />
@@ -1595,6 +1613,15 @@ export default function PayInRequestsPage() {
           item={rejectTarget}
           onSuccess={handleRefresh}
           onClose={() => setRejectTarget(null)}
+        />
+      )}
+
+      {reapproveTarget && (
+        <ApproveConfirmModal
+          item={reapproveTarget}
+          mode="reapprove"
+          onSuccess={handleRefresh}
+          onClose={() => setReapproveTarget(null)}
         />
       )}
 

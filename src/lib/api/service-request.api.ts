@@ -41,6 +41,9 @@ export const serviceRequestApi = {
   deleteServiceRequestById: (id: string) =>
     client.delete<ServiceRequestResult>(`${BASE}/DeleteServiceRequestById/${id}`),
 
+  deleteServiceRequestCompletelyById: (id: string) =>
+    client.delete<ServiceRequestResult>(`${BASE}/DeleteServiceRequestCompletelyById/${id}`),
+
   rejectServiceRequestById: (id: string, rejectReason: string) =>
     client.post<ServiceRequestResult>(`${BASE}/RejectServiceRequestById/${id}`, { RejectReason: rejectReason }),
 

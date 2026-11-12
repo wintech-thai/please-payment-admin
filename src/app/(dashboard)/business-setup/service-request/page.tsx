@@ -284,7 +284,7 @@ function ServiceRequestListContent() {
   const [showTypeMenu, setShowTypeMenu] = useState(false)
   const typeMenuRef = useRef<HTMLDivElement>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'regenerate' | 'resend' | 'delete'; item?: ServiceRequestItem }>({ open: false })
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'regenerate' | 'resend' | 'delete' | 'delete-completely'; item?: ServiceRequestItem }>({ open: false })
   const [linkModal, setLinkModal] = useState<{ open: boolean; title?: string; link?: string }>({ open: false })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
@@ -422,10 +422,15 @@ function ServiceRequestListContent() {
         const data = res.data as any
         if (data?.status === 'OK' || data?.Status === 'OK') { toast.success(m.deleteSuccess); setSelectedId(null); fetchItems() }
         else toast.error(data?.status === 'APPROVED_CANNOT_DELETE' ? m.cannotDeleteApproved : (data?.description ?? m.deleteFailed))
+      } else if (type === 'delete-completely') {
+        const res = await serviceRequestApi.deleteServiceRequestCompletelyById(item.id)
+        const data = res.data as any
+        if (data?.status === 'OK' || data?.Status === 'OK') { toast.success(m.deleteCompletelySuccess); setSelectedId(null); fetchItems() }
+        else toast.error(data?.status === 'MERCHANT_HAS_ACTIVITY' ? m.cannotDeleteMerchantHasActivity : (data?.description ?? m.deleteCompletelyFailed))
       }
       setConfirmModal({ open: false })
     } catch (err: unknown) {
-      const failMsg = type === 'regenerate' ? m.regenerateFailed : type === 'resend' ? m.resendFailed : m.deleteFailed
+      const failMsg = type === 'regenerate' ? m.regenerateFailed : type === 'resend' ? m.resendFailed : type === 'delete-completely' ? m.deleteCompletelyFailed : m.deleteFailed
       toast.error(err instanceof Error ? err.message : failMsg)
     } finally {
       setActionLoading(null)
@@ -461,8 +466,8 @@ function ServiceRequestListContent() {
 
       {confirmModal.open && (
         <ConfirmModal
-          title={confirmModal.type === 'regenerate' ? m.regenerateConfirmTitle : confirmModal.type === 'resend' ? m.resendConfirmTitle : m.deleteConfirmTitle}
-          desc={confirmModal.type === 'regenerate' ? m.regenerateConfirmDesc : confirmModal.type === 'resend' ? m.resendConfirmDesc : m.deleteConfirmDesc}
+          title={confirmModal.type === 'regenerate' ? m.regenerateConfirmTitle : confirmModal.type === 'resend' ? m.resendConfirmTitle : confirmModal.type === 'delete-completely' ? m.deleteCompletelyConfirmTitle : m.deleteConfirmTitle}
+          desc={confirmModal.type === 'regenerate' ? m.regenerateConfirmDesc : confirmModal.type === 'resend' ? m.resendConfirmDesc : confirmModal.type === 'delete-completely' ? m.deleteCompletelyConfirmDesc : m.deleteConfirmDesc}
           onConfirm={handleConfirmAction}
           onCancel={() => setConfirmModal({ open: false })}
           loading={!!actionLoading}
@@ -646,6 +651,13 @@ function ServiceRequestListContent() {
                                   >
                                     <Mail className="w-4 h-4 text-primary-500 flex-shrink-0" />
                                     {m.actionResendEmail}
+                                  </button>
+                                  <button
+                                    onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'delete-completely', item }) }}
+                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                    {m.actionDeleteCompletely}
                                   </button>
                                 </>
                               )}

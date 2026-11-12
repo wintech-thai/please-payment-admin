@@ -1057,7 +1057,7 @@ function ActionMenu({
         <MoreVertical className="w-4 h-4" />
       </button>
       {open && (
-        <div className={clsx('absolute right-0 z-20 w-36 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden', dropUp ? 'bottom-8' : 'top-8')}>
+        <div className={clsx('absolute right-0 z-20 w-40 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden', dropUp ? 'bottom-8' : 'top-8')}>
           <button
             type="button"
             disabled={!isPending}
@@ -1078,7 +1078,7 @@ function ActionMenu({
             type="button"
             disabled={!isRejectedReapprovable}
             onClick={() => { setOpen(false); onApproveRejected() }}
-            className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
           >
             {m.menuApproveRejected}
           </button>

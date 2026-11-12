@@ -629,7 +629,7 @@ function ServiceRequestListContent() {
                         <div className="relative" ref={el => { menuRefs.current[item.id ?? ''] = el }}>
                           <button
                             onClick={() => setOpenActionId(prev => prev === item.id ? null : (item.id ?? null))}
-                            disabled={busy || !canModify}
+                            disabled={busy}
                             className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-40"
                           >
                             <MoreHorizontal className="w-4 h-4" />
@@ -652,15 +652,15 @@ function ServiceRequestListContent() {
                                     <Mail className="w-4 h-4 text-primary-500 flex-shrink-0" />
                                     {m.actionResendEmail}
                                   </button>
-                                  <button
-                                    onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'delete-completely', item }) }}
-                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-red-500 flex-shrink-0" />
-                                    {m.actionDeleteCompletely}
-                                  </button>
                                 </>
                               )}
+                              <button
+                                onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'delete-completely', item }) }}
+                                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                {m.actionDeleteCompletely}
+                              </button>
                             </div>
                           )}
                         </div>

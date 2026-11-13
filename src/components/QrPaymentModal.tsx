@@ -25,6 +25,7 @@ interface Props {
   merchantName?: string
   orgId?: string | null
   onClose: () => void
+  onSuccess?: (id?: string) => void
 }
 
 function generateRefId(): string {
@@ -40,7 +41,7 @@ function generateRefId(): string {
   )
 }
 
-export default function QrPaymentModal({ merchantId, merchantName, orgId, onClose }: Props) {
+export default function QrPaymentModal({ merchantId, merchantName, orgId, onClose, onSuccess }: Props) {
   const { t, lang } = useLang()
   const m = t.merchant
   const a = t.admin
@@ -219,6 +220,7 @@ export default function QrPaymentModal({ merchantId, merchantName, orgId, onClos
       const raw = res.data as any
       const pr: PaymentRequestResponse = raw?.paymentResponse ?? raw?.PaymentResponse ?? raw
       setResult(pr)
+      onSuccess?.(pr.id)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : m.qrErrFailed)
     } finally {

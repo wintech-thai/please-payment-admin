@@ -32,13 +32,32 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   )
 }
 
-function TagsCell({ tags }: { tags?: string | null }) {
+function TagsCell({ tags, tags2 }: { tags?: string | null; tags2?: string | null }) {
   if (!tags) return <span className="text-gray-400">—</span>
   const refId1 = tags.match(/RefId1=\[([^\]]+)\]/i)?.[1] ?? null
-  const parts = tags.split(',').map(p => p.trim()).filter(p => p && !/^RefId1=/i.test(p))
+  const parts = tags.split(',').map(p => p.trim()).filter(p => p && !/^RefId1=/i.test(p) && p !== 'PointTopUp')
   return (
     <div className="flex flex-col gap-1">
       {parts.map((part, i) => {
+        // x093 3 : Point TopUp -> link ไปที่เอกสาร Purchase Order (PurchaseCash) ที่เกี่ยวข้อง แสดงเลขที่เอกสารแทน tag ดิบ
+        const accountDocMatch = part.match(/AccountDocId=\[?([0-9a-f-]{36})\]?/i)
+        if (accountDocMatch) {
+          const uuid = accountDocMatch[1]
+          return (
+            <a
+              key={i}
+              href={`/business-setup/purchase-cash/${uuid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-xs text-violet-600 hover:underline"
+            >
+              <span className="truncate max-w-[160px]">{tags2 ?? uuid}</span>
+              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+            </a>
+          )
+        }
+
         // PayIn Transaction link
         const payInMatch = part.match(/PaymentTxId=\[?([0-9a-f-]{36})\]?/i)
         if (payInMatch) {
@@ -504,7 +523,7 @@ export default function MerchantPointWalletPage() {
                         {formatDateTime(tx.createdDate, timezone)}
                       </td>
                       <td className="px-6 py-3 border-b border-gray-100 max-w-[220px]">
-                        <TagsCell tags={tx.tags} />
+                        <TagsCell tags={tx.tags} tags2={tx.tags2} />
                       </td>
                       <td className="px-6 py-3 border-b border-gray-100 text-sm text-gray-600 max-w-[200px] truncate">
                         {tx.description || '—'}

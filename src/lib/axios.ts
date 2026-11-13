@@ -162,11 +162,12 @@ client.interceptors.response.use(
     // answer to "is this IP blocked?") — not a failure. Never reject them as an API error,
     // or callers checking the block status (BlacklistContext, /access-blocked) silently
     // fail open instead of seeing the real (blocked) answer.
-    // GetSmtpConfig returns NOT_FOUND as the normal "not configured yet" answer, which
-    // SmtpConfigModal handles itself — don't let it get rejected as an error here.
+    // GetSmtpConfig / GetPaymentConfirmationConfig return NOT_FOUND as the normal "not
+    // configured yet" answer, which their own modals handle — don't let it get rejected
+    // as an error here.
     if (
       typeof response.config?.url === 'string' &&
-      (response.config.url.includes('GetIpPolicyStatus') || response.config.url.includes('GetAdminWebIpPolicyStatus') || response.config.url.includes('GetSmtpConfig'))
+      (response.config.url.includes('GetIpPolicyStatus') || response.config.url.includes('GetAdminWebIpPolicyStatus') || response.config.url.includes('GetSmtpConfig') || response.config.url.includes('GetPaymentConfirmationConfig'))
     ) {
       return response
     }

@@ -5,11 +5,12 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { serviceRequestApi } from '@/lib/api/service-request.api'
 import type { ServiceRequestItem } from '@/lib/api/types'
 import { toast } from 'sonner'
-import { Search, Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, Link2, Mail, RefreshCw, Copy, Check, X, MoreHorizontal } from 'lucide-react'
+import { Search, Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, Link2, Mail, RefreshCw, Copy, Check, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/context/LanguageContext'
 import { useFormatDate } from '@/hooks/useFormatDate'
 import { AdvancedTimeRangeSelector, type TimeRangeValue } from '@/components/AdvancedTimeRangeSelector'
+import RowActionsMenu from '@/components/RowActionsMenu'
 
 const SERVICE_TYPES = [
   { value: 'CustomerRegistration', labelKey: 'serviceTypeCustomerRegistration' as const },
@@ -292,20 +293,6 @@ function ServiceRequestListContent() {
     if (typeof window !== 'undefined') return sessionStorage.getItem('service_request_highlight') ?? null
     return null
   })
-  const [openActionId, setOpenActionId] = useState<string | null>(null)
-  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (openActionId) {
-        const ref = menuRefs.current[openActionId]
-        if (ref && !ref.contains(e.target as Node)) setOpenActionId(null)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [openActionId])
-
   const fetchItems = async (p = page, search = searchTerm, status = statusFilter, type = typeFilter, tr = timeRange) => {
     setLoading(true)
     try {
@@ -621,37 +608,22 @@ function ServiceRequestListContent() {
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap"><StatusBadge status={item.status} expiredDate={item.expiredDate} m={m} /></td>
                       <td className="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-sm text-gray-500">{item.expiredDate ? fmtDateTime(item.expiredDate, false) : '—'}</td>
                       <td className="px-4 py-3 border-b border-gray-100" onClick={e => e.stopPropagation()}>
-                        <div className="relative" ref={el => { menuRefs.current[item.id ?? ''] = el }}>
-                          <button
-                            onClick={() => setOpenActionId(prev => prev === item.id ? null : (item.id ?? null))}
-                            disabled={busy || !canModify}
-                            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-40"
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                          {openActionId === item.id && (
-                            <div className="absolute right-0 top-8 z-50 w-52 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden">
-                              {canModify && (
-                                <>
-                                  <button
-                                    onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'regenerate', item }) }}
-                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <RefreshCw className="w-4 h-4 text-primary-500 flex-shrink-0" />
-                                    {m.actionRegenerateLink}
-                                  </button>
-                                  <button
-                                    onClick={() => { setOpenActionId(null); setConfirmModal({ open: true, type: 'resend', item }) }}
-                                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Mail className="w-4 h-4 text-primary-500 flex-shrink-0" />
-                                    {m.actionResendEmail}
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <RowActionsMenu items={[
+                          {
+                            label: m.actionRegenerateLink,
+                            icon: <RefreshCw className="w-4 h-4 text-primary-500 flex-shrink-0" />,
+                            hidden: !canModify,
+                            disabled: busy,
+                            onClick: () => setConfirmModal({ open: true, type: 'regenerate', item }),
+                          },
+                          {
+                            label: m.actionResendEmail,
+                            icon: <Mail className="w-4 h-4 text-primary-500 flex-shrink-0" />,
+                            hidden: !canModify,
+                            disabled: busy,
+                            onClick: () => setConfirmModal({ open: true, type: 'resend', item }),
+                          },
+                        ]} />
                       </td>
                     </tr>
                   )

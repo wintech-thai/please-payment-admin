@@ -49,17 +49,18 @@ export default function RowActionsMenu({ items }: { items: RowActionItem[] }) {
   }, [open, calcPos])
 
   const visible = items.filter(i => !i.hidden)
+  const hasItems = visible.length > 0
 
   return (
     <div className="relative flex justify-center">
       <button
         ref={btnRef}
-        onClick={e => { e.stopPropagation(); if (!open) calcPos(); setOpen(v => !v) }}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+        onClick={e => { e.stopPropagation(); if (!hasItems) return; if (!open) calcPos(); setOpen(v => !v) }}
+        className={clsx('p-1.5 rounded-lg transition-colors', hasItems ? 'text-gray-400 hover:text-gray-700 hover:bg-gray-100' : 'text-gray-200 cursor-default')}
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
-      {open && (
+      {open && hasItems && (
         <div
           ref={ref}
           className="fixed z-[200] w-52 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden"

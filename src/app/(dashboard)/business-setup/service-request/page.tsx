@@ -285,7 +285,7 @@ function ServiceRequestListContent() {
   const [showTypeMenu, setShowTypeMenu] = useState(false)
   const typeMenuRef = useRef<HTMLDivElement>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'regenerate' | 'resend' | 'delete' | 'delete-completely'; item?: ServiceRequestItem }>({ open: false })
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type?: 'regenerate' | 'resend' | 'delete'; item?: ServiceRequestItem }>({ open: false })
   const [linkModal, setLinkModal] = useState<{ open: boolean; title?: string; link?: string }>({ open: false })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
@@ -409,15 +409,10 @@ function ServiceRequestListContent() {
         const data = res.data as any
         if (data?.status === 'OK' || data?.Status === 'OK') { toast.success(m.deleteSuccess); setSelectedId(null); fetchItems() }
         else toast.error(data?.status === 'APPROVED_CANNOT_DELETE' ? m.cannotDeleteApproved : (data?.description ?? m.deleteFailed))
-      } else if (type === 'delete-completely') {
-        const res = await serviceRequestApi.deleteServiceRequestCompletelyById(item.id)
-        const data = res.data as any
-        if (data?.status === 'OK' || data?.Status === 'OK') { toast.success(m.deleteCompletelySuccess); setSelectedId(null); fetchItems() }
-        else toast.error(data?.status === 'MERCHANT_HAS_ACTIVITY' ? m.cannotDeleteMerchantHasActivity : (data?.description ?? m.deleteCompletelyFailed))
       }
       setConfirmModal({ open: false })
     } catch (err: unknown) {
-      const failMsg = type === 'regenerate' ? m.regenerateFailed : type === 'resend' ? m.resendFailed : type === 'delete-completely' ? m.deleteCompletelyFailed : m.deleteFailed
+      const failMsg = type === 'regenerate' ? m.regenerateFailed : type === 'resend' ? m.resendFailed : m.deleteFailed
       toast.error(err instanceof Error ? err.message : failMsg)
     } finally {
       setActionLoading(null)
@@ -453,8 +448,8 @@ function ServiceRequestListContent() {
 
       {confirmModal.open && (
         <ConfirmModal
-          title={confirmModal.type === 'regenerate' ? m.regenerateConfirmTitle : confirmModal.type === 'resend' ? m.resendConfirmTitle : confirmModal.type === 'delete-completely' ? m.deleteCompletelyConfirmTitle : m.deleteConfirmTitle}
-          desc={confirmModal.type === 'regenerate' ? m.regenerateConfirmDesc : confirmModal.type === 'resend' ? m.resendConfirmDesc : confirmModal.type === 'delete-completely' ? m.deleteCompletelyConfirmDesc : m.deleteConfirmDesc}
+          title={confirmModal.type === 'regenerate' ? m.regenerateConfirmTitle : confirmModal.type === 'resend' ? m.resendConfirmTitle : m.deleteConfirmTitle}
+          desc={confirmModal.type === 'regenerate' ? m.regenerateConfirmDesc : confirmModal.type === 'resend' ? m.resendConfirmDesc : m.deleteConfirmDesc}
           onConfirm={handleConfirmAction}
           onCancel={() => setConfirmModal({ open: false })}
           loading={!!actionLoading}
@@ -627,13 +622,6 @@ function ServiceRequestListContent() {
                             hidden: !canModify,
                             disabled: busy,
                             onClick: () => setConfirmModal({ open: true, type: 'resend', item }),
-                          },
-                          {
-                            label: m.actionDeleteCompletely,
-                            icon: <Trash2 className="w-4 h-4 text-red-500 flex-shrink-0" />,
-                            danger: true,
-                            disabled: busy,
-                            onClick: () => setConfirmModal({ open: true, type: 'delete-completely', item }),
                           },
                         ]} />
                       </td>
